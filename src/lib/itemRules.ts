@@ -55,6 +55,11 @@ export function formatDueDate(isoDate: string): string {
   return dueDateFormat.format(fromIsoDate(isoDate));
 }
 
+/** The local day of a timestamp such as `items.completed_at`. */
+export function formatTimestampDate(timestamp: string): string {
+  return dueDateFormat.format(new Date(timestamp));
+}
+
 const recurrenceRules = {
   daily: 'FREQ=DAILY',
   weekly: 'FREQ=WEEKLY',

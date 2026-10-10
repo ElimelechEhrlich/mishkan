@@ -66,6 +66,7 @@ export const labels = {
     debts: 'חובות',
     incomplete: 'להשלמה',
     settings: 'הגדרות',
+    done: 'בוצעו',
     item: 'פריט',
     onboarding: 'הקמת הבית',
   },
@@ -83,6 +84,7 @@ export const labels = {
     noDebts: 'אין חובות פתוחים',
     itemNotFound: 'הפריט לא נמצא. ייתכן שהוא נסגר או נמחק.',
     done: 'בוצע',
+    noDoneItems: 'עוד לא סומנו פריטים כבוצעו',
   },
   actions: {
     save: 'שמירה',
@@ -105,6 +107,7 @@ export const labels = {
     attachFile: 'צירוף קובץ',
     closeDebt: 'סגירת החוב',
     settings: 'הגדרות',
+    showDone: 'פריטים שבוצעו',
     makePrivate: 'פרטי',
   },
   fields: {

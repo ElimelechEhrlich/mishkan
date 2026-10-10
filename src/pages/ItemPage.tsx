@@ -22,7 +22,7 @@ export function ItemPage(): ReactElement {
       incompleteCount={items.incomplete.length}
       inner
     >
-      <ErrorBanner message={items.error ?? areas.error} />
+      <ErrorBanner message={items.error ?? page.error ?? areas.error} />
       {item === null ? (
         <EmptyState text={items.loading ? labels.status.loading : labels.status.itemNotFound} />
       ) : (

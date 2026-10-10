@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { DebtsPage } from '../pages/DebtsPage';
+import { DonePage } from '../pages/DonePage';
 import { GoalsPage } from '../pages/GoalsPage';
 import { IncompletePage } from '../pages/IncompletePage';
 import { ItemPage } from '../pages/ItemPage';
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
           { path: '/incomplete', element: <IncompletePage /> },
           { path: '/item/:itemId', element: <ItemPage /> },
           { path: '/settings', element: <SettingsPage /> },
+          { path: '/done', element: <DonePage /> },
         ],
       },
     ],

@@ -35,6 +35,15 @@ export function PageShell({
         <h1 className="min-w-0 flex-1 truncate font-display text-3xl font-bold">{title}</h1>
         {!inner && (
           <Link
+            to="/done"
+            aria-label={labels.actions.showDone}
+            className="flex size-10 items-center justify-center rounded-full text-muted"
+          >
+            <Icon name="done" className="size-6" />
+          </Link>
+        )}
+        {!inner && (
+          <Link
             to="/settings"
             aria-label={labels.actions.settings}
             className="flex size-10 items-center justify-center rounded-full text-muted"

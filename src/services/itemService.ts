@@ -27,6 +27,29 @@ export async function listSteps(): Promise<Item[]> {
   return data;
 }
 
+/** The most recently closed items, newest first. */
+export async function listDoneItems(limit: number): Promise<Item[]> {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('status', 'done')
+    .order('completed_at', { ascending: false })
+    .limit(limit);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+/** One item in any status, or null when it does not exist or is not visible. */
+export async function getItem(itemId: string): Promise<Item | null> {
+  const { data, error } = await supabase.from('items').select('*').eq('id', itemId).maybeSingle();
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
 /** `household_id` and `created_by` are filled in by the database. */
 export async function createItem(newItem: NewItem): Promise<void> {
   const { error } = await supabase.from('items').insert({
