@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { ItemList } from '../components/items/ItemList';
 import { MemberFilter } from '../components/items/MemberFilter';
@@ -18,6 +19,7 @@ export function OpenItemsPage(): ReactElement {
   const items = useItems();
   const lookups = useLookups(areas.areas, members);
   const view = useOpenSegments(items.assigned);
+  const [searchParams] = useSearchParams();
 
   return (
     <PageShell title={labels.pages.open} incompleteCount={items.incomplete.length}>
@@ -31,7 +33,12 @@ export function OpenItemsPage(): ReactElement {
         loading={items.loading}
         onComplete={items.completeItem}
       />
-      <QuickAddSheet areas={areas.areas} currentMemberId={member.id} onAdd={items.addItem} />
+      <QuickAddSheet
+        areas={areas.areas}
+        currentMemberId={member.id}
+        onAdd={items.addItem}
+        initiallyOpen={searchParams.has('new')}
+      />
     </PageShell>
   );
 }

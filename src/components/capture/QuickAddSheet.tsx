@@ -15,6 +15,8 @@ type QuickAddSheetProps = {
   readonly onAdd: (newItem: NewItem) => Promise<boolean>;
   /** The kind that is selected when the sheet opens. */
   readonly defaultKind?: CapturableKind;
+  /** Opens the sheet right away, for the "new item" home-screen shortcut. */
+  readonly initiallyOpen?: boolean;
 };
 
 const kinds = ['task', 'goal', 'issue', 'note'] as const satisfies readonly CapturableKind[];
@@ -38,8 +40,9 @@ export function QuickAddSheet({
   currentMemberId,
   onAdd,
   defaultKind = 'task',
+  initiallyOpen = false,
 }: QuickAddSheetProps): ReactElement {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<CapturableKind>(defaultKind);
   const [domainId, setDomainId] = useState<string | null>(null);
