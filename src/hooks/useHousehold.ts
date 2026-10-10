@@ -5,6 +5,7 @@ import {
   getHousehold,
   getMemberByUserId,
   listMembers,
+  removeChild,
 } from '../services/householdService';
 import type { Household, Member } from '../types/domain';
 
@@ -23,6 +24,7 @@ type HouseholdState = {
 
 type UseHousehold = HouseholdState & {
   readonly addChild: (name: string) => Promise<boolean>;
+  readonly removeChild: (memberId: string) => void;
 };
 
 async function loadHousehold(userId: string): Promise<HouseholdData | null> {
@@ -72,5 +74,16 @@ export function useHousehold(userId: string): UseHousehold {
     [householdId, reload],
   );
 
-  return { ...state, addChild: handleAddChild };
+  const handleRemoveChild = useCallback(
+    (memberId: string): void => {
+      removeChild(memberId)
+        .then(reload)
+        .catch((error: unknown) => {
+          setState((previous) => ({ ...previous, error: toMessage(error) }));
+        });
+    },
+    [reload],
+  );
+
+  return { ...state, addChild: handleAddChild, removeChild: handleRemoveChild };
 }

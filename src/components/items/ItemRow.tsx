@@ -1,58 +1,39 @@
 import type { ReactElement } from 'react';
+import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
-import { formatDueDate } from '../../lib/itemRules';
+import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
+import { CheckButton } from '../ui/CheckButton';
+import { Icon } from '../ui/Icon';
+import { ItemMeta } from './ItemMeta';
 
 type ItemRowProps = {
   readonly item: Item;
-  readonly domainLabel: string | null;
-  readonly memberName: string | null;
-  readonly overdue: boolean;
-  readonly onComplete: (itemId: string) => void;
+  readonly lookups: Lookups;
+  readonly today: string;
+  readonly onComplete: (item: Item) => void;
 };
 
-function timeLabel(item: Item): string | null {
-  if (item.time_mode === null) {
-    return null;
-  }
-  if (item.time_mode === 'scheduled' && item.due_date !== null) {
-    return formatDueDate(item.due_date);
-  }
-  return labels.timeMode[item.time_mode];
-}
-
-export function ItemRow({
-  item,
-  domainLabel,
-  memberName,
-  overdue,
-  onComplete,
-}: ItemRowProps): ReactElement {
-  const details = [domainLabel, memberName, timeLabel(item)].filter((part) => part !== null);
-  const canComplete = item.kind !== 'note';
-
+/** One item in a list: tick it off, or tap it to open its page. */
+export function ItemRow({ item, lookups, today, onComplete }: ItemRowProps): ReactElement {
   return (
-    <li className="flex items-start gap-3 border-b border-soft py-3">
-      {canComplete ? (
-        <button
-          type="button"
-          aria-label={labels.actions.markDone}
+    <li className="flex items-center gap-3 rounded-2xl bg-surface py-3 ps-3 pe-2 shadow-card">
+      {item.kind !== 'note' && (
+        <CheckButton
+          checked={false}
+          label={labels.actions.markDone}
           onClick={() => {
-            onComplete(item.id);
+            onComplete(item);
           }}
-          className="mt-0.5 size-7 shrink-0 border-2 border-ink bg-surface"
         />
-      ) : (
-        <span className="mt-0.5 size-7 shrink-0" />
       )}
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="font-medium break-words">{item.title}</span>
-        <span className="text-sm text-muted">
-          {item.kind !== 'task' && <span className="me-2 text-accent">{labels.kind[item.kind]}</span>}
-          {details.join(labels.item.separator)}
-          {overdue && <span className="ms-2 text-alert">{labels.item.overdue}</span>}
+      <Link to={`/item/${item.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="font-medium break-words">{item.title}</span>
+          <ItemMeta item={item} lookups={lookups} today={today} />
         </span>
-      </div>
+        <Icon name="forward" className="size-4 text-muted/60" />
+      </Link>
     </li>
   );
 }

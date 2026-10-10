@@ -4,13 +4,15 @@ type ButtonProps = {
   readonly children: ReactNode;
   readonly onClick?: () => void;
   readonly type?: 'button' | 'submit';
-  readonly variant?: 'primary' | 'ghost';
+  readonly variant?: 'primary' | 'soft' | 'ghost' | 'danger';
   readonly disabled?: boolean;
 };
 
 const variantClasses = {
-  primary: 'border-ink bg-ink text-paper',
-  ghost: 'border-ink bg-transparent text-ink',
+  primary: 'bg-primary text-white',
+  soft: 'bg-primary-soft text-primary',
+  ghost: 'border border-line bg-transparent text-ink',
+  danger: 'bg-alert-soft text-alert',
 } as const;
 
 export function Button({
@@ -25,7 +27,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`min-h-12 border px-4 py-2 font-medium disabled:opacity-40 ${variantClasses[variant]}`}
+      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 font-medium transition active:scale-[0.98] disabled:opacity-40 ${variantClasses[variant]}`}
     >
       {children}
     </button>

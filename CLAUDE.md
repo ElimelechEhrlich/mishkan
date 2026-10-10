@@ -25,5 +25,5 @@ Do not add folders or change this structure without the owner's approval.
 - Services return a value or throw. Hooks surface errors in state. Nothing is swallowed silently.
 - Components are PascalCase, one component per file. Everything else is camelCase.
 - No Hebrew strings inside components; add them to `src/constants/labels.ts`.
-- No rounded corners anywhere in the UI.
+- Design tokens (colors, fonts, shadows) live in `src/index.css`; use them instead of raw values.
 - `npm run typecheck`, `npm run lint` and `npm run build` must pass before a change is done.

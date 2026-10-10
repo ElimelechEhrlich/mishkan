@@ -3,7 +3,10 @@ import { toMessage } from '../lib/errors';
 import {
   completeItem,
   createItem,
+  deleteItem,
   listOpenItems,
+  listSteps,
+  reopenItem,
   subscribeToItems,
   updateItem,
 } from '../services/itemService';
@@ -11,54 +14,68 @@ import type { Item, ItemUpdate, NewItem } from '../types/domain';
 
 type ItemsState = {
   readonly items: readonly Item[];
+  readonly steps: readonly Item[];
   readonly loading: boolean;
   readonly error: string | null;
 };
 
-type UseItems = {
+export type UseItems = {
+  /** Every open item the parent can see. */
+  readonly items: readonly Item[];
+  /** Every step of a goal or an issue, done ones included. */
+  readonly steps: readonly Item[];
   /** Open items that are fully assigned. */
   readonly assigned: readonly Item[];
   /** Open items still missing a domain, a member or a time. */
   readonly incomplete: readonly Item[];
   readonly loading: boolean;
   readonly error: string | null;
+  readonly reload: () => void;
   readonly addItem: (newItem: NewItem) => Promise<boolean>;
   readonly updateItem: (itemId: string, changes: ItemUpdate) => void;
-  readonly completeItem: (itemId: string) => void;
+  readonly completeItem: (item: Item) => void;
+  readonly reopenItem: (itemId: string) => void;
+  readonly deleteItem: (itemId: string) => Promise<boolean>;
 };
 
-export function useItems(): UseItems {
-  const [state, setState] = useState<ItemsState>({ items: [], loading: true, error: null });
+const initialState: ItemsState = { items: [], steps: [], loading: true, error: null };
 
-  const reload = useCallback(async (): Promise<void> => {
+export function useItems(): UseItems {
+  const [state, setState] = useState<ItemsState>(initialState);
+
+  const load = useCallback(async (): Promise<void> => {
     try {
-      const items = await listOpenItems();
-      setState({ items, loading: false, error: null });
+      const [items, steps] = await Promise.all([listOpenItems(), listSteps()]);
+      setState({ items, steps, loading: false, error: null });
     } catch (error: unknown) {
       setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
     }
   }, []);
 
+  const reload = useCallback((): void => {
+    void load();
+  }, [load]);
+
   useEffect(() => {
-    void reload();
+    void load();
     return subscribeToItems(() => {
-      void reload();
+      void load();
     });
-  }, [reload]);
+  }, [load]);
 
   /** Runs a change, then reloads. A failure is reported in `error`, never swallowed. */
   const run = useCallback(
     async (change: () => Promise<void>): Promise<boolean> => {
       try {
         await change();
-        await reload();
+        await load();
         return true;
       } catch (error: unknown) {
         setState((previous) => ({ ...previous, error: toMessage(error) }));
         return false;
       }
     },
-    [reload],
+    [load],
   );
 
   const handleAdd = useCallback(
@@ -74,9 +91,21 @@ export function useItems(): UseItems {
   );
 
   const handleComplete = useCallback(
-    (itemId: string): void => {
-      void run(() => completeItem(itemId));
+    (item: Item): void => {
+      void run(() => completeItem(item));
     },
+    [run],
+  );
+
+  const handleReopen = useCallback(
+    (itemId: string): void => {
+      void run(() => reopenItem(itemId));
+    },
+    [run],
+  );
+
+  const handleDelete = useCallback(
+    (itemId: string): Promise<boolean> => run(() => deleteItem(itemId)),
     [run],
   );
 
@@ -84,12 +113,17 @@ export function useItems(): UseItems {
   const incomplete = useMemo(() => state.items.filter((item) => !item.is_complete), [state.items]);
 
   return {
+    items: state.items,
+    steps: state.steps,
     assigned,
     incomplete,
     loading: state.loading,
     error: state.error,
+    reload,
     addItem: handleAdd,
     updateItem: handleUpdate,
     completeItem: handleComplete,
+    reopenItem: handleReopen,
+    deleteItem: handleDelete,
   };
 }

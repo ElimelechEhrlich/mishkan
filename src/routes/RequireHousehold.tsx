@@ -9,7 +9,7 @@ import type { HouseholdContext } from '../types/domain';
 /** Lets parents who belong to a household through; the rest go to onboarding. */
 export function RequireHousehold(): ReactElement {
   const session = useSessionContext();
-  const { data, loading, error, addChild } = useHousehold(session.userId);
+  const { data, loading, error, addChild, removeChild } = useHousehold(session.userId);
 
   if (loading) {
     return <StatusScreen text={labels.status.loading} />;
@@ -21,6 +21,6 @@ export function RequireHousehold(): ReactElement {
     return <Navigate to="/onboarding" replace />;
   }
 
-  const context: HouseholdContext = { ...session, ...data, addChild };
+  const context: HouseholdContext = { ...session, ...data, addChild, removeChild };
   return <Outlet context={context} />;
 }

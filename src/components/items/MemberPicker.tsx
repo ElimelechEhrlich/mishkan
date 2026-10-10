@@ -2,30 +2,24 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { Member } from '../../types/domain';
-import { Button } from '../ui/Button';
+import { AddRow } from '../ui/AddRow';
 import { Chip } from '../ui/Chip';
-import { TextField } from '../ui/TextField';
 
 type MemberPickerProps = {
   readonly members: readonly Member[];
+  readonly value: string | null;
   readonly onPick: (memberId: string) => void;
   readonly onAddChild: (name: string) => Promise<boolean>;
 };
 
 /** Pick who an item belongs to. A new child can be added on the spot. */
-export function MemberPicker({ members, onPick, onAddChild }: MemberPickerProps): ReactElement {
+export function MemberPicker({
+  members,
+  value,
+  onPick,
+  onAddChild,
+}: MemberPickerProps): ReactElement {
   const [adding, setAdding] = useState(false);
-  const [childName, setChildName] = useState('');
-  const trimmedName = childName.trim();
-
-  function handleAddChild(): void {
-    void onAddChild(trimmedName).then((added) => {
-      if (added) {
-        setChildName('');
-        setAdding(false);
-      }
-    });
-  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -34,7 +28,7 @@ export function MemberPicker({ members, onPick, onAddChild }: MemberPickerProps)
           <Chip
             key={member.id}
             label={member.name}
-            selected={false}
+            selected={member.id === value}
             onClick={() => {
               onPick(member.id);
             }}
@@ -49,12 +43,16 @@ export function MemberPicker({ members, onPick, onAddChild }: MemberPickerProps)
         />
       </div>
       {adding && (
-        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
-          <TextField label={labels.fields.childName} value={childName} onChange={setChildName} />
-          <Button disabled={trimmedName === ''} onClick={handleAddChild}>
-            {labels.actions.add}
-          </Button>
-        </div>
+        <AddRow
+          label={labels.fields.childName}
+          onAdd={(name) => {
+            void onAddChild(name).then((added) => {
+              if (added) {
+                setAdding(false);
+              }
+            });
+          }}
+        />
       )}
     </div>
   );

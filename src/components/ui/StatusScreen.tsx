@@ -8,7 +8,11 @@ type StatusScreenProps = {
 export function StatusScreen({ text, isError = false }: StatusScreenProps): ReactElement {
   return (
     <div className="flex min-h-dvh items-center justify-center p-6">
-      <p className={isError ? 'text-alert' : 'text-muted'} role={isError ? 'alert' : 'status'}>
+      <p
+        dir="auto"
+        className={isError ? 'rounded-xl bg-alert-soft px-4 py-3 text-alert' : 'text-muted'}
+        role={isError ? 'alert' : 'status'}
+      >
         {text}
       </p>
     </div>

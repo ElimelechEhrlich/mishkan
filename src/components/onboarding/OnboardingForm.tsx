@@ -2,13 +2,15 @@ import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
 import { Button } from '../ui/Button';
-import { Chip } from '../ui/Chip';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { Segmented } from '../ui/Segmented';
 import { TextField } from '../ui/TextField';
 
 type OnboardingFormProps = {
   readonly busy: boolean;
   readonly error: string | null;
+  /** From an invite link; opens the form ready to join. */
+  readonly initialInviteCode: string | null;
   readonly onCreate: (householdName: string, parentName: string) => void;
   readonly onJoin: (inviteCode: string, parentName: string) => void;
   readonly onSignOut: () => void;
@@ -16,18 +18,24 @@ type OnboardingFormProps = {
 
 type Mode = 'create' | 'join';
 
+const modes = [
+  { value: 'create', label: labels.onboarding.createTab },
+  { value: 'join', label: labels.onboarding.joinTab },
+] as const satisfies readonly { value: Mode; label: string }[];
+
 /** The first parent creates the household; the second joins it with the invite code. */
 export function OnboardingForm({
   busy,
   error,
+  initialInviteCode,
   onCreate,
   onJoin,
   onSignOut,
 }: OnboardingFormProps): ReactElement {
-  const [mode, setMode] = useState<Mode>('create');
+  const [mode, setMode] = useState<Mode>(initialInviteCode === null ? 'create' : 'join');
   const [parentName, setParentName] = useState('');
   const [householdName, setHouseholdName] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(initialInviteCode ?? '');
 
   const name = parentName.trim();
   const secondValue = mode === 'create' ? householdName.trim() : inviteCode.trim();
@@ -42,52 +50,39 @@ export function OnboardingForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-4 p-6"
-    >
-      <h1 className="border-b border-ink pb-3 text-3xl font-bold">{labels.pages.onboarding}</h1>
-      <div className="flex gap-2">
-        <Chip
-          label={labels.onboarding.createTab}
-          selected={mode === 'create'}
-          onClick={() => {
-            setMode('create');
-          }}
-        />
-        <Chip
-          label={labels.onboarding.joinTab}
-          selected={mode === 'join'}
-          onClick={() => {
-            setMode('join');
-          }}
-        />
-      </div>
-      <ErrorBanner message={error} />
-      <TextField label={labels.fields.yourName} value={parentName} onChange={setParentName} />
-      {mode === 'create' ? (
-        <TextField
-          label={labels.fields.householdName}
-          value={householdName}
-          onChange={setHouseholdName}
-        />
-      ) : (
-        <>
+    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 p-6">
+      <h1 className="text-center font-display text-4xl font-bold">{labels.pages.onboarding}</h1>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card"
+      >
+        <Segmented options={modes} value={mode} onChange={setMode} />
+        <ErrorBanner message={error} />
+        <TextField label={labels.fields.yourName} value={parentName} onChange={setParentName} />
+        {mode === 'create' ? (
           <TextField
-            label={labels.fields.inviteCode}
-            direction="ltr"
-            value={inviteCode}
-            onChange={setInviteCode}
+            label={labels.fields.householdName}
+            value={householdName}
+            onChange={setHouseholdName}
           />
-          <p className="text-sm text-muted">{labels.onboarding.inviteHint}</p>
-        </>
-      )}
-      <Button type="submit" disabled={busy || name === '' || secondValue === ''}>
-        {mode === 'create' ? labels.actions.createHousehold : labels.actions.joinHousehold}
-      </Button>
+        ) : (
+          <>
+            <TextField
+              label={labels.fields.inviteCode}
+              direction="ltr"
+              value={inviteCode}
+              onChange={setInviteCode}
+            />
+            <p className="text-sm text-muted">{labels.onboarding.inviteHint}</p>
+          </>
+        )}
+        <Button type="submit" disabled={busy || name === '' || secondValue === ''}>
+          {mode === 'create' ? labels.actions.createHousehold : labels.actions.joinHousehold}
+        </Button>
+      </form>
       <Button variant="ghost" onClick={onSignOut}>
         {labels.actions.signOut}
       </Button>
-    </form>
+    </div>
   );
 }

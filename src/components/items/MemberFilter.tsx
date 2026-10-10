@@ -9,25 +9,29 @@ type MemberFilterProps = {
   readonly onChange: (memberId: string | null) => void;
 };
 
+/** One scrolling line of chips: everyone, then each member. */
 export function MemberFilter({ members, value, onChange }: MemberFilterProps): ReactElement {
   return (
-    <div className="flex flex-wrap gap-2">
-      <Chip
-        label={labels.filter.all}
-        selected={value === null}
-        onClick={() => {
-          onChange(null);
-        }}
-      />
-      {members.map((member) => (
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+      <span className="shrink-0">
         <Chip
-          key={member.id}
-          label={member.name}
-          selected={member.id === value}
+          label={labels.filter.all}
+          selected={value === null}
           onClick={() => {
-            onChange(member.id);
+            onChange(null);
           }}
         />
+      </span>
+      {members.map((member) => (
+        <span key={member.id} className="shrink-0">
+          <Chip
+            label={member.name}
+            selected={member.id === value}
+            onClick={() => {
+              onChange(member.id);
+            }}
+          />
+        </span>
       ))}
     </div>
   );

@@ -6,19 +6,33 @@ type ChipProps = {
   readonly onClick: () => void;
   /** Small secondary text, such as the private mark. */
   readonly note?: string | undefined;
+  /** Background class of a small color dot shown before the label. */
+  readonly dotClass?: string | undefined;
+  readonly disabled?: boolean;
 };
 
-export function Chip({ label, selected, onClick, note }: ChipProps): ReactElement {
-  const tone = selected ? 'border-ink bg-ink text-paper' : 'border-soft bg-surface text-ink';
+export function Chip({
+  label,
+  selected,
+  onClick,
+  note,
+  dotClass,
+  disabled = false,
+}: ChipProps): ReactElement {
+  const tone = selected
+    ? 'border-primary bg-primary text-white'
+    : 'border-line bg-surface text-ink';
   return (
     <button
       type="button"
       aria-pressed={selected}
+      disabled={disabled}
       onClick={onClick}
-      className={`min-h-10 border px-3 py-1 text-sm ${tone}`}
+      className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3.5 py-1 text-sm font-medium transition active:scale-[0.97] disabled:opacity-40 ${tone}`}
     >
+      {dotClass !== undefined && <span className={`size-2 rounded-full ${dotClass}`} />}
       {label}
-      {note !== undefined && <span className="ms-2 text-xs opacity-70">{note}</span>}
+      {note !== undefined && <span className="text-xs opacity-70">{note}</span>}
     </button>
   );
 }

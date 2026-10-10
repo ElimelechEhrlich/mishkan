@@ -1,34 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import { listAreasWithDomains } from '../services/areaService';
 import type { AreaWithDomains } from '../types/domain';
 
-type UseAreas = {
+type AreasState = {
   readonly areas: readonly AreaWithDomains[];
   readonly loading: boolean;
   readonly error: string | null;
 };
 
-export function useAreas(): UseAreas {
-  const [state, setState] = useState<UseAreas>({ areas: [], loading: true, error: null });
+export type UseAreas = AreasState & {
+  readonly reload: () => Promise<void>;
+};
 
-  useEffect(() => {
-    let active = true;
-    listAreasWithDomains()
-      .then((areas) => {
-        if (active) {
-          setState({ areas, loading: false, error: null });
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setState({ areas: [], loading: false, error: toMessage(error) });
-        }
-      });
-    return (): void => {
-      active = false;
-    };
+export function useAreas(): UseAreas {
+  const [state, setState] = useState<AreasState>({ areas: [], loading: true, error: null });
+
+  const reload = useCallback(async (): Promise<void> => {
+    try {
+      const areas = await listAreasWithDomains();
+      setState({ areas, loading: false, error: null });
+    } catch (error: unknown) {
+      setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
+    }
   }, []);
 
-  return state;
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  return { ...state, reload };
 }

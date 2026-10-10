@@ -68,3 +68,11 @@ export async function addChild(householdId: string, name: string): Promise<void>
     throw new Error(error.message);
   }
 }
+
+/** Items that belonged to the child stay, without an assignee. */
+export async function removeChild(memberId: string): Promise<void> {
+  const { error } = await supabase.from('members').delete().eq('id', memberId);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
