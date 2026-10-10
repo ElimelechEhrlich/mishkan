@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FormEvent, ReactElement } from 'react';
+import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
 import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -15,7 +15,7 @@ export function LoginForm({ busy, error, onSubmit }: LoginFormProps): ReactEleme
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+  function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
     onSubmit(email.trim(), password);
   }

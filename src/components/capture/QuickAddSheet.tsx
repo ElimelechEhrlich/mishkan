@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FormEvent, ReactElement } from 'react';
+import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
 import type { AreaWithDomains, NewItem } from '../../types/domain';
 import { Button } from '../ui/Button';
@@ -36,7 +36,7 @@ export function QuickAddSheet({ areas, currentMemberId, onAdd }: QuickAddSheetPr
 
   const trimmedTitle = title.trim();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+  function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
     if (trimmedTitle === '' || saving) {
       return;

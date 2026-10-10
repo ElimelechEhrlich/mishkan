@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FormEvent, ReactElement } from 'react';
+import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
@@ -32,7 +32,7 @@ export function OnboardingForm({
   const name = parentName.trim();
   const secondValue = mode === 'create' ? householdName.trim() : inviteCode.trim();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+  function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
     if (mode === 'create') {
       onCreate(secondValue, name);
