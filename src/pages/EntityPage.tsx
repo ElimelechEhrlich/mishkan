@@ -48,7 +48,7 @@ export function EntityPage(): ReactElement {
         >
           {page.hasProfile && (
             <div className="mb-4">
-              <EntityProfileCard entity={entity} onEntityChanged={entities.reload} />
+              <EntityProfileCard entity={entity} onEntityChanged={page.onProfileSaved} />
             </div>
           )}
           <DomainSectionList

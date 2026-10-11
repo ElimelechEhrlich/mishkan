@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import { todayIso } from '../lib/itemRules';
-import { occasionFacts, occasionOf } from '../lib/occasions';
+import { occasionFacts, occasionOf, occasionReminders } from '../lib/occasions';
 import type { Occasion, OccasionFacts } from '../lib/occasions';
 import {
   addListValue,
@@ -9,6 +9,7 @@ import {
   deleteListValue,
   deleteProfileList,
   listProfileLists,
+  syncAutoReminder,
   updateEntityProfile,
 } from '../services/profileService';
 import type { EntityUpdate, EntityWithDomains, ProfileList } from '../types/domain';
@@ -23,7 +24,10 @@ export type UseEntityProfile = ProfileState & {
   /** The birthday or wedding day, when its date is set. */
   readonly occasion: Occasion | null;
   readonly facts: OccasionFacts | null;
-  /** Saves profile fields, then reloads the entity through `onEntityChanged`. */
+  /**
+   * Saves profile fields and brings the reminder of a changed date up to date at once,
+   * then reloads through `onEntityChanged`.
+   */
   readonly update: (changes: EntityUpdate) => void;
   readonly addList: (title: string) => void;
   readonly removeList: (listId: string) => void;
@@ -66,9 +70,13 @@ export function useEntityProfile(
 
   const update = useCallback(
     (changes: EntityUpdate): void => {
-      run(() => updateEntityProfile(entityId, changes), onEntityChanged);
+      run(async () => {
+        await updateEntityProfile(entityId, changes);
+        const reminders = occasionReminders([{ ...entity, ...changes }], todayIso());
+        await Promise.all(reminders.map((reminder) => syncAutoReminder(reminder)));
+      }, onEntityChanged);
     },
-    [run, entityId, onEntityChanged],
+    [run, entity, entityId, onEntityChanged],
   );
 
   const addList = useCallback(

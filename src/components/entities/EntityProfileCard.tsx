@@ -16,7 +16,7 @@ import { TextPropertyRow } from "./TextPropertyRow";
 
 type EntityProfileCardProps = {
   readonly entity: EntityWithDomains;
-  /** Reloads the entity after its fields are saved. */
+  /** Reloads the entity, and its items, after its fields are saved. */
   readonly onEntityChanged: () => Promise<void>;
 };
 

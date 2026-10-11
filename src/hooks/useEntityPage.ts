@@ -31,6 +31,8 @@ export type UseEntityPage = {
   /** Set when the add sheet should open on a domain; a new `key` each time it is asked for. */
   readonly addRequest: { readonly domainId: string; readonly key: number } | null;
   readonly requestAdd: (domainId: string) => void;
+  /** After the profile is saved: reloads the entity, and the items for a reminder it changed. */
+  readonly onProfileSaved: () => Promise<void>;
   /** Children, parents and the couple have a profile with dates. */
   readonly hasProfile: boolean;
   /** Which way the page slides in: toward an entity later in the strip, or an earlier one. */
@@ -87,6 +89,13 @@ export function useEntityPage(): UseEntityPage {
     setAddRequest((previous) => ({ domainId, key: (previous?.key ?? 0) + 1 }));
   }, []);
 
+  const reloadEntities = entities.reload;
+  const reloadItems = items.reload;
+  const onProfileSaved = useCallback(async (): Promise<void> => {
+    await reloadEntities();
+    reloadItems();
+  }, [reloadEntities, reloadItems]);
+
   return {
     entities,
     items,
@@ -97,6 +106,7 @@ export function useEntityPage(): UseEntityPage {
     openCount,
     addRequest,
     requestAdd,
+    onProfileSaved,
     hasProfile:
       entity !== undefined &&
       (entity.kind === 'child' || entity.kind === 'parent' || entity.kind === 'couple'),
