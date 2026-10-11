@@ -104,6 +104,7 @@ alter table public.items add constraint items_auto_key_unique unique (household_
 -- Keeps one open reminder for an occasion: open reminders of the same occasion under an
 -- older key (say, last year's date) are removed, and the current one is added once.
 -- A reminder that was marked done keeps its key, so it is not added again.
+-- Keys are '<occasion>:<entity id>:<date>', such as 'birthday:<id>:2027-10-27'.
 create function public.sync_auto_reminder(
   p_prefix    text,
   p_key       text,
@@ -123,7 +124,42 @@ begin
     and auto_key <> p_key
     and status = 'open';
 
+  -- An open reminder takes the current title (say, after a rename) and gets a domain
+  -- back if its domain was deleted; its date stays as the parents may have moved it.
   insert into public.items (title, kind, domain_id, time_mode, due_date, auto_key)
   values (p_title, 'task', p_domain_id, 'scheduled', p_due, p_key)
-  on conflict (household_id, auto_key) do nothing;
+  on conflict (household_id, auto_key) do update
+    set title     = excluded.title,
+        domain_id = coalesce(public.items.domain_id, excluded.domain_id)
+    where public.items.status = 'open'
+      and (public.items.title <> excluded.title or public.items.domain_id is null);
 end $$;
+
+-- Open reminders of a date go with it: when the date is cleared, or the entity is
+-- deleted (otherwise they would wait in "needs completion" for nothing).
+create function public.entities_clear_reminders() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if tg_op = 'DELETE' then
+    delete from public.items
+    where household_id = old.household_id and status = 'open'
+      and (auto_key like 'birthday:' || old.id || ':%'
+           or auto_key like 'anniversary:' || old.id || ':%');
+    return old;
+  end if;
+  if new.birth_date is null and old.birth_date is not null then
+    delete from public.items
+    where household_id = old.household_id and status = 'open'
+      and auto_key like 'birthday:' || old.id || ':%';
+  end if;
+  if new.wedding_date is null and old.wedding_date is not null then
+    delete from public.items
+    where household_id = old.household_id and status = 'open'
+      and auto_key like 'anniversary:' || old.id || ':%';
+  end if;
+  return new;
+end $$;
+
+create trigger entities_clear_reminders
+  before update of birth_date, wedding_date or delete on public.entities
+  for each row execute function public.entities_clear_reminders();
