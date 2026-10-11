@@ -287,6 +287,17 @@ export const labels = {
     today: 'להיום',
     incomplete: 'להשלמה',
   },
+  week: {
+    title: 'השבוע',
+    doneThisWeek: 'בוצעו ב־7 הימים האחרונים',
+    late: 'באיחור',
+    comingWeek: 'בשבוע הקרוב',
+    done: 'בוצעו',
+    coming: 'בשבוע הקרוב',
+    byWhom: 'מי סימן',
+    allDone: 'לכל מה שבוצע',
+    nothingDone: 'עוד לא בוצע כלום השבוע',
+  },
   overview: {
     title: 'מבט כולל',
     andMore: 'ועוד',

@@ -5,6 +5,7 @@ import { EntityProfileCard } from '../components/entities/EntityProfileCard';
 import { ScopeBar } from '../components/entities/ScopeBar';
 import { SummaryTiles } from '../components/items/SummaryTiles';
 import { OverviewCards } from '../components/overview/OverviewCards';
+import { WeekSummaryCard } from '../components/overview/WeekSummaryCard';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
@@ -17,6 +18,7 @@ import { useOverview } from '../hooks/useOverview';
 import { useProfileHost } from '../hooks/useProfileHost';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
+import { useWeekSummary } from '../hooks/useWeekSummary';
 import { formatToday } from '../lib/itemRules';
 
 export function OverviewPage(): ReactElement {
@@ -28,6 +30,7 @@ export function OverviewPage(): ReactElement {
   const overview = useOverview(scoped.items, scoped.assigned, scoped.steps);
   const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
   const [searchParams] = useSearchParams();
+  const week = useWeekSummary(scoped.inScope, members, items.items);
   const profile = useProfileHost(scoped.scope, entities, items);
   const remindersError = useOccasionReminders(entities.entities, items.reload);
 
@@ -37,7 +40,7 @@ export function OverviewPage(): ReactElement {
       subtitle={formatToday()}
       incompleteCount={scoped.incomplete.length}
     >
-      <ErrorBanner message={items.error ?? entities.error ?? remindersError} />
+      <ErrorBanner message={items.error ?? entities.error ?? remindersError ?? week.error} />
       <ScopeBar
         entities={entities.entities}
         scopeId={scopeId}
@@ -57,6 +60,7 @@ export function OverviewPage(): ReactElement {
         incomplete={scoped.incomplete.length}
       />
       <OverviewCards overview={overview} lookups={lookups} onComplete={items.completeItem} />
+      <WeekSummaryCard summary={week} overdue={overview.overdue} thisWeek={overview.thisWeek} />
       <QuickAddSheet
         entities={entities.entities}
         onStructureChanged={entities.reload}

@@ -27,6 +27,8 @@ export type Overview = {
   /** Tasks and goals that are late, and due today, counting a goal by its earliest open step. */
   readonly overdue: number;
   readonly today: number;
+  /** Due from tomorrow to a week from today. */
+  readonly thisWeek: number;
 };
 
 function byTime(items: readonly Item[], steps: readonly Item[]): TimeGroups {
@@ -71,6 +73,8 @@ export function useOverview(
       goals,
       overdue: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'overdue').length,
       today: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'today').length,
+      thisWeek: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'thisWeek')
+        .length,
     };
   }, [assigned, steps]);
 

@@ -44,6 +44,21 @@ export async function listDoneItems(limit: number, kind: ItemKind | null): Promi
   return data;
 }
 
+/** Items closed since a moment, newest first, such as for a summary of the week. */
+export async function listDoneSince(since: string): Promise<Item[]> {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('status', 'done')
+    .eq('hidden', false)
+    .gte('completed_at', since)
+    .order('completed_at', { ascending: false });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
 /** One item in any status, or null when it does not exist or is not visible. */
 export async function getItem(itemId: string): Promise<Item | null> {
   const { data, error } = await supabase.from('items').select('*').eq('id', itemId).maybeSingle();
