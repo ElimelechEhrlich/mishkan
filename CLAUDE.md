@@ -2,6 +2,8 @@
 
 Hebrew RTL home-management PWA for two parents. React + Vite + TypeScript + Tailwind v4 + react-router v7 + Supabase.
 
+`DATA_MODEL.md` holds the agreed data model (entities, item kinds, shopping, conversions). It supersedes the areas model in migration 0001; read it before any schema or data change.
+
 ## Structure
 
 ```
