@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0009_auto_reminder_recipients.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0010_entity_avatars.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -88,6 +88,8 @@ export type Database = {
           notes: string | null;
           wedding_date: string | null;
           wedding_after_sunset: boolean;
+          avatar_emoji: string | null;
+          avatar_path: string | null;
           created_at: string;
         };
         Insert: {
@@ -103,6 +105,8 @@ export type Database = {
           notes?: string | null;
           wedding_date?: string | null;
           wedding_after_sunset?: boolean;
+          avatar_emoji?: string | null;
+          avatar_path?: string | null;
           created_at?: string;
         };
         Update: {
@@ -114,6 +118,8 @@ export type Database = {
           notes?: string | null;
           wedding_date?: string | null;
           wedding_after_sunset?: boolean;
+          avatar_emoji?: string | null;
+          avatar_path?: string | null;
         };
         Relationships: [];
       };

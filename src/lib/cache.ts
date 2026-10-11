@@ -3,7 +3,7 @@
  * in the background. Kept in memory for moving between screens, and in local storage for
  * the next time the app opens. Everything is cleared on sign-out.
  */
-const prefix = 'mishkan.cache.v1.';
+const prefix = 'mishkan.cache.v2.';
 const memory = new Map<string, unknown>();
 
 export function readCache<T>(key: string, isValid: (value: unknown) => value is T): T | null {

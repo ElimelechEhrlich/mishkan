@@ -392,15 +392,18 @@ export const labels = {
   allKinds: {
     toggle: 'כל הסוגים',
   },
+  avatar: {
+    change: 'החלפת תמונה',
+    title: 'תמונה',
+    photo: 'בחירת תמונה מהטלפון',
+    emoji: 'או סמל',
+    letter: 'בלי תמונה (האות הראשונה)',
+    emojis: ['👦', '👧', '🧒', '👶', '👨', '👩', '🧔', '👱‍♀️', '👴', '👵', '🏠', '💑', '❤️', '🌟', '⚽', '🎨', '📚', '🎵', '🐶', '🐱', '🦁', '🐻', '🌸', '🚗'],
+  },
   scope: {
     showingOnly: 'מסונן לפי',
     byDomain: 'לפי תחומים',
-    allEntities: 'כל הישויות',
-    chooseEntity: 'מעבר בין ישויות',
-    viewing: 'מציג את',
     everythingHint: 'כל הישויות יחד',
-    clear: 'הצגת הכול',
-    groups: { home: 'הבית', parents: 'הורים', children: 'ילדים' },
   },
   entityPage: {
     main: 'ראשי',

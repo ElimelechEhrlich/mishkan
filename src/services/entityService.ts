@@ -19,10 +19,83 @@ export async function listEntitiesWithDomains(): Promise<EntityWithDomains[]> {
     throw new Error(domains.error.message);
   }
   const allDomains = domains.data;
+  const urls = await avatarUrls(
+    entities.data.flatMap((entity) => (entity.avatar_path === null ? [] : [entity.avatar_path])),
+  );
   return entities.data.map((entity) => ({
     ...entity,
     domains: allDomains.filter((domain) => domain.entity_id === entity.id),
+    avatarUrl: entity.avatar_path === null ? null : (urls.get(entity.avatar_path) ?? null),
   }));
+}
+
+const avatarBucket = 'entity-avatars';
+/** Long enough that a copy kept on the device still shows the photos. */
+const avatarUrlSeconds = 60 * 60 * 24 * 30;
+
+async function avatarUrls(paths: readonly string[]): Promise<Map<string, string>> {
+  if (paths.length === 0) {
+    return new Map();
+  }
+  const { data, error } = await supabase.storage
+    .from(avatarBucket)
+    .createSignedUrls([...paths], avatarUrlSeconds);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  const urls = new Map<string, string>();
+  for (const entry of data) {
+    const { path, signedUrl } = entry;
+    if (path !== null && signedUrl !== null && signedUrl !== '') {
+      urls.set(path, signedUrl);
+    }
+  }
+  return urls;
+}
+
+/** Saves a photo for an entity (already made small) and makes it the entity's picture. */
+export async function setEntityPhoto(entity: EntityWithDomains, photo: Blob): Promise<void> {
+  const path = `${entity.household_id}/${entity.id}/${crypto.randomUUID()}.jpg`;
+  const uploaded = await supabase.storage
+    .from(avatarBucket)
+    .upload(path, photo, { contentType: 'image/jpeg' });
+  if (uploaded.error !== null) {
+    throw new Error(uploaded.error.message);
+  }
+  const { error } = await supabase
+    .from('entities')
+    .update({ avatar_path: path, avatar_emoji: null })
+    .eq('id', entity.id);
+  if (error !== null) {
+    await supabase.storage.from(avatarBucket).remove([path]);
+    throw new Error(error.message);
+  }
+  await removeOldPhoto(entity.avatar_path);
+}
+
+/** Shows an emoji instead of the letter, or the letter again when `emoji` is null. */
+export async function setEntityEmoji(
+  entity: EntityWithDomains,
+  emoji: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('entities')
+    .update({ avatar_emoji: emoji, avatar_path: null })
+    .eq('id', entity.id);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  await removeOldPhoto(entity.avatar_path);
+}
+
+async function removeOldPhoto(path: string | null): Promise<void> {
+  if (path === null) {
+    return;
+  }
+  const { error } = await supabase.storage.from(avatarBucket).remove([path]);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
 }
 
 type NewEntity = {

@@ -27,7 +27,11 @@ export type DomainRole = Enums['domain_role'];
 export type DebtDirection = Enums['debt_direction'];
 export type ShoppingCategory = Enums['shopping_category'];
 
-export type EntityWithDomains = Entity & { readonly domains: readonly Domain[] };
+export type EntityWithDomains = Entity & {
+  readonly domains: readonly Domain[];
+  /** A short-lived link to the entity's photo, when it has one. */
+  readonly avatarUrl: string | null;
+};
 
 /** Entities that are added and removed by hand; the rest are created by the system. */
 export type AddableEntityKind = Extract<EntityKind, 'parent' | 'child'>;

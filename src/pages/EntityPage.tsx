@@ -23,7 +23,12 @@ export function EntityPage(): ReactElement {
       inner
       heading={
         entity === undefined ? undefined : (
-          <EntityHeading entity={entity} tone={page.tone} openCount={page.openCount} />
+          <EntityHeading
+            entity={entity}
+            tone={page.tone}
+            openCount={page.openCount}
+            onAvatarChanged={entities.reload}
+          />
         )
       }
     >
@@ -42,9 +47,7 @@ export function EntityPage(): ReactElement {
       ) : (
         <div
           key={`items-${entity.id}`}
-          className={
-            page.direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
-          }
+          className={page.direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'}
         >
           {page.profile.profileEntity !== undefined && (
             <div className="mb-4">

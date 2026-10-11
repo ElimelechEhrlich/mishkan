@@ -16,6 +16,9 @@ function entity(overrides: Partial<EntityWithDomains>): EntityWithDomains {
     notes: null,
     wedding_date: null,
     wedding_after_sunset: false,
+    avatar_emoji: null,
+    avatar_path: null,
+    avatarUrl: null,
     created_at: '',
     domains: [
       {
