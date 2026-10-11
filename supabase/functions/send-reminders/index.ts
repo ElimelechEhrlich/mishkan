@@ -13,12 +13,16 @@ type DueReminder = {
   auth: string;
 };
 
+/** A secret as saved in Supabase, forgiving spaces, quotes and '=' padding pasted along with it. */
 function secret(name: string): string {
-  const value = Deno.env.get(name);
-  if (value === undefined || value === '') {
+  const value = (Deno.env.get(name) ?? '')
+    .trim()
+    .replace(/^["'`]+|["'`]+$/g, '')
+    .trim();
+  if (value === '') {
     throw new Error(`missing secret ${name}`);
   }
-  return value;
+  return name.startsWith('VAPID_') && name !== 'VAPID_SUBJECT' ? value.replace(/=+$/, '') : value;
 }
 
 Deno.serve(async () => {
