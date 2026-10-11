@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
+import { InstallAppButton } from '../ui/InstallAppButton';
 
 type AuthShellProps = {
   readonly children: ReactNode;
@@ -25,6 +26,7 @@ export function AuthShell({
         <p className="text-muted">{labels.app.tagline}</p>
       </header>
       {children}
+      <InstallAppButton />
       <p className="text-center text-sm text-muted">
         {switchText}{' '}
         <Link to={switchTo} className="font-semibold text-primary">

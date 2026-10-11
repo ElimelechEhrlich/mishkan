@@ -7,6 +7,7 @@ import { NotificationsCard } from '../components/settings/NotificationsCard';
 import { ProfileCard } from '../components/settings/ProfileCard';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Icon } from '../components/ui/Icon';
+import { InstallAppButton } from '../components/ui/InstallAppButton';
 import { ListRow } from '../components/ui/ListRow';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
@@ -26,6 +27,7 @@ export function SettingsPage(): ReactElement {
       <ErrorBanner message={entities.error} />
       <ProfileCard member={member} household={household} entities={entities.entities} />
       <EntitySettings entities={entities.entities} settings={settings} />
+      <InstallAppButton />
       <NotificationsCard />
       <AutoReminderCard household={household} members={members} />
       <InviteCard inviteCode={household.invite_code} />

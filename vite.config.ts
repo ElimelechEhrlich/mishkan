@@ -11,7 +11,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg'],
       // Adds the handlers that show reminders sent by web push.
-      workbox: { importScripts: ['push-sw.js'] },
+      workbox: {
+        importScripts: ['push-sw.js'],
+        // The Android app and its link file are real files, not pages of the app.
+        navigateFallbackDenylist: [/\.apk$/, /^\/\.well-known\//],
+      },
       manifest: {
         name: 'משכן',
         short_name: 'משכן',
