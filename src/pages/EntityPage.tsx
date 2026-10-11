@@ -46,9 +46,13 @@ export function EntityPage(): ReactElement {
             page.direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
           }
         >
-          {page.hasProfile && (
+          {page.profile.profileEntity !== undefined && (
             <div className="mb-4">
-              <EntityProfileCard entity={entity} onEntityChanged={page.onProfileSaved} />
+              <EntityProfileCard
+                key={`profile-${page.profile.profileEntity.id}`}
+                entity={page.profile.profileEntity}
+                onEntityChanged={page.profile.onProfileSaved}
+              />
             </div>
           )}
           <DomainSectionList

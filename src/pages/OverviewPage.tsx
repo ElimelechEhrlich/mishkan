@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
+import { EntityProfileCard } from '../components/entities/EntityProfileCard';
 import { ScopeBar } from '../components/entities/ScopeBar';
 import { SummaryTiles } from '../components/items/SummaryTiles';
 import { OverviewCards } from '../components/overview/OverviewCards';
@@ -13,6 +14,7 @@ import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useOccasionReminders } from '../hooks/useOccasionReminders';
 import { useOverview } from '../hooks/useOverview';
+import { useProfileHost } from '../hooks/useProfileHost';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 import { formatToday } from '../lib/itemRules';
@@ -26,6 +28,7 @@ export function OverviewPage(): ReactElement {
   const overview = useOverview(scoped.items, scoped.assigned, scoped.steps);
   const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
   const [searchParams] = useSearchParams();
+  const profile = useProfileHost(scoped.scope, entities, items);
   const remindersError = useOccasionReminders(entities.entities, items.reload);
 
   return (
@@ -41,6 +44,13 @@ export function OverviewPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
+      {profile.profileEntity !== undefined && (
+        <EntityProfileCard
+          key={`profile-${profile.profileEntity.id}`}
+          entity={profile.profileEntity}
+          onEntityChanged={profile.onProfileSaved}
+        />
+      )}
       <SummaryTiles
         overdue={overview.overdue}
         today={overview.today}
