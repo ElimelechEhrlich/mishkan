@@ -6,12 +6,13 @@ import { Icon } from '../ui/Icon';
 type EntityAvatarProps = {
   readonly entity: Entity;
   readonly tone: EntityTone;
-  readonly size: 'xs' | 'md' | 'lg';
+  readonly size: 'xs' | 'md' | 'list' | 'lg';
 };
 
 const sizes = {
   xs: { box: 'size-6 rounded-full text-xs', icon: 'size-3.5' },
   md: { box: 'size-9 rounded-full text-[15px]', icon: 'size-4.5' },
+  list: { box: 'size-11 rounded-full text-lg', icon: 'size-5' },
   lg: { box: 'size-14 rounded-[18px] text-[26px]', icon: 'size-7' },
 } as const;
 
