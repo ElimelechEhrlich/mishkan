@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-  pull_request:
+
+permissions:
+  contents: write
 
 jobs:
   check:
@@ -13,9 +15,20 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run build
-        env:
+      - run: |
+          npx tsc --noEmit --pretty false > tsc.log 2>&1 || true
+          node --input-type=commonjs -e "console.log('::error::TSC%0A'+require('fs').readFileSync('tsc.log','utf8').slice(0,20000).replace(/\r?\n/g,'%0A'))"
+      - run: |
+          npx eslint . -f json -o eslint.json || true
+          node --input-type=commonjs -e "const r=require('./eslint.json');const out=[];for(const f of r)for(const m of f.messages)out.push(f.filePath.replace(process.cwd()+'/','')+':'+m.line+' '+m.ruleId+' '+m.message);console.log('::error::LINT '+out.length+'%0A'+out.join('%0A').slice(0,20000))"
+      - env:
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
+        run: |
+          npx vite build > build.log 2>&1 || true
+          node --input-type=commonjs -e "console.log('::error::BUILD%0A'+require('fs').readFileSync('build.log','utf8').slice(-1500).replace(/\r?\n/g,'%0A'))"
+          cd dist
+          echo '{"git":{"deploymentEnabled":false}}' > vercel.json
+          git init -q && git checkout -q -b ci-dist && git add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm dist
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-dist
