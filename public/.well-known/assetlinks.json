@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.mishkan.twa",
+        "sha256_cert_fingerprints": ["F2:F3:12:1B:EA:72:33:AA:52:88:01:CE:54:95:E9:65:2F:51:63:16:BF:E0:98:D1:33:DF:58:60:C4:5C:0D:08"]
+      }
+    }]
