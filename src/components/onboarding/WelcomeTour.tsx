@@ -12,7 +12,9 @@ type WelcomeTourProps = {
 const steps: readonly { readonly step: TourStep; readonly title: string; readonly text: string }[] =
   [
     { step: 'welcome', title: labels.tour.welcomeTitle, text: labels.tour.welcomeText },
-    { step: 'entities', title: labels.tour.entitiesTitle, text: labels.tour.entitiesText },
+    { step: 'kinds', title: labels.tour.kindsTitle, text: labels.tour.kindsText },
+    { step: 'arenas', title: labels.tour.arenasTitle, text: labels.tour.arenasText },
+    { step: 'domains', title: labels.tour.domainsTitle, text: labels.tour.domainsText },
     { step: 'add', title: labels.tour.addTitle, text: labels.tour.addText },
     { step: 'incomplete', title: labels.tour.incompleteTitle, text: labels.tour.incompleteText },
     { step: 'tabs', title: labels.tour.tabsTitle, text: labels.tour.tabsText },
