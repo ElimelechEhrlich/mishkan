@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
-import { EntityChips } from '../components/entities/EntityChips';
+import { ScopeBar } from '../components/entities/ScopeBar';
 import { ItemList } from '../components/items/ItemList';
 import { SummaryTiles } from '../components/items/SummaryTiles';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
@@ -14,14 +14,16 @@ import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useOpenSegments } from '../hooks/useOpenSegments';
 import { useHouseholdContext } from '../hooks/useRouteContext';
+import { useScopedItems } from '../hooks/useScopedItems';
 import { formatToday } from '../lib/itemRules';
 
 export function OpenItemsPage(): ReactElement {
-  const { members } = useHouseholdContext();
+  const { members, scopeId, setScope } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
-  const view = useOpenSegments(items.assigned, items.steps);
+  const scoped = useScopedItems(items, entities.entities);
+  const view = useOpenSegments(scoped.assigned, scoped.steps);
   const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
   const [searchParams] = useSearchParams();
 
@@ -29,18 +31,19 @@ export function OpenItemsPage(): ReactElement {
     <PageShell
       title={labels.pages.open}
       subtitle={formatToday()}
-      incompleteCount={items.incomplete.length}
+      incompleteCount={scoped.incomplete.length}
     >
       <ErrorBanner message={items.error ?? entities.error} />
       <SummaryTiles
         overdue={view.overdueCount}
         today={view.todayCount}
-        incomplete={items.incomplete.length}
+        incomplete={scoped.incomplete.length}
       />
-      <EntityChips
+      <ScopeBar
         entities={entities.entities}
+        scopeId={scopeId}
+        onChange={setScope}
         counts={entityCounts.counts}
-        total={entityCounts.total}
       />
       <Tabs options={view.options} value={view.segment} onChange={view.setSegment} />
       <ItemList
@@ -55,6 +58,7 @@ export function OpenItemsPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         initiallyOpen={searchParams.has('new')}
+        entityId={scoped.scope?.id}
       />
     </PageShell>
   );

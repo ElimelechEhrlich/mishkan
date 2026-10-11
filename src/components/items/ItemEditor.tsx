@@ -117,13 +117,12 @@ export function ItemEditor({
   const isQuestion = item.kind === 'question';
   const hasSchedule = item.kind !== 'note' && item.kind !== 'debt' && !isShopping && !isQuestion;
   const convertible = isStep ? null : asConvertible(item.kind);
-  // A missing item can only move to the shopping domain of another entity.
-  const domainChoices = isShopping
-    ? entities.map((entity) => ({
-        ...entity,
-        domains: entity.domains.filter((domain) => domain.role === 'shopping'),
-      }))
-    : entities;
+  // A missing item can only move to the shopping domain of another entity, and anything
+  // else stays out of shopping domains (it becomes a missing item by converting it).
+  const domainChoices = entities.map((entity) => ({
+    ...entity,
+    domains: entity.domains.filter((domain) => (domain.role === 'shopping') === isShopping),
+  }));
   const done = item.status === 'done';
 
   const domainLabel = item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);

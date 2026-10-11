@@ -79,8 +79,18 @@ export function countByEntity(
   return counts;
 }
 
-/** The debts domain of the home, where new debts land by default. */
-export function findDebtDomainId(entities: readonly EntityWithDomains[]): string | null {
+/**
+ * Where new debts land: the debts domain of the chosen entity when it has one,
+ * otherwise the home's.
+ */
+export function findDebtDomainId(
+  entities: readonly EntityWithDomains[],
+  scope?: EntityWithDomains,
+): string | null {
+  const scoped = scope?.domains.find((domain) => domain.role === 'debts');
+  if (scoped !== undefined) {
+    return scoped.id;
+  }
   const home = entities.find((entity) => entity.kind === 'home');
   return home?.domains.find((domain) => domain.role === 'debts')?.id ?? null;
 }

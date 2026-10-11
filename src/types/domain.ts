@@ -127,4 +127,7 @@ export type HouseholdContext = SessionContext & {
   readonly household: Household;
   /** The parents who have joined, for showing who completed an item. */
   readonly members: readonly Member[];
+  /** The entity every tab is narrowed to, or null for everything. */
+  readonly scopeId: string | null;
+  readonly setScope: (entityId: string | null) => void;
 };

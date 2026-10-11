@@ -8,8 +8,10 @@ import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useEntityPage } from '../hooks/useEntityPage';
+import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function EntityPage(): ReactElement {
+  const { setScope } = useHouseholdContext();
   const page = useEntityPage();
   const { entities, items, entity, addRequest } = page;
 
@@ -25,7 +27,13 @@ export function EntityPage(): ReactElement {
       }
     >
       <ErrorBanner message={items.error ?? entities.error} />
-      <EntitySwitcher entities={entities.entities} currentId={entity?.id} />
+      <EntitySwitcher
+        entities={entities.entities}
+        currentId={entity?.id}
+        onMain={() => {
+          setScope(null);
+        }}
+      />
       {entity === undefined ? (
         <EmptyState
           text={entities.loading ? labels.status.loading : labels.status.entityNotFound}

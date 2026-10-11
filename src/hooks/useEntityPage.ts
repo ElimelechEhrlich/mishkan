@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { toListEntries, withoutNestedSteps } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
@@ -38,13 +38,21 @@ export type UseEntityPage = {
 /** Everything the entity page needs about the entity in its URL. */
 export function useEntityPage(): UseEntityPage {
   const { entityId } = useParams();
-  const { members } = useHouseholdContext();
+  const { members, scopeId, setScope } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
 
   const entity = entities.entities.find((candidate) => candidate.id === entityId);
   const index = entities.entities.findIndex((candidate) => candidate.id === entityId);
+
+  // Opening an entity's page narrows every tab to it, until "everything" is chosen.
+  const openId = entity?.id;
+  useEffect(() => {
+    if (openId !== undefined && openId !== scopeId) {
+      setScope(openId);
+    }
+  }, [openId, scopeId, setScope]);
 
   // The slide direction is worked out when the entity changes, from where it sits
   // in the strip relative to the one shown before.

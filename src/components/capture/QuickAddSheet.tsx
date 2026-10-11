@@ -81,6 +81,22 @@ export function QuickAddSheet({
   const canSave =
     trimmedTitle !== '' && !saving && (kind !== 'missing_item' || missingItemDomainId !== null);
 
+  /**
+   * Choosing an entity's shopping domain means something to buy: the item becomes
+   * a missing item for that entity, so it shows on the shopping list.
+   */
+  function pickDomain(chosen: string | null): void {
+    const isShoppingDomain = entities.some((entity) =>
+      entity.domains.some((domain) => domain.id === chosen && domain.role === 'shopping'),
+    );
+    if (chosen !== null && isShoppingDomain) {
+      setKind('missing_item');
+      setShoppingDomainId(chosen);
+      return;
+    }
+    setDomainId(chosen);
+  }
+
   function save(): Promise<boolean> {
     if (kind === 'missing_item') {
       return missingItemDomainId === null
@@ -195,7 +211,7 @@ export function QuickAddSheet({
                 key={pickerVersion}
                 entities={entities}
                 value={domainId}
-                onChange={setDomainId}
+                onChange={pickDomain}
                 initialEntityId={entityId}
               />
               {domainId === null && (

@@ -11,6 +11,8 @@ type EntitySwitcherProps = {
   readonly entities: readonly Entity[];
   /** The entity whose page is open. */
   readonly currentId: string | undefined;
+  /** Leaving for the main page shows everything again. */
+  readonly onMain: () => void;
 };
 
 /**
@@ -18,7 +20,11 @@ type EntitySwitcherProps = {
  * The open one is ringed and kept in view; moving replaces the history entry,
  * so "back" returns to the main page.
  */
-export function EntitySwitcher({ entities, currentId }: EntitySwitcherProps): ReactElement {
+export function EntitySwitcher({
+  entities,
+  currentId,
+  onMain,
+}: EntitySwitcherProps): ReactElement {
   const currentRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -33,6 +39,7 @@ export function EntitySwitcher({ entities, currentId }: EntitySwitcherProps): Re
       <Link
         to="/"
         replace
+        onClick={onMain}
         aria-label={labels.entityPage.main}
         className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-white opacity-60 transition active:scale-90"
       >

@@ -222,6 +222,10 @@ export const labels = {
     today: 'להיום',
     incomplete: 'להשלמה',
   },
+  scope: {
+    showingOnly: 'מסונן לפי',
+    byDomain: 'לפי תחומים',
+  },
   entityPage: {
     main: 'ראשי',
     everything: 'הכול',
@@ -253,6 +257,8 @@ export const labels = {
     progress: 'נקנו',
     of: 'מתוך',
     finishHint: 'מה שלא סומן יחזור לרשימה.',
+    misplacedTitle: 'בתחום קניות, אבל לא כפריט חסר',
+    makeMissing: 'להוסיף לרשימה',
   },
   debts: {
     total: 'סה"כ',

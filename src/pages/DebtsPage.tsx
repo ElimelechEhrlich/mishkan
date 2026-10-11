@@ -2,26 +2,32 @@ import type { ReactElement } from 'react';
 import { DebtForm } from '../components/debts/DebtForm';
 import { DebtSection } from '../components/debts/DebtSection';
 import { DebtSummary } from '../components/debts/DebtSummary';
+import { ScopeBar } from '../components/entities/ScopeBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
-import { useEntities } from '../hooks/useEntities';
 import { useDebts } from '../hooks/useDebts';
+import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
+import { useHouseholdContext } from '../hooks/useRouteContext';
+import { useScopedItems } from '../hooks/useScopedItems';
 import { findDebtDomainId } from '../lib/lookups';
 
 export function DebtsPage(): ReactElement {
+  const { scopeId, setScope } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
-  const debts = useDebts(items.items, items.reload);
+  const scoped = useScopedItems(items, entities.entities);
+  const debts = useDebts(scoped.items, items.reload);
   const isEmpty = debts.owedToUs.length === 0 && debts.weOwe.length === 0;
 
   return (
-    <PageShell title={labels.pages.debts} incompleteCount={items.incomplete.length}>
+    <PageShell title={labels.pages.debts} incompleteCount={scoped.incomplete.length}>
       <ErrorBanner message={debts.error ?? items.error ?? entities.error} />
+      <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <DebtSummary owedToUs={debts.owedToUs} weOwe={debts.weOwe} />
-      <DebtForm domainId={findDebtDomainId(entities.entities)} onAdd={debts.addDebt} />
+      <DebtForm domainId={findDebtDomainId(entities.entities, scoped.scope)} onAdd={debts.addDebt} />
       <DebtSection
         title={labels.debtDirection.owed_to_us}
         debts={debts.owedToUs}

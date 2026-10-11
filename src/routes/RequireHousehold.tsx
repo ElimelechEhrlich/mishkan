@@ -3,6 +3,7 @@ import { Navigate, Outlet } from 'react-router';
 import { StatusScreen } from '../components/ui/StatusScreen';
 import { labels } from '../constants/labels';
 import { useHousehold } from '../hooks/useHousehold';
+import { useScopeState } from '../hooks/useScopeState';
 import { useSessionContext } from '../hooks/useRouteContext';
 import type { HouseholdContext } from '../types/domain';
 
@@ -10,6 +11,7 @@ import type { HouseholdContext } from '../types/domain';
 export function RequireHousehold(): ReactElement {
   const session = useSessionContext();
   const { data, loading, error } = useHousehold(session.userId);
+  const scope = useScopeState();
 
   if (loading) {
     return <StatusScreen text={labels.status.loading} />;
@@ -21,6 +23,6 @@ export function RequireHousehold(): ReactElement {
     return <Navigate to="/onboarding" replace />;
   }
 
-  const context: HouseholdContext = { ...session, ...data };
+  const context: HouseholdContext = { ...session, ...data, ...scope };
   return <Outlet context={context} />;
 }
