@@ -1,11 +1,12 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql, 0002_entities.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0003_shopping.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
 type MemberRole = 'parent' | 'child' | 'household';
 type EntityKind = 'parent' | 'personal' | 'child' | 'home' | 'couple';
 type DomainRole = 'regular' | 'shopping' | 'debts';
-type ItemKind = 'task' | 'goal' | 'issue' | 'note' | 'debt';
+type ItemKind = 'task' | 'goal' | 'issue' | 'note' | 'debt' | 'missing_item' | 'shopping_run';
+type ShoppingCategory = 'food' | 'clothing' | 'urgent' | 'planned';
 type ItemTimeMode = 'scheduled' | 'recurring' | 'anytime' | 'waiting' | 'someday';
 type ItemStatus = 'open' | 'done';
 type DebtDirection = 'we_owe' | 'owed_to_us';
@@ -135,6 +136,8 @@ export type Database = {
           completed_by: string | null;
           review_by: string | null;
           previous_domain_label: string | null;
+          shopping_category: ShoppingCategory | null;
+          run_id: string | null;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -155,6 +158,8 @@ export type Database = {
           created_by?: string;
           review_by?: string | null;
           previous_domain_label?: string | null;
+          shopping_category?: ShoppingCategory | null;
+          run_id?: string | null;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -170,6 +175,8 @@ export type Database = {
           remind_at?: string | null;
           recurrence_rule?: string | null;
           status?: ItemStatus;
+          shopping_category?: ShoppingCategory | null;
+          run_id?: string | null;
         };
         Relationships: [];
       };
@@ -282,12 +289,17 @@ export type Database = {
         Args: { p_entity_id: string };
         Returns: undefined;
       };
+      create_shopping_run: {
+        Args: { p_category: ShoppingCategory; p_private: boolean };
+        Returns: string;
+      };
     };
     Enums: {
       member_role: MemberRole;
       entity_kind: EntityKind;
       domain_role: DomainRole;
       item_kind: ItemKind;
+      shopping_category: ShoppingCategory;
       item_time_mode: ItemTimeMode;
       item_status: ItemStatus;
       debt_direction: DebtDirection;

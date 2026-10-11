@@ -4,7 +4,16 @@ import type {
   MissingField,
   OpenSegment,
   Recurrence,
+  ShoppingCategory,
 } from '../types/domain';
+
+/** The categories of a missing item, in the order the shopping list shows them. */
+export const shoppingCategories = [
+  'urgent',
+  'food',
+  'clothing',
+  'planned',
+] as const satisfies readonly ShoppingCategory[];
 
 /** Tasks and goals need a time; the other kinds are complete with a domain alone. */
 export function needsTime(item: Item): boolean {
@@ -103,9 +112,9 @@ export function nextDueDate(current: string | null, recurrence: Recurrence, toda
   return toIsoDate(date);
 }
 
-/** Which tab of the open-items page shows this item. Debts have their own page. */
+/** Which tab of the open-items page shows this item. Debts and shopping have their own pages. */
 export function segmentOf(item: Item): OpenSegment | null {
-  if (item.kind === 'debt') {
+  if (item.kind === 'debt' || item.kind === 'missing_item' || item.kind === 'shopping_run') {
     return null;
   }
   if (item.kind === 'note') {

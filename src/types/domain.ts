@@ -19,6 +19,7 @@ export type ItemKind = Enums['item_kind'];
 export type EntityKind = Enums['entity_kind'];
 export type DomainRole = Enums['domain_role'];
 export type DebtDirection = Enums['debt_direction'];
+export type ShoppingCategory = Enums['shopping_category'];
 
 export type EntityWithDomains = Entity & { readonly domains: readonly Domain[] };
 
@@ -49,8 +50,8 @@ export type TimeChoice = {
   readonly recurrence_rule: string | null;
 };
 
-/** Kinds that quick add can create. A debt has its own form. */
-export type CapturableKind = Exclude<ItemKind, 'debt'>;
+/** Kinds that quick add can create. Debts and missing items have their own forms. */
+export type CapturableKind = Extract<ItemKind, 'task' | 'goal' | 'issue' | 'note'>;
 
 export type NewItem = {
   readonly title: string;
@@ -64,6 +65,19 @@ export type NewDebt = {
   readonly amount: number;
   readonly direction: DebtDirection;
   readonly domainId: string | null;
+};
+
+export type NewMissingItem = {
+  readonly title: string;
+  readonly category: ShoppingCategory;
+  /** The shopping domain of the chosen entity. */
+  readonly domainId: string;
+};
+
+/** A shopping run with every missing item in it, bought ones included. */
+export type ShoppingRun = {
+  readonly run: Item;
+  readonly items: readonly Item[];
 };
 
 export type Debt = {

@@ -8,6 +8,8 @@ import { LoginPage } from '../pages/LoginPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
 import { OpenItemsPage } from '../pages/OpenItemsPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { ShoppingPage } from '../pages/ShoppingPage';
+import { ShoppingRunPage } from '../pages/ShoppingRunPage';
 import { RequireAuth } from './RequireAuth';
 import { RequireHousehold } from './RequireHousehold';
 
@@ -22,6 +24,8 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <OpenItemsPage /> },
           { path: '/goals', element: <GoalsPage /> },
+          { path: '/shopping', element: <ShoppingPage /> },
+          { path: '/shopping/run/:runId', element: <ShoppingRunPage /> },
           { path: '/debts', element: <DebtsPage /> },
           { path: '/incomplete', element: <IncompletePage /> },
           { path: '/item/:itemId', element: <ItemPage /> },

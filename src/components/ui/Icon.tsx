@@ -37,6 +37,11 @@ const paths = {
     'M4 13h4.5a3.5 3.5 0 0 0 7 0H20',
   ],
   edit: ['M4 20h4l10-10-4-4L4 16v4z', 'M13 7l4 4'],
+  cart: [
+    'M3 4h2l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.2',
+    'M9 20h.01',
+    'M17 20h.01',
+  ],
 } as const;
 
 export type IconName = keyof typeof paths;

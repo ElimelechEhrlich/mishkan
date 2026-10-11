@@ -17,6 +17,7 @@ type NavItem = {
 const navItems: readonly NavItem[] = [
   { to: '/', label: labels.nav.open, icon: 'list' },
   { to: '/goals', label: labels.nav.goals, icon: 'target' },
+  { to: '/shopping', label: labels.nav.shopping, icon: 'cart' },
   { to: '/debts', label: labels.nav.debts, icon: 'wallet' },
   { to: '/incomplete', label: labels.nav.incomplete, icon: 'alert' },
 ];
@@ -24,7 +25,7 @@ const navItems: readonly NavItem[] = [
 export function BottomNav({ incompleteCount }: BottomNavProps): ReactElement {
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-10 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-      <div className="pointer-events-auto mx-auto grid max-w-[34rem] grid-cols-4 rounded-[28px] bg-surface/90 px-1 shadow-nav backdrop-blur-md">
+      <div className="pointer-events-auto mx-auto grid max-w-[34rem] grid-cols-5 rounded-[28px] bg-surface/90 px-1 shadow-nav backdrop-blur-md">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -35,7 +36,7 @@ export function BottomNav({ incompleteCount }: BottomNavProps): ReactElement {
             {({ isActive }) => (
               <>
                 <span
-                  className={`relative flex h-8 w-16 items-center justify-center rounded-full transition-colors ${
+                  className={`relative flex h-8 w-14 items-center justify-center rounded-full transition-colors ${
                     isActive ? 'bg-primary-soft text-primary' : 'text-muted'
                   }`}
                 >

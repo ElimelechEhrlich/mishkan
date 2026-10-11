@@ -6,6 +6,7 @@ import type {
   MissingField,
   OpenSegment,
   Recurrence,
+  ShoppingCategory,
   TimeMode,
 } from '../types/domain';
 
@@ -23,7 +24,16 @@ const kind = {
   issue: 'סוגיה',
   note: 'פתק',
   debt: 'חוב',
+  missing_item: 'פריט חסר',
+  shopping_run: 'סבב קניות',
 } as const satisfies Record<ItemKind, string>;
+
+const shoppingCategory = {
+  food: 'מזון',
+  clothing: 'ביגוד',
+  urgent: 'דחוף',
+  planned: 'מתוכננת',
+} as const satisfies Record<ShoppingCategory, string>;
 
 const missing = {
   domain: 'תחום',
@@ -71,6 +81,7 @@ export const labels = {
   pages: {
     open: 'משימות',
     goals: 'יעדים וסוגיות',
+    shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
     settings: 'הגדרות',
@@ -81,6 +92,7 @@ export const labels = {
   nav: {
     open: 'משימות',
     goals: 'יעדים',
+    shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
   },
@@ -94,6 +106,8 @@ export const labels = {
     done: 'בוצע',
     notSet: 'לא נבחר',
     noDoneItems: 'עוד לא סומנו פריטים כבוצעו',
+    noMissingItems: 'לא חסר כלום',
+    runNotFound: 'הסבב הסתיים או נמחק.',
   },
   actions: {
     save: 'שמירה',
@@ -118,6 +132,10 @@ export const labels = {
     settings: 'הגדרות',
     showDone: 'פריטים שבוצעו',
     makePrivate: 'פרטי',
+    markBought: 'סימון כנקנה',
+    markNotBought: 'החזרה לרשימה',
+    startRun: 'יציאה לסבב',
+    finishRun: 'סיום הסבב',
   },
   fields: {
     email: 'אימייל',
@@ -137,6 +155,7 @@ export const labels = {
     newStep: 'צעד חדש',
     newCondition: 'תנאי חדש, למשל: לדעת את מידות החדר',
     newDomain: 'תחום חדש',
+    missingItem: 'מה חסר?',
     noParent: 'לא משויך ליעד',
     chooseItem: 'בחירת פריט',
   },
@@ -189,6 +208,17 @@ export const labels = {
     progressOf: 'מתוך',
     noSteps: 'אין צעדים עדיין',
   },
+  shopping: {
+    shared: 'משותף',
+    private: 'פרטי',
+    openRuns: 'סבבים פתוחים',
+    toBuy: 'לקנות',
+    forEntity: 'בשביל',
+    category: 'סוג',
+    progress: 'נקנו',
+    of: 'מתוך',
+    finishHint: 'מה שלא סומן יחזור לרשימה.',
+  },
   debts: {
     total: 'סה"כ',
     domainHint: 'חוב',
@@ -215,4 +245,5 @@ export const labels = {
   section,
   debtDirection,
   entityKind,
+  shoppingCategory,
 } as const;

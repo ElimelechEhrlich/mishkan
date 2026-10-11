@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
-import { needsTime, todayIso } from '../../lib/itemRules';
+import { needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
 import { fullTimeText } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
 import type {
@@ -10,6 +10,7 @@ import type {
   DebtDetails,
   EntityWithDomains,
   Item,
+  ItemKind,
   ItemUpdate,
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
@@ -42,9 +43,19 @@ type ItemEditorProps = {
   readonly onPrerequisitesChange: () => void;
 };
 
-type Row = 'kind' | 'domain' | 'time' | 'parent';
+type Row = 'kind' | 'domain' | 'category' | 'time' | 'parent';
 
 const kinds = ['task', 'goal', 'issue', 'note'] as const satisfies readonly CapturableKind[];
+
+function doneLabel(kind: ItemKind, done: boolean): string {
+  if (kind === 'missing_item') {
+    return done ? labels.actions.markNotBought : labels.actions.markBought;
+  }
+  if (kind === 'shopping_run' && !done) {
+    return labels.actions.finishRun;
+  }
+  return done ? labels.actions.markOpen : labels.actions.markDone;
+}
 
 /** Everything about one item: text, a list of its properties, and what hangs on it. */
 export function ItemEditor({
@@ -74,8 +85,17 @@ export function ItemEditor({
 
   const isStep = item.parent_id !== null;
   const isContainer = item.kind === 'goal' || item.kind === 'issue';
-  const hasSchedule = item.kind !== 'note' && item.kind !== 'debt';
-  const canChangeKind = item.kind !== 'debt' && !isStep && steps.length === 0;
+  const isShopping = item.kind === 'missing_item' || item.kind === 'shopping_run';
+  const hasSchedule = item.kind !== 'note' && item.kind !== 'debt' && !isShopping;
+  const canChangeKind =
+    kinds.some((kind) => kind === item.kind) && !isStep && steps.length === 0;
+  // A missing item can only move to the shopping domain of another entity.
+  const domainChoices = isShopping
+    ? entities.map((entity) => ({
+        ...entity,
+        domains: entity.domains.filter((domain) => domain.role === 'shopping'),
+      }))
+    : entities;
   const done = item.status === 'done';
 
   const domainLabel = item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
@@ -98,7 +118,7 @@ export function ItemEditor({
               }
             }}
           >
-            {done ? labels.actions.markOpen : labels.actions.markDone}
+            {doneLabel(item.kind, done)}
           </Button>
         )}
       </Card>
@@ -162,7 +182,7 @@ export function ItemEditor({
             }}
           >
             <DomainPicker
-              entities={entities}
+              entities={domainChoices}
               value={item.domain_id}
               onChange={(domainId) => {
                 if (domainId !== null) {
@@ -170,6 +190,34 @@ export function ItemEditor({
                 }
               }}
             />
+          </PropertyRow>
+        )}
+
+        {item.kind === 'missing_item' && (
+          <PropertyRow
+            label={labels.shopping.category}
+            value={
+              item.shopping_category === null
+                ? labels.status.notSet
+                : labels.shoppingCategory[item.shopping_category]
+            }
+            open={openRow === 'category'}
+            onToggle={() => {
+              toggle('category');
+            }}
+          >
+            <div className="flex flex-wrap gap-2">
+              {shoppingCategories.map((category) => (
+                <Chip
+                  key={category}
+                  label={labels.shoppingCategory[category]}
+                  selected={category === item.shopping_category}
+                  onClick={() => {
+                    update({ shopping_category: category });
+                  }}
+                />
+              ))}
+            </div>
           </PropertyRow>
         )}
 
