@@ -28,4 +28,4 @@ Do not add folders or change this structure without the owner's approval.
 - Components are PascalCase, one component per file. Everything else is camelCase.
 - No Hebrew strings inside components; add them to `src/constants/labels.ts`.
 - Design tokens (colors, fonts, shadows) live in `src/index.css`; use them instead of raw values.
-- `npm run typecheck`, `npm run lint` and `npm run build` must pass before a change is done.
+- `npm run typecheck`, `npm run lint`, `npm test` and `npm run build` must pass before a change is done. Tests sit next to the code they test (`src/lib/*.test.ts`).
