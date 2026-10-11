@@ -28,3 +28,15 @@ export async function listMembersWithPush(): Promise<string[]> {
   }
   return data;
 }
+
+/** Which parents get the automatic birthday and anniversary reminders; null for everyone. */
+export async function setAutoReminderRecipients(
+  memberIds: readonly string[] | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('set_auto_reminder_recipients', {
+    p_member_ids: memberIds === null ? null : [...memberIds],
+  });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}

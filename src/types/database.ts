@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0008_reminder_recipients.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0009_auto_reminder_recipients.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -27,6 +27,7 @@ export type Database = {
           id: string;
           name: string;
           invite_code: string;
+          auto_remind_member_ids: string[] | null;
           created_at: string;
         };
         Insert: {
@@ -391,6 +392,10 @@ export type Database = {
           p_counterparty?: string;
           p_direction?: DebtDirection;
         };
+        Returns: undefined;
+      };
+      set_auto_reminder_recipients: {
+        Args: { p_member_ids: string[] | null };
         Returns: undefined;
       };
       members_with_push: {

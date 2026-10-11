@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { EntitySettings } from '../components/settings/EntitySettings';
+import { AutoReminderCard } from '../components/settings/AutoReminderCard';
 import { InviteCard } from '../components/settings/InviteCard';
 import { NotificationsCard } from '../components/settings/NotificationsCard';
 import { ProfileCard } from '../components/settings/ProfileCard';
@@ -13,7 +14,7 @@ import { useItems } from '../hooks/useItems';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function SettingsPage(): ReactElement {
-  const { member, household, signOut } = useHouseholdContext();
+  const { member, household, members, signOut } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const settings = useEntitySettings(member, entities.entities, entities.reload);
@@ -24,6 +25,7 @@ export function SettingsPage(): ReactElement {
       <ProfileCard member={member} household={household} entities={entities.entities} />
       <EntitySettings entities={entities.entities} settings={settings} />
       <NotificationsCard />
+      <AutoReminderCard household={household} members={members} />
       <InviteCard inviteCode={household.invite_code} />
       <section className="flex flex-col gap-1.5">
         <h2 className="px-1 text-xs font-bold tracking-wide text-muted">

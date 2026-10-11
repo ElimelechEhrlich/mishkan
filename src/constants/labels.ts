@@ -302,6 +302,8 @@ export const labels = {
     clearReminder: 'הסרת התזכורת',
     reminderHint: 'ההתראה תגיע לכל מכשיר שבו מי שנבחר הפעיל התראות.',
     forWhom: 'למי',
+    autoTitle: 'תזכורות ימי הולדת ונישואין',
+    autoHint: 'למי יישלחו התזכורות שנוצרות אוטומטית, שבוע לפני התאריך העברי.',
     everyone: 'לכולם',
     noDevice: 'בלי התראות',
     reachesNoOne:
