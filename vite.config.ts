@@ -19,7 +19,12 @@ export default defineConfig({
       manifest: {
         name: 'משכן',
         short_name: 'משכן',
-        description: 'ניהול הבית והמשימות',
+        description: 'כל ענייני הבית במקום אחד: משימות, יעדים, קניות, חובות, פתקים ותזכורות, משותף לשני ההורים.',
+        id: '/',
+        scope: '/',
+        orientation: 'portrait',
+        categories: ['productivity', 'lifestyle'],
+        display_override: ['standalone', 'minimal-ui'],
         lang: 'he',
         dir: 'rtl',
         display: 'standalone',
