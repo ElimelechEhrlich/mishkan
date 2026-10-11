@@ -62,6 +62,9 @@ export function PageShell({
                 {title}
               </h1>
             </div>
+            <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>
+              <Icon name="search" className="size-5.5" />
+            </Link>
             <Link
               to="/incomplete"
               aria-label={labels.nav.incomplete}

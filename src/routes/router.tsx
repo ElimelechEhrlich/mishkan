@@ -6,6 +6,7 @@ import { GoalsPage } from '../pages/GoalsPage';
 import { IncompletePage } from '../pages/IncompletePage';
 import { ItemPage } from '../pages/ItemPage';
 import { LoginPage } from '../pages/LoginPage';
+import { SearchPage } from '../pages/SearchPage';
 import { SignUpPage } from '../pages/SignUpPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
 import { NotesPage } from '../pages/NotesPage';
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: '/entity/:entityId', element: <EntityPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/done', element: <DonePage /> },
+          { path: '/search', element: <SearchPage /> },
         ],
       },
     ],
