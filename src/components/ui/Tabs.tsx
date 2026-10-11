@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 type TabOption<Value extends string> = {
   readonly value: Value;
@@ -10,6 +10,8 @@ type TabsProps<Value extends string> = {
   readonly options: readonly TabOption<Value>[];
   readonly value: Value;
   readonly onChange: (value: Value) => void;
+  /** Shown at the end of the row, such as a toggle. */
+  readonly aside?: ReactNode;
 };
 
 /** A row of tabs over a hairline, the selected one underlined. */
@@ -17,9 +19,11 @@ export function Tabs<Value extends string>({
   options,
   value,
   onChange,
+  aside,
 }: TabsProps<Value>): ReactElement {
   return (
-    <div role="tablist" className="-mx-4 flex gap-5 overflow-x-auto border-b border-line px-4 [scrollbar-width:none]">
+    <div className="-mx-4 flex items-center gap-3 border-b border-line px-4">
+      <div role="tablist" className="flex min-w-0 flex-1 gap-5 overflow-x-auto [scrollbar-width:none]">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -47,6 +51,8 @@ export function Tabs<Value extends string>({
           </button>
         );
       })}
+      </div>
+      {aside}
     </div>
   );
 }

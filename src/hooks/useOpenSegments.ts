@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { labels } from '../constants/labels';
 import {
   activeSectionOf,
@@ -19,9 +19,9 @@ type SegmentOption = {
 };
 
 export type UseOpenSegments = {
-  /** Which kinds are shown: one, or all that run on time. */
-  readonly kind: KindFilter;
-  readonly setKind: (kind: KindFilter) => void;
+  /** Whether every kind that runs on time is shown, rather than only the first kind. */
+  readonly allKinds: boolean;
+  readonly toggleAllKinds: () => void;
   readonly segment: OpenSegment;
   readonly setSegment: (segment: OpenSegment) => void;
   /** The time tabs, each with the number of rows it holds. */
@@ -47,6 +47,9 @@ export function useOpenSegments(
   initialKind: KindFilter = 'all',
 ): UseOpenSegments {
   const [kind, setKind] = useState<KindFilter>(initialKind);
+  const toggleAllKinds = useCallback((): void => {
+    setKind((current) => (current === 'all' ? initialKind : 'all'));
+  }, [initialKind]);
   const [segment, setSegment] = useState<OpenSegment>('active');
 
   const rows = useMemo(
@@ -82,8 +85,8 @@ export function useOpenSegments(
   }, [rows, steps]);
 
   return {
-    kind,
-    setKind,
+    allKinds: kind === 'all',
+    toggleAllKinds,
     segment,
     setSegment,
     options,

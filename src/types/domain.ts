@@ -41,8 +41,8 @@ export type Recurrence = 'daily' | 'weekly' | 'monthly';
 /** The tabs of the open-items page. */
 export type OpenSegment = 'active' | 'waiting' | 'someday';
 
-/** Which kinds the main list shows: one of them, or all that run on time. */
-export type KindFilter = 'all' | 'task' | 'goal' | 'issue';
+/** Which kinds the tasks tab shows: tasks, or every kind that runs on time. */
+export type KindFilter = 'task' | 'all';
 
 /** The quick choices of when, offered when adding a task or a goal. */
 export type QuickTime = 'today' | 'tomorrow' | 'anytime' | 'someday';

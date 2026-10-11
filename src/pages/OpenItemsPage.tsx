@@ -2,11 +2,11 @@ import type { ReactElement } from 'react';
 import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { ScopeBar } from '../components/entities/ScopeBar';
+import { AllKindsToggle } from '../components/items/AllKindsToggle';
 import { ItemList } from '../components/items/ItemList';
 import { SummaryTiles } from '../components/items/SummaryTiles';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
-import { Segmented } from '../components/ui/Segmented';
 import { Tabs } from '../components/ui/Tabs';
 import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
@@ -17,11 +17,6 @@ import { useOpenSegments } from '../hooks/useOpenSegments';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 import { formatToday } from '../lib/itemRules';
-import type { KindFilter } from '../types/domain';
-
-const kindOptions = (['task', 'goal', 'issue', 'all'] as const satisfies readonly KindFilter[]).map(
-  (value) => ({ value, label: labels.kindFilter[value] }),
-);
 
 export function OpenItemsPage(): ReactElement {
   const { members, scopeId, setScope } = useHouseholdContext();
@@ -35,7 +30,7 @@ export function OpenItemsPage(): ReactElement {
 
   return (
     <PageShell
-      title={labels.pages.open}
+      title={view.allKinds ? labels.pages.allItems : labels.pages.open}
       subtitle={formatToday()}
       incompleteCount={scoped.incomplete.length}
     >
@@ -51,8 +46,12 @@ export function OpenItemsPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
-      <Segmented options={kindOptions} value={view.kind} onChange={view.setKind} />
-      <Tabs options={view.options} value={view.segment} onChange={view.setSegment} />
+      <Tabs
+        options={view.options}
+        value={view.segment}
+        onChange={view.setSegment}
+        aside={<AllKindsToggle on={view.allKinds} onToggle={view.toggleAllKinds} />}
+      />
       <ItemList
         entries={view.visible}
         lookups={lookups}

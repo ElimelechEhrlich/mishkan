@@ -5,7 +5,6 @@ import type {
   EntityKind,
   ItemKind,
   MissingField,
-  KindFilter,
   OpenSegment,
   QuickTime,
   Recurrence,
@@ -66,13 +65,6 @@ const titlePrompt = {
   missing_item: 'מה חסר?',
 } as const satisfies Record<ConvertibleKind, string>;
 
-const kindFilter = {
-  all: 'הכול',
-  task: 'משימות',
-  goal: 'יעדים',
-  issue: 'סוגיות',
-} as const satisfies Record<KindFilter, string>;
-
 const quickTime = {
   today: 'היום',
   tomorrow: 'מחר',
@@ -107,6 +99,7 @@ export const labels = {
   },
   pages: {
     open: 'משימות',
+    allItems: 'כל הפריטים',
     goals: 'יעדים וסוגיות',
     notes: 'פתקים',
     shopping: 'קניות',
@@ -254,6 +247,9 @@ export const labels = {
     today: 'להיום',
     incomplete: 'להשלמה',
   },
+  allKinds: {
+    toggle: 'כל הסוגים',
+  },
   scope: {
     showingOnly: 'מסונן לפי',
     byDomain: 'לפי תחומים',
@@ -327,7 +323,6 @@ export const labels = {
   recurrence,
   segment,
   section,
-  kindFilter,
   quickTime,
   titlePrompt,
   debtDirection,
