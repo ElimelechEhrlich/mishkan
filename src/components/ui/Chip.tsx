@@ -26,7 +26,7 @@ export function Chip({
       aria-pressed={selected}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium transition active:scale-[0.97] disabled:opacity-40 ${tone}`}
+      className={`inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium whitespace-nowrap transition active:scale-[0.97] disabled:opacity-40 ${tone}`}
     >
       {dotClass !== undefined && <span className={`size-1.5 rounded-full ${dotClass}`} />}
       {label}

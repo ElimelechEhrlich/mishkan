@@ -1,14 +1,21 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { useEntityAvatar } from '../../hooks/useEntityAvatar';
+import { limitEmoji } from '../../lib/emoji';
 import type { EntityTone } from '../../lib/lookups';
 import type { EntityWithDomains } from '../../types/domain';
+import { Button } from '../ui/Button';
+import { Chip } from '../ui/Chip';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
+import { TextField } from '../ui/TextField';
 import { EntityAvatar } from './EntityAvatar';
+
+/** How many characters a typed picture keeps; two emoji still fit in the circle. */
+const maxCustomCharacters = 2;
 
 type AvatarPickerProps = {
   readonly entity: EntityWithDomains;
@@ -26,6 +33,8 @@ export function AvatarPicker({
 }: AvatarPickerProps): ReactElement {
   const avatar = useEntityAvatar(entity, onChanged);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [categoryIndex, setCategoryIndex] = useState(0);
+  const [custom, setCustom] = useState('');
 
   async function done(saved: Promise<boolean>): Promise<void> {
     if (await saved) {
@@ -85,8 +94,20 @@ export function AvatarPicker({
 
         <div className="flex flex-col gap-2">
           <span className="text-xs font-bold tracking-wide text-muted">{labels.avatar.emoji}</span>
-          <div className="grid grid-cols-6 gap-2">
-            {labels.avatar.emojis.map((emoji) => (
+          <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+            {labels.avatar.categories.map((category, index) => (
+              <Chip
+                key={category.name}
+                label={category.name}
+                selected={index === categoryIndex}
+                onClick={() => {
+                  setCategoryIndex(index);
+                }}
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1.5">
+            {(labels.avatar.categories[categoryIndex]?.emojis ?? '').split(' ').map((emoji) => (
               <button
                 key={emoji}
                 type="button"
@@ -95,7 +116,7 @@ export function AvatarPicker({
                 onClick={() => {
                   void done(avatar.chooseEmoji(emoji));
                 }}
-                className={`flex aspect-square items-center justify-center rounded-2xl text-2xl transition active:scale-90 ${
+                className={`flex aspect-square items-center justify-center rounded-xl text-[26px] transition active:scale-90 ${
                   entity.avatar_emoji === emoji ? 'bg-primary-soft ring-2 ring-primary' : 'bg-paper'
                 }`}
               >
@@ -103,6 +124,28 @@ export function AvatarPicker({
               </button>
             ))}
           </div>
+          <form
+            className="flex items-center gap-2 pt-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const typed = custom.trim();
+              if (typed !== '') {
+                void done(avatar.chooseEmoji(typed));
+              }
+            }}
+          >
+            <TextField
+              label={labels.avatar.custom}
+              value={custom}
+              onChange={(value) => {
+                setCustom(limitEmoji(value, maxCustomCharacters));
+              }}
+              compact
+            />
+            <Button type="submit" disabled={avatar.busy || custom.trim() === ''}>
+              {labels.actions.save}
+            </Button>
+          </form>
         </div>
 
         {(entity.avatar_emoji !== null || entity.avatar_path !== null) && (
