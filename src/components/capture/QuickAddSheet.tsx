@@ -14,7 +14,6 @@ import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
-import { TextField } from '../ui/TextField';
 import { DomainPicker } from './DomainPicker';
 
 type QuickAddSheetProps = {
@@ -124,66 +123,94 @@ export function QuickAddSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-20 flex animate-fade-in flex-col justify-end bg-ink/40">
+    <div
+      className="fixed inset-0 z-20 flex animate-fade-in flex-col justify-end bg-ink/30 backdrop-blur-[2px]"
+      onClick={() => {
+        setOpen(false);
+      }}
+    >
       <form
         onSubmit={handleSubmit}
-        className="mx-auto flex max-h-[88dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-t-3xl bg-paper p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-sheet animate-sheet-up"
+        onClick={(event) => {
+          event.stopPropagation();
+        }}
+        className="mx-auto flex max-h-[90dvh] w-full max-w-xl animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-sheet"
       >
-        <span className="mx-auto -mt-1 h-1 w-10 shrink-0 rounded-full bg-line" />
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold">{labels.actions.newItem}</h2>
-          <IconButton
-            icon="close"
-            label={labels.actions.close}
-            onClick={() => {
-              setOpen(false);
-            }}
-          />
-        </div>
-        <TextField
-          label={labels.fields.itemTitle}
-          value={title}
-          onChange={setTitle}
-          autoFocus
-          compact
-        />
-        <div className="flex flex-wrap gap-2">
-          {kinds.map((option) => (
-            <Chip
-              key={option}
-              label={labels.kind[option]}
-              selected={option === kind}
+        <div className="flex flex-col gap-3 border-b border-line px-4 pt-2.5 pb-3">
+          <span className="mx-auto h-1 w-9 shrink-0 rounded-full bg-line" />
+          <div className="flex items-center justify-between">
+            <IconButton
+              icon="close"
+              label={labels.actions.close}
               onClick={() => {
-                setKind(option);
+                setOpen(false);
               }}
             />
-          ))}
-        </div>
-        {kind === 'missing_item' ? (
-          <MissingItemFields
-            category={category}
-            onCategoryChange={setCategory}
-            targets={targets}
-            domainId={missingItemDomainId}
-            onDomainChange={setShoppingDomainId}
+            <h2 className="font-display text-[17px] font-semibold">{labels.actions.newItem}</h2>
+            <span className="size-10" />
+          </div>
+          <label className="sr-only" htmlFor="quick-add-title">
+            {labels.fields.itemTitle}
+          </label>
+          <input
+            id="quick-add-title"
+            value={title}
+            autoFocus
+            autoComplete="off"
+            placeholder={labels.fields.itemTitle}
+            onChange={(event) => {
+              setTitle(event.target.value);
+            }}
+            className="w-full bg-transparent px-1 py-1 text-xl font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none"
           />
-        ) : (
-          <>
-            <DomainPicker
-              key={pickerVersion}
-              entities={entities}
-              value={domainId}
-              onChange={setDomainId}
-              initialEntityId={entityId}
+        </div>
+        <div className="flex flex-col gap-5 overflow-y-auto px-4 py-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-bold tracking-wide text-muted">{labels.capture.kind}</span>
+            <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]">
+              {kinds.map((option) => (
+                <span key={option} className="shrink-0">
+                  <Chip
+                    label={labels.kind[option]}
+                    selected={option === kind}
+                    onClick={() => {
+                      setKind(option);
+                    }}
+                  />
+                </span>
+              ))}
+            </div>
+          </div>
+          {kind === 'missing_item' ? (
+            <MissingItemFields
+              category={category}
+              onCategoryChange={setCategory}
+              targets={targets}
+              domainId={missingItemDomainId}
+              onDomainChange={setShoppingDomainId}
             />
-            {domainId === null && (
-              <p className="text-sm text-muted">{labels.capture.noDomainHint}</p>
-            )}
-          </>
-        )}
-        <Button type="submit" disabled={!canSave}>
-          {labels.actions.save}
-        </Button>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <DomainPicker
+                key={pickerVersion}
+                entities={entities}
+                value={domainId}
+                onChange={setDomainId}
+                initialEntityId={entityId}
+              />
+              {domainId === null && (
+                <p className="text-[13px] text-muted">{labels.capture.noDomainHint}</p>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="flex flex-col">
+            <Button type="submit" disabled={!canSave}>
+              {labels.actions.save}
+            </Button>
+          </div>
+        </div>
       </form>
     </div>
   );

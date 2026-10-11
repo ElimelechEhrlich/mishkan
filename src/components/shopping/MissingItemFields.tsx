@@ -23,7 +23,7 @@ export function MissingItemFields({
 }: MissingItemFieldsProps): ReactElement {
   return (
     <>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {shoppingCategories.map((option) => (
           <Chip
             key={option}
@@ -35,9 +35,9 @@ export function MissingItemFields({
           />
         ))}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-muted">{labels.shopping.forWhom}</span>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-bold tracking-wide text-muted">{labels.shopping.forWhom}</span>
+        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
           {targets.map((target) => (
             <span key={target.domainId} className="shrink-0">
               <Chip

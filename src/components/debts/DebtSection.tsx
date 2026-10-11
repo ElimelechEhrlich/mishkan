@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
 import type { Debt, Item } from '../../types/domain';
-import { Card } from '../ui/Card';
 import { DebtRow } from './DebtRow';
 
 type DebtSectionProps = {
@@ -20,19 +19,20 @@ export function DebtSection({ title, debts, tone, onClose }: DebtSectionProps): 
   const total = debts.reduce((sum, debt) => sum + debt.details.amount, 0);
 
   return (
-    <Card
-      title={title}
-      aside={
-        <span className={`text-[13px] font-bold ${tone === 'alert' ? 'text-alert' : 'text-primary'}`}>
+    <section className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-2 px-1">
+        <h2 className="text-xs font-bold tracking-wide text-muted">{title}</h2>
+        <span
+          className={`text-xs font-semibold tabular-nums ${tone === 'alert' ? 'text-alert' : 'text-primary'}`}
+        >
           {labels.debts.total} {formatMoney(total)}
         </span>
-      }
-    >
-      <ul className="flex flex-col divide-y divide-line">
+      </div>
+      <ul className="overflow-hidden rounded-2xl bg-surface shadow-card">
         {debts.map((debt) => (
           <DebtRow key={debt.item.id} debt={debt} onClose={onClose} />
         ))}
       </ul>
-    </Card>
+    </section>
   );
 }

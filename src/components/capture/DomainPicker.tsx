@@ -29,9 +29,9 @@ export function DomainPicker({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-muted">{labels.capture.entity}</span>
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-bold tracking-wide text-muted">{labels.capture.entity}</span>
+        <div className="flex flex-wrap gap-1.5">
           {entities.map((entity, index) => (
             <Chip
               key={entity.id}
@@ -47,9 +47,9 @@ export function DomainPicker({
         </div>
       </div>
       {openEntity !== undefined && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-muted">{labels.capture.domain}</span>
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-bold tracking-wide text-muted">{labels.capture.domain}</span>
+          <div className="flex flex-wrap gap-1.5">
             {openEntity.domains.map((domain) => (
               <Chip
                 key={domain.id}

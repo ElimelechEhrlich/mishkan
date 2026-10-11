@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { Item, ShoppingRun } from '../../types/domain';
 import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
 import { MissingItemRow } from './MissingItemRow';
 
 type RunChecklistProps = {
@@ -27,16 +26,15 @@ export function RunChecklist({
 
   return (
     <div className="flex flex-col gap-4">
-      <Card
-        title={labels.shopping.toBuy}
-        aside={
-          <span className="text-[13px] font-bold text-primary">
+      <section className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xs font-bold tracking-wide text-muted">{labels.shopping.toBuy}</h2>
+          <span className="text-xs font-semibold text-primary">
             {labels.shopping.progress} {String(bought.length)} {labels.shopping.of}{' '}
             {String(run.items.length)}
           </span>
-        }
-      >
-        <ul className="flex flex-col divide-y divide-line">
+        </div>
+        <ul className="overflow-hidden rounded-2xl bg-surface shadow-card">
           {[...open, ...bought].map((item) => (
             <MissingItemRow
               key={item.id}
@@ -46,16 +44,17 @@ export function RunChecklist({
             />
           ))}
         </ul>
-      </Card>
+      </section>
       <Button
-        variant="soft"
         onClick={() => {
           onFinish(run.run);
         }}
       >
         {labels.actions.finishRun}
       </Button>
-      {open.length > 0 && <p className="text-center text-sm text-muted">{labels.shopping.finishHint}</p>}
+      {open.length > 0 && (
+        <p className="text-center text-[13px] text-muted">{labels.shopping.finishHint}</p>
+      )}
     </div>
   );
 }

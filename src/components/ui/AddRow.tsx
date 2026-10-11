@@ -31,7 +31,7 @@ export function AddRow({ label, onAdd }: AddRowProps): ReactElement {
         type="submit"
         aria-label={labels.actions.add}
         disabled={trimmed === ''}
-        className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary transition active:scale-95 disabled:opacity-40"
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white transition active:scale-95 disabled:bg-line disabled:text-faint"
       >
         <Icon name="plus" />
       </button>

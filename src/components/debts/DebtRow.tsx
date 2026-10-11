@@ -12,17 +12,26 @@ type DebtRowProps = {
 
 export function DebtRow({ debt, onClose }: DebtRowProps): ReactElement {
   return (
-    <li className="flex items-center gap-3 py-2.5">
-      <CheckButton
-        checked={false}
-        label={labels.actions.closeDebt}
-        onClick={() => {
-          onClose(debt.item);
-        }}
-      />
-      <Link to={`/item/${debt.item.id}`} className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span className="min-w-0 flex-1 font-medium break-words">{debt.details.counterparty}</span>
-        <span className="font-display text-lg font-bold">{formatMoney(debt.details.amount)}</span>
+    <li className="group flex gap-3 ps-3.5">
+      <span className="w-5.5 shrink-0 pt-3">
+        <CheckButton
+          checked={false}
+          label={labels.actions.closeDebt}
+          onClick={() => {
+            onClose(debt.item);
+          }}
+        />
+      </span>
+      <Link
+        to={`/item/${debt.item.id}`}
+        className="flex min-w-0 flex-1 items-baseline gap-2 border-t border-line py-3 pe-3.5 group-first:border-t-0 active:opacity-70"
+      >
+        <span className="min-w-0 flex-1 text-[15px] font-medium break-words">
+          {debt.details.counterparty}
+        </span>
+        <span className="font-display text-base font-semibold tabular-nums">
+          {formatMoney(debt.details.amount)}
+        </span>
       </Link>
     </li>
   );

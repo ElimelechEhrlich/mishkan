@@ -19,20 +19,18 @@ export function Chip({
   dotClass,
   disabled = false,
 }: ChipProps): ReactElement {
-  const tone = selected
-    ? 'border-primary bg-primary text-white shadow-card'
-    : 'border-line bg-surface text-ink';
+  const tone = selected ? 'bg-primary text-white' : 'bg-surface text-ink shadow-card';
   return (
     <button
       type="button"
       aria-pressed={selected}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3.5 py-1 text-sm font-medium transition active:scale-[0.97] disabled:opacity-40 ${tone}`}
+      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium transition active:scale-[0.97] disabled:opacity-40 ${tone}`}
     >
-      {dotClass !== undefined && <span className={`size-2 rounded-full ${dotClass}`} />}
+      {dotClass !== undefined && <span className={`size-1.5 rounded-full ${dotClass}`} />}
       {label}
-      {note !== undefined && <span className="text-xs opacity-70">{note}</span>}
+      {note !== undefined && <span className="text-[11px] opacity-60">{note}</span>}
     </button>
   );
 }

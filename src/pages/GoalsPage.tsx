@@ -26,6 +26,7 @@ export function GoalsPage(): ReactElement {
         steps={items.steps}
         lookups={lookups}
         loading={items.loading}
+        onComplete={items.completeItem}
       />
       <ResolvedIssues issues={resolved.items} lookups={lookups} onReopen={resolved.reopen} />
       <QuickAddSheet

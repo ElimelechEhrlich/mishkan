@@ -14,7 +14,7 @@ type PropertyRowProps = {
   readonly hint?: string | undefined;
 };
 
-/** One line of a settings-style list: a label, its current value, and an editor that unfolds. */
+/** One line of a settings-style list: a label, its current value at the end, and an editor that unfolds. */
 export function PropertyRow({
   label,
   value,
@@ -32,22 +32,24 @@ export function PropertyRow({
         disabled={!editable}
         aria-expanded={editable ? open : undefined}
         onClick={onToggle}
-        className="flex min-h-13 w-full items-center gap-3 py-2 text-start"
+        className="flex min-h-12 w-full items-center gap-3 py-2 text-start"
       >
-        <span className="w-20 shrink-0 text-sm text-muted">{label}</span>
+        <span className="shrink-0 text-[15px]">{label}</span>
         <span
-          className={`min-w-0 flex-1 truncate font-medium ${missing ? 'text-alert' : 'text-ink'}`}
+          className={`min-w-0 flex-1 truncate text-end text-[15px] ${
+            missing ? 'font-medium text-alert' : 'text-muted'
+          }`}
         >
           {value}
         </span>
         {editable && (
           <Icon
             name="down"
-            className={`size-4 text-muted transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`size-4 text-faint transition-transform ${open ? 'rotate-180' : ''}`}
           />
         )}
       </button>
-      {hint !== undefined && <p className="pb-3 text-sm text-muted">{hint}</p>}
+      {hint !== undefined && <p className="-mt-1 pb-3 text-[13px] text-muted">{hint}</p>}
       {editable && open && <div className="pb-4">{children}</div>}
     </div>
   );

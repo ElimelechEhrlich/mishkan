@@ -214,6 +214,8 @@ export const labels = {
     progressOf: 'מתוך',
     noSteps: 'אין צעדים עדיין',
     resolved: 'סוגיות שנפתרו',
+    goals: 'יעדים',
+    issues: 'סוגיות',
   },
   summary: {
     overdue: 'באיחור',
@@ -267,7 +269,8 @@ export const labels = {
     confirmDeleteWithItems: 'לחיצה נוספת למחיקה. הפריטים יעברו ל"להשלמה".',
     addParentHint:
       'הורה שעוד לא הצטרף לאפליקציה מקבל ישות משותפת כבר עכשיו. כשיצטרף, יבחר בה ויקבל גם ישות אישית.',
-    addDebtsDomain: '+ תחום חובות',
+    addDebtsDomain: 'הוספת תחום חובות',
+    addEntity: 'הוספת ילד או הורה',
     debtsDomainName: 'חובות',
   },
   timeMode,

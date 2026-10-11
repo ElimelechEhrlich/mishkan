@@ -24,7 +24,7 @@ export function SettingsPage(): ReactElement {
       <ErrorBanner message={entities.error} />
       <EntitySettings member={member} entities={entities.entities} reload={entities.reload} />
       <InviteCard inviteCode={household.invite_code} />
-      <Button variant="ghost" onClick={signOut}>
+      <Button variant="quiet" onClick={signOut}>
         {labels.actions.signOut}
       </Button>
     </PageShell>

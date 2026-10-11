@@ -20,19 +20,24 @@ export function DoneRow({ item, lookups, onReopen }: DoneRowProps): ReactElement
   const details = [domainLabel, doneBy, doneOn].filter((part) => part !== undefined);
 
   return (
-    <li className="flex items-center gap-3 rounded-2xl bg-surface py-3 ps-3 pe-4 shadow-card">
-      <CheckButton
-        checked
-        label={labels.actions.markOpen}
-        onClick={() => {
-          onReopen(item.id);
-        }}
-      />
-      <Link to={`/item/${item.id}`} className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="break-words text-muted line-through">{item.title}</span>
-        <span className="text-sm text-muted">
+    <li className="group flex gap-3 ps-3.5">
+      <span className="w-5.5 shrink-0 pt-3">
+        <CheckButton
+          checked
+          label={labels.actions.markOpen}
+          onClick={() => {
+            onReopen(item.id);
+          }}
+        />
+      </span>
+      <Link
+        to={`/item/${item.id}`}
+        className="flex min-w-0 flex-1 flex-col gap-0.5 border-t border-line py-3 pe-3.5 group-first:border-t-0 active:opacity-70"
+      >
+        <span className="text-[15px] break-words text-muted line-through">{item.title}</span>
+        <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
           {item.kind !== 'task' && (
-            <span className="me-2 rounded-md bg-primary-soft px-1.5 text-xs font-medium text-primary">
+            <span className="rounded-[5px] bg-line/70 px-1.5 text-[11px] font-semibold">
               {labels.kind[item.kind]}
             </span>
           )}

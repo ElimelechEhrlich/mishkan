@@ -31,7 +31,7 @@ export function IconButton({
       aria-label={label}
       aria-pressed={pressed}
       onClick={onClick}
-      className={`flex size-10 shrink-0 items-center justify-center rounded-full transition active:bg-line ${look}`}
+      className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition active:bg-line ${look}`}
     >
       <Icon name={icon} />
     </button>

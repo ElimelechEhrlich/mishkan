@@ -15,18 +15,18 @@ function total(debts: readonly Debt[]): number {
 /** The two totals side by side: what is owed to the household, and what it owes. */
 export function DebtSummary({ owedToUs, weOwe }: DebtSummaryProps): ReactElement {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <div className="flex flex-col gap-1 rounded-2xl bg-primary-soft p-4">
-        <span className="text-[13px] font-bold text-primary">{labels.debtDirection.owed_to_us}</span>
-        <span className="font-display text-2xl font-bold text-primary">
+    <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-col rounded-xl bg-surface px-3.5 py-3 shadow-card">
+        <span className="font-display text-[22px] leading-8 font-bold text-primary tabular-nums">
           {formatMoney(total(owedToUs))}
         </span>
+        <span className="text-xs text-muted">{labels.debtDirection.owed_to_us}</span>
       </div>
-      <div className="flex flex-col gap-1 rounded-2xl bg-alert-soft p-4">
-        <span className="text-[13px] font-bold text-alert">{labels.debtDirection.we_owe}</span>
-        <span className="font-display text-2xl font-bold text-alert">
+      <div className="flex flex-col rounded-xl bg-surface px-3.5 py-3 shadow-card">
+        <span className="font-display text-[22px] leading-8 font-bold text-alert tabular-nums">
           {formatMoney(total(weOwe))}
         </span>
+        <span className="text-xs text-muted">{labels.debtDirection.we_owe}</span>
       </div>
     </div>
   );

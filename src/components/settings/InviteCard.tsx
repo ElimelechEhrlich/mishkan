@@ -13,19 +13,24 @@ export function InviteCard({ inviteCode }: InviteCardProps): ReactElement {
 
   return (
     <Card title={labels.sections.invite}>
-      <p className="text-sm text-muted">{labels.settings.inviteHint}</p>
+      <p className="text-[13px] leading-5 text-muted">{labels.settings.inviteHint}</p>
       <a
         href={`https://wa.me/?text=${encodeURIComponent(message)}`}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 font-medium text-white"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 text-[15px] font-semibold text-white transition active:scale-[0.98]"
       >
         {labels.settings.shareInvite}
       </a>
-      <p className="text-sm text-muted">{labels.settings.inviteCodeLabel}</p>
-      <code dir="ltr" className="rounded-xl bg-paper px-3 py-2.5 text-center text-sm select-all">
-        {inviteCode}
-      </code>
+      <div className="flex flex-col gap-1">
+        <p className="text-xs text-muted">{labels.settings.inviteCodeLabel}</p>
+        <code
+          dir="ltr"
+          className="rounded-lg bg-paper px-3 py-2 text-center font-mono text-xs text-muted select-all"
+        >
+          {inviteCode}
+        </code>
+      </div>
     </Card>
   );
 }

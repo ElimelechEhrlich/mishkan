@@ -14,7 +14,7 @@ export function ConfirmButton({ label, confirmLabel, onConfirm }: ConfirmButtonP
   const [armed, setArmed] = useState(false);
   return (
     <Button
-      variant={armed ? 'danger' : 'ghost'}
+      variant={armed ? 'danger' : 'quiet'}
       onClick={() => {
         if (armed) {
           onConfirm();
@@ -23,7 +23,7 @@ export function ConfirmButton({ label, confirmLabel, onConfirm }: ConfirmButtonP
         }
       }}
     >
-      <Icon name="trash" />
+      <Icon name="trash" className="size-4.5" />
       {armed ? confirmLabel : label}
     </Button>
   );
