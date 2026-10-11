@@ -15,6 +15,8 @@ type PageShellProps = {
   readonly inner?: boolean;
   /** Replaces the title on an inner page that draws its own heading. */
   readonly heading?: ReactNode;
+  /** Leaves out the bottom bar, so a page typed into keeps the space above the keyboard. */
+  readonly hideNav?: boolean;
 };
 
 const headerLinkClass =
@@ -27,6 +29,7 @@ export function PageShell({
   children,
   inner = false,
   heading,
+  hideNav = false,
 }: PageShellProps): ReactElement {
   const navigate = useNavigate();
   return (
@@ -86,8 +89,12 @@ export function PageShell({
           </div>
         )}
       </header>
-      <main className="flex flex-1 animate-fade-in flex-col gap-4 px-4 pt-1 pb-40">{children}</main>
-      <BottomNav />
+      <main
+        className={`flex flex-1 animate-fade-in flex-col gap-4 px-4 pt-1 ${hideNav ? 'pb-8' : 'pb-40'}`}
+      >
+        {children}
+      </main>
+      {!hideNav && <BottomNav />}
     </div>
   );
 }

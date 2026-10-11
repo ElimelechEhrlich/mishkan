@@ -18,14 +18,21 @@ export function SearchPage(): ReactElement {
   const search = useSearch(entities.entities);
 
   return (
-    <PageShell title={labels.pages.search} incompleteCount={items.incomplete.length} inner>
-      <TextField
-        label={labels.search.field}
-        value={search.term}
-        onChange={search.setTerm}
-        autoFocus
-        compact
-      />
+    <PageShell
+      title={labels.pages.search}
+      incompleteCount={items.incomplete.length}
+      inner
+      hideNav
+      heading={
+        <TextField
+          label={labels.search.field}
+          value={search.term}
+          onChange={search.setTerm}
+          autoFocus
+          compact
+        />
+      }
+    >
       <ErrorBanner message={search.error ?? entities.error} />
       <SearchResults search={search} entities={entities.entities} lookups={lookups} />
     </PageShell>

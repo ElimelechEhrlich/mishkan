@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { toListEntries, withoutNestedSteps } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
 import { entityTone } from '../lib/lookups';
@@ -49,13 +49,18 @@ export function useEntityPage(): UseEntityPage {
   const entity = entities.entities.find((candidate) => candidate.id === entityId);
   const index = entities.entities.findIndex((candidate) => candidate.id === entityId);
 
-  // Opening an entity's page narrows every tab to it, until "everything" is chosen.
+  // Opening an entity's page narrows every tab to it, until "everything" is chosen;
+  // not when it is opened from a search, so going back finds the tabs as they were.
+  const location = useLocation();
+  const state: unknown = location.state;
+  const keepScope =
+    typeof state === 'object' && state !== null && 'keepScope' in state && state.keepScope === true;
   const openId = entity?.id;
   useEffect(() => {
-    if (openId !== undefined && openId !== scopeId) {
+    if (!keepScope && openId !== undefined && openId !== scopeId) {
       setScope(openId);
     }
-  }, [openId, scopeId, setScope]);
+  }, [keepScope, openId, scopeId, setScope]);
 
   // The slide direction is worked out when the entity changes, from where it sits
   // in the strip relative to the one shown before.
