@@ -1,10 +1,12 @@
 import type { ReactElement } from 'react';
+import { Link } from 'react-router';
 import { EntitySettings } from '../components/settings/EntitySettings';
 import { AutoReminderCard } from '../components/settings/AutoReminderCard';
 import { InviteCard } from '../components/settings/InviteCard';
 import { NotificationsCard } from '../components/settings/NotificationsCard';
 import { ProfileCard } from '../components/settings/ProfileCard';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { Icon } from '../components/ui/Icon';
 import { ListRow } from '../components/ui/ListRow';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
@@ -32,6 +34,14 @@ export function SettingsPage(): ReactElement {
           {labels.settings.account}
         </h2>
         <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
+          <Link to="/?tour=1" className="group block active:bg-paper">
+            <ListRow
+              icon="help"
+              title={labels.tour.replay}
+              subtitle={labels.tour.replayHint}
+              trailing={<Icon name="forward" className="size-4 text-faint" />}
+            />
+          </Link>
           <ListRow
             icon="logout"
             iconClass="bg-alert-soft text-alert"
