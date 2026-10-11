@@ -358,6 +358,8 @@ export const labels = {
       'הורה שעוד לא הצטרף לאפליקציה מקבל ישות משותפת כבר עכשיו. כשיצטרף, יבחר בה ויקבל גם ישות אישית.',
     addDebtsDomain: 'הוספת תחום חובות',
     addEntity: 'הוספה',
+    entityPage: 'לדף',
+    openEntityPage: 'לדף של',
     addChild: 'הוספת ילד/ה',
     addParent: 'הוספת הורה',
     addParentShort: 'בן או בת זוג שעוד לא הצטרפו',
