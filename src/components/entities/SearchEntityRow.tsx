@@ -11,12 +11,16 @@ type SearchEntityRowProps = {
   readonly tone: EntityTone;
 };
 
+/** Opening an entity from a search leaves the chosen entity of the tabs as it was. */
+const keepScopeState = { keepScope: true } as const;
+
 /** An entity found by a search, with what matched in its profile; opens its page. */
 export function SearchEntityRow({ hit, tone }: SearchEntityRowProps): ReactElement {
   return (
     <li className="group">
       <Link
         to={`/entity/${hit.entity.id}`}
+        state={keepScopeState}
         className="flex items-center gap-3 ps-3.5 active:bg-paper"
       >
         <EntityAvatar entity={hit.entity} tone={tone} size="md" />

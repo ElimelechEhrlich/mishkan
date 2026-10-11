@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { labels } from '../constants/labels';
 import { toMessage } from '../lib/errors';
 import { searchItems, searchListValues } from '../services/searchService';
@@ -37,7 +38,15 @@ const delayMs = 250;
  * their names, ID numbers, notes, domains and list values.
  */
 export function useSearch(entities: readonly EntityWithDomains[]): UseSearch {
-  const [term, setTerm] = useState('');
+  // Kept in the address, so coming back from a result shows the same search.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const term = searchParams.get('q') ?? '';
+  const setTerm = useCallback(
+    (next: string): void => {
+      setSearchParams(next === '' ? {} : { q: next }, { replace: true });
+    },
+    [setSearchParams],
+  );
   const [state, setState] = useState<SearchState>({
     items: [],
     listValues: [],
