@@ -1,5 +1,5 @@
 import { labels } from '../constants/labels';
-import type { Item } from '../types/domain';
+import type { Item, OpenSegment } from '../types/domain';
 import { addDays, formatDueDate, recurrenceOf } from './itemRules';
 
 function dateText(dueDate: string, today: string): string {
@@ -31,4 +31,14 @@ export function fullTimeText(item: Item, today: string): string | null {
     return time;
   }
   return `${labels.recurrence[recurrence]}${labels.item.separator}${time}`;
+}
+
+const timeOrder = ['active', 'waiting', 'someday'] as const satisfies readonly OpenSegment[];
+
+/** "9 active · 2 waiting", leaving out the empty groups; "nothing open" when all are empty. */
+export function timeGroupsSummary(counts: Readonly<Record<OpenSegment, number>>): string {
+  const parts = timeOrder
+    .filter((segment) => counts[segment] > 0)
+    .map((segment) => `${String(counts[segment])} ${labels.segment[segment]}`);
+  return parts.length === 0 ? labels.overview.nothingOpen : parts.join(labels.item.separator);
 }

@@ -9,6 +9,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
 import { NotesPage } from '../pages/NotesPage';
 import { OpenItemsPage } from '../pages/OpenItemsPage';
+import { OverviewPage } from '../pages/OverviewPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ShoppingPage } from '../pages/ShoppingPage';
 import { ShoppingRunPage } from '../pages/ShoppingRunPage';
@@ -24,7 +25,8 @@ export const router = createBrowserRouter([
       {
         element: <RequireHousehold />,
         children: [
-          { path: '/', element: <OpenItemsPage /> },
+          { path: '/', element: <OverviewPage /> },
+          { path: '/tasks', element: <OpenItemsPage /> },
           { path: '/goals', element: <GoalsPage /> },
           { path: '/notes', element: <NotesPage /> },
           { path: '/shopping', element: <ShoppingPage /> },

@@ -15,7 +15,8 @@ type NavItem = {
 };
 
 const navItems: readonly NavItem[] = [
-  { to: '/', label: labels.nav.open, icon: 'list' },
+  { to: '/', label: labels.nav.home, icon: 'home' },
+  { to: '/tasks', label: labels.nav.open, icon: 'list' },
   { to: '/goals', label: labels.nav.goals, icon: 'target' },
   { to: '/notes', label: labels.nav.notes, icon: 'note' },
   { to: '/shopping', label: labels.nav.shopping, icon: 'cart' },
@@ -26,7 +27,7 @@ const navItems: readonly NavItem[] = [
 export function BottomNav({ incompleteCount }: BottomNavProps): ReactElement {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
-      <div className="mx-auto grid max-w-xl grid-cols-6">
+      <div className="mx-auto grid max-w-xl grid-cols-7">
         {navItems.map((item) => (
           <NavLink
             key={item.to}

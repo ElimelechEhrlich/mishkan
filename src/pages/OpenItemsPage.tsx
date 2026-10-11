@@ -1,10 +1,8 @@
 import type { ReactElement } from 'react';
-import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { ScopeBar } from '../components/entities/ScopeBar';
 import { AllKindsToggle } from '../components/items/AllKindsToggle';
 import { ItemList } from '../components/items/ItemList';
-import { SummaryTiles } from '../components/items/SummaryTiles';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { Tabs } from '../components/ui/Tabs';
@@ -16,7 +14,6 @@ import { useLookups } from '../hooks/useLookups';
 import { useOpenSegments } from '../hooks/useOpenSegments';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
-import { formatToday } from '../lib/itemRules';
 
 export function OpenItemsPage(): ReactElement {
   const { members, scopeId, setScope } = useHouseholdContext();
@@ -26,20 +23,13 @@ export function OpenItemsPage(): ReactElement {
   const scoped = useScopedItems(items, entities.entities);
   const view = useOpenSegments(scoped.assigned, scoped.steps, 'task');
   const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
-  const [searchParams] = useSearchParams();
 
   return (
     <PageShell
       title={view.allKinds ? labels.pages.allItems : labels.pages.open}
-      subtitle={formatToday()}
       incompleteCount={scoped.incomplete.length}
     >
       <ErrorBanner message={items.error ?? entities.error} />
-      <SummaryTiles
-        overdue={view.overdueCount}
-        today={view.todayCount}
-        incomplete={scoped.incomplete.length}
-      />
       <ScopeBar
         entities={entities.entities}
         scopeId={scopeId}
@@ -64,7 +54,6 @@ export function OpenItemsPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
-        initiallyOpen={searchParams.has('new')}
         entityId={scoped.scope?.id}
       />
     </PageShell>
