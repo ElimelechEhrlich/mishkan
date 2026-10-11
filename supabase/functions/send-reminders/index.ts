@@ -72,7 +72,9 @@ Deno.serve(async () => {
       await supabase.from('push_subscriptions').delete().in('endpoint', gone);
     }
 
-    return new Response(JSON.stringify({ due: reminders.length, sent, removed: gone.length }), {
+    const result = { due: reminders.length, sent, removed: gone.length };
+    console.log('send-reminders', JSON.stringify(result));
+    return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (caught) {
