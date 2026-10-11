@@ -88,6 +88,7 @@ export const labels = {
     settings: 'הגדרות',
     done: 'בוצעו',
     item: 'פריט',
+    entity: 'ישות',
     onboarding: 'הקמת הבית',
   },
   nav: {
@@ -109,6 +110,7 @@ export const labels = {
     noDoneItems: 'עוד לא סומנו פריטים כבוצעו',
     noMissingItems: 'לא חסר כלום',
     runNotFound: 'הסבב הסתיים או נמחק.',
+    entityNotFound: 'הישות לא נמצאה. ייתכן שהיא נמחקה.',
   },
   actions: {
     save: 'שמירה',
@@ -212,6 +214,9 @@ export const labels = {
     progressOf: 'מתוך',
     noSteps: 'אין צעדים עדיין',
     resolved: 'סוגיות שנפתרו',
+  },
+  entityPage: {
+    emptyDomains: 'תחומים בלי פריטים:',
   },
   convert: {
     convertTo: 'המרה ל',

@@ -1,5 +1,5 @@
 import { labels } from '../constants/labels';
-import type { EntityWithDomains, Member, ShoppingTarget } from '../types/domain';
+import type { EntityWithDomains, Item, Member, ShoppingTarget } from '../types/domain';
 
 /** Background classes that tell entities apart, assigned by display order. */
 const entityTones = [
@@ -55,6 +55,21 @@ export function shoppingTargets(entities: readonly EntityWithDomains[]): Shoppin
   return targets.sort(
     (a, b) => Number(b.entity.kind === 'home') - Number(a.entity.kind === 'home'),
   );
+}
+
+/** How many open rows each entity holds, by entity id. Questions and nested steps are not counted. */
+export function countByEntity(
+  rows: readonly Item[],
+  domainEntities: ReadonlyMap<string, string>,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const item of rows) {
+    const entityId = item.domain_id === null ? undefined : domainEntities.get(item.domain_id);
+    if (entityId !== undefined && item.kind !== 'question') {
+      counts.set(entityId, (counts.get(entityId) ?? 0) + 1);
+    }
+  }
+  return counts;
 }
 
 /** The debts domain of the home, where new debts land by default. */

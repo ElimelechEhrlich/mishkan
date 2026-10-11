@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { DebtsPage } from '../pages/DebtsPage';
 import { DonePage } from '../pages/DonePage';
+import { EntityPage } from '../pages/EntityPage';
 import { GoalsPage } from '../pages/GoalsPage';
 import { IncompletePage } from '../pages/IncompletePage';
 import { ItemPage } from '../pages/ItemPage';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
           { path: '/debts', element: <DebtsPage /> },
           { path: '/incomplete', element: <IncompletePage /> },
           { path: '/item/:itemId', element: <ItemPage /> },
+          { path: '/entity/:entityId', element: <EntityPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/done', element: <DonePage /> },
         ],

@@ -134,30 +134,65 @@ export function segmentOf(item: Item): OpenSegment | null {
   return 'active';
 }
 
-export function activeSectionOf(item: Item, today: string): ActiveSection {
-  if (item.due_date === null) {
+export function activeSectionOf(dueDate: string | null, today: string): ActiveSection {
+  if (dueDate === null) {
     return 'undated';
   }
-  if (item.due_date < today) {
+  if (dueDate < today) {
     return 'overdue';
   }
-  return item.due_date === today ? 'today' : 'upcoming';
+  return dueDate === today ? 'today' : 'upcoming';
+}
+
+export function isContainer(item: Item): boolean {
+  return item.kind === 'goal' || item.kind === 'issue';
+}
+
+/**
+ * Open steps whose goal or issue is itself in `items` are shown inside it,
+ * so they are taken out of the list.
+ */
+export function withoutNestedSteps(items: readonly Item[]): Item[] {
+  const containerIds = new Set(items.filter(isContainer).map((item) => item.id));
+  return items.filter((item) => item.parent_id === null || !containerIds.has(item.parent_id));
+}
+
+/** One row of a list: an item, and for a goal or issue its steps (done ones included). */
+export type ListEntry = {
+  readonly item: Item;
+  readonly steps: readonly Item[];
+  /** The earliest due date of the item and its open steps, for sorting and sections. */
+  readonly dueDate: string | null;
+};
+
+export function toListEntries(items: readonly Item[], allSteps: readonly Item[]): ListEntry[] {
+  return items.map((item) => {
+    const steps = isContainer(item) ? allSteps.filter((step) => step.parent_id === item.id) : [];
+    const dueDates = [item, ...steps.filter((step) => step.status === 'open')]
+      .map((entry) => entry.due_date)
+      .filter((date) => date !== null);
+    const dueDate = dueDates.reduce<string | null>(
+      (earliest, date) => (earliest === null || date < earliest ? date : earliest),
+      null,
+    );
+    return { item, steps, dueDate };
+  });
+}
+
+/** By due date (undated last), then newest first. */
+export function compareEntries(a: ListEntry, b: ListEntry): number {
+  if (a.dueDate !== null && b.dueDate !== null && a.dueDate !== b.dueDate) {
+    return a.dueDate < b.dueDate ? -1 : 1;
+  }
+  if (a.dueDate === null && b.dueDate !== null) {
+    return 1;
+  }
+  if (a.dueDate !== null && b.dueDate === null) {
+    return -1;
+  }
+  return a.item.created_at < b.item.created_at ? 1 : -1;
 }
 
 export function isOverdue(item: Item, today: string): boolean {
   return item.status === 'open' && item.due_date !== null && item.due_date < today;
-}
-
-/** Open first, then by due date, then newest first. */
-export function compareByDueDate(a: Item, b: Item): number {
-  if (a.due_date !== null && b.due_date !== null && a.due_date !== b.due_date) {
-    return a.due_date < b.due_date ? -1 : 1;
-  }
-  if (a.due_date === null && b.due_date !== null) {
-    return 1;
-  }
-  if (a.due_date !== null && b.due_date === null) {
-    return -1;
-  }
-  return a.created_at < b.created_at ? 1 : -1;
 }

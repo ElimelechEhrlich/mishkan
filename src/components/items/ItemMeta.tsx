@@ -12,6 +12,8 @@ type ItemMetaProps = {
   readonly today: string;
   /** Leaves out the entity color dot, for rows that show the color another way. */
   readonly hideTone?: boolean;
+  /** Leaves out the domain, for a step shown inside its goal. */
+  readonly hideDomain?: boolean;
 };
 
 /** The small line under an item's title: entity color, domain and time. */
@@ -20,6 +22,7 @@ export function ItemMeta({
   lookups,
   today,
   hideTone = false,
+  hideDomain = false,
 }: ItemMetaProps): ReactElement {
   const domainLabel = item.domain_id === null ? null : lookups.domainLabels.get(item.domain_id);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
@@ -35,7 +38,9 @@ export function ItemMeta({
         </span>
       )}
       {tone !== undefined && !hideTone && <span className={`size-2 rounded-full ${tone}`} />}
-      {domainLabel !== null && domainLabel !== undefined && <span>{domainLabel}</span>}
+      {!hideDomain && domainLabel !== null && domainLabel !== undefined && (
+        <span>{domainLabel}</span>
+      )}
       {time !== null && (
         <span
           className={`inline-flex items-center gap-1 rounded-md px-1.5 ${
