@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { DebtForm } from '../components/debts/DebtForm';
 import { DebtSection } from '../components/debts/DebtSection';
+import { DebtSummary } from '../components/debts/DebtSummary';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
@@ -19,6 +20,7 @@ export function DebtsPage(): ReactElement {
   return (
     <PageShell title={labels.pages.debts} incompleteCount={items.incomplete.length}>
       <ErrorBanner message={debts.error ?? items.error ?? areas.error} />
+      <DebtSummary owedToUs={debts.owedToUs} weOwe={debts.weOwe} />
       <DebtForm domainId={findDebtDomainId(areas.areas)} onAdd={debts.addDebt} />
       <DebtSection
         title={labels.debtDirection.owed_to_us}

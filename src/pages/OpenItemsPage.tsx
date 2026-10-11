@@ -11,6 +11,7 @@ import { useAreas } from '../hooks/useAreas';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useOpenSegments } from '../hooks/useOpenSegments';
+import { formatToday } from '../lib/itemRules';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function OpenItemsPage(): ReactElement {
@@ -22,7 +23,11 @@ export function OpenItemsPage(): ReactElement {
   const [searchParams] = useSearchParams();
 
   return (
-    <PageShell title={labels.pages.open} incompleteCount={items.incomplete.length}>
+    <PageShell
+      title={labels.pages.open}
+      subtitle={formatToday()}
+      incompleteCount={items.incomplete.length}
+    >
       <ErrorBanner message={items.error ?? areas.error} />
       <Segmented options={view.options} value={view.segment} onChange={view.setSegment} />
       <MemberFilter members={members} value={view.memberFilter} onChange={view.setMemberFilter} />

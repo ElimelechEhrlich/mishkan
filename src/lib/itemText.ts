@@ -1,0 +1,34 @@
+import { labels } from '../constants/labels';
+import type { Item } from '../types/domain';
+import { addDays, formatDueDate, recurrenceOf } from './itemRules';
+
+function dateText(dueDate: string, today: string): string {
+  if (dueDate === today) {
+    return labels.item.today;
+  }
+  if (dueDate === addDays(today, 1)) {
+    return labels.item.tomorrow;
+  }
+  return formatDueDate(dueDate);
+}
+
+/** When an item is due, in words: a date, "today", or the name of its time mode. */
+export function timeText(item: Item, today: string): string | null {
+  if (item.time_mode === null) {
+    return null;
+  }
+  if (item.due_date !== null) {
+    return dateText(item.due_date, today);
+  }
+  return labels.timeMode[item.time_mode];
+}
+
+/** Like `timeText`, with the rhythm of a recurring item added. */
+export function fullTimeText(item: Item, today: string): string | null {
+  const time = timeText(item, today);
+  const recurrence = recurrenceOf(item.recurrence_rule);
+  if (time === null || recurrence === null) {
+    return time;
+  }
+  return `${labels.recurrence[recurrence]}${labels.item.separator}${time}`;
+}

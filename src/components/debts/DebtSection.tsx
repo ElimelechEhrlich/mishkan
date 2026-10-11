@@ -23,7 +23,7 @@ export function DebtSection({ title, debts, tone, onClose }: DebtSectionProps): 
     <Card
       title={title}
       aside={
-        <span className={`text-sm font-medium ${tone === 'alert' ? 'text-alert' : 'text-primary'}`}>
+        <span className={`text-[13px] font-bold ${tone === 'alert' ? 'text-alert' : 'text-primary'}`}>
           {labels.debts.total} {formatMoney(total)}
         </span>
       }

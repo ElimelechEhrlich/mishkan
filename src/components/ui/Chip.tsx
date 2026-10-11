@@ -20,7 +20,7 @@ export function Chip({
   disabled = false,
 }: ChipProps): ReactElement {
   const tone = selected
-    ? 'border-primary bg-primary text-white'
+    ? 'border-primary bg-primary text-white shadow-card'
     : 'border-line bg-surface text-ink';
   return (
     <button

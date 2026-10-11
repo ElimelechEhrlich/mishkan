@@ -2,6 +2,7 @@ import type {
   ActiveSection,
   DebtDirection,
   ItemKind,
+  MemberRole,
   MissingField,
   OpenSegment,
   Recurrence,
@@ -50,6 +51,12 @@ const section = {
   undated: 'ללא מועד',
 } as const satisfies Record<ActiveSection, string>;
 
+const memberRole = {
+  household: 'משימות כלליות של הבית',
+  parent: 'הורה',
+  child: 'ילד/ה',
+} as const satisfies Record<MemberRole, string>;
+
 const debtDirection = {
   owed_to_us: 'חייבים לנו',
   we_owe: 'אנחנו חייבים',
@@ -84,6 +91,7 @@ export const labels = {
     noDebts: 'אין חובות פתוחים',
     itemNotFound: 'הפריט לא נמצא. ייתכן שהוא נסגר או נמחק.',
     done: 'בוצע',
+    notSet: 'לא נבחר',
     noDoneItems: 'עוד לא סומנו פריטים כבוצעו',
   },
   actions: {
@@ -106,6 +114,7 @@ export const labels = {
     confirmDelete: 'לחיצה נוספת למחיקה',
     attachFile: 'צירוף קובץ',
     closeDebt: 'סגירת החוב',
+    newDebt: 'חוב חדש',
     settings: 'הגדרות',
     showDone: 'פריטים שבוצעו',
     makePrivate: 'פרטי',
@@ -167,6 +176,8 @@ export const labels = {
     attachments: 'קבצים מצורפים',
     debt: 'פרטי החוב',
     children: 'ילדים',
+    members: 'בני הבית',
+    properties: 'שיוך',
     areas: 'אבות תחום ותחומים',
     invite: 'הזמנת ההורה השני',
     account: 'חשבון',
@@ -189,6 +200,7 @@ export const labels = {
     inviteMessage: 'הזמנה להצטרף לבית שלנו במשכן:',
     shareInvite: 'שליחה בוואטסאפ',
     inviteCodeLabel: 'או להזין ידנית את הקוד:',
+    domainsCount: 'תחומים',
     privateAreaHint: 'אב תחום פרטי: כל התחומים שלו גלויים רק לך.',
   },
   timeMode,
@@ -198,4 +210,5 @@ export const labels = {
   segment,
   section,
   debtDirection,
+  memberRole,
 } as const;

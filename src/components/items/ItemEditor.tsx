@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
+import { todayIso } from '../../lib/itemRules';
+import { fullTimeText } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
 import type {
   AreaWithDomains,
@@ -16,6 +18,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Chip } from '../ui/Chip';
 import { ConfirmButton } from '../ui/ConfirmButton';
+import { PropertyRow } from '../ui/PropertyRow';
 import { SelectField } from '../ui/SelectField';
 import { AttachmentList } from './AttachmentList';
 import { ItemTextForm } from './ItemTextForm';
@@ -43,9 +46,11 @@ type ItemEditorProps = {
   readonly onPrerequisitesChange: () => void;
 };
 
+type Row = 'kind' | 'domain' | 'member' | 'time' | 'parent';
+
 const kinds = ['task', 'goal', 'issue', 'note'] as const satisfies readonly CapturableKind[];
 
-/** Everything about one item: text, kind, assignment, time, and what hangs on it. */
+/** Everything about one item: text, a list of its properties, and what hangs on it. */
 export function ItemEditor({
   item,
   items,
@@ -62,17 +67,28 @@ export function ItemEditor({
   onAddChild,
   onPrerequisitesChange,
 }: ItemEditorProps): ReactElement {
-  const [pickingDomain, setPickingDomain] = useState(false);
+  const [openRow, setOpenRow] = useState<Row | null>(null);
+
+  function toggle(row: Row): void {
+    setOpenRow(openRow === row ? null : row);
+  }
+
+  function update(changes: ItemUpdate): void {
+    onUpdate(item.id, changes);
+    setOpenRow(null);
+  }
 
   const isStep = item.parent_id !== null;
   const isContainer = item.kind === 'goal' || item.kind === 'issue';
   const hasSchedule = item.kind !== 'note' && item.kind !== 'debt';
+  const canChangeKind = item.kind !== 'debt' && !isStep && steps.length === 0;
   const done = item.status === 'done';
-  const domainLabel =
-    item.domain_id === null ? labels.item.noDomain : lookups.domainLabels.get(item.domain_id);
-  const goalOptions = items
-    .filter((candidate) => candidate.kind === 'goal' || candidate.kind === 'issue')
-    .map((candidate) => ({ value: candidate.id, label: candidate.title }));
+
+  const domainLabel = item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
+  const memberName = item.member_id === null ? undefined : lookups.memberNames.get(item.member_id);
+  const timeLabel = fullTimeText(item, todayIso());
+  const goals = items.filter((candidate) => candidate.kind === 'goal' || candidate.kind === 'issue');
+  const parentTitle = goals.find((goal) => goal.id === item.parent_id)?.title;
 
   return (
     <div className="flex flex-col gap-4">
@@ -107,79 +123,119 @@ export function ItemEditor({
         </Card>
       )}
 
-      {item.kind !== 'debt' && !isStep && steps.length === 0 && (
-        <Card title={labels.sections.kind}>
-          <div className="flex flex-wrap gap-2">
-            {kinds.map((kind) => (
-              <Chip
-                key={kind}
-                label={labels.kind[kind]}
-                selected={kind === item.kind}
-                onClick={() => {
-                  onUpdate(item.id, { kind });
-                }}
-              />
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <Card
-        title={labels.sections.domain}
-        aside={
-          !isStep && (
-            <button
-              type="button"
-              className="text-sm font-medium text-primary"
-              onClick={() => {
-                setPickingDomain(!pickingDomain);
-              }}
-            >
-              {pickingDomain ? labels.actions.close : labels.actions.change}
-            </button>
-          )
-        }
-      >
-        <p>{domainLabel ?? labels.item.noDomain}</p>
-        {isStep && <p className="text-sm text-muted">{labels.item.inheritedDomain}</p>}
-        {pickingDomain && (
-          <DomainPicker
-            areas={areas}
-            value={item.domain_id}
-            onChange={(domainId) => {
-              if (domainId !== null) {
-                onUpdate(item.id, { domain_id: domainId });
-                setPickingDomain(false);
-              }
+      <section className="flex flex-col divide-y divide-line rounded-2xl bg-surface px-4 shadow-card">
+        {canChangeKind && (
+          <PropertyRow
+            label={labels.sections.kind}
+            value={labels.kind[item.kind]}
+            open={openRow === 'kind'}
+            onToggle={() => {
+              toggle('kind');
             }}
-          />
+          >
+            <div className="flex flex-wrap gap-2">
+              {kinds.map((kind) => (
+                <Chip
+                  key={kind}
+                  label={labels.kind[kind]}
+                  selected={kind === item.kind}
+                  onClick={() => {
+                    update({ kind });
+                  }}
+                />
+              ))}
+            </div>
+          </PropertyRow>
         )}
-      </Card>
 
-      {hasSchedule && (
-        <Card title={labels.sections.member}>
-          <MemberPicker
-            members={members}
-            value={item.member_id}
-            onPick={(memberId) => {
-              onUpdate(item.id, { member_id: memberId });
-            }}
-            onAddChild={onAddChild}
-          />
-        </Card>
-      )}
-
-      {hasSchedule && (
-        <Card title={labels.sections.time}>
-          <TimePicker
-            key={`${item.id}-${item.time_mode ?? ''}-${item.due_date ?? ''}`}
-            item={item}
-            onPick={(choice) => {
-              onUpdate(item.id, choice);
+        {isStep ? (
+          <PropertyRow
+            label={labels.sections.domain}
+            value={domainLabel ?? labels.item.noDomain}
+            hint={labels.item.inheritedDomain}
+            open={false}
+            onToggle={() => {
+              setOpenRow(null);
             }}
           />
-        </Card>
-      )}
+        ) : (
+          <PropertyRow
+            label={labels.sections.domain}
+            value={domainLabel ?? labels.status.notSet}
+            missing={domainLabel === undefined}
+            open={openRow === 'domain'}
+            onToggle={() => {
+              toggle('domain');
+            }}
+          >
+            <DomainPicker
+              areas={areas}
+              value={item.domain_id}
+              onChange={(domainId) => {
+                if (domainId !== null) {
+                  update({ domain_id: domainId });
+                }
+              }}
+            />
+          </PropertyRow>
+        )}
+
+        {hasSchedule && (
+          <PropertyRow
+            label={labels.sections.member}
+            value={memberName ?? labels.status.notSet}
+            missing={memberName === undefined}
+            open={openRow === 'member'}
+            onToggle={() => {
+              toggle('member');
+            }}
+          >
+            <MemberPicker
+              members={members}
+              value={item.member_id}
+              onPick={(memberId) => {
+                update({ member_id: memberId });
+              }}
+              onAddChild={onAddChild}
+            />
+          </PropertyRow>
+        )}
+
+        {hasSchedule && (
+          <PropertyRow
+            label={labels.sections.time}
+            value={timeLabel ?? labels.status.notSet}
+            missing={timeLabel === null}
+            open={openRow === 'time'}
+            onToggle={() => {
+              toggle('time');
+            }}
+          >
+            <TimePicker item={item} onPick={update} />
+          </PropertyRow>
+        )}
+
+        {item.kind === 'task' && goals.length > 0 && (
+          <PropertyRow
+            label={labels.sections.parent}
+            value={parentTitle ?? labels.fields.noParent}
+            open={openRow === 'parent'}
+            onToggle={() => {
+              toggle('parent');
+            }}
+          >
+            <SelectField
+              label={labels.sections.parent}
+              placeholder={labels.fields.noParent}
+              value={item.parent_id ?? ''}
+              options={goals.map((goal) => ({ value: goal.id, label: goal.title }))}
+              onChange={(parentId) => {
+                update({ parent_id: parentId === '' ? null : parentId });
+              }}
+            />
+          </PropertyRow>
+        )}
+      </section>
 
       {item.time_mode === 'waiting' && (
         <Card title={labels.sections.prerequisites}>
@@ -195,20 +251,6 @@ export function ItemEditor({
             onReopen={onReopen}
             onAdd={(title) => {
               onAddStep(item, title);
-            }}
-          />
-        </Card>
-      )}
-
-      {item.kind === 'task' && goalOptions.length > 0 && (
-        <Card title={labels.sections.parent}>
-          <SelectField
-            label={labels.sections.parent}
-            placeholder={labels.fields.noParent}
-            value={item.parent_id ?? ''}
-            options={goalOptions}
-            onChange={(parentId) => {
-              onUpdate(item.id, { parent_id: parentId === '' ? null : parentId });
             }}
           />
         </Card>

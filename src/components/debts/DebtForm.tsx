@@ -4,6 +4,8 @@ import { labels } from '../../constants/labels';
 import type { DebtDirection, NewDebt } from '../../types/domain';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { Icon } from '../ui/Icon';
+import { IconButton } from '../ui/IconButton';
 import { Segmented } from '../ui/Segmented';
 import { TextField } from '../ui/TextField';
 
@@ -18,8 +20,9 @@ const directions = [
   { value: 'we_owe', label: labels.debtDirection.we_owe },
 ] as const satisfies readonly { value: DebtDirection; label: string }[];
 
-/** Who, how much, and in which direction. */
+/** A "new debt" button that unfolds into: who, how much, and in which direction. */
 export function DebtForm({ domainId, onAdd }: DebtFormProps): ReactElement {
+  const [open, setOpen] = useState(false);
   const [direction, setDirection] = useState<DebtDirection>('owed_to_us');
   const [counterparty, setCounterparty] = useState('');
   const [amountText, setAmountText] = useState('');
@@ -40,12 +43,38 @@ export function DebtForm({ domainId, onAdd }: DebtFormProps): ReactElement {
       if (saved) {
         setCounterparty('');
         setAmountText('');
+        setOpen(false);
       }
     });
   }
 
+  if (!open) {
+    return (
+      <Button
+        variant="soft"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        <Icon name="plus" />
+        {labels.actions.newDebt}
+      </Button>
+    );
+  }
+
   return (
-    <Card>
+    <Card
+      title={labels.actions.newDebt}
+      aside={
+        <IconButton
+          icon="close"
+          label={labels.actions.close}
+          onClick={() => {
+            setOpen(false);
+          }}
+        />
+      }
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Segmented options={directions} value={direction} onChange={setDirection} />
         <div className="flex gap-2">
@@ -53,6 +82,7 @@ export function DebtForm({ domainId, onAdd }: DebtFormProps): ReactElement {
             label={labels.fields.counterparty}
             value={counterparty}
             onChange={setCounterparty}
+            autoFocus
             compact
           />
           <TextField

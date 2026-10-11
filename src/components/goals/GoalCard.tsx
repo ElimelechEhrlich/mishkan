@@ -22,10 +22,10 @@ export function GoalCard({ goal, steps, lookups, today }: GoalCardProps): ReactE
     <li>
       <Link
         to={`/item/${goal.id}`}
-        className="flex flex-col gap-3 rounded-2xl bg-surface p-4 shadow-card"
+        className="flex flex-col gap-3 rounded-2xl bg-surface p-4 shadow-card transition active:scale-[0.99]"
       >
         <span className="flex flex-col gap-1">
-          <span className="font-display text-xl font-bold break-words">{goal.title}</span>
+          <span className="text-[19px] leading-7 font-semibold break-words">{goal.title}</span>
           <ItemMeta item={goal} lookups={lookups} today={today} />
         </span>
         {steps.length === 0 ? (

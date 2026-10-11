@@ -21,26 +21,36 @@ const navItems: readonly NavItem[] = [
   { to: '/incomplete', label: labels.nav.incomplete, icon: 'alert' },
 ];
 
-function linkClass({ isActive }: { readonly isActive: boolean }): string {
-  const tone = isActive ? 'text-primary' : 'text-muted';
-  return `relative flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-medium ${tone}`;
-}
-
 export function BottomNav({ incompleteCount }: BottomNavProps): ReactElement {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <div className="mx-auto grid max-w-xl grid-cols-4">
         {navItems.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClass}>
-            <span className="relative">
-              <Icon name={item.icon} className="size-6" />
-              {item.to === '/incomplete' && incompleteCount > 0 && (
-                <span className="absolute -end-3 -top-2 flex min-w-5 items-center justify-center rounded-full bg-alert px-1 text-[11px] leading-5 font-bold text-white">
-                  {String(incompleteCount)}
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            className="flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs"
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  className={`relative flex h-8 w-16 items-center justify-center rounded-full transition-colors ${
+                    isActive ? 'bg-primary-soft text-primary' : 'text-muted'
+                  }`}
+                >
+                  <Icon name={item.icon} className="size-6" />
+                  {item.to === '/incomplete' && incompleteCount > 0 && (
+                    <span className="absolute -top-1 end-1 flex min-w-5 items-center justify-center rounded-full bg-alert px-1 text-[11px] leading-5 font-bold text-white">
+                      {String(incompleteCount)}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            {item.label}
+                <span className={isActive ? 'font-bold text-primary' : 'font-medium text-muted'}>
+                  {item.label}
+                </span>
+              </>
+            )}
           </NavLink>
         ))}
       </div>

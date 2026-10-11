@@ -55,6 +55,17 @@ export function formatDueDate(isoDate: string): string {
   return dueDateFormat.format(fromIsoDate(isoDate));
 }
 
+const longDateFormat = new Intl.DateTimeFormat('he-IL', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
+/** Today, written out: weekday, day and month. */
+export function formatToday(): string {
+  return longDateFormat.format(new Date());
+}
+
 /** The local day of a timestamp such as `items.completed_at`. */
 export function formatTimestampDate(timestamp: string): string {
   return dueDateFormat.format(new Date(timestamp));

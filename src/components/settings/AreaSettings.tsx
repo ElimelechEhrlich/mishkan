@@ -17,8 +17,10 @@ export function AreaSettings({ member, areas, reload }: AreaSettingsProps): Reac
   const settings = useAreaSettings(member, areas, reload);
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="px-1 font-display text-lg font-bold">{labels.sections.areas}</h2>
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 pt-2 text-[13px] font-bold tracking-wide text-muted">
+        {labels.sections.areas}
+      </h2>
       <ErrorBanner message={settings.error} />
       {areas.map((area, index) => (
         <AreaSettingsCard

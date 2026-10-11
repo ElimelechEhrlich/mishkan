@@ -90,11 +90,12 @@ export function QuickAddSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-end bg-ink/40">
+    <div className="fixed inset-0 z-20 flex animate-fade-in flex-col justify-end bg-ink/40">
       <form
         onSubmit={handleSubmit}
-        className="mx-auto flex max-h-[88dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-t-3xl bg-paper p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-sheet"
+        className="mx-auto flex max-h-[88dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-t-3xl bg-paper p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-sheet animate-sheet-up"
       >
+        <span className="mx-auto -mt-1 h-1 w-10 shrink-0 rounded-full bg-line" />
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl font-bold">{labels.actions.newItem}</h2>
           <IconButton

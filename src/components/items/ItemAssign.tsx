@@ -15,9 +15,10 @@ type ItemAssignProps = {
   readonly onAddChild: (name: string) => Promise<boolean>;
 };
 
-const headingClass = 'text-sm font-bold text-alert';
-
-/** One incomplete item, with a picker for each thing it still lacks. */
+/**
+ * One incomplete item. It lists what is still missing and asks for one thing
+ * at a time; once that is chosen, the next one takes its place.
+ */
 export function ItemAssign({
   item,
   areas,
@@ -26,54 +27,58 @@ export function ItemAssign({
   onAddChild,
 }: ItemAssignProps): ReactElement {
   const missing = missingFields(item);
+  const current = missing[0];
 
   return (
-    <li className="flex flex-col gap-4 rounded-2xl bg-surface p-4 shadow-card">
+    <li className="flex flex-col gap-3 rounded-2xl bg-surface p-4 shadow-card">
       <Link to={`/item/${item.id}`} className="flex items-baseline gap-2">
-        <span className="min-w-0 flex-1 font-medium break-words">{item.title}</span>
+        <span className="min-w-0 flex-1 text-[17px] font-semibold break-words">{item.title}</span>
         {item.kind !== 'task' && (
           <span className="rounded-md bg-primary-soft px-1.5 text-xs font-medium text-primary">
             {labels.kind[item.kind]}
           </span>
         )}
       </Link>
-      {missing.includes('domain') && (
-        <section className="flex flex-col gap-2">
-          <h3 className={headingClass}>{labels.missing.domain}</h3>
-          <DomainPicker
-            areas={areas}
-            value={null}
-            onChange={(domainId) => {
-              if (domainId !== null) {
-                onUpdate(item.id, { domain_id: domainId });
-              }
-            }}
-          />
-        </section>
+      <div className="flex flex-wrap gap-1.5">
+        {missing.map((field) => (
+          <span
+            key={field}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+              field === current ? 'bg-alert-soft text-alert' : 'bg-paper text-muted'
+            }`}
+          >
+            {labels.missing[field]}
+          </span>
+        ))}
+      </div>
+      {current === 'domain' && (
+        <DomainPicker
+          areas={areas}
+          value={null}
+          onChange={(domainId) => {
+            if (domainId !== null) {
+              onUpdate(item.id, { domain_id: domainId });
+            }
+          }}
+        />
       )}
-      {missing.includes('member') && (
-        <section className="flex flex-col gap-2">
-          <h3 className={headingClass}>{labels.missing.member}</h3>
-          <MemberPicker
-            members={members}
-            value={null}
-            onPick={(memberId) => {
-              onUpdate(item.id, { member_id: memberId });
-            }}
-            onAddChild={onAddChild}
-          />
-        </section>
+      {current === 'member' && (
+        <MemberPicker
+          members={members}
+          value={null}
+          onPick={(memberId) => {
+            onUpdate(item.id, { member_id: memberId });
+          }}
+          onAddChild={onAddChild}
+        />
       )}
-      {missing.includes('time') && (
-        <section className="flex flex-col gap-2">
-          <h3 className={headingClass}>{labels.missing.time}</h3>
-          <TimePicker
-            item={item}
-            onPick={(choice) => {
-              onUpdate(item.id, choice);
-            }}
-          />
-        </section>
+      {current === 'time' && (
+        <TimePicker
+          item={item}
+          onPick={(choice) => {
+            onUpdate(item.id, choice);
+          }}
+        />
       )}
     </li>
   );
