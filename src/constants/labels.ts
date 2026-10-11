@@ -317,6 +317,7 @@ export const labels = {
     eventsDomain: 'אירוע',
     birthdayOf: 'יום הולדת עברי של',
     anniversaryTitle: 'יום נישואין עברי',
+    inAWeek: 'בעוד שבוע',
   },
   convert: {
     convertTo: 'המרה ל',

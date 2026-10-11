@@ -7,7 +7,7 @@ import {
   hebrewBirthDate,
   nextHebrewBirthday,
 } from './hebrewDate';
-import { addDays } from './itemRules';
+import { addDays, formatDueDate } from './itemRules';
 
 /** How long before a Hebrew birthday or anniversary its reminder is due. */
 const daysBefore = 7;
@@ -93,18 +93,23 @@ export function occasionReminders(
       return [];
     }
     const before = addDays(next, -daysBefore);
+    const due = before < today ? today : before;
     const prefix = `${occasion.kind}:${entity.id}:`;
-    const title =
+    const name =
       occasion.kind === 'birthday'
         ? `${labels.occasions.birthdayOf} ${entity.name}`
         : labels.occasions.anniversaryTitle;
+    // Read on the day it is due: "in a week", or how near it is when added later.
+    const gap = daysBetween(due, next);
+    const when = gap === daysBefore ? labels.occasions.inAWeek : countdownText(gap);
+    const date = `${occasionHebrewDate(occasion, false)} (${formatDueDate(next)})`;
     return [
       {
         prefix,
         key: `${prefix}${next}`,
-        title: `${title}${labels.item.separator}${occasionHebrewDate(occasion, false)}`,
+        title: `${when}: ${name}${labels.item.separator}${date}`,
         domainId,
-        due: before < today ? today : before,
+        due,
       },
     ];
   });
