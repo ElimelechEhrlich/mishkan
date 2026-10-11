@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0007_push.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0008_reminder_recipients.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -168,6 +168,7 @@ export type Database = {
           answer: string | null;
           auto_key: string | null;
           reminder_sent_at: string | null;
+          remind_member_ids: string[] | null;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -206,6 +207,7 @@ export type Database = {
           time_mode?: ItemTimeMode | null;
           due_date?: string | null;
           remind_at?: string | null;
+          remind_member_ids?: string[] | null;
           recurrence_rule?: string | null;
           status?: ItemStatus;
           shopping_category?: ShoppingCategory | null;
@@ -390,6 +392,10 @@ export type Database = {
           p_direction?: DebtDirection;
         };
         Returns: undefined;
+      };
+      members_with_push: {
+        Args: Record<string, never>;
+        Returns: string[];
       };
       save_push_subscription: {
         Args: { p_endpoint: string; p_p256dh: string; p_auth: string };

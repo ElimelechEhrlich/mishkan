@@ -300,7 +300,13 @@ export const labels = {
     reminder: 'תזכורת',
     noReminder: 'בלי תזכורת',
     clearReminder: 'הסרת התזכורת',
-    reminderHint: 'בשעה הזו תגיע התראה לכל מי שרואה את הפריט ושהפעיל התראות.',
+    reminderHint: 'ההתראה תגיע לכל מכשיר שבו מי שנבחר הפעיל התראות.',
+    forWhom: 'למי',
+    everyone: 'לכולם',
+    noDevice: 'בלי התראות',
+    reachesNoOne:
+      'למי שנבחר אין עדיין מכשיר עם התראות פעילות, ולכן ההתראה לא תגיע. אפשר להפעיל בהגדרות.',
+    toPrefix: 'ל',
   },
   week: {
     title: 'השבוע',

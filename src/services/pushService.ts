@@ -19,3 +19,12 @@ export async function deleteSubscription(endpoint: string): Promise<void> {
     throw new Error(error.message);
   }
 }
+
+/** The parents of the household who have notifications on in at least one device. */
+export async function listMembersWithPush(): Promise<string[]> {
+  const { data, error } = await supabase.rpc('members_with_push');
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
+}

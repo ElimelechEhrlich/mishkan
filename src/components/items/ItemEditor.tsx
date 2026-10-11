@@ -24,6 +24,7 @@ import { SelectField } from '../ui/SelectField';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
+import type { ReminderPerson } from '../../hooks/useReminderPeople';
 import { ReminderPicker } from './ReminderPicker';
 import { PrerequisiteList } from './PrerequisiteList';
 import { QuestionList } from './QuestionList';
@@ -45,6 +46,8 @@ type ItemEditorProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly lookups: Lookups;
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
+  /** The parents a reminder can go to. */
+  readonly reminderPeople: readonly ReminderPerson[];
   /** Reloads the entities after a child or domain is added while choosing a domain. */
   readonly onStructureChanged: () => Promise<void>;
   readonly onComplete: (item: Item) => void;
@@ -55,6 +58,22 @@ type ItemEditorProps = {
   readonly onConvert: (itemId: string, conversion: Conversion) => void;
   readonly onPrerequisitesChange: () => void;
 };
+
+/** When a reminder rings, and for whom when it is not for everyone. */
+function reminderText(item: Item, people: readonly ReminderPerson[]): string {
+  if (item.remind_at === null) {
+    return labels.push.noReminder;
+  }
+  const when = formatReminder(item.remind_at);
+  if (item.remind_member_ids === null) {
+    return when;
+  }
+  const names = people
+    .filter((person) => item.remind_member_ids?.includes(person.id) === true)
+    .map((person) => person.name)
+    .join(', ');
+  return `${when}${labels.item.separator}${labels.push.toPrefix}${names}`;
+}
 
 type Row = 'kind' | 'domain' | 'category' | 'time' | 'reminder' | 'parent';
 
@@ -95,6 +114,7 @@ export function ItemEditor({
   entities,
   lookups,
   onUpdate,
+  reminderPeople,
   onStructureChanged,
   onComplete,
   onReopen,
@@ -269,20 +289,23 @@ export function ItemEditor({
         {item.status === 'open' && item.kind !== 'missing_item' && (
           <PropertyRow
             label={labels.push.reminder}
-            value={
-              item.remind_at === null ? labels.push.noReminder : formatReminder(item.remind_at)
-            }
+            value={reminderText(item, reminderPeople)}
             open={openRow === 'reminder'}
             onToggle={() => {
               toggle('reminder');
             }}
           >
             <ReminderPicker
-              key={item.remind_at ?? ''}
+              key={`${item.remind_at ?? ''}-${(item.remind_member_ids ?? []).join(',')}`}
               remindAt={item.remind_at}
+              memberIds={item.remind_member_ids}
               dueDate={item.due_date}
-              onChange={(remindAt) => {
-                update({ remind_at: remindAt });
+              people={reminderPeople}
+              onChange={(choice) => {
+                update({
+                  remind_at: choice.remindAt,
+                  remind_member_ids: choice.memberIds === null ? null : [...choice.memberIds],
+                });
                 setOpenRow(null);
               }}
             />

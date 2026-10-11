@@ -7,6 +7,7 @@ import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
 import { useItemPage } from '../hooks/useItemPage';
 import { useLookups } from '../hooks/useLookups';
+import { useReminderPeople } from '../hooks/useReminderPeople';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function ItemPage(): ReactElement {
@@ -14,6 +15,7 @@ export function ItemPage(): ReactElement {
   const entities = useEntities();
   const page = useItemPage();
   const lookups = useLookups(entities.entities, members);
+  const reminderPeople = useReminderPeople(members);
   const { items, item } = page;
 
   return (
@@ -22,7 +24,7 @@ export function ItemPage(): ReactElement {
       incompleteCount={items.incomplete.length}
       inner
     >
-      <ErrorBanner message={items.error ?? page.error ?? entities.error} />
+      <ErrorBanner message={items.error ?? page.error ?? entities.error ?? reminderPeople.error} />
       {item === null ? (
         <EmptyState text={items.loading ? labels.status.loading : labels.status.itemNotFound} />
       ) : (
@@ -36,6 +38,7 @@ export function ItemPage(): ReactElement {
           entities={entities.entities}
           lookups={lookups}
           onUpdate={items.updateItem}
+          reminderPeople={reminderPeople.people}
           onStructureChanged={entities.reload}
           onComplete={items.completeItem}
           onReopen={items.reopenItem}
