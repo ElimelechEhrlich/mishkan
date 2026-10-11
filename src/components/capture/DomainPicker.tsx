@@ -37,7 +37,7 @@ export function DomainPicker({
               key={entity.id}
               label={entity.name}
               note={entity.kind === 'personal' ? labels.capture.privateMark : undefined}
-              dotClass={entity.id === entityId ? undefined : entityTone(index)}
+              dotClass={entity.id === entityId ? undefined : entityTone(index).bg}
               selected={entity.id === entityId}
               onClick={() => {
                 setEntityId(entity.id === entityId ? null : entity.id);

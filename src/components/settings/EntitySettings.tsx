@@ -27,7 +27,7 @@ export function EntitySettings({ member, entities, reload }: EntitySettingsProps
         <EntitySettingsCard
           key={entity.id}
           entity={entity}
-          toneClass={entityTone(index)}
+          toneClass={entityTone(index).bg}
           settings={settings}
         />
       ))}

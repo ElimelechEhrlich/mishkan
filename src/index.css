@@ -1,26 +1,33 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-paper: #f6f1e7;
-  --color-surface: #fffdf9;
-  --color-ink: #26221c;
-  --color-muted: #7d7567;
-  --color-line: #e7dfd0;
+  --color-paper: #f5f5f2;
+  --color-surface: #ffffff;
+  --color-ink: #1d1d1f;
+  --color-muted: #86868b;
+  --color-faint: #b4b4b8;
+  --color-line: #ebebe8;
   --color-primary: #1f5c52;
-  --color-primary-soft: #e2eeea;
-  --color-alert: #c0462d;
-  --color-alert-soft: #fae8e2;
+  --color-primary-soft: #e6f0ed;
+  --color-alert: #d0402b;
+  --color-alert-soft: #fcebe8;
   --color-gold: #b08433;
+
+  /* Entities are told apart by these, in display order. */
+  --color-entity-1: #d97706;
+  --color-entity-2: #7c3aed;
+  --color-entity-3: #0d9488;
+  --color-entity-4: #e11d48;
+  --color-entity-5: #0284c7;
+  --color-entity-6: #65a30d;
 
   --font-sans: 'Heebo', system-ui, 'Segoe UI', Arial, sans-serif;
   --font-display: 'Rubik', 'Heebo', system-ui, sans-serif;
 
-  --shadow-card:
-    0 0 0 1px rgb(38 34 28 / 0.04), 0 1px 2px rgb(38 34 28 / 0.04),
-    0 10px 24px -14px rgb(38 34 28 / 0.18);
-  --shadow-nav: 0 0 0 1px rgb(38 34 28 / 0.05), 0 14px 36px -10px rgb(38 34 28 / 0.3);
-  --shadow-float: 0 8px 24px rgb(31 92 82 / 0.35);
-  --shadow-sheet: 0 -8px 32px rgb(38 34 28 / 0.18);
+  --shadow-card: 0 0 0 1px var(--color-line);
+  --shadow-raised: 0 0 0 1px var(--color-line), 0 8px 20px -12px rgb(29 29 31 / 0.25);
+  --shadow-float: 0 10px 24px -8px rgb(31 92 82 / 0.5);
+  --shadow-sheet: 0 -8px 32px rgb(29 29 31 / 0.16);
 
   --animate-sheet-up: sheet-up 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 0.2s ease-out;
@@ -75,14 +82,7 @@ body,
 }
 
 body {
-  background:
-    linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-primary-soft) 55%, var(--color-paper)) 0,
-        var(--color-paper) 100%
-      )
-      top / 100% 22rem no-repeat,
-    var(--color-paper);
+  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;

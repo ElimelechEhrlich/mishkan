@@ -10,10 +10,18 @@ type EntryRowProps = {
   readonly lookups: Lookups;
   readonly today: string;
   readonly onComplete: (item: Item) => void;
+  /** Leaves out the domain, on a page that already groups by it. */
+  readonly hideDomain: boolean;
 };
 
 /** A goal or issue with steps holds them inside it; anything else is a plain row. */
-export function EntryRow({ entry, lookups, today, onComplete }: EntryRowProps): ReactElement {
+export function EntryRow({
+  entry,
+  lookups,
+  today,
+  onComplete,
+  hideDomain,
+}: EntryRowProps): ReactElement {
   if (entry.steps.length > 0) {
     return (
       <GoalRow
@@ -22,8 +30,17 @@ export function EntryRow({ entry, lookups, today, onComplete }: EntryRowProps): 
         lookups={lookups}
         today={today}
         onComplete={onComplete}
+        hideDomain={hideDomain}
       />
     );
   }
-  return <ItemRow item={entry.item} lookups={lookups} today={today} onComplete={onComplete} />;
+  return (
+    <ItemRow
+      item={entry.item}
+      lookups={lookups}
+      today={today}
+      onComplete={onComplete}
+      hideDomain={hideDomain}
+    />
+  );
 }

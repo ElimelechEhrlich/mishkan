@@ -5,6 +5,7 @@ import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
+import { DueText } from './DueText';
 import { ItemMeta } from './ItemMeta';
 
 type ItemRowProps = {
@@ -12,13 +13,24 @@ type ItemRowProps = {
   readonly lookups: Lookups;
   readonly today: string;
   readonly onComplete: (item: Item) => void;
+  /** Leaves out the domain, on a page that already groups by it. */
+  readonly hideDomain?: boolean;
 };
 
 /** How long a row stays ticked before it gives up waiting for the list to refresh. */
 const completingTimeoutMs = 4000;
 
-/** One item in a list: tick it off, or tap it to open its page. */
-export function ItemRow({ item, lookups, today, onComplete }: ItemRowProps): ReactElement {
+/**
+ * One item in a list card: tick it off, or tap it to open its page.
+ * The divider above it starts after the check, so the checks line up in one column.
+ */
+export function ItemRow({
+  item,
+  lookups,
+  today,
+  onComplete,
+  hideDomain = false,
+}: ItemRowProps): ReactElement {
   const [completing, setCompleting] = useState(false);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
 
@@ -37,32 +49,38 @@ export function ItemRow({ item, lookups, today, onComplete }: ItemRowProps): Rea
 
   return (
     <li
-      className={`relative flex items-center gap-3 overflow-hidden rounded-2xl bg-surface py-3.5 ps-5 pe-4 shadow-card transition duration-300 ${
-        completing ? 'scale-[0.98] opacity-50' : 'active:scale-[0.99]'
-      }`}
+      className={`group flex gap-3 ps-3.5 transition duration-300 ${completing ? 'opacity-40' : ''}`}
     >
-      {tone !== undefined && (
-        <span className={`absolute inset-y-3 start-1.5 w-1 rounded-full ${tone}`} />
-      )}
-      {item.kind !== 'note' && (
-        <CheckButton
-          checked={completing}
-          label={labels.actions.markDone}
-          onClick={() => {
-            if (!completing) {
-              setCompleting(true);
-              onComplete(item);
-            }
-          }}
-        />
-      )}
-      <Link to={`/item/${item.id}`} className="flex min-w-0 flex-1 flex-col gap-1">
-        <span
-          className={`text-[17px] leading-6 font-medium break-words ${completing ? 'line-through' : ''}`}
-        >
-          {item.title}
+      <span className="w-5.5 shrink-0 pt-3">
+        {item.kind !== 'note' && (
+          <CheckButton
+            checked={completing}
+            label={labels.actions.markDone}
+            toneClass={tone?.border}
+            onClick={() => {
+              if (!completing) {
+                setCompleting(true);
+                onComplete(item);
+              }
+            }}
+          />
+        )}
+      </span>
+      <Link
+        to={`/item/${item.id}`}
+        className="flex min-w-0 flex-1 items-start gap-3 border-t border-line py-3 pe-3.5 group-first:border-t-0 active:opacity-70"
+      >
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span
+            className={`text-[15px] leading-snug font-medium break-words ${completing ? 'line-through' : ''}`}
+          >
+            {item.title}
+          </span>
+          <ItemMeta item={item} lookups={lookups} today={today} hideDomain={hideDomain} />
         </span>
-        <ItemMeta item={item} lookups={lookups} today={today} hideTone />
+        <span className="pt-0.5">
+          <DueText item={item} today={today} />
+        </span>
       </Link>
     </li>
   );

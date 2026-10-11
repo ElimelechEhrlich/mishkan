@@ -215,8 +215,16 @@ export const labels = {
     noSteps: 'אין צעדים עדיין',
     resolved: 'סוגיות שנפתרו',
   },
+  summary: {
+    overdue: 'באיחור',
+    today: 'להיום',
+    incomplete: 'להשלמה',
+  },
   entityPage: {
     main: 'ראשי',
+    everything: 'הכול',
+    openItems: 'פריטים פתוחים',
+    addTo: 'הוספה ל',
     emptyDomains: 'תחומים בלי פריטים:',
   },
   convert: {

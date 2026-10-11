@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { DomainSectionList } from '../components/entities/DomainSectionList';
-import { EntityStrip } from '../components/entities/EntityStrip';
+import { EntityHeading } from '../components/entities/EntityHeading';
+import { EntitySwitcher } from '../components/entities/EntitySwitcher';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
@@ -10,17 +11,21 @@ import { useEntityPage } from '../hooks/useEntityPage';
 
 export function EntityPage(): ReactElement {
   const page = useEntityPage();
-  const { entities, items, entity } = page;
+  const { entities, items, entity, addRequest } = page;
 
   return (
     <PageShell
       title={entity?.name ?? labels.pages.entity}
-      subtitle={entity === undefined ? undefined : labels.entityKind[entity.kind]}
       incompleteCount={items.incomplete.length}
       inner
+      heading={
+        entity === undefined ? undefined : (
+          <EntityHeading entity={entity} tone={page.tone} openCount={page.openCount} />
+        )
+      }
     >
       <ErrorBanner message={items.error ?? entities.error} />
-      <EntityStrip entities={entities.entities} counts={page.counts} currentId={entity?.id} />
+      <EntitySwitcher entities={entities.entities} currentId={entity?.id} />
       {entity === undefined ? (
         <EmptyState
           text={entities.loading ? labels.status.loading : labels.status.entityNotFound}
@@ -37,15 +42,18 @@ export function EntityPage(): ReactElement {
             lookups={page.lookups}
             loading={items.loading}
             onComplete={items.completeItem}
+            onAdd={page.requestAdd}
           />
         </div>
       )}
       <QuickAddSheet
-        key={`add-${entity?.id ?? ''}`}
+        key={`add-${entity?.id ?? ''}-${String(addRequest?.key ?? 0)}`}
         entities={entities.entities}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         entityId={entity?.id}
+        initialDomainId={addRequest?.domainId}
+        initiallyOpen={addRequest !== null}
       />
     </PageShell>
   );

@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 import { labels } from '../constants/labels';
-import { segmentOf, toListEntries, withoutNestedSteps } from '../lib/itemRules';
+import {
+  activeSectionOf,
+  segmentOf,
+  todayIso,
+  toListEntries,
+  withoutNestedSteps,
+} from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
 import type { Item, OpenSegment } from '../types/domain';
 
@@ -19,6 +25,9 @@ export type UseOpenSegments = {
   readonly options: readonly SegmentOption[];
   /** The rows of the selected tab. A step whose goal is listed is shown inside the goal. */
   readonly visible: readonly ListEntry[];
+  /** Active rows that are late, and due today, counting a goal by its earliest open step. */
+  readonly overdueCount: number;
+  readonly todayCount: number;
 };
 
 /** The tab of the open-items page, and the rows it leaves visible. */
@@ -45,5 +54,24 @@ export function useOpenSegments(
     [rows, steps, segment],
   );
 
-  return { segment, setSegment, options, visible };
+  const sectionCounts = useMemo(() => {
+    const today = todayIso();
+    const active = toListEntries(
+      rows.filter((item) => segmentOf(item) === 'active'),
+      steps,
+    );
+    return {
+      overdue: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'overdue').length,
+      today: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'today').length,
+    };
+  }, [rows, steps]);
+
+  return {
+    segment,
+    setSegment,
+    options,
+    visible,
+    overdueCount: sectionCounts.overdue,
+    todayCount: sectionCounts.today,
+  };
 }

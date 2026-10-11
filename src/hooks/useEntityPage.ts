@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { toListEntries, withoutNestedSteps } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
-import type { Lookups } from '../lib/lookups';
+import { entityTone } from '../lib/lookups';
+import type { EntityTone, Lookups } from '../lib/lookups';
 import type { Domain, EntityWithDomains } from '../types/domain';
 import { useEntities } from './useEntities';
 import type { UseEntities } from './useEntities';
-import { useEntityCounts } from './useEntityCounts';
 import { useItems } from './useItems';
 import type { UseItems } from './useItems';
 import { useLookups } from './useLookups';
@@ -25,7 +25,12 @@ export type UseEntityPage = {
   readonly entity: EntityWithDomains | undefined;
   /** Each domain of the entity with its open items. */
   readonly sections: readonly DomainSection[];
-  readonly counts: ReadonlyMap<string, number>;
+  readonly tone: EntityTone;
+  /** Open items of the entity, all domains together. */
+  readonly openCount: number;
+  /** Set when the add sheet should open on a domain; a new `key` each time it is asked for. */
+  readonly addRequest: { readonly domainId: string; readonly key: number } | null;
+  readonly requestAdd: (domainId: string) => void;
   /** Which way the page slides in: toward an entity later in the strip, or an earlier one. */
   readonly direction: 'next' | 'previous';
 };
@@ -37,7 +42,6 @@ export function useEntityPage(): UseEntityPage {
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
-  const counts = useEntityCounts(items.items, lookups.domainEntities);
 
   const entity = entities.entities.find((candidate) => candidate.id === entityId);
   const index = entities.entities.findIndex((candidate) => candidate.id === entityId);
@@ -66,5 +70,23 @@ export function useEntityPage(): UseEntityPage {
     }));
   }, [entity, items.items, items.steps]);
 
-  return { entities, items, lookups, entity, sections, counts, direction: shown.direction };
+  const openCount = sections.reduce((sum, section) => sum + section.entries.length, 0);
+
+  const [addRequest, setAddRequest] = useState<UseEntityPage['addRequest']>(null);
+  const requestAdd = useCallback((domainId: string): void => {
+    setAddRequest((previous) => ({ domainId, key: (previous?.key ?? 0) + 1 }));
+  }, []);
+
+  return {
+    entities,
+    items,
+    lookups,
+    entity,
+    sections,
+    tone: entityTone(Math.max(index, 0)),
+    openCount,
+    addRequest,
+    requestAdd,
+    direction: shown.direction,
+  };
 }

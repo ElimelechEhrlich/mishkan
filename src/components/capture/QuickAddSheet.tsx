@@ -27,6 +27,8 @@ type QuickAddSheetProps = {
   readonly initiallyOpen?: boolean;
   /** On an entity's page: the item is for this entity unless changed. */
   readonly entityId?: string | undefined;
+  /** Opens on this domain; a shopping domain opens as a missing item for its entity. */
+  readonly initialDomainId?: string | undefined;
 };
 
 /** A missing item can be added here too; it then asks for its kind and whom it is for. */
@@ -51,13 +53,23 @@ export function QuickAddSheet({
   defaultKind = 'task',
   initiallyOpen = false,
   entityId,
+  initialDomainId,
 }: QuickAddSheetProps): ReactElement {
   const [open, setOpen] = useState(initiallyOpen);
   const [title, setTitle] = useState('');
-  const [kind, setKind] = useState<QuickAddKind>(defaultKind);
-  const [domainId, setDomainId] = useState<string | null>(null);
+  const initialIsShopping = entities.some((entity) =>
+    entity.domains.some((domain) => domain.id === initialDomainId && domain.role === 'shopping'),
+  );
+  const [kind, setKind] = useState<QuickAddKind>(
+    initialIsShopping ? 'missing_item' : defaultKind,
+  );
+  const [domainId, setDomainId] = useState<string | null>(
+    initialIsShopping ? null : (initialDomainId ?? null),
+  );
   const [category, setCategory] = useState<ShoppingCategory>('food');
-  const [shoppingDomainId, setShoppingDomainId] = useState<string | null>(null);
+  const [shoppingDomainId, setShoppingDomainId] = useState<string | null>(
+    initialIsShopping ? (initialDomainId ?? null) : null,
+  );
   const [saving, setSaving] = useState(false);
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
@@ -104,7 +116,7 @@ export function QuickAddSheet({
         onClick={() => {
           setOpen(true);
         }}
-        className="fixed start-4 bottom-[calc(6.25rem+env(safe-area-inset-bottom))] z-10 flex size-14 items-center justify-center rounded-[20px] bg-primary text-white shadow-float transition active:scale-95"
+        className="fixed end-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 flex size-14 items-center justify-center rounded-2xl bg-primary text-white shadow-float transition active:scale-95"
       >
         <Icon name="plus" className="size-7" />
       </button>
