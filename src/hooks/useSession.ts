@@ -1,21 +1,52 @@
-import type { Session } from '@supabase/supabase-js';
-import { useCallback, useEffect, useState } from 'react';
-import { toMessage } from '../lib/errors';
-import { getSession, onSessionChange, signIn, signOut } from '../services/authService';
+import type { Session } from "@supabase/supabase-js";
+import { useCallback, useEffect, useState } from "react";
+import { toMessage } from "../lib/errors";
+import { labels } from "../constants/labels";
+import {
+  AuthFailure,
+  getSession,
+  onSessionChange,
+  signIn,
+  signOut,
+  signUp,
+} from "../services/authService";
 
 type SessionState = {
   readonly session: Session | null;
   readonly loading: boolean;
   readonly busy: boolean;
   readonly error: string | null;
+  /** Set after signing up when the address still has to be confirmed by email. */
+  readonly confirmationSentTo: string | null;
 };
 
 type UseSession = SessionState & {
   readonly signIn: (email: string, password: string) => void;
+  /** `redirectTo` is where the confirmation link in the email leads. */
+  readonly signUp: (
+    email: string,
+    password: string,
+    redirectTo: string,
+  ) => void;
   readonly signOut: () => void;
 };
 
-const initialState: SessionState = { session: null, loading: true, busy: false, error: null };
+/** Known auth errors in the app's words; anything else as it came. */
+function authMessage(error: unknown): string {
+  if (error instanceof AuthFailure && error.code !== undefined) {
+    const known: Readonly<Record<string, string>> = labels.authErrors;
+    return known[error.code] ?? error.message;
+  }
+  return toMessage(error);
+}
+
+const initialState: SessionState = {
+  session: null,
+  loading: true,
+  busy: false,
+  error: null,
+  confirmationSentTo: null,
+};
 
 export function useSession(): UseSession {
   const [state, setState] = useState<SessionState>(initialState);
@@ -30,7 +61,11 @@ export function useSession(): UseSession {
       })
       .catch((error: unknown) => {
         if (active) {
-          setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
+          setState((previous) => ({
+            ...previous,
+            loading: false,
+            error: toMessage(error),
+          }));
         }
       });
     const unsubscribe = onSessionChange((session) => {
@@ -49,9 +84,35 @@ export function useSession(): UseSession {
         setState((previous) => ({ ...previous, busy: false }));
       })
       .catch((error: unknown) => {
-        setState((previous) => ({ ...previous, busy: false, error: toMessage(error) }));
+        setState((previous) => ({
+          ...previous,
+          busy: false,
+          error: authMessage(error),
+        }));
       });
   }, []);
+
+  const handleSignUp = useCallback(
+    (email: string, password: string, redirectTo: string): void => {
+      setState((previous) => ({ ...previous, busy: true, error: null }));
+      signUp(email, password, redirectTo)
+        .then((signedIn) => {
+          setState((previous) => ({
+            ...previous,
+            busy: false,
+            confirmationSentTo: signedIn ? null : email,
+          }));
+        })
+        .catch((error: unknown) => {
+          setState((previous) => ({
+            ...previous,
+            busy: false,
+            error: authMessage(error),
+          }));
+        });
+    },
+    [],
+  );
 
   const handleSignOut = useCallback((): void => {
     signOut().catch((error: unknown) => {
@@ -59,5 +120,10 @@ export function useSession(): UseSession {
     });
   }, []);
 
-  return { ...state, signIn: handleSignIn, signOut: handleSignOut };
+  return {
+    ...state,
+    signIn: handleSignIn,
+    signUp: handleSignUp,
+    signOut: handleSignOut,
+  };
 }

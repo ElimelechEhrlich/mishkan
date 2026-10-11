@@ -6,6 +6,7 @@ import { GoalsPage } from '../pages/GoalsPage';
 import { IncompletePage } from '../pages/IncompletePage';
 import { ItemPage } from '../pages/ItemPage';
 import { LoginPage } from '../pages/LoginPage';
+import { SignUpPage } from '../pages/SignUpPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
 import { NotesPage } from '../pages/NotesPage';
 import { OpenItemsPage } from '../pages/OpenItemsPage';
@@ -18,6 +19,7 @@ import { RequireHousehold } from './RequireHousehold';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/signup', element: <SignUpPage /> },
   {
     element: <RequireAuth />,
     children: [

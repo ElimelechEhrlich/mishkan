@@ -1,19 +1,27 @@
-import { useState } from 'react';
-import type { ReactElement, SyntheticEvent } from 'react';
-import { labels } from '../../constants/labels';
-import { Button } from '../ui/Button';
-import { ErrorBanner } from '../ui/ErrorBanner';
-import { TextField } from '../ui/TextField';
+import { useState } from "react";
+import type { ReactElement, SyntheticEvent } from "react";
+import { labels } from "../../constants/labels";
+import { Button } from "../ui/Button";
+import { ErrorBanner } from "../ui/ErrorBanner";
+import { TextField } from "../ui/TextField";
+import { AuthShell } from "./AuthShell";
 
 type LoginFormProps = {
   readonly busy: boolean;
   readonly error: string | null;
   readonly onSubmit: (email: string, password: string) => void;
+  /** The sign-up screen, keeping an invite code if there is one. */
+  readonly signUpPath: string;
 };
 
-export function LoginForm({ busy, error, onSubmit }: LoginFormProps): ReactElement {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export function LoginForm({
+  busy,
+  error,
+  onSubmit,
+  signUpPath,
+}: LoginFormProps): ReactElement {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -21,12 +29,11 @@ export function LoginForm({ busy, error, onSubmit }: LoginFormProps): ReactEleme
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-8 p-6">
-      <header className="flex flex-col items-center gap-3 text-center">
-        <img src="/icons/icon.svg" alt="" className="size-20 rounded-3xl shadow-card" />
-        <h1 className="font-display text-5xl font-bold">{labels.app.name}</h1>
-        <p className="text-muted">{labels.app.tagline}</p>
-      </header>
+    <AuthShell
+      switchText={labels.auth.noAccount}
+      switchLabel={labels.actions.signUp}
+      switchTo={signUpPath}
+    >
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card"
@@ -48,10 +55,13 @@ export function LoginForm({ busy, error, onSubmit }: LoginFormProps): ReactEleme
           value={password}
           onChange={setPassword}
         />
-        <Button type="submit" disabled={busy || email.trim() === '' || password === ''}>
+        <Button
+          type="submit"
+          disabled={busy || email.trim() === "" || password === ""}
+        >
           {labels.actions.signIn}
         </Button>
       </form>
-    </div>
+    </AuthShell>
   );
 }

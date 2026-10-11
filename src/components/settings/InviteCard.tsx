@@ -10,7 +10,7 @@ type InviteCardProps = {
 
 /** Sends the second parent a link that opens the app ready to join this household. */
 export function InviteCard({ inviteCode }: InviteCardProps): ReactElement {
-  const link = `${window.location.origin}/onboarding?code=${inviteCode}`;
+  const link = `${window.location.origin}/signup?code=${inviteCode}`;
   const message = `${labels.settings.inviteMessage} ${link}`;
   const { copied, copy } = useCopyText();
 
