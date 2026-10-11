@@ -154,6 +154,7 @@ export const labels = {
     incomplete: 'להשלמה',
   },
   status: {
+    offline: 'אין חיבור לשרת כרגע. כדאי לבדוק את האינטרנט ולנסות שוב.',
     loading: 'טוען…',
     emptySegment: 'אין כאן פריטים',
     nothingMissing: 'כל הפריטים משויכים',

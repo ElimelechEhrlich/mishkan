@@ -33,15 +33,20 @@ export function usePushNotifications(): UsePushNotifications {
     }
     let active = true;
     currentSubscription()
-      .then(async (device) => {
-        if (device !== null) {
-          // Saved again in case the device moved to this account or the row was removed.
-          await saveSubscription(device);
-        }
+      .then((device) => {
         if (active) {
           setStatus(
             device !== null ? 'on' : notificationPermission() === 'denied' ? 'blocked' : 'off',
           );
+        }
+        if (device !== null) {
+          // Saved again in case the device moved to this account or the row was removed;
+          // the device stays on even if this fails, and it is tried again next time.
+          saveSubscription(device).catch((caught: unknown) => {
+            if (active) {
+              setError(toMessage(caught));
+            }
+          });
         }
       })
       .catch((caught: unknown) => {
