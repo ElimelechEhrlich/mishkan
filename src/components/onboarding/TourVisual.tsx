@@ -8,6 +8,7 @@ export type TourStep =
   | 'kinds'
   | 'arenas'
   | 'domains'
+  | 'profile'
   | 'add'
   | 'incomplete'
   | 'tabs'
@@ -88,24 +89,48 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
       );
     case 'arenas':
       return (
-        <div className="flex max-w-72 flex-wrap justify-center gap-2">
-          {labels.tour.arenasSample.map((name, index) => (
-            <span
-              key={name}
-              className="inline-flex items-center gap-2 rounded-full bg-surface py-1.5 ps-1.5 pe-3.5 text-[15px] font-medium shadow-card"
-            >
+        <div className="relative h-28 w-72">
+          {labels.tour.arenasSample.slice(0, 5).map((name, index) => {
+            const distance = index - 2;
+            const away = Math.abs(distance);
+            const offset = away === 0 ? 0 : away === 1 ? 74 : 124;
+            return (
               <span
-                className={`flex size-7 items-center justify-center rounded-full font-display text-sm font-bold text-white ${entityColors[index % entityColors.length] ?? ''}`}
+                key={name}
+                className={`absolute top-1/2 left-1/2 flex items-center justify-center rounded-full border-4 border-surface font-display font-bold text-white shadow-card ${entityColors[index] ?? ''}`}
+                style={{
+                  width: away === 0 ? 96 : away === 1 ? 62 : 42,
+                  height: away === 0 ? 96 : away === 1 ? 62 : 42,
+                  fontSize: away === 0 ? 40 : away === 1 ? 24 : 16,
+                  transform: `translate(calc(-50% + ${String(-Math.sign(distance) * offset)}px), -50%)`,
+                  opacity: away === 0 ? 1 : away === 1 ? 0.85 : 0.4,
+                  zIndex: 10 - away,
+                }}
               >
-                {index === labels.tour.arenasSample.length - 1 ? (
-                  <Icon name="lock" className="size-3.5" />
-                ) : (
-                  name.charAt(0)
-                )}
+                {name.charAt(0)}
               </span>
-              {name}
-            </span>
-          ))}
+            );
+          })}
+        </div>
+      );
+    case 'profile':
+      return (
+        <div className="flex w-72 flex-col items-center gap-2 rounded-3xl bg-surface p-4 shadow-card">
+          <span className="flex size-20 items-center justify-center rounded-full bg-cream text-5xl">
+            👧
+          </span>
+          <span className="font-display text-lg font-bold">{labels.tour.profileName}</span>
+          <span className="text-[13px] text-muted">{labels.tour.profileFacts}</span>
+          <div className="flex gap-1.5">
+            {labels.tour.profileChips.map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full bg-primary-soft px-3 py-1 text-[13px] font-medium text-primary"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
         </div>
       );
     case 'add':
