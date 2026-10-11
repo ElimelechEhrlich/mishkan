@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { toListEntries, withoutNestedSteps } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
@@ -26,6 +26,8 @@ export type UseEntityPage = {
   /** Each domain of the entity with its open items. */
   readonly sections: readonly DomainSection[];
   readonly counts: ReadonlyMap<string, number>;
+  /** Which way the page slides in: toward an entity later in the strip, or an earlier one. */
+  readonly direction: 'next' | 'previous';
 };
 
 /** Everything the entity page needs about the entity in its URL. */
@@ -38,6 +40,17 @@ export function useEntityPage(): UseEntityPage {
   const counts = useEntityCounts(items.items, lookups.domainEntities);
 
   const entity = entities.entities.find((candidate) => candidate.id === entityId);
+  const index = entities.entities.findIndex((candidate) => candidate.id === entityId);
+
+  // The slide direction is worked out when the entity changes, from where it sits
+  // in the strip relative to the one shown before.
+  const [shown, setShown] = useState<{
+    readonly index: number;
+    readonly direction: 'next' | 'previous';
+  }>({ index, direction: 'next' });
+  if (index !== -1 && index !== shown.index) {
+    setShown({ index, direction: index > shown.index ? 'next' : 'previous' });
+  }
 
   const sections = useMemo(() => {
     if (entity === undefined) {
@@ -53,5 +66,5 @@ export function useEntityPage(): UseEntityPage {
     }));
   }, [entity, items.items, items.steps]);
 
-  return { entities, items, lookups, entity, sections, counts };
+  return { entities, items, lookups, entity, sections, counts, direction: shown.direction };
 }

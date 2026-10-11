@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { DomainSectionList } from '../components/entities/DomainSectionList';
 import { EntityStrip } from '../components/entities/EntityStrip';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -25,13 +26,27 @@ export function EntityPage(): ReactElement {
           text={entities.loading ? labels.status.loading : labels.status.entityNotFound}
         />
       ) : (
-        <DomainSectionList
-          sections={page.sections}
-          lookups={page.lookups}
-          loading={items.loading}
-          onComplete={items.completeItem}
-        />
+        <div
+          key={entity.id}
+          className={
+            page.direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
+          }
+        >
+          <DomainSectionList
+            sections={page.sections}
+            lookups={page.lookups}
+            loading={items.loading}
+            onComplete={items.completeItem}
+          />
+        </div>
       )}
+      <QuickAddSheet
+        key={entity?.id}
+        entities={entities.entities}
+        onAdd={items.addItem}
+        onAddMissingItem={items.addMissingItem}
+        entityId={entity?.id}
+      />
     </PageShell>
   );
 }

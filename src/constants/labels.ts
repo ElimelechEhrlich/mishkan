@@ -216,6 +216,7 @@ export const labels = {
     resolved: 'סוגיות שנפתרו',
   },
   entityPage: {
+    main: 'ראשי',
     emptyDomains: 'תחומים בלי פריטים:',
   },
   convert: {

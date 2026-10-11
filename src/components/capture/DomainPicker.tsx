@@ -9,12 +9,21 @@ type DomainPickerProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly value: string | null;
   readonly onChange: (domainId: string | null) => void;
+  /** The entity opened at first when no domain is chosen yet. */
+  readonly initialEntityId?: string | undefined;
 };
 
 /** Two taps: an entity, then one of its domains. Tapping the selected domain clears it. */
-export function DomainPicker({ entities, value, onChange }: DomainPickerProps): ReactElement {
+export function DomainPicker({
+  entities,
+  value,
+  onChange,
+  initialEntityId,
+}: DomainPickerProps): ReactElement {
   const currentEntityId =
-    entities.find((entity) => entity.domains.some((domain) => domain.id === value))?.id ?? null;
+    entities.find((entity) => entity.domains.some((domain) => domain.id === value))?.id ??
+    initialEntityId ??
+    null;
   const [entityId, setEntityId] = useState<string | null>(currentEntityId);
   const openEntity = entities.find((entity) => entity.id === entityId);
 

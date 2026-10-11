@@ -24,12 +24,37 @@
 
   --animate-sheet-up: sheet-up 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 0.2s ease-out;
+  /* Moving to the next entity slides in from the left (the reading direction is right to left). */
+  --animate-entity-next: entity-next 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-entity-previous: entity-previous 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
   @keyframes sheet-up {
     from {
       transform: translateY(100%);
     }
     to {
       transform: translateY(0);
+    }
+  }
+
+  @keyframes entity-next {
+    from {
+      opacity: 0;
+      transform: translateX(-2.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes entity-previous {
+    from {
+      opacity: 0;
+      transform: translateX(2.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
     }
   }
 

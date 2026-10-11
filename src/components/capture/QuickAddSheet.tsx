@@ -25,6 +25,8 @@ type QuickAddSheetProps = {
   readonly defaultKind?: CapturableKind;
   /** Opens the sheet right away, for the "new item" home-screen shortcut. */
   readonly initiallyOpen?: boolean;
+  /** On an entity's page: the item is for this entity unless changed. */
+  readonly entityId?: string | undefined;
 };
 
 /** A missing item can be added here too; it then asks for its kind and whom it is for. */
@@ -48,6 +50,7 @@ export function QuickAddSheet({
   onAddMissingItem,
   defaultKind = 'task',
   initiallyOpen = false,
+  entityId,
 }: QuickAddSheetProps): ReactElement {
   const [open, setOpen] = useState(initiallyOpen);
   const [title, setTitle] = useState('');
@@ -61,7 +64,9 @@ export function QuickAddSheet({
 
   const trimmedTitle = title.trim();
   const targets = shoppingTargets(entities);
-  const missingItemDomainId = shoppingDomainId ?? targets[0]?.domainId ?? null;
+  const entityTarget = targets.find((target) => target.entity.id === entityId);
+  const missingItemDomainId =
+    shoppingDomainId ?? entityTarget?.domainId ?? targets[0]?.domainId ?? null;
   const canSave =
     trimmedTitle !== '' && !saving && (kind !== 'missing_item' || missingItemDomainId !== null);
 
@@ -86,6 +91,7 @@ export function QuickAddSheet({
         setTitle('');
         setDomainId(null);
         setPickerVersion((version) => version + 1);
+        setOpen(false);
       }
     });
   }
@@ -156,6 +162,7 @@ export function QuickAddSheet({
               entities={entities}
               value={domainId}
               onChange={setDomainId}
+              initialEntityId={entityId}
             />
             {domainId === null && (
               <p className="text-sm text-muted">{labels.capture.noDomainHint}</p>
