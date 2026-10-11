@@ -27,7 +27,7 @@ export function EntityPage(): ReactElement {
         />
       ) : (
         <div
-          key={entity.id}
+          key={`items-${entity.id}`}
           className={
             page.direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
           }
@@ -41,7 +41,7 @@ export function EntityPage(): ReactElement {
         </div>
       )}
       <QuickAddSheet
-        key={entity?.id}
+        key={`add-${entity?.id ?? ''}`}
         entities={entities.entities}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
