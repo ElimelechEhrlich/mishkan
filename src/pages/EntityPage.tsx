@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { DomainSectionList } from '../components/entities/DomainSectionList';
+import { EntityProfileCard } from '../components/entities/EntityProfileCard';
 import { EntityHeading } from '../components/entities/EntityHeading';
 import { EntitySwitcher } from '../components/entities/EntitySwitcher';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -45,6 +46,11 @@ export function EntityPage(): ReactElement {
             page.direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
           }
         >
+          {page.hasProfile && (
+            <div className="mb-4">
+              <EntityProfileCard entity={entity} onEntityChanged={entities.reload} />
+            </div>
+          )}
           <DomainSectionList
             sections={page.sections}
             lookups={page.lookups}

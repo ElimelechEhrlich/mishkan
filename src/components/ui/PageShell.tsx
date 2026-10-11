@@ -62,6 +62,18 @@ export function PageShell({
                 {title}
               </h1>
             </div>
+            <Link
+              to="/incomplete"
+              aria-label={labels.nav.incomplete}
+              className={`relative ${headerLinkClass}`}
+            >
+              <Icon name="alert" className="size-5.5" />
+              {incompleteCount > 0 && (
+                <span className="absolute top-0.5 end-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-paper bg-alert px-1 text-[10px] font-bold text-white">
+                  {String(incompleteCount)}
+                </span>
+              )}
+            </Link>
             <Link to="/done" aria-label={labels.actions.showDone} className={headerLinkClass}>
               <Icon name="done" className="size-5.5" />
             </Link>
@@ -72,7 +84,7 @@ export function PageShell({
         )}
       </header>
       <main className="flex flex-1 animate-fade-in flex-col gap-4 px-4 pt-1 pb-40">{children}</main>
-      <BottomNav incompleteCount={incompleteCount} />
+      <BottomNav />
     </div>
   );
 }

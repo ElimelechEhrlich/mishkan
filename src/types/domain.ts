@@ -6,6 +6,12 @@ type Enums = Database['public']['Enums'];
 export type Household = Tables['households']['Row'];
 export type Member = Tables['members']['Row'];
 export type Entity = Tables['entities']['Row'];
+export type EntityUpdate = Tables['entities']['Update'];
+export type EntityList = Tables['entity_lists']['Row'];
+export type EntityListValue = Tables['entity_list_values']['Row'];
+
+/** A list on an entity's profile, such as hobbies, with its values. */
+export type ProfileList = EntityList & { readonly values: readonly EntityListValue[] };
 export type Domain = Tables['domains']['Row'];
 export type DomainUpdate = Tables['domains']['Update'];
 export type Item = Tables['items']['Row'];

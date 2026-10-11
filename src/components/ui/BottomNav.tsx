@@ -4,10 +4,6 @@ import { labels } from '../../constants/labels';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
 
-type BottomNavProps = {
-  readonly incompleteCount: number;
-};
-
 type NavItem = {
   readonly to: string;
   readonly label: string;
@@ -21,13 +17,12 @@ const navItems: readonly NavItem[] = [
   { to: '/notes', label: labels.nav.notes, icon: 'note' },
   { to: '/shopping', label: labels.nav.shopping, icon: 'cart' },
   { to: '/debts', label: labels.nav.debts, icon: 'wallet' },
-  { to: '/incomplete', label: labels.nav.incomplete, icon: 'alert' },
 ];
 
-export function BottomNav({ incompleteCount }: BottomNavProps): ReactElement {
+export function BottomNav(): ReactElement {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
-      <div className="mx-auto grid max-w-xl grid-cols-7">
+      <div className="mx-auto grid max-w-xl grid-cols-6">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -38,16 +33,11 @@ export function BottomNav({ incompleteCount }: BottomNavProps): ReactElement {
             {({ isActive }) => (
               <>
                 <span
-                  className={`relative flex items-center justify-center transition-colors ${
+                  className={`flex items-center justify-center transition-colors ${
                     isActive ? 'text-primary' : 'text-faint'
                   }`}
                 >
                   <Icon name={item.icon} className="size-6" />
-                  {item.to === '/incomplete' && incompleteCount > 0 && (
-                    <span className="absolute -top-1.5 -end-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-surface bg-alert px-1 text-[10px] font-bold text-white">
-                      {String(incompleteCount)}
-                    </span>
-                  )}
                 </span>
                 <span className={isActive ? 'font-semibold text-primary' : 'font-medium text-muted'}>
                   {item.label}

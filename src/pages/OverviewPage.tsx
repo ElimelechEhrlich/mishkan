@@ -11,6 +11,7 @@ import { useEntities } from '../hooks/useEntities';
 import { useEntityCounts } from '../hooks/useEntityCounts';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
+import { useOccasionReminders } from '../hooks/useOccasionReminders';
 import { useOverview } from '../hooks/useOverview';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
@@ -25,6 +26,7 @@ export function OverviewPage(): ReactElement {
   const overview = useOverview(scoped.items, scoped.assigned, scoped.steps);
   const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
   const [searchParams] = useSearchParams();
+  const remindersError = useOccasionReminders(entities.entities, items.reload);
 
   return (
     <PageShell
@@ -32,7 +34,7 @@ export function OverviewPage(): ReactElement {
       subtitle={formatToday()}
       incompleteCount={scoped.incomplete.length}
     >
-      <ErrorBanner message={items.error ?? entities.error} />
+      <ErrorBanner message={items.error ?? entities.error ?? remindersError} />
       <ScopeBar
         entities={entities.entities}
         scopeId={scopeId}

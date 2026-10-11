@@ -31,6 +31,8 @@ export type UseEntityPage = {
   /** Set when the add sheet should open on a domain; a new `key` each time it is asked for. */
   readonly addRequest: { readonly domainId: string; readonly key: number } | null;
   readonly requestAdd: (domainId: string) => void;
+  /** Children, parents and the couple have a profile with dates. */
+  readonly hasProfile: boolean;
   /** Which way the page slides in: toward an entity later in the strip, or an earlier one. */
   readonly direction: 'next' | 'previous';
 };
@@ -95,6 +97,9 @@ export function useEntityPage(): UseEntityPage {
     openCount,
     addRequest,
     requestAdd,
+    hasProfile:
+      entity !== undefined &&
+      (entity.kind === 'child' || entity.kind === 'parent' || entity.kind === 'couple'),
     direction: shown.direction,
   };
 }

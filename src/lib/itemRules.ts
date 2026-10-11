@@ -211,3 +211,14 @@ export function compareEntries(a: ListEntry, b: ListEntry): number {
 export function isOverdue(item: Item, today: string): boolean {
   return item.status === 'open' && item.due_date !== null && item.due_date < today;
 }
+
+const fullDateFormat = new Intl.DateTimeFormat('he-IL', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+/** A date with its year, such as a birth date. */
+export function formatFullDate(isoDate: string): string {
+  return fullDateFormat.format(fromIsoDate(isoDate));
+}

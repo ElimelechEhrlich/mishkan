@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0004_conversions.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0005_child_profile.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -81,6 +81,12 @@ export type Database = {
           name: string;
           member_id: string | null;
           sort_order: number;
+          id_number: string | null;
+          birth_date: string | null;
+          born_after_sunset: boolean;
+          notes: string | null;
+          wedding_date: string | null;
+          wedding_after_sunset: boolean;
           created_at: string;
         };
         Insert: {
@@ -90,11 +96,23 @@ export type Database = {
           name: string;
           member_id?: string | null;
           sort_order?: number;
+          id_number?: string | null;
+          birth_date?: string | null;
+          born_after_sunset?: boolean;
+          notes?: string | null;
+          wedding_date?: string | null;
+          wedding_after_sunset?: boolean;
           created_at?: string;
         };
         Update: {
           name?: string;
           sort_order?: number;
+          id_number?: string | null;
+          birth_date?: string | null;
+          born_after_sunset?: boolean;
+          notes?: string | null;
+          wedding_date?: string | null;
+          wedding_after_sunset?: boolean;
         };
         Relationships: [];
       };
@@ -148,6 +166,7 @@ export type Database = {
           run_id: string | null;
           hidden: boolean;
           answer: string | null;
+          auto_key: string | null;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -172,6 +191,7 @@ export type Database = {
           run_id?: string | null;
           hidden?: boolean;
           answer?: string | null;
+          auto_key?: string | null;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -190,6 +210,47 @@ export type Database = {
           shopping_category?: ShoppingCategory | null;
           run_id?: string | null;
           answer?: string | null;
+        };
+        Relationships: [];
+      };
+      entity_lists: {
+        Row: {
+          id: string;
+          household_id: string;
+          entity_id: string;
+          title: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string;
+          entity_id: string;
+          title: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          title?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      entity_list_values: {
+        Row: {
+          id: string;
+          list_id: string;
+          value: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          list_id: string;
+          value: string;
+          created_at?: string;
+        };
+        Update: {
+          value?: string;
         };
         Relationships: [];
       };
@@ -311,6 +372,16 @@ export type Database = {
           p_amount?: number;
           p_counterparty?: string;
           p_direction?: DebtDirection;
+        };
+        Returns: undefined;
+      };
+      sync_auto_reminder: {
+        Args: {
+          p_prefix: string;
+          p_key: string;
+          p_title: string;
+          p_domain_id: string;
+          p_due: string;
         };
         Returns: undefined;
       };
