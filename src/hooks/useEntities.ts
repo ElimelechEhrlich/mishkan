@@ -1,7 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
+import { isRowList, readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
 import { listEntitiesWithDomains } from '../services/entityService';
 import type { EntityWithDomains } from '../types/domain';
+import { useHouseholdContext } from './useRouteContext';
+
+function isEntityList(value: unknown): value is EntityWithDomains[] {
+  return (
+    isRowList(value) &&
+    Array.isArray(value) &&
+    value.every(
+      (entity: unknown) =>
+        typeof entity === 'object' &&
+        entity !== null &&
+        'domains' in entity &&
+        isRowList(entity.domains),
+    )
+  );
+}
 
 type EntitiesState = {
   readonly entities: readonly EntityWithDomains[];
@@ -14,16 +30,23 @@ export type UseEntities = EntitiesState & {
 };
 
 export function useEntities(): UseEntities {
-  const [state, setState] = useState<EntitiesState>({ entities: [], loading: true, error: null });
+  const { member } = useHouseholdContext();
+  const cacheKey = `entities.${member.id}`;
+  // What was loaded last time shows at once; the fresh copy replaces it when it arrives.
+  const [state, setState] = useState<EntitiesState>(() => {
+    const cached = readCache(cacheKey, isEntityList);
+    return { entities: cached ?? [], loading: cached === null, error: null };
+  });
 
   const reload = useCallback(async (): Promise<void> => {
     try {
       const entities = await listEntitiesWithDomains();
       setState({ entities, loading: false, error: null });
+      writeCache(cacheKey, entities);
     } catch (error: unknown) {
       setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => {
     void reload();

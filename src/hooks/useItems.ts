@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
 import {
   completeItem,
@@ -54,20 +55,32 @@ export type UseItems = {
   readonly deleteItem: (itemId: string) => Promise<boolean>;
 };
 
-const initialState: ItemsState = { items: [], steps: [], loading: true, error: null };
+function isItemsSnapshot(
+  value: unknown,
+): value is { readonly items: Item[]; readonly steps: Item[] } {
+  return hasRowLists(value, ['items', 'steps']);
+}
 
 export function useItems(): UseItems {
   const { member } = useHouseholdContext();
-  const [state, setState] = useState<ItemsState>(initialState);
+  const cacheKey = `items.${member.id}`;
+  // What was loaded last time shows at once; the fresh copy replaces it when it arrives.
+  const [state, setState] = useState<ItemsState>(() => {
+    const cached = readCache(cacheKey, isItemsSnapshot);
+    return cached === null
+      ? { items: [], steps: [], loading: true, error: null }
+      : { ...cached, loading: false, error: null };
+  });
 
   const load = useCallback(async (): Promise<void> => {
     try {
       const [items, steps] = await Promise.all([listOpenItems(), listSteps()]);
       setState({ items, steps, loading: false, error: null });
+      writeCache(cacheKey, { items, steps });
     } catch (error: unknown) {
       setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
     }
-  }, []);
+  }, [cacheKey]);
 
   const reload = useCallback((): void => {
     void load();

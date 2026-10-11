@@ -1,8 +1,8 @@
 import type { ReactElement } from 'react';
 import { Navigate, Outlet } from 'react-router';
 import { WelcomeTour } from '../components/onboarding/WelcomeTour';
+import { SplashScreen } from '../components/ui/SplashScreen';
 import { StatusScreen } from '../components/ui/StatusScreen';
-import { labels } from '../constants/labels';
 import { useHousehold } from '../hooks/useHousehold';
 import { useScopeState } from '../hooks/useScopeState';
 import { useSessionContext } from '../hooks/useRouteContext';
@@ -17,7 +17,7 @@ export function RequireHousehold(): ReactElement {
   const tour = useWelcomeTour();
 
   if (loading) {
-    return <StatusScreen text={labels.status.loading} />;
+    return <SplashScreen />;
   }
   if (data === null) {
     if (error !== null) {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
-import { getHousehold, getMemberByUserId, listMembers } from '../services/householdService';
+import { hasRowLists, hasRows, readCache, writeCache } from '../lib/cache';
+import { getOwnHousehold, listMembers } from '../services/householdService';
 import type { Household, Member } from '../types/domain';
 
 type HouseholdData = {
@@ -16,20 +17,26 @@ type HouseholdState = {
   readonly error: string | null;
 };
 
+function isHouseholdData(value: unknown): value is HouseholdData {
+  return hasRows(value, ['member', 'household']) && hasRowLists(value, ['members']);
+}
+
+/** Both asked at once: the household and its members, the signed-in parent among them. */
 async function loadHousehold(userId: string): Promise<HouseholdData | null> {
-  const member = await getMemberByUserId(userId);
-  if (member === null) {
+  const [household, members] = await Promise.all([getOwnHousehold(), listMembers()]);
+  const member = members.find((candidate) => candidate.user_id === userId);
+  if (household === null || member === undefined) {
     return null;
   }
-  const [household, members] = await Promise.all([
-    getHousehold(member.household_id),
-    listMembers(),
-  ]);
   return { member, household, members };
 }
 
 export function useHousehold(userId: string): HouseholdState {
-  const [state, setState] = useState<HouseholdState>({ data: null, loading: true, error: null });
+  // What was loaded last time shows at once; the fresh copy replaces it when it arrives.
+  const [state, setState] = useState<HouseholdState>(() => {
+    const cached = readCache(`household.${userId}`, isHouseholdData);
+    return { data: cached, loading: cached === null, error: null };
+  });
 
   useEffect(() => {
     let active = true;
@@ -37,6 +44,9 @@ export function useHousehold(userId: string): HouseholdState {
       .then((data) => {
         if (active) {
           setState({ data, loading: false, error: null });
+        }
+        if (data !== null) {
+          writeCache(`household.${userId}`, data);
         }
       })
       .catch((error: unknown) => {

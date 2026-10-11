@@ -1,31 +1,16 @@
 import { supabase } from '../lib/supabase';
 import type { Household, Member, UnclaimedParent } from '../types/domain';
 
-export async function getMemberByUserId(userId: string): Promise<Member | null> {
-  const { data, error } = await supabase
-    .from('members')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
-}
-
-export async function getHousehold(householdId: string): Promise<Household> {
-  const { data, error } = await supabase
-    .from('households')
-    .select('*')
-    .eq('id', householdId)
-    .single();
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
-}
-
 /** The parents who have joined, in the order they joined. */
+/** The household of the signed-in parent (the only one visible), or null before joining. */
+export async function getOwnHousehold(): Promise<Household | null> {
+  const { data, error } = await supabase.from('households').select('*').limit(1).maybeSingle();
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
 export async function listMembers(): Promise<Member[]> {
   const { data, error } = await supabase.from('members').select('*').order('created_at');
   if (error !== null) {

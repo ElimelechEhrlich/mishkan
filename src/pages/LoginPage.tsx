@@ -1,8 +1,7 @@
 import type { ReactElement } from 'react';
 import { Navigate } from 'react-router';
 import { LoginForm } from '../components/auth/LoginForm';
-import { StatusScreen } from '../components/ui/StatusScreen';
-import { labels } from '../constants/labels';
+import { SplashScreen } from '../components/ui/SplashScreen';
 import { useAuthPaths } from '../hooks/useAuthPaths';
 import { useSession } from '../hooks/useSession';
 
@@ -11,7 +10,7 @@ export function LoginPage(): ReactElement {
   const paths = useAuthPaths();
 
   if (loading) {
-    return <StatusScreen text={labels.status.loading} />;
+    return <SplashScreen />;
   }
   if (session !== null) {
     return <Navigate to={paths.afterSignIn} replace />;

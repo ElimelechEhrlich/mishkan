@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
+import { SplashScreen } from '../components/ui/SplashScreen';
 import { StatusScreen } from '../components/ui/StatusScreen';
-import { labels } from '../constants/labels';
 import { useSession } from '../hooks/useSession';
 import type { SessionContext } from '../types/domain';
 
@@ -11,7 +11,7 @@ export function RequireAuth(): ReactElement {
   const location = useLocation();
 
   if (loading) {
-    return <StatusScreen text={labels.status.loading} />;
+    return <SplashScreen />;
   }
   if (error !== null) {
     return <StatusScreen text={error} isError />;

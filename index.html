@@ -13,9 +13,35 @@
       href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Rubik:wght@500;600;700;800&display=swap"
     />
     <title>משכן</title>
+    <style>
+      /* Shown until the app starts; the same picture as the app's loading screen. */
+      .splash { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #f5f5f2; }
+      .splash svg { width: 112px; height: 112px; border-radius: 30px; box-shadow: 0 10px 30px -12px rgb(31 92 82 / 0.45); }
+      .splash .roof { stroke-dasharray: 520; stroke-dashoffset: 520; animation: splash-roof 0.7s ease-out forwards; }
+      .splash .tile { opacity: 0; transform-box: fill-box; transform-origin: center; animation: splash-tile 0.35s ease-out forwards, splash-breathe 1.6s ease-in-out 1.4s infinite; }
+      .splash .t1 { animation-delay: 0.55s, 1.4s; } .splash .t2 { animation-delay: 0.65s, 1.5s; } .splash .t3 { animation-delay: 0.75s, 1.6s; }
+      .splash .t4 { animation-delay: 0.85s, 1.7s; } .splash .t5 { animation-delay: 0.95s, 1.8s; } .splash .t6 { animation-delay: 1.05s, 1.9s; }
+      @keyframes splash-roof { to { stroke-dashoffset: 0; } }
+      @keyframes splash-tile { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+      @keyframes splash-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+      @media (prefers-reduced-motion: reduce) { .splash .roof, .splash .tile { animation: none; opacity: 1; stroke-dashoffset: 0; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="splash" role="status" aria-label="טוען">
+        <svg viewBox="0 0 512 512" aria-hidden="true">
+          <rect width="512" height="512" fill="#f6f1e7" />
+          <path class="roof" d="M80 236 L256 96 L432 236" fill="none" stroke="#1f5c52" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" />
+          <rect class="tile t1" x="140" y="268" width="62" height="62" rx="14" fill="#d97706" />
+          <rect class="tile t2" x="225" y="268" width="62" height="62" rx="14" fill="#7c3aed" />
+          <rect class="tile t3" x="310" y="268" width="62" height="62" rx="14" fill="#0d9488" />
+          <rect class="tile t4" x="140" y="352" width="62" height="62" rx="14" fill="#e11d48" />
+          <rect class="tile t5" x="225" y="352" width="62" height="62" rx="14" fill="#1f5c52" />
+          <rect class="tile t6" x="310" y="352" width="62" height="62" rx="14" fill="#0284c7" />
+        </svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

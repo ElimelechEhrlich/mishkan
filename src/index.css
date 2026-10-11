@@ -2,6 +2,7 @@
 
 @theme {
   --color-paper: #f5f5f2;
+  --color-cream: #f6f1e7;
   --color-surface: #ffffff;
   --color-ink: #1d1d1f;
   --color-muted: #86868b;
@@ -113,5 +114,55 @@ body {
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* The loading picture: the roof draws itself, then each entity's tile appears and breathes. */
+@layer components {
+  .splash-roof {
+    stroke-dasharray: 520;
+    stroke-dashoffset: 520;
+    animation: splash-roof 0.7s ease-out forwards;
+  }
+  .splash-tile {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation:
+      splash-tile 0.35s ease-out forwards,
+      splash-breathe 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .splash-roof,
+    .splash-tile {
+      animation: none;
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+}
+
+@keyframes splash-roof {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes splash-tile {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes splash-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
   }
 }

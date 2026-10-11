@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import { labels } from '../constants/labels';
+import { clearCache } from '../lib/cache';
 import {
   AuthFailure,
   getSession,
@@ -108,6 +109,8 @@ export function useSession(): UseSession {
   }, []);
 
   const handleSignOut = useCallback((): void => {
+    // Another person may sign in on this device next; nothing of this household stays on it.
+    clearCache();
     signOut().catch((error: unknown) => {
       setState((previous) => ({ ...previous, error: toMessage(error) }));
     });
