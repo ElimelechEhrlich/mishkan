@@ -256,3 +256,27 @@ const fullDateFormat = new Intl.DateTimeFormat('he-IL', {
 export function formatFullDate(isoDate: string): string {
   return fullDateFormat.format(fromIsoDate(isoDate));
 }
+
+/** A stored timestamp as the value of a datetime-local field, in local time. */
+export function toLocalDateTime(timestamp: string): string {
+  const date = new Date(timestamp);
+  const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  return `${toIsoDate(date)}T${time}`;
+}
+
+/** The value of a datetime-local field (local time) as a timestamp to store. */
+export function fromLocalDateTime(value: string): string {
+  return new Date(value).toISOString();
+}
+
+const reminderFormat = new Intl.DateTimeFormat('he-IL', {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+/** A reminder time as people read it: day, month and time. */
+export function formatReminder(timestamp: string): string {
+  return reminderFormat.format(new Date(timestamp));
+}

@@ -30,6 +30,7 @@ function item(overrides: Partial<Item>): Item {
     completed_at: null,
     is_complete: true,
     auto_key: null,
+    reminder_sent_at: null,
     ...overrides,
   };
 }

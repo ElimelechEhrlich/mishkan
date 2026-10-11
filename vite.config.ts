@@ -10,6 +10,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg'],
+      // Adds the handlers that show reminders sent by web push.
+      workbox: { importScripts: ['push-sw.js'] },
       manifest: {
         name: 'משכן',
         short_name: 'משכן',

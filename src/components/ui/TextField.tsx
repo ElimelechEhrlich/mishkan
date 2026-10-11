@@ -5,7 +5,7 @@ type TextFieldProps = {
   readonly label: string;
   readonly value: string;
   readonly onChange: (value: string) => void;
-  readonly type?: 'text' | 'email' | 'password' | 'date' | 'number';
+  readonly type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local' | 'number';
   readonly direction?: 'rtl' | 'ltr';
   readonly autoFocus?: boolean;
   readonly autoComplete?: string;

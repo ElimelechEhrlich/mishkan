@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
-import { needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
+import { formatReminder, needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
 import { fullTimeText } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
 import type {
@@ -24,6 +24,7 @@ import { SelectField } from '../ui/SelectField';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
+import { ReminderPicker } from './ReminderPicker';
 import { PrerequisiteList } from './PrerequisiteList';
 import { QuestionList } from './QuestionList';
 import { QuestionRow } from './QuestionRow';
@@ -55,7 +56,7 @@ type ItemEditorProps = {
   readonly onPrerequisitesChange: () => void;
 };
 
-type Row = 'kind' | 'domain' | 'category' | 'time' | 'parent';
+type Row = 'kind' | 'domain' | 'category' | 'time' | 'reminder' | 'parent';
 
 const convertibleKinds = [
   'task',
@@ -262,6 +263,29 @@ export function ItemEditor({
             }}
           >
             <TimePicker item={item} onPick={update} />
+          </PropertyRow>
+        )}
+
+        {item.status === 'open' && item.kind !== 'missing_item' && (
+          <PropertyRow
+            label={labels.push.reminder}
+            value={
+              item.remind_at === null ? labels.push.noReminder : formatReminder(item.remind_at)
+            }
+            open={openRow === 'reminder'}
+            onToggle={() => {
+              toggle('reminder');
+            }}
+          >
+            <ReminderPicker
+              key={item.remind_at ?? ''}
+              remindAt={item.remind_at}
+              dueDate={item.due_date}
+              onChange={(remindAt) => {
+                update({ remind_at: remindAt });
+                setOpenRow(null);
+              }}
+            />
           </PropertyRow>
         )}
 

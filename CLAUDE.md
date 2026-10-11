@@ -8,6 +8,7 @@ Hebrew RTL home-management PWA for two parents. React + Vite + TypeScript + Tail
 
 ```
 supabase/migrations/   SQL schema (source of truth for the database)
+supabase/functions/    Edge functions (Deno), such as send-reminders for push notifications
 src/lib/               Supabase client and pure helpers
 src/types/             database.ts mirrors the schema; domain.ts derives app types from it
 src/services/          All database access. No React.

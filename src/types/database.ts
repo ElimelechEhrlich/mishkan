@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0005_child_profile.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0007_push.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -167,6 +167,7 @@ export type Database = {
           hidden: boolean;
           answer: string | null;
           auto_key: string | null;
+          reminder_sent_at: string | null;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -234,6 +235,21 @@ export type Database = {
           title?: string;
           sort_order?: number;
         };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          household_id: string;
+          member_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+        };
+        // Written only through save_push_subscription().
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       entity_list_values: {
@@ -373,6 +389,10 @@ export type Database = {
           p_counterparty?: string;
           p_direction?: DebtDirection;
         };
+        Returns: undefined;
+      };
+      save_push_subscription: {
+        Args: { p_endpoint: string; p_p256dh: string; p_auth: string };
         Returns: undefined;
       };
       sync_auto_reminder: {
