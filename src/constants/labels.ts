@@ -75,6 +75,7 @@ const quickTime = {
 const section = {
   overdue: 'באיחור',
   today: 'היום',
+  thisWeek: 'השבוע הקרוב',
   upcoming: 'בהמשך',
   undated: 'ללא מועד',
 } as const satisfies Record<ActiveSection, string>;

@@ -146,6 +146,10 @@ export function segmentOf(item: Item): OpenSegment | null {
   return 'active';
 }
 
+/** How many days after today count as the coming week. */
+const comingWeekDays = 7;
+
+/** Overdue, today, from tomorrow to a week from today, later, or with no date. */
 export function activeSectionOf(dueDate: string | null, today: string): ActiveSection {
   if (dueDate === null) {
     return 'undated';
@@ -153,7 +157,10 @@ export function activeSectionOf(dueDate: string | null, today: string): ActiveSe
   if (dueDate < today) {
     return 'overdue';
   }
-  return dueDate === today ? 'today' : 'upcoming';
+  if (dueDate === today) {
+    return 'today';
+  }
+  return dueDate <= addDays(today, comingWeekDays) ? 'thisWeek' : 'upcoming';
 }
 
 export function isContainer(item: Item): boolean {
