@@ -1,11 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Household, Member, MemberRole } from '../types/domain';
-
-const roleOrder = {
-  household: 0,
-  parent: 1,
-  child: 2,
-} as const satisfies Record<MemberRole, number>;
+import type { Household, Member, UnclaimedParent } from '../types/domain';
 
 export async function getMemberByUserId(userId: string): Promise<Member | null> {
   const { data, error } = await supabase
@@ -31,13 +25,13 @@ export async function getHousehold(householdId: string): Promise<Household> {
   return data;
 }
 
-/** The house first, then parents, then children. */
+/** The parents who have joined, in the order they joined. */
 export async function listMembers(): Promise<Member[]> {
   const { data, error } = await supabase.from('members').select('*').order('created_at');
   if (error !== null) {
     throw new Error(error.message);
   }
-  return [...data].sort((a, b) => roleOrder[a.role] - roleOrder[b.role]);
+  return data;
 }
 
 export async function createHousehold(householdName: string, parentName: string): Promise<void> {
@@ -50,29 +44,31 @@ export async function createHousehold(householdName: string, parentName: string)
   }
 }
 
-export async function joinHousehold(inviteCode: string, parentName: string): Promise<void> {
-  const { error } = await supabase.rpc('join_household', {
-    p_invite_code: inviteCode,
-    p_parent_name: parentName,
-  });
+/**
+ * Joins with the invite code. With `parentEntityId`, the parent takes over a parent
+ * entity created for them before they joined; otherwise a new one is opened.
+ */
+export async function joinHousehold(
+  inviteCode: string,
+  parentName: string,
+  parentEntityId: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc(
+    'join_household',
+    parentEntityId === null
+      ? { p_invite_code: inviteCode, p_parent_name: parentName }
+      : { p_invite_code: inviteCode, p_parent_name: parentName, p_parent_entity_id: parentEntityId },
+  );
   if (error !== null) {
     throw new Error(error.message);
   }
 }
 
-export async function addChild(householdId: string, name: string): Promise<void> {
-  const { error } = await supabase
-    .from('members')
-    .insert({ household_id: householdId, name, role: 'child' });
+/** Parent entities of the household that no parent has joined as yet. */
+export async function listUnclaimedParents(inviteCode: string): Promise<UnclaimedParent[]> {
+  const { data, error } = await supabase.rpc('unclaimed_parents', { p_invite_code: inviteCode });
   if (error !== null) {
     throw new Error(error.message);
   }
-}
-
-/** Items that belonged to the child stay, without an assignee. */
-export async function removeChild(memberId: string): Promise<void> {
-  const { error } = await supabase.from('members').delete().eq('id', memberId);
-  if (error !== null) {
-    throw new Error(error.message);
-  }
+  return data;
 }

@@ -1,8 +1,8 @@
 import { labels } from '../constants/labels';
-import type { AreaWithDomains, Member } from '../types/domain';
+import type { EntityWithDomains, Member } from '../types/domain';
 
-/** Background classes that tell areas apart, assigned by display order. */
-const areaTones = [
+/** Background classes that tell entities apart, assigned by display order. */
+const entityTones = [
   'bg-amber-500',
   'bg-violet-500',
   'bg-teal-600',
@@ -11,41 +11,40 @@ const areaTones = [
   'bg-lime-600',
 ] as const;
 
-export function areaTone(index: number): string {
-  return areaTones[index % areaTones.length] ?? areaTones[0];
+export function entityTone(index: number): string {
+  return entityTones[index % entityTones.length] ?? entityTones[0];
 }
 
 export type Lookups = {
-  /** Domain id to "area · domain". */
+  /** Domain id to "entity · domain". */
   readonly domainLabels: ReadonlyMap<string, string>;
-  /** Domain id to the color class of its area. */
+  /** Domain id to the color class of its entity. */
   readonly domainTones: ReadonlyMap<string, string>;
+  /** Domain id to the id of its entity. */
+  readonly domainEntities: ReadonlyMap<string, string>;
   readonly memberNames: ReadonlyMap<string, string>;
 };
 
 export function buildLookups(
-  areas: readonly AreaWithDomains[],
+  entities: readonly EntityWithDomains[],
   members: readonly Member[],
 ): Lookups {
   const domainLabels = new Map<string, string>();
   const domainTones = new Map<string, string>();
-  areas.forEach((area, index) => {
-    for (const domain of area.domains) {
-      domainLabels.set(domain.id, `${area.name}${labels.item.separator}${domain.name}`);
-      domainTones.set(domain.id, areaTone(index));
+  const domainEntities = new Map<string, string>();
+  entities.forEach((entity, index) => {
+    for (const domain of entity.domains) {
+      domainLabels.set(domain.id, `${entity.name}${labels.item.separator}${domain.name}`);
+      domainTones.set(domain.id, entityTone(index));
+      domainEntities.set(domain.id, entity.id);
     }
   });
   const memberNames = new Map(members.map((member) => [member.id, member.name]));
-  return { domainLabels, domainTones, memberNames };
+  return { domainLabels, domainTones, domainEntities, memberNames };
 }
 
-/** The shared domain that new debts land in, found by its name. */
-export function findDebtDomainId(areas: readonly AreaWithDomains[]): string | null {
-  const domain = areas
-    .flatMap((area) => area.domains)
-    .find(
-      (candidate) =>
-        candidate.visibility === 'household' && candidate.name.includes(labels.debts.domainHint),
-    );
-  return domain?.id ?? null;
+/** The debts domain of the home, where new debts land by default. */
+export function findDebtDomainId(entities: readonly EntityWithDomains[]): string | null {
+  const home = entities.find((entity) => entity.kind === 'home');
+  return home?.domains.find((domain) => domain.role === 'debts')?.id ?? null;
 }

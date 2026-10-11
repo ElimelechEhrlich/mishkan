@@ -4,20 +4,20 @@ import { GoalList } from '../components/goals/GoalList';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
-import { useAreas } from '../hooks/useAreas';
+import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function GoalsPage(): ReactElement {
-  const { member, members } = useHouseholdContext();
-  const areas = useAreas();
+  const { members } = useHouseholdContext();
+  const entities = useEntities();
   const items = useItems();
-  const lookups = useLookups(areas.areas, members);
+  const lookups = useLookups(entities.entities, members);
 
   return (
     <PageShell title={labels.pages.goals} incompleteCount={items.incomplete.length}>
-      <ErrorBanner message={items.error ?? areas.error} />
+      <ErrorBanner message={items.error ?? entities.error} />
       <GoalList
         items={items.items}
         steps={items.steps}
@@ -25,8 +25,7 @@ export function GoalsPage(): ReactElement {
         loading={items.loading}
       />
       <QuickAddSheet
-        areas={areas.areas}
-        currentMemberId={member.id}
+        entities={entities.entities}
         onAdd={items.addItem}
         defaultKind="goal"
       />

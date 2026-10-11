@@ -1,8 +1,8 @@
 import type {
   ActiveSection,
   DebtDirection,
+  EntityKind,
   ItemKind,
-  MemberRole,
   MissingField,
   OpenSegment,
   Recurrence,
@@ -27,7 +27,6 @@ const kind = {
 
 const missing = {
   domain: 'תחום',
-  member: 'של מי',
   time: 'זמן',
 } as const satisfies Record<MissingField, string>;
 
@@ -51,11 +50,13 @@ const section = {
   undated: 'ללא מועד',
 } as const satisfies Record<ActiveSection, string>;
 
-const memberRole = {
-  household: 'משימות כלליות של הבית',
+const entityKind = {
   parent: 'הורה',
+  personal: 'אישי, גלוי רק לך',
   child: 'ילד/ה',
-} as const satisfies Record<MemberRole, string>;
+  home: 'הבית',
+  couple: 'זוגי',
+} as const satisfies Record<EntityKind, string>;
 
 const debtDirection = {
   owed_to_us: 'חייבים לנו',
@@ -107,7 +108,6 @@ export const labels = {
     signOut: 'יציאה מהחשבון',
     createHousehold: 'הקמת הבית',
     joinHousehold: 'הצטרפות',
-    addChild: '+ ילד',
     markDone: 'סימון כבוצע',
     markOpen: 'החזרה לפתוח',
     delete: 'מחיקה',
@@ -128,7 +128,8 @@ export const labels = {
     householdName: 'שם הבית',
     yourName: 'השם שלך',
     inviteCode: 'קוד הזמנה',
-    childName: 'שם הילד',
+    childName: 'ילד/ה חדש/ה',
+    parentName: 'הורה שעוד לא הצטרף',
     dueDate: 'תאריך',
     startDate: 'החל מתאריך',
     counterparty: 'מי',
@@ -136,7 +137,6 @@ export const labels = {
     newStep: 'צעד חדש',
     newCondition: 'תנאי חדש, למשל: לדעת את מידות החדר',
     newDomain: 'תחום חדש',
-    newArea: 'אב תחום חדש',
     noParent: 'לא משויך ליעד',
     chooseItem: 'בחירת פריט',
   },
@@ -144,9 +144,10 @@ export const labels = {
     createTab: 'בית חדש',
     joinTab: 'בית קיים',
     inviteHint: 'את קוד ההזמנה רואה ההורה שהקים את הבית, במסך ההגדרות.',
+    whoAreYou: 'כבר פתחו לך מקום? בחר/י את עצמך:',
   },
   capture: {
-    area: 'אב תחום',
+    entity: 'ישות',
     domain: 'תחום',
     kind: 'סוג',
     privateMark: 'פרטי',
@@ -162,12 +163,12 @@ export const labels = {
     noDomain: 'בלי תחום',
     inheritedDomain: 'התחום נקבע לפי היעד',
     stepOf: 'צעד ביעד',
+    previouslyIn: 'היה ב:',
   },
   sections: {
     details: 'פרטים',
     kind: 'סוג',
     domain: 'תחום',
-    member: 'של מי',
     time: 'זמן',
     prerequisites: 'במה זה תלוי',
     dependsOnItem: 'תלוי בפריט אחר',
@@ -175,10 +176,8 @@ export const labels = {
     parent: 'שיוך ליעד',
     attachments: 'קבצים מצורפים',
     debt: 'פרטי החוב',
-    children: 'ילדים',
-    members: 'בני הבית',
     properties: 'שיוך',
-    areas: 'אבות תחום ותחומים',
+    entities: 'ישויות ותחומים',
     invite: 'הזמנת ההורה השני',
     account: 'חשבון',
   },
@@ -201,7 +200,12 @@ export const labels = {
     shareInvite: 'שליחה בוואטסאפ',
     inviteCodeLabel: 'או להזין ידנית את הקוד:',
     domainsCount: 'תחומים',
-    privateAreaHint: 'אב תחום פרטי: כל התחומים שלו גלויים רק לך.',
+    privateEntityHint: 'ישות אישית: כל התחומים שלה גלויים רק לך.',
+    confirmDeleteWithItems: 'לחיצה נוספת למחיקה. הפריטים יעברו ל"להשלמה".',
+    addParentHint:
+      'הורה שעוד לא הצטרף לאפליקציה מקבל ישות משותפת כבר עכשיו. כשיצטרף, יבחר בה ויקבל גם ישות אישית.',
+    addDebtsDomain: '+ תחום חובות',
+    debtsDomainName: 'חובות',
   },
   timeMode,
   kind,
@@ -210,5 +214,5 @@ export const labels = {
   segment,
   section,
   debtDirection,
-  memberRole,
+  entityKind,
 } as const;

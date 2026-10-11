@@ -2,30 +2,21 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import { missingFields } from '../../lib/itemRules';
-import type { AreaWithDomains, Item, ItemUpdate, Member } from '../../types/domain';
+import type { EntityWithDomains, Item, ItemUpdate } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
-import { MemberPicker } from './MemberPicker';
 import { TimePicker } from './TimePicker';
 
 type ItemAssignProps = {
   readonly item: Item;
-  readonly areas: readonly AreaWithDomains[];
-  readonly members: readonly Member[];
+  readonly entities: readonly EntityWithDomains[];
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
-  readonly onAddChild: (name: string) => Promise<boolean>;
 };
 
 /**
  * One incomplete item. It lists what is still missing and asks for one thing
  * at a time; once that is chosen, the next one takes its place.
  */
-export function ItemAssign({
-  item,
-  areas,
-  members,
-  onUpdate,
-  onAddChild,
-}: ItemAssignProps): ReactElement {
+export function ItemAssign({ item, entities, onUpdate }: ItemAssignProps): ReactElement {
   const missing = missingFields(item);
   const current = missing[0];
 
@@ -39,6 +30,11 @@ export function ItemAssign({
           </span>
         )}
       </Link>
+      {item.previous_domain_label !== null && (
+        <p className="text-sm text-muted">
+          {labels.item.previouslyIn} {item.previous_domain_label}
+        </p>
+      )}
       <div className="flex flex-wrap gap-1.5">
         {missing.map((field) => (
           <span
@@ -53,23 +49,13 @@ export function ItemAssign({
       </div>
       {current === 'domain' && (
         <DomainPicker
-          areas={areas}
+          entities={entities}
           value={null}
           onChange={(domainId) => {
             if (domainId !== null) {
               onUpdate(item.id, { domain_id: domainId });
             }
           }}
-        />
-      )}
-      {current === 'member' && (
-        <MemberPicker
-          members={members}
-          value={null}
-          onPick={(memberId) => {
-            onUpdate(item.id, { member_id: memberId });
-          }}
-          onAddChild={onAddChild}
         />
       )}
       {current === 'time' && (

@@ -6,22 +6,21 @@ import type {
   Recurrence,
 } from '../types/domain';
 
+/** Tasks and goals need a time; the other kinds are complete with a domain alone. */
+export function needsTime(item: Item): boolean {
+  return item.kind === 'task' || item.kind === 'goal';
+}
+
 /**
  * Same rule as the generated `is_complete` column in the schema:
- * notes and debts need a domain; everything else needs domain, member and time.
+ * tasks and goals need a domain and a time; issues, notes and debts a domain only.
  */
 export function missingFields(item: Item): MissingField[] {
   const missing: MissingField[] = [];
   if (item.domain_id === null) {
     missing.push('domain');
   }
-  if (item.kind === 'note' || item.kind === 'debt') {
-    return missing;
-  }
-  if (item.member_id === null) {
-    missing.push('member');
-  }
-  if (item.time_mode === null) {
+  if (needsTime(item) && item.time_mode === null) {
     missing.push('time');
   }
   return missing;

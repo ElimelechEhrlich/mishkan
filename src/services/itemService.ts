@@ -56,7 +56,6 @@ export async function createItem(newItem: NewItem): Promise<void> {
     title: newItem.title,
     kind: newItem.kind,
     domain_id: newItem.domainId,
-    member_id: newItem.memberId,
     parent_id: newItem.parentId,
   });
   if (error !== null) {

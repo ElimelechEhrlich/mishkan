@@ -5,8 +5,7 @@ type Enums = Database['public']['Enums'];
 
 export type Household = Tables['households']['Row'];
 export type Member = Tables['members']['Row'];
-export type Area = Tables['areas']['Row'];
-export type AreaUpdate = Tables['areas']['Update'];
+export type Entity = Tables['entities']['Row'];
 export type Domain = Tables['domains']['Row'];
 export type DomainUpdate = Tables['domains']['Update'];
 export type Item = Tables['items']['Row'];
@@ -17,14 +16,23 @@ export type Attachment = Tables['attachments']['Row'];
 
 export type TimeMode = Enums['item_time_mode'];
 export type ItemKind = Enums['item_kind'];
-export type MemberRole = Enums['member_role'];
-export type Visibility = Enums['domain_visibility'];
+export type EntityKind = Enums['entity_kind'];
+export type DomainRole = Enums['domain_role'];
 export type DebtDirection = Enums['debt_direction'];
 
-export type AreaWithDomains = Area & { readonly domains: readonly Domain[] };
+export type EntityWithDomains = Entity & { readonly domains: readonly Domain[] };
+
+/** Entities that are added and removed by hand; the rest are created by the system. */
+export type AddableEntityKind = Extract<EntityKind, 'parent' | 'child'>;
+
+/** A parent entity that no parent has joined as yet, offered when joining a household. */
+export type UnclaimedParent = {
+  readonly id: string;
+  readonly name: string;
+};
 
 /** What an item still lacks before it counts as fully assigned. */
-export type MissingField = 'domain' | 'member' | 'time';
+export type MissingField = 'domain' | 'time';
 
 /** Stored in `items.recurrence_rule` as an iCal RRULE (FREQ=DAILY and so on). */
 export type Recurrence = 'daily' | 'weekly' | 'monthly';
@@ -48,7 +56,6 @@ export type NewItem = {
   readonly title: string;
   readonly kind: CapturableKind;
   readonly domainId: string | null;
-  readonly memberId: string | null;
   readonly parentId: string | null;
 };
 
@@ -76,7 +83,6 @@ export type SessionContext = {
 export type HouseholdContext = SessionContext & {
   readonly member: Member;
   readonly household: Household;
+  /** The parents who have joined, for showing who completed an item. */
   readonly members: readonly Member[];
-  readonly addChild: (name: string) => Promise<boolean>;
-  readonly removeChild: (memberId: string) => void;
 };

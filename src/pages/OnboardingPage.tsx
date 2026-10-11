@@ -6,16 +6,18 @@ import { useSessionContext } from '../hooks/useRouteContext';
 
 export function OnboardingPage(): ReactElement {
   const { signOut } = useSessionContext();
-  const { busy, error, create, join } = useOnboarding();
   const [searchParams] = useSearchParams();
+  const onboarding = useOnboarding(searchParams.get('code'));
 
   return (
     <OnboardingForm
-      busy={busy}
-      error={error}
-      initialInviteCode={searchParams.get('code')}
-      onCreate={create}
-      onJoin={join}
+      busy={onboarding.busy}
+      error={onboarding.error}
+      inviteCode={onboarding.inviteCode}
+      onInviteCodeChange={onboarding.setInviteCode}
+      unclaimedParents={onboarding.unclaimedParents}
+      onCreate={onboarding.create}
+      onJoin={onboarding.join}
       onSignOut={signOut}
     />
   );

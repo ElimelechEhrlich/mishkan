@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
-import type { AreaWithDomains, CapturableKind, NewItem } from '../../types/domain';
+import type { CapturableKind, EntityWithDomains, NewItem } from '../../types/domain';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
@@ -10,8 +10,7 @@ import { TextField } from '../ui/TextField';
 import { DomainPicker } from './DomainPicker';
 
 type QuickAddSheetProps = {
-  readonly areas: readonly AreaWithDomains[];
-  readonly currentMemberId: string;
+  readonly entities: readonly EntityWithDomains[];
   readonly onAdd: (newItem: NewItem) => Promise<boolean>;
   /** The kind that is selected when the sheet opens. */
   readonly defaultKind?: CapturableKind;
@@ -21,23 +20,9 @@ type QuickAddSheetProps = {
 
 const kinds = ['task', 'goal', 'issue', 'note'] as const satisfies readonly CapturableKind[];
 
-/** An item in a private domain belongs to the parent who wrote it. */
-function defaultMemberId(
-  areas: readonly AreaWithDomains[],
-  domainId: string | null,
-  currentMemberId: string,
-): string | null {
-  if (domainId === null) {
-    return null;
-  }
-  const domain = areas.flatMap((area) => area.domains).find((candidate) => candidate.id === domainId);
-  return domain?.visibility === 'private' ? currentMemberId : null;
-}
-
 /** The floating add button and the sheet it opens. Only the title is required. */
 export function QuickAddSheet({
-  areas,
-  currentMemberId,
+  entities,
   onAdd,
   defaultKind = 'task',
   initiallyOpen = false,
@@ -47,7 +32,7 @@ export function QuickAddSheet({
   const [kind, setKind] = useState<CapturableKind>(defaultKind);
   const [domainId, setDomainId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  /** Bumped after each save so the picker starts again from the list of areas. */
+  /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
 
   const trimmedTitle = title.trim();
@@ -62,7 +47,6 @@ export function QuickAddSheet({
       title: trimmedTitle,
       kind,
       domainId,
-      memberId: defaultMemberId(areas, domainId, currentMemberId),
       parentId: null,
     }).then((saved) => {
       setSaving(false);
@@ -125,7 +109,12 @@ export function QuickAddSheet({
             />
           ))}
         </div>
-        <DomainPicker key={pickerVersion} areas={areas} value={domainId} onChange={setDomainId} />
+        <DomainPicker
+          key={pickerVersion}
+          entities={entities}
+          value={domainId}
+          onChange={setDomainId}
+        />
         {domainId === null && <p className="text-sm text-muted">{labels.capture.noDomainHint}</p>}
         <Button type="submit" disabled={trimmedTitle === '' || saving}>
           {labels.actions.save}

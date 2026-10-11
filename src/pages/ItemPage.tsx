@@ -4,16 +4,16 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
-import { useAreas } from '../hooks/useAreas';
+import { useEntities } from '../hooks/useEntities';
 import { useItemPage } from '../hooks/useItemPage';
 import { useLookups } from '../hooks/useLookups';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function ItemPage(): ReactElement {
-  const { members, addChild } = useHouseholdContext();
-  const areas = useAreas();
+  const { members } = useHouseholdContext();
+  const entities = useEntities();
   const page = useItemPage();
-  const lookups = useLookups(areas.areas, members);
+  const lookups = useLookups(entities.entities, members);
   const { items, item } = page;
 
   return (
@@ -22,7 +22,7 @@ export function ItemPage(): ReactElement {
       incompleteCount={items.incomplete.length}
       inner
     >
-      <ErrorBanner message={items.error ?? page.error ?? areas.error} />
+      <ErrorBanner message={items.error ?? page.error ?? entities.error} />
       {item === null ? (
         <EmptyState text={items.loading ? labels.status.loading : labels.status.itemNotFound} />
       ) : (
@@ -31,15 +31,13 @@ export function ItemPage(): ReactElement {
           items={items.items}
           steps={page.steps}
           debt={page.debt}
-          areas={areas.areas}
-          members={members}
+          entities={entities.entities}
           lookups={lookups}
           onUpdate={items.updateItem}
           onComplete={items.completeItem}
           onReopen={items.reopenItem}
           onDelete={page.deleteAndLeave}
           onAddStep={page.addStep}
-          onAddChild={addChild}
           onPrerequisitesChange={items.reload}
         />
       )}

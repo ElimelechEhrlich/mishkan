@@ -10,11 +10,11 @@ type ItemMetaProps = {
   readonly item: Item;
   readonly lookups: Lookups;
   readonly today: string;
-  /** Leaves out the area color dot, for rows that show the color another way. */
+  /** Leaves out the entity color dot, for rows that show the color another way. */
   readonly hideTone?: boolean;
 };
 
-/** The small line under an item's title: area color, domain, member and time. */
+/** The small line under an item's title: entity color, domain and time. */
 export function ItemMeta({
   item,
   lookups,
@@ -23,11 +23,9 @@ export function ItemMeta({
 }: ItemMetaProps): ReactElement {
   const domainLabel = item.domain_id === null ? null : lookups.domainLabels.get(item.domain_id);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
-  const memberName = item.member_id === null ? null : lookups.memberNames.get(item.member_id);
   const time = timeText(item, today);
   const recurrence = recurrenceOf(item.recurrence_rule);
   const overdue = isOverdue(item, today);
-  const parts = [domainLabel, memberName].filter((part) => part !== null && part !== undefined);
 
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-5 text-muted">
@@ -37,7 +35,7 @@ export function ItemMeta({
         </span>
       )}
       {tone !== undefined && !hideTone && <span className={`size-2 rounded-full ${tone}`} />}
-      {parts.length > 0 && <span>{parts.join(labels.item.separator)}</span>}
+      {domainLabel !== null && domainLabel !== undefined && <span>{domainLabel}</span>}
       {time !== null && (
         <span
           className={`inline-flex items-center gap-1 rounded-md px-1.5 ${

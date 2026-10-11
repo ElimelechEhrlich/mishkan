@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
+import type { UnclaimedParent } from '../../types/domain';
 import { Button } from '../ui/Button';
+import { Chip } from '../ui/Chip';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Segmented } from '../ui/Segmented';
 import { TextField } from '../ui/TextField';
@@ -9,10 +11,12 @@ import { TextField } from '../ui/TextField';
 type OnboardingFormProps = {
   readonly busy: boolean;
   readonly error: string | null;
-  /** From an invite link; opens the form ready to join. */
-  readonly initialInviteCode: string | null;
+  readonly inviteCode: string;
+  readonly onInviteCodeChange: (inviteCode: string) => void;
+  /** Parents the household already opened for someone who has not joined yet. */
+  readonly unclaimedParents: readonly UnclaimedParent[];
   readonly onCreate: (householdName: string, parentName: string) => void;
-  readonly onJoin: (inviteCode: string, parentName: string) => void;
+  readonly onJoin: (parentName: string, parentEntityId: string | null) => void;
   readonly onSignOut: () => void;
 };
 
@@ -23,21 +27,28 @@ const modes = [
   { value: 'join', label: labels.onboarding.joinTab },
 ] as const satisfies readonly { value: Mode; label: string }[];
 
-/** The first parent creates the household; the second joins it with the invite code. */
+/**
+ * The first parent creates the household; the second joins it with the invite code,
+ * either as a parent that was already opened for them or as a new one.
+ */
 export function OnboardingForm({
   busy,
   error,
-  initialInviteCode,
+  inviteCode,
+  onInviteCodeChange,
+  unclaimedParents,
   onCreate,
   onJoin,
   onSignOut,
 }: OnboardingFormProps): ReactElement {
-  const [mode, setMode] = useState<Mode>(initialInviteCode === null ? 'create' : 'join');
+  const [mode, setMode] = useState<Mode>(inviteCode === '' ? 'create' : 'join');
   const [parentName, setParentName] = useState('');
   const [householdName, setHouseholdName] = useState('');
-  const [inviteCode, setInviteCode] = useState(initialInviteCode ?? '');
+  const [claimedId, setClaimedId] = useState<string | null>(null);
 
-  const name = parentName.trim();
+  const claimed =
+    mode === 'join' ? unclaimedParents.find((parent) => parent.id === claimedId) : undefined;
+  const name = claimed?.name ?? parentName.trim();
   const secondValue = mode === 'create' ? householdName.trim() : inviteCode.trim();
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
@@ -45,7 +56,7 @@ export function OnboardingForm({
     if (mode === 'create') {
       onCreate(secondValue, name);
     } else {
-      onJoin(secondValue, name);
+      onJoin(name, claimed?.id ?? null);
     }
   }
 
@@ -58,23 +69,43 @@ export function OnboardingForm({
       >
         <Segmented options={modes} value={mode} onChange={setMode} />
         <ErrorBanner message={error} />
-        <TextField label={labels.fields.yourName} value={parentName} onChange={setParentName} />
-        {mode === 'create' ? (
-          <TextField
-            label={labels.fields.householdName}
-            value={householdName}
-            onChange={setHouseholdName}
-          />
-        ) : (
+        {mode === 'join' && (
           <>
             <TextField
               label={labels.fields.inviteCode}
               direction="ltr"
               value={inviteCode}
-              onChange={setInviteCode}
+              onChange={onInviteCodeChange}
             />
             <p className="text-sm text-muted">{labels.onboarding.inviteHint}</p>
           </>
+        )}
+        {mode === 'join' && unclaimedParents.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-muted">{labels.onboarding.whoAreYou}</span>
+            <div className="flex flex-wrap gap-2">
+              {unclaimedParents.map((parent) => (
+                <Chip
+                  key={parent.id}
+                  label={parent.name}
+                  selected={parent.id === claimedId}
+                  onClick={() => {
+                    setClaimedId(parent.id === claimedId ? null : parent.id);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {claimed === undefined && (
+          <TextField label={labels.fields.yourName} value={parentName} onChange={setParentName} />
+        )}
+        {mode === 'create' && (
+          <TextField
+            label={labels.fields.householdName}
+            value={householdName}
+            onChange={setHouseholdName}
+          />
         )}
         <Button type="submit" disabled={busy || name === '' || secondValue === ''}>
           {mode === 'create' ? labels.actions.createHousehold : labels.actions.joinHousehold}

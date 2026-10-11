@@ -2,16 +2,15 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
-import { todayIso } from '../../lib/itemRules';
+import { needsTime, todayIso } from '../../lib/itemRules';
 import { fullTimeText } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
 import type {
-  AreaWithDomains,
   CapturableKind,
   DebtDetails,
+  EntityWithDomains,
   Item,
   ItemUpdate,
-  Member,
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
 import { Button } from '../ui/Button';
@@ -22,7 +21,6 @@ import { PropertyRow } from '../ui/PropertyRow';
 import { SelectField } from '../ui/SelectField';
 import { AttachmentList } from './AttachmentList';
 import { ItemTextForm } from './ItemTextForm';
-import { MemberPicker } from './MemberPicker';
 import { PrerequisiteList } from './PrerequisiteList';
 import { StepList } from './StepList';
 import { TimePicker } from './TimePicker';
@@ -34,19 +32,17 @@ type ItemEditorProps = {
   /** The steps of this item, when it is a goal or an issue. */
   readonly steps: readonly Item[];
   readonly debt: DebtDetails | null;
-  readonly areas: readonly AreaWithDomains[];
-  readonly members: readonly Member[];
+  readonly entities: readonly EntityWithDomains[];
   readonly lookups: Lookups;
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
   readonly onComplete: (item: Item) => void;
   readonly onReopen: (itemId: string) => void;
   readonly onDelete: (itemId: string) => void;
   readonly onAddStep: (parent: Item, title: string) => void;
-  readonly onAddChild: (name: string) => Promise<boolean>;
   readonly onPrerequisitesChange: () => void;
 };
 
-type Row = 'kind' | 'domain' | 'member' | 'time' | 'parent';
+type Row = 'kind' | 'domain' | 'time' | 'parent';
 
 const kinds = ['task', 'goal', 'issue', 'note'] as const satisfies readonly CapturableKind[];
 
@@ -56,15 +52,13 @@ export function ItemEditor({
   items,
   steps,
   debt,
-  areas,
-  members,
+  entities,
   lookups,
   onUpdate,
   onComplete,
   onReopen,
   onDelete,
   onAddStep,
-  onAddChild,
   onPrerequisitesChange,
 }: ItemEditorProps): ReactElement {
   const [openRow, setOpenRow] = useState<Row | null>(null);
@@ -85,7 +79,6 @@ export function ItemEditor({
   const done = item.status === 'done';
 
   const domainLabel = item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
-  const memberName = item.member_id === null ? undefined : lookups.memberNames.get(item.member_id);
   const timeLabel = fullTimeText(item, todayIso());
   const goals = items.filter((candidate) => candidate.kind === 'goal' || candidate.kind === 'issue');
   const parentTitle = goals.find((goal) => goal.id === item.parent_id)?.title;
@@ -169,7 +162,7 @@ export function ItemEditor({
             }}
           >
             <DomainPicker
-              areas={areas}
+              entities={entities}
               value={item.domain_id}
               onChange={(domainId) => {
                 if (domainId !== null) {
@@ -182,30 +175,9 @@ export function ItemEditor({
 
         {hasSchedule && (
           <PropertyRow
-            label={labels.sections.member}
-            value={memberName ?? labels.status.notSet}
-            missing={memberName === undefined}
-            open={openRow === 'member'}
-            onToggle={() => {
-              toggle('member');
-            }}
-          >
-            <MemberPicker
-              members={members}
-              value={item.member_id}
-              onPick={(memberId) => {
-                update({ member_id: memberId });
-              }}
-              onAddChild={onAddChild}
-            />
-          </PropertyRow>
-        )}
-
-        {hasSchedule && (
-          <PropertyRow
             label={labels.sections.time}
             value={timeLabel ?? labels.status.notSet}
-            missing={timeLabel === null}
+            missing={timeLabel === null && needsTime(item)}
             open={openRow === 'time'}
             onToggle={() => {
               toggle('time');

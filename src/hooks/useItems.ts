@@ -11,6 +11,7 @@ import {
   updateItem,
 } from '../services/itemService';
 import type { Item, ItemUpdate, NewItem } from '../types/domain';
+import { useHouseholdContext } from './useRouteContext';
 
 type ItemsState = {
   readonly items: readonly Item[];
@@ -26,7 +27,7 @@ export type UseItems = {
   readonly steps: readonly Item[];
   /** Open items that are fully assigned. */
   readonly assigned: readonly Item[];
-  /** Open items still missing a domain, a member or a time. */
+  /** Open items still missing a domain or a time, that the current parent has to complete. */
   readonly incomplete: readonly Item[];
   readonly loading: boolean;
   readonly error: string | null;
@@ -41,6 +42,7 @@ export type UseItems = {
 const initialState: ItemsState = { items: [], steps: [], loading: true, error: null };
 
 export function useItems(): UseItems {
+  const { member } = useHouseholdContext();
   const [state, setState] = useState<ItemsState>(initialState);
 
   const load = useCallback(async (): Promise<void> => {
@@ -110,7 +112,10 @@ export function useItems(): UseItems {
   );
 
   const assigned = useMemo(() => state.items.filter((item) => item.is_complete), [state.items]);
-  const incomplete = useMemo(() => state.items.filter((item) => !item.is_complete), [state.items]);
+  const incomplete = useMemo(
+    () => state.items.filter((item) => !item.is_complete && item.review_by === member.id),
+    [state.items, member.id],
+  );
 
   return {
     items: state.items,

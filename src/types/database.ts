@@ -1,9 +1,10 @@
-// Mirrors supabase/migrations/0001_initial_schema.sql.
+// Mirrors supabase/migrations (0001_initial_schema.sql, 0002_entities.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
 type MemberRole = 'parent' | 'child' | 'household';
-type DomainVisibility = 'household' | 'private';
+type EntityKind = 'parent' | 'personal' | 'child' | 'home' | 'couple';
+type DomainRole = 'regular' | 'shopping' | 'debts';
 type ItemKind = 'task' | 'goal' | 'issue' | 'note' | 'debt';
 type ItemTimeMode = 'scheduled' | 'recurring' | 'anytime' | 'waiting' | 'someday';
 type ItemStatus = 'open' | 'done';
@@ -63,36 +64,28 @@ export type Database = {
         };
         Relationships: [];
       };
-      areas: {
+      entities: {
         Row: {
           id: string;
           household_id: string;
+          kind: EntityKind;
           name: string;
-          icon: string | null;
+          member_id: string | null;
           sort_order: number;
-          visibility: DomainVisibility;
-          owner_id: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           household_id: string;
+          kind: EntityKind;
           name: string;
-          icon?: string | null;
+          member_id?: string | null;
           sort_order?: number;
-          visibility?: DomainVisibility;
-          owner_id?: string | null;
           created_at?: string;
         };
         Update: {
-          id?: string;
-          household_id?: string;
           name?: string;
-          icon?: string | null;
           sort_order?: number;
-          visibility?: DomainVisibility;
-          owner_id?: string | null;
-          created_at?: string;
         };
         Relationships: [];
       };
@@ -100,35 +93,27 @@ export type Database = {
         Row: {
           id: string;
           household_id: string;
-          area_id: string;
+          entity_id: string;
           name: string;
           icon: string | null;
           sort_order: number;
-          visibility: DomainVisibility;
-          owner_id: string | null;
+          role: DomainRole;
           created_at: string;
         };
         Insert: {
           id?: string;
           household_id?: string;
-          area_id: string;
+          entity_id: string;
           name: string;
           icon?: string | null;
           sort_order?: number;
-          visibility?: DomainVisibility;
-          owner_id?: string | null;
+          role?: DomainRole;
           created_at?: string;
         };
         Update: {
-          id?: string;
-          household_id?: string;
-          area_id?: string;
           name?: string;
           icon?: string | null;
           sort_order?: number;
-          visibility?: DomainVisibility;
-          owner_id?: string | null;
-          created_at?: string;
         };
         Relationships: [];
       };
@@ -140,7 +125,6 @@ export type Database = {
           notes: string | null;
           kind: ItemKind;
           domain_id: string | null;
-          member_id: string | null;
           parent_id: string | null;
           time_mode: ItemTimeMode | null;
           due_date: string | null;
@@ -149,6 +133,8 @@ export type Database = {
           status: ItemStatus;
           created_by: string;
           completed_by: string | null;
+          review_by: string | null;
+          previous_domain_label: string | null;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -160,7 +146,6 @@ export type Database = {
           notes?: string | null;
           kind?: ItemKind;
           domain_id?: string | null;
-          member_id?: string | null;
           parent_id?: string | null;
           time_mode?: ItemTimeMode | null;
           due_date?: string | null;
@@ -168,6 +153,8 @@ export type Database = {
           recurrence_rule?: string | null;
           status?: ItemStatus;
           created_by?: string;
+          review_by?: string | null;
+          previous_domain_label?: string | null;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -177,7 +164,6 @@ export type Database = {
           notes?: string | null;
           kind?: ItemKind;
           domain_id?: string | null;
-          member_id?: string | null;
           parent_id?: string | null;
           time_mode?: ItemTimeMode | null;
           due_date?: string | null;
@@ -281,13 +267,26 @@ export type Database = {
         Returns: string;
       };
       join_household: {
-        Args: { p_invite_code: string; p_parent_name: string };
+        Args: { p_invite_code: string; p_parent_name: string; p_parent_entity_id?: string };
         Returns: string;
+      };
+      unclaimed_parents: {
+        Args: { p_invite_code: string };
+        Returns: { id: string; name: string }[];
+      };
+      delete_domain: {
+        Args: { p_domain_id: string };
+        Returns: undefined;
+      };
+      delete_entity: {
+        Args: { p_entity_id: string };
+        Returns: undefined;
       };
     };
     Enums: {
       member_role: MemberRole;
-      domain_visibility: DomainVisibility;
+      entity_kind: EntityKind;
+      domain_role: DomainRole;
       item_kind: ItemKind;
       item_time_mode: ItemTimeMode;
       item_status: ItemStatus;

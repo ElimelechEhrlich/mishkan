@@ -6,22 +6,22 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
-import { useAreas } from '../hooks/useAreas';
+import { useEntities } from '../hooks/useEntities';
 import { useDebts } from '../hooks/useDebts';
 import { useItems } from '../hooks/useItems';
 import { findDebtDomainId } from '../lib/lookups';
 
 export function DebtsPage(): ReactElement {
-  const areas = useAreas();
+  const entities = useEntities();
   const items = useItems();
   const debts = useDebts(items.items, items.reload);
   const isEmpty = debts.owedToUs.length === 0 && debts.weOwe.length === 0;
 
   return (
     <PageShell title={labels.pages.debts} incompleteCount={items.incomplete.length}>
-      <ErrorBanner message={debts.error ?? items.error ?? areas.error} />
+      <ErrorBanner message={debts.error ?? items.error ?? entities.error} />
       <DebtSummary owedToUs={debts.owedToUs} weOwe={debts.weOwe} />
-      <DebtForm domainId={findDebtDomainId(areas.areas)} onAdd={debts.addDebt} />
+      <DebtForm domainId={findDebtDomainId(entities.entities)} onAdd={debts.addDebt} />
       <DebtSection
         title={labels.debtDirection.owed_to_us}
         debts={debts.owedToUs}

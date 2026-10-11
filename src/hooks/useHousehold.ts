@@ -1,12 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
-import {
-  addChild,
-  getHousehold,
-  getMemberByUserId,
-  listMembers,
-  removeChild,
-} from '../services/householdService';
+import { getHousehold, getMemberByUserId, listMembers } from '../services/householdService';
 import type { Household, Member } from '../types/domain';
 
 type HouseholdData = {
@@ -22,11 +16,6 @@ type HouseholdState = {
   readonly error: string | null;
 };
 
-type UseHousehold = HouseholdState & {
-  readonly addChild: (name: string) => Promise<boolean>;
-  readonly removeChild: (memberId: string) => void;
-};
-
 async function loadHousehold(userId: string): Promise<HouseholdData | null> {
   const member = await getMemberByUserId(userId);
   if (member === null) {
@@ -39,51 +28,26 @@ async function loadHousehold(userId: string): Promise<HouseholdData | null> {
   return { member, household, members };
 }
 
-export function useHousehold(userId: string): UseHousehold {
+export function useHousehold(userId: string): HouseholdState {
   const [state, setState] = useState<HouseholdState>({ data: null, loading: true, error: null });
 
-  const reload = useCallback(async (): Promise<void> => {
-    try {
-      const data = await loadHousehold(userId);
-      setState({ data, loading: false, error: null });
-    } catch (error: unknown) {
-      setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
-    }
+  useEffect(() => {
+    let active = true;
+    loadHousehold(userId)
+      .then((data) => {
+        if (active) {
+          setState({ data, loading: false, error: null });
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
+        }
+      });
+    return (): void => {
+      active = false;
+    };
   }, [userId]);
 
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  const householdId = state.data?.household.id ?? null;
-
-  const handleAddChild = useCallback(
-    async (name: string): Promise<boolean> => {
-      if (householdId === null) {
-        return false;
-      }
-      try {
-        await addChild(householdId, name);
-        await reload();
-        return true;
-      } catch (error: unknown) {
-        setState((previous) => ({ ...previous, error: toMessage(error) }));
-        return false;
-      }
-    },
-    [householdId, reload],
-  );
-
-  const handleRemoveChild = useCallback(
-    (memberId: string): void => {
-      removeChild(memberId)
-        .then(reload)
-        .catch((error: unknown) => {
-          setState((previous) => ({ ...previous, error: toMessage(error) }));
-        });
-    },
-    [reload],
-  );
-
-  return { ...state, addChild: handleAddChild, removeChild: handleRemoveChild };
+  return state;
 }

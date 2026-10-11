@@ -76,7 +76,6 @@ export function useItemPage(): UseItemPage {
         title,
         kind: 'task',
         domainId: parent.domain_id,
-        memberId: null,
         parentId: parent.id,
       });
     },
