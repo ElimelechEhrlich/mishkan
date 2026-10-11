@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react';
-import { AddEntityCard } from '../components/settings/AddEntityCard';
 import { EntitySettings } from '../components/settings/EntitySettings';
 import { InviteCard } from '../components/settings/InviteCard';
 import { ProfileCard } from '../components/settings/ProfileCard';
@@ -23,7 +22,6 @@ export function SettingsPage(): ReactElement {
       <ErrorBanner message={entities.error} />
       <ProfileCard member={member} household={household} entities={entities.entities} />
       <EntitySettings entities={entities.entities} settings={settings} />
-      <AddEntityCard onAdd={settings.addEntity} />
       <InviteCard inviteCode={household.invite_code} />
       <section className="flex flex-col gap-1.5">
         <h2 className="px-1 text-xs font-bold tracking-wide text-muted">

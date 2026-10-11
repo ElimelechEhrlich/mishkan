@@ -368,6 +368,8 @@ export const labels = {
     addParent: 'הוספת הורה',
     addParentShort: 'בן או בת זוג שעוד לא הצטרפו',
     parents: 'הורים',
+    homeGroup: 'הבית',
+    parentsFull: 'יש כבר שני הורים בבית.',
     children: 'ילדים',
     inviteShort: 'שליחת קישור הצטרפות',
     copyCode: 'העתקת קוד ההזמנה',

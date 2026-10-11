@@ -15,6 +15,8 @@ type EntitySettingsCardProps = {
   readonly entity: EntityWithDomains;
   readonly tone: EntityTone;
   readonly settings: UseEntitySettings;
+  /** The home: one per household, drawn larger with a house. */
+  readonly featured?: boolean;
 };
 
 /**
@@ -26,6 +28,7 @@ export function EntitySettingsCard({
   entity,
   tone,
   settings,
+  featured = false,
 }: EntitySettingsCardProps): ReactElement {
   const [open, setOpen] = useState(false);
   const isPrivate = entity.kind === "personal";
@@ -37,7 +40,7 @@ export function EntitySettingsCard({
     !entity.domains.some((domain) => domain.role === "debts");
 
   return (
-    <li className="group">
+    <li className={featured ? "group bg-primary-soft/50" : "group"}>
       <div className="flex items-stretch">
         <button
           type="button"
@@ -47,10 +50,22 @@ export function EntitySettingsCard({
           }}
           className="flex min-w-0 flex-1 items-center gap-3 ps-3.5 text-start active:bg-paper"
         >
-          <EntityAvatar entity={entity} tone={tone} size="md" />
+          {featured ? (
+            <span className="my-3 flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-primary text-white">
+              <Icon name="home" className="size-6" />
+            </span>
+          ) : (
+            <EntityAvatar entity={entity} tone={tone} size="md" />
+          )}
           <span className="flex min-w-0 flex-1 items-center gap-3 border-t border-line py-2.5 pe-2 group-first:border-t-0">
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-[15px] font-medium">
+              <span
+                className={
+                  featured
+                    ? "truncate font-display text-lg font-bold"
+                    : "truncate text-[15px] font-medium"
+                }
+              >
                 {entity.name}
               </span>
               <span className="text-xs text-muted">

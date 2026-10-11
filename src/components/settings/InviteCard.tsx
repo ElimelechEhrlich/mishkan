@@ -1,8 +1,8 @@
-import type { ReactElement } from 'react';
-import { labels } from '../../constants/labels';
-import { useCopyText } from '../../hooks/useCopyText';
-import { Icon } from '../ui/Icon';
-import { ListRow } from '../ui/ListRow';
+import type { ReactElement } from "react";
+import { labels } from "../../constants/labels";
+import { useCopyText } from "../../hooks/useCopyText";
+import { Icon } from "../ui/Icon";
+import { ListRow } from "../ui/ListRow";
 
 type InviteCardProps = {
   readonly inviteCode: string;
@@ -16,7 +16,9 @@ export function InviteCard({ inviteCode }: InviteCardProps): ReactElement {
 
   return (
     <section className="flex flex-col gap-1.5">
-      <h2 className="px-1 text-xs font-bold tracking-wide text-muted">{labels.sections.invite}</h2>
+      <h2 className="px-1 text-xs font-bold tracking-wide text-muted">
+        {labels.sections.invite}
+      </h2>
       <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
         <a
           href={`https://wa.me/?text=${encodeURIComponent(message)}`}
@@ -42,7 +44,9 @@ export function InviteCard({ inviteCode }: InviteCardProps): ReactElement {
           }}
         />
       </div>
-      <p className="px-1 text-xs leading-5 text-muted">{labels.settings.inviteHint}</p>
+      <p className="px-1 text-xs leading-5 text-muted">
+        {labels.settings.inviteHint}
+      </p>
     </section>
   );
 }
