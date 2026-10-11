@@ -214,6 +214,7 @@ export const labels = {
     openRuns: 'סבבים פתוחים',
     toBuy: 'לקנות',
     forEntity: 'בשביל',
+    forWhom: 'בשביל מי',
     category: 'סוג',
     progress: 'נקנו',
     of: 'מתוך',

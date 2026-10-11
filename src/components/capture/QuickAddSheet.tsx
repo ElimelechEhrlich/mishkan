@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
-import type { CapturableKind, EntityWithDomains, NewItem } from '../../types/domain';
+import { shoppingTargets } from '../../lib/lookups';
+import type {
+  CapturableKind,
+  EntityWithDomains,
+  NewItem,
+  NewMissingItem,
+  ShoppingCategory,
+} from '../../types/domain';
+import { MissingItemFields } from '../shopping/MissingItemFields';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
@@ -12,43 +20,67 @@ import { DomainPicker } from './DomainPicker';
 type QuickAddSheetProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly onAdd: (newItem: NewItem) => Promise<boolean>;
+  readonly onAddMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
   /** The kind that is selected when the sheet opens. */
   readonly defaultKind?: CapturableKind;
   /** Opens the sheet right away, for the "new item" home-screen shortcut. */
   readonly initiallyOpen?: boolean;
 };
 
-const kinds = ['task', 'goal', 'issue', 'note'] as const satisfies readonly CapturableKind[];
+/** A missing item can be added here too; it then asks for its kind and whom it is for. */
+type QuickAddKind = CapturableKind | 'missing_item';
 
-/** The floating add button and the sheet it opens. Only the title is required. */
+const kinds = [
+  'task',
+  'goal',
+  'issue',
+  'note',
+  'missing_item',
+] as const satisfies readonly QuickAddKind[];
+
+/**
+ * The floating add button and the sheet it opens. Only the title is required,
+ * except for a missing item, which always lands in a shopping domain (the home's by default).
+ */
 export function QuickAddSheet({
   entities,
   onAdd,
+  onAddMissingItem,
   defaultKind = 'task',
   initiallyOpen = false,
 }: QuickAddSheetProps): ReactElement {
   const [open, setOpen] = useState(initiallyOpen);
   const [title, setTitle] = useState('');
-  const [kind, setKind] = useState<CapturableKind>(defaultKind);
+  const [kind, setKind] = useState<QuickAddKind>(defaultKind);
   const [domainId, setDomainId] = useState<string | null>(null);
+  const [category, setCategory] = useState<ShoppingCategory>('food');
+  const [shoppingDomainId, setShoppingDomainId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
 
   const trimmedTitle = title.trim();
+  const targets = shoppingTargets(entities);
+  const missingItemDomainId = shoppingDomainId ?? targets[0]?.domainId ?? null;
+  const canSave =
+    trimmedTitle !== '' && !saving && (kind !== 'missing_item' || missingItemDomainId !== null);
+
+  function save(): Promise<boolean> {
+    if (kind === 'missing_item') {
+      return missingItemDomainId === null
+        ? Promise.resolve(false)
+        : onAddMissingItem({ title: trimmedTitle, category, domainId: missingItemDomainId });
+    }
+    return onAdd({ title: trimmedTitle, kind, domainId, parentId: null });
+  }
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
-    if (trimmedTitle === '' || saving) {
+    if (!canSave) {
       return;
     }
     setSaving(true);
-    void onAdd({
-      title: trimmedTitle,
-      kind,
-      domainId,
-      parentId: null,
-    }).then((saved) => {
+    void save().then((saved) => {
       setSaving(false);
       if (saved) {
         setTitle('');
@@ -109,14 +141,28 @@ export function QuickAddSheet({
             />
           ))}
         </div>
-        <DomainPicker
-          key={pickerVersion}
-          entities={entities}
-          value={domainId}
-          onChange={setDomainId}
-        />
-        {domainId === null && <p className="text-sm text-muted">{labels.capture.noDomainHint}</p>}
-        <Button type="submit" disabled={trimmedTitle === '' || saving}>
+        {kind === 'missing_item' ? (
+          <MissingItemFields
+            category={category}
+            onCategoryChange={setCategory}
+            targets={targets}
+            domainId={missingItemDomainId}
+            onDomainChange={setShoppingDomainId}
+          />
+        ) : (
+          <>
+            <DomainPicker
+              key={pickerVersion}
+              entities={entities}
+              value={domainId}
+              onChange={setDomainId}
+            />
+            {domainId === null && (
+              <p className="text-sm text-muted">{labels.capture.noDomainHint}</p>
+            )}
+          </>
+        )}
+        <Button type="submit" disabled={!canSave}>
           {labels.actions.save}
         </Button>
       </form>

@@ -10,7 +10,8 @@ import {
   subscribeToItems,
   updateItem,
 } from '../services/itemService';
-import type { Item, ItemUpdate, NewItem } from '../types/domain';
+import { createMissingItem } from '../services/shoppingService';
+import type { Item, ItemUpdate, NewItem, NewMissingItem } from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
 
 type ItemsState = {
@@ -33,6 +34,7 @@ export type UseItems = {
   readonly error: string | null;
   readonly reload: () => void;
   readonly addItem: (newItem: NewItem) => Promise<boolean>;
+  readonly addMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
   readonly updateItem: (itemId: string, changes: ItemUpdate) => void;
   readonly completeItem: (item: Item) => void;
   readonly reopenItem: (itemId: string) => void;
@@ -85,6 +87,11 @@ export function useItems(): UseItems {
     [run],
   );
 
+  const handleAddMissing = useCallback(
+    (newItem: NewMissingItem): Promise<boolean> => run(() => createMissingItem(newItem)),
+    [run],
+  );
+
   const handleUpdate = useCallback(
     (itemId: string, changes: ItemUpdate): void => {
       void run(() => updateItem(itemId, changes));
@@ -126,6 +133,7 @@ export function useItems(): UseItems {
     error: state.error,
     reload,
     addItem: handleAdd,
+    addMissingItem: handleAddMissing,
     updateItem: handleUpdate,
     completeItem: handleComplete,
     reopenItem: handleReopen,

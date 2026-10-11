@@ -45,6 +45,7 @@ export function OpenItemsPage(): ReactElement {
       <QuickAddSheet
         entities={entities.entities}
         onAdd={items.addItem}
+        onAddMissingItem={items.addMissingItem}
         initiallyOpen={searchParams.has('new')}
       />
     </PageShell>

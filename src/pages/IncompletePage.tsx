@@ -20,7 +20,11 @@ export function IncompletePage(): ReactElement {
         loading={items.loading}
         onUpdate={items.updateItem}
       />
-      <QuickAddSheet entities={entities.entities} onAdd={items.addItem} />
+      <QuickAddSheet
+        entities={entities.entities}
+        onAdd={items.addItem}
+        onAddMissingItem={items.addMissingItem}
+      />
     </PageShell>
   );
 }

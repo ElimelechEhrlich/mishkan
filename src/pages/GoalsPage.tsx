@@ -27,6 +27,7 @@ export function GoalsPage(): ReactElement {
       <QuickAddSheet
         entities={entities.entities}
         onAdd={items.addItem}
+        onAddMissingItem={items.addMissingItem}
         defaultKind="goal"
       />
     </PageShell>

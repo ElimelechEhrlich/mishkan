@@ -1,5 +1,5 @@
 import { labels } from '../constants/labels';
-import type { EntityWithDomains, Member } from '../types/domain';
+import type { EntityWithDomains, Member, ShoppingTarget } from '../types/domain';
 
 /** Background classes that tell entities apart, assigned by display order. */
 const entityTones = [
@@ -41,6 +41,20 @@ export function buildLookups(
   });
   const memberNames = new Map(members.map((member) => [member.id, member.name]));
   return { domainLabels, domainTones, domainEntities, memberNames };
+}
+
+/** Every entity with its shopping domain, the home first: most missing items are for it. */
+export function shoppingTargets(entities: readonly EntityWithDomains[]): ShoppingTarget[] {
+  const targets: ShoppingTarget[] = [];
+  for (const entity of entities) {
+    const shoppingDomain = entity.domains.find((domain) => domain.role === 'shopping');
+    if (shoppingDomain !== undefined) {
+      targets.push({ entity, domainId: shoppingDomain.id });
+    }
+  }
+  return targets.sort(
+    (a, b) => Number(b.entity.kind === 'home') - Number(a.entity.kind === 'home'),
+  );
 }
 
 /** The debts domain of the home, where new debts land by default. */

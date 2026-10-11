@@ -74,6 +74,12 @@ export type NewMissingItem = {
   readonly domainId: string;
 };
 
+/** An entity and its shopping domain, for choosing whom a missing item is for. */
+export type ShoppingTarget = {
+  readonly entity: EntityWithDomains;
+  readonly domainId: string;
+};
+
 /** A shopping run with every missing item in it, bought ones included. */
 export type ShoppingRun = {
   readonly run: Item;

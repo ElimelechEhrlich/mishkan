@@ -20,7 +20,7 @@ export function ShoppingPage(): ReactElement {
   return (
     <PageShell title={labels.pages.shopping} incompleteCount={items.incomplete.length}>
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />
-      <MissingItemForm targets={shopping.targets} onAdd={shopping.addMissingItem} />
+      <MissingItemForm targets={shopping.targets} onAdd={items.addMissingItem} />
       {shopping.runs.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="px-1 text-[13px] font-bold tracking-wide text-muted">
