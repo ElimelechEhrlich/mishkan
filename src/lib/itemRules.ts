@@ -163,6 +163,33 @@ export function activeSectionOf(dueDate: string | null, today: string): ActiveSe
   return dueDate <= addDays(today, comingWeekDays) ? 'thisWeek' : 'upcoming';
 }
 
+/** The groups of the active tab, in the order they are shown. */
+export const activeSections = [
+  'overdue',
+  'today',
+  'thisWeek',
+  'upcoming',
+  'undated',
+] as const satisfies readonly ActiveSection[];
+
+/** Active entries split by how soon they are due. */
+export function splitBySection<T extends { readonly dueDate: string | null }>(
+  entries: readonly T[],
+  today: string,
+): Record<ActiveSection, T[]> {
+  const groups: Record<ActiveSection, T[]> = {
+    overdue: [],
+    today: [],
+    thisWeek: [],
+    upcoming: [],
+    undated: [],
+  };
+  for (const entry of entries) {
+    groups[activeSectionOf(entry.dueDate, today)].push(entry);
+  }
+  return groups;
+}
+
 export function isContainer(item: Item): boolean {
   return item.kind === 'goal' || item.kind === 'issue';
 }

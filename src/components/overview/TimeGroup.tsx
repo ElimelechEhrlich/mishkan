@@ -16,6 +16,8 @@ type TimeGroupProps = {
   readonly defaultOpen?: boolean;
   /** How many rows to show before "and N more". */
   readonly limit?: number;
+  /** Overdue groups show their name in red. */
+  readonly alert?: boolean;
 };
 
 /** One time group inside an overview card: a header that folds, and its first few rows. */
@@ -26,6 +28,7 @@ export function TimeGroup({
   onComplete,
   defaultOpen = false,
   limit = 3,
+  alert = false,
 }: TimeGroupProps): ReactElement | null {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -47,7 +50,11 @@ export function TimeGroup({
         }}
         className="flex items-center gap-2 bg-paper/50 px-3.5 py-2 text-start active:bg-paper"
       >
-        <span className="flex-1 text-xs font-bold tracking-wide text-muted">{label}</span>
+        <span
+          className={`flex-1 text-xs font-bold tracking-wide ${alert ? 'text-alert' : 'text-muted'}`}
+        >
+          {label}
+        </span>
         <span className="rounded-full bg-line/80 px-2 text-xs leading-5 font-semibold text-muted">
           {String(entries.length)}
         </span>

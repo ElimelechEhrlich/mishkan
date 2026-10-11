@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { activeSectionOf, compareEntries, todayIso } from '../../lib/itemRules';
+import { activeSectionOf, activeSections, compareEntries, todayIso } from '../../lib/itemRules';
 import type { ListEntry } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
-import type { ActiveSection, Item } from '../../types/domain';
+import type { Item } from '../../types/domain';
 import { EmptyState } from '../ui/EmptyState';
 import { SkeletonList } from '../ui/SkeletonList';
 import { EntryRow } from './EntryRow';
@@ -21,13 +21,7 @@ type ItemListProps = {
   readonly emptyText?: string;
 };
 
-const sections = [
-  'overdue',
-  'today',
-  'thisWeek',
-  'upcoming',
-  'undated',
-] as const satisfies readonly ActiveSection[];
+const sections = activeSections;
 
 const cardClass = 'overflow-hidden rounded-2xl bg-surface shadow-card';
 

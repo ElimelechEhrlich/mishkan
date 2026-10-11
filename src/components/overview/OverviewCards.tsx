@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
+import { activeSections, splitBySection, todayIso } from '../../lib/itemRules';
 import { timeGroupsSummary } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
 import type { Overview, TimeGroups } from '../../hooks/useOverview';
@@ -27,29 +28,40 @@ function counts(groups: TimeGroups): Record<'active' | 'waiting' | 'someday', nu
  * everything else stays folded to its one-line summary, so the whole picture fits.
  */
 export function OverviewCards({ overview, lookups, onComplete }: OverviewCardsProps): ReactElement {
-  const timeCard = (groups: TimeGroups, openActive: boolean): ReactElement => (
-    <>
-      <TimeGroup
-        label={labels.segment.active}
-        entries={groups.active}
-        lookups={lookups}
-        onComplete={onComplete}
-        defaultOpen={openActive}
-      />
-      <TimeGroup
-        label={labels.segment.waiting}
-        entries={groups.waiting}
-        lookups={lookups}
-        onComplete={onComplete}
-      />
-      <TimeGroup
-        label={labels.segment.someday}
-        entries={groups.someday}
-        lookups={lookups}
-        onComplete={onComplete}
-      />
-    </>
-  );
+  const today = todayIso();
+  /** Active items split by how soon they are due; the near groups open on the tasks card. */
+  const timeCard = (groups: TimeGroups, openNear: boolean): ReactElement => {
+    const sections = splitBySection(groups.active, today);
+    return (
+      <>
+        {activeSections.map((section) => (
+          <TimeGroup
+            key={section}
+            label={labels.section[section]}
+            entries={sections[section]}
+            lookups={lookups}
+            onComplete={onComplete}
+            alert={section === 'overdue'}
+            defaultOpen={
+              openNear && (section === 'overdue' || section === 'today' || section === 'thisWeek')
+            }
+          />
+        ))}
+        <TimeGroup
+          label={labels.segment.waiting}
+          entries={groups.waiting}
+          lookups={lookups}
+          onComplete={onComplete}
+        />
+        <TimeGroup
+          label={labels.segment.someday}
+          entries={groups.someday}
+          lookups={lookups}
+          onComplete={onComplete}
+        />
+      </>
+    );
+  };
 
   const debtSummary =
     overview.debtCount === 0
