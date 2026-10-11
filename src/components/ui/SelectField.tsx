@@ -34,7 +34,7 @@ export function SelectField({
         onChange={(event) => {
           onChange(event.target.value);
         }}
-        className="min-h-12 w-full rounded-xl border border-line bg-surface px-3 text-base focus:border-primary focus:outline-none"
+        className="min-h-12 w-full rounded-xl border border-line bg-surface px-3 text-base transition focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none"
       >
         <option value="">{placeholder}</option>
         {options.map((option) => (

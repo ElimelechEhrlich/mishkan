@@ -82,7 +82,7 @@ export function QuickAddSheet({
         onClick={() => {
           setOpen(true);
         }}
-        className="fixed start-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-float transition active:scale-95"
+        className="fixed start-4 bottom-[calc(6.25rem+env(safe-area-inset-bottom))] z-10 flex size-14 items-center justify-center rounded-[20px] bg-primary text-white shadow-float transition active:scale-95"
       >
         <Icon name="plus" className="size-7" />
       </button>

@@ -18,7 +18,7 @@ export function Segmented<Value extends string>({
   onChange,
 }: SegmentedProps<Value>): ReactElement {
   return (
-    <div role="tablist" className="flex gap-1 rounded-2xl bg-line/60 p-1">
+    <div role="tablist" className="flex gap-1 rounded-full bg-line/60 p-1">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -30,7 +30,7 @@ export function Segmented<Value extends string>({
             onClick={() => {
               onChange(option.value);
             }}
-            className={`flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-medium transition ${
+            className={`flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-medium transition ${
               selected ? 'bg-surface font-bold text-ink shadow-card' : 'text-muted'
             }`}
           >

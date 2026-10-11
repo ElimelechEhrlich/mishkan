@@ -3,6 +3,7 @@ import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { EmptyState } from '../ui/EmptyState';
+import { SkeletonList } from '../ui/SkeletonList';
 import { DoneRow } from './DoneRow';
 
 type DoneListProps = {
@@ -14,7 +15,7 @@ type DoneListProps = {
 
 export function DoneList({ items, lookups, loading, onReopen }: DoneListProps): ReactElement {
   if (items.length === 0) {
-    return <EmptyState text={loading ? labels.status.loading : labels.status.noDoneItems} />;
+    return loading ? <SkeletonList /> : <EmptyState text={labels.status.noDoneItems} />;
   }
 
   return (

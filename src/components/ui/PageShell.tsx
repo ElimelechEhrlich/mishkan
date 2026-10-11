@@ -28,7 +28,7 @@ export function PageShell({
   const navigate = useNavigate();
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-1 bg-paper/90 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center gap-1 bg-paper/60 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 backdrop-blur-md">
         {inner && (
           <IconButton
             icon="back"
@@ -40,7 +40,7 @@ export function PageShell({
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <h1
-            className={`truncate font-display font-bold ${inner ? 'text-2xl' : 'text-[32px] leading-10'}`}
+            className={`truncate font-display font-bold ${inner ? 'text-2xl' : 'text-[30px] leading-10 tracking-tight'}`}
           >
             {title}
           </h1>
@@ -57,7 +57,7 @@ export function PageShell({
           </Link>
         )}
       </header>
-      <main className="flex flex-1 flex-col gap-4 px-4 pt-1 pb-44">{children}</main>
+      <main className="flex flex-1 animate-fade-in flex-col gap-4 px-4 pt-1 pb-48">{children}</main>
       <BottomNav incompleteCount={incompleteCount} />
     </div>
   );

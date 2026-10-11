@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { AreaWithDomains, Item, ItemUpdate, Member } from '../../types/domain';
 import { EmptyState } from '../ui/EmptyState';
+import { SkeletonList } from '../ui/SkeletonList';
 import { ItemAssign } from './ItemAssign';
 
 type IncompleteListProps = {
@@ -22,7 +23,7 @@ export function IncompleteList({
   onAddChild,
 }: IncompleteListProps): ReactElement {
   if (items.length === 0) {
-    return <EmptyState text={loading ? labels.status.loading : labels.status.nothingMissing} />;
+    return loading ? <SkeletonList /> : <EmptyState text={labels.status.nothingMissing} />;
   }
 
   return (

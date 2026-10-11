@@ -4,6 +4,7 @@ import { todayIso } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { EmptyState } from '../ui/EmptyState';
+import { SkeletonList } from '../ui/SkeletonList';
 import { GoalCard } from './GoalCard';
 
 type GoalListProps = {
@@ -19,7 +20,7 @@ export function GoalList({ items, steps, lookups, loading }: GoalListProps): Rea
   const today = todayIso();
 
   if (goals.length === 0) {
-    return <EmptyState text={loading ? labels.status.loading : labels.status.noGoals} />;
+    return loading ? <SkeletonList /> : <EmptyState text={labels.status.noGoals} />;
   }
 
   return (

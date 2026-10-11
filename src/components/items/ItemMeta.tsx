@@ -10,10 +10,17 @@ type ItemMetaProps = {
   readonly item: Item;
   readonly lookups: Lookups;
   readonly today: string;
+  /** Leaves out the area color dot, for rows that show the color another way. */
+  readonly hideTone?: boolean;
 };
 
 /** The small line under an item's title: area color, domain, member and time. */
-export function ItemMeta({ item, lookups, today }: ItemMetaProps): ReactElement {
+export function ItemMeta({
+  item,
+  lookups,
+  today,
+  hideTone = false,
+}: ItemMetaProps): ReactElement {
   const domainLabel = item.domain_id === null ? null : lookups.domainLabels.get(item.domain_id);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
   const memberName = item.member_id === null ? null : lookups.memberNames.get(item.member_id);
@@ -29,7 +36,7 @@ export function ItemMeta({ item, lookups, today }: ItemMetaProps): ReactElement 
           {labels.kind[item.kind]}
         </span>
       )}
-      {tone !== undefined && <span className={`size-2 rounded-full ${tone}`} />}
+      {tone !== undefined && !hideTone && <span className={`size-2 rounded-full ${tone}`} />}
       {parts.length > 0 && <span>{parts.join(labels.item.separator)}</span>}
       {time !== null && (
         <span

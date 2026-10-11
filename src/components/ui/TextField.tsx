@@ -41,7 +41,7 @@ export function TextField({
         onChange={(event) => {
           onChange(event.target.value);
         }}
-        className="min-h-12 w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-base placeholder:text-muted/70 focus:border-primary focus:outline-none"
+        className="min-h-12 w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-base placeholder:text-muted/70 transition focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none"
       />
     </div>
   );

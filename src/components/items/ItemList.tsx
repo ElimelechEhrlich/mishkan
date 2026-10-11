@@ -4,6 +4,7 @@ import { activeSectionOf, compareByDueDate, todayIso } from '../../lib/itemRules
 import type { Lookups } from '../../lib/lookups';
 import type { ActiveSection, Item } from '../../types/domain';
 import { EmptyState } from '../ui/EmptyState';
+import { SkeletonList } from '../ui/SkeletonList';
 import { ItemRow } from './ItemRow';
 
 type ItemListProps = {
@@ -27,7 +28,7 @@ export function ItemList({
   const today = todayIso();
 
   if (items.length === 0) {
-    return <EmptyState text={loading ? labels.status.loading : labels.status.emptySegment} />;
+    return loading ? <SkeletonList /> : <EmptyState text={labels.status.emptySegment} />;
   }
 
   const sorted = [...items].sort(compareByDueDate);
@@ -36,7 +37,7 @@ export function ItemList({
     return (
       <ul className="flex flex-col gap-2">
         {sorted.map((item) => (
-          <ItemRow key={item.id} item={item} lookups={lookups} today={today} onComplete={onComplete} />
+          <ItemRow key={`${item.id}-${item.due_date ?? ''}`} item={item} lookups={lookups} today={today} onComplete={onComplete} />
         ))}
       </ul>
     );
@@ -68,7 +69,7 @@ export function ItemList({
             <ul className="flex flex-col gap-2">
               {rows.map((item) => (
                 <ItemRow
-                  key={item.id}
+                  key={`${item.id}-${item.due_date ?? ''}`}
                   item={item}
                   lookups={lookups}
                   today={today}

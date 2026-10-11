@@ -21,7 +21,7 @@ export function TextArea({ label, value, onChange }: TextAreaProps): ReactElemen
         onChange={(event) => {
           onChange(event.target.value);
         }}
-        className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-base focus:border-primary focus:outline-none"
+        className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-base transition focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none"
       />
     </div>
   );

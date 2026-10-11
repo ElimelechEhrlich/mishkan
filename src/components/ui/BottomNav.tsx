@@ -23,14 +23,14 @@ const navItems: readonly NavItem[] = [
 
 export function BottomNav({ incompleteCount }: BottomNavProps): ReactElement {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <div className="mx-auto grid max-w-xl grid-cols-4">
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-10 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="pointer-events-auto mx-auto grid max-w-[34rem] grid-cols-4 rounded-[28px] bg-surface/90 px-1 shadow-nav backdrop-blur-md">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === '/'}
-            className="flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs"
+            className="flex min-h-[68px] flex-col items-center justify-center gap-0.5 text-xs"
           >
             {({ isActive }) => (
               <>
