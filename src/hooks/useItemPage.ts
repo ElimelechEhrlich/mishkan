@@ -11,9 +11,14 @@ export type UseItemPage = {
   readonly items: UseItems;
   /** The item named in the URL, or null when it is not visible or still loading. */
   readonly item: Item | null;
-  /** The steps of the item, when it is a goal or an issue. */
+  /** The task steps of the item, when it is a goal or an issue. */
   readonly steps: readonly Item[];
+  /** The questions of the item, when it is an issue. */
+  readonly questions: readonly Item[];
+  /** The details of the item while it is a debt. */
   readonly debt: DebtDetails | null;
+  /** Whether the item has debt details, kept from a time it was a debt. */
+  readonly hasDebtDetails: boolean;
   /** Set when a closed item could not be loaded. */
   readonly error: string | null;
   readonly addStep: (parent: Item, title: string) => void;
@@ -63,10 +68,13 @@ export function useItemPage(): UseItemPage {
 
   const item = listed ?? (closed?.id === itemId ? closed : null);
 
-  const steps = item === null ? [] : items.steps.filter((step) => step.parent_id === item.id);
+  const children = item === null ? [] : items.steps.filter((step) => step.parent_id === item.id);
+  const steps = children.filter((child) => child.kind === 'task');
+  const questions = children.filter((child) => child.kind === 'question');
   const debt =
     [...debts.owedToUs, ...debts.weOwe].find((candidate) => candidate.item.id === itemId)
       ?.details ?? null;
+  const hasDebtDetails = itemId !== undefined && debts.detailsByItem.has(itemId);
 
   const { addItem, deleteItem } = items;
 
@@ -93,5 +101,15 @@ export function useItemPage(): UseItemPage {
     [deleteItem, navigate],
   );
 
-  return { items, item, steps, debt, error, addStep, deleteAndLeave };
+  return {
+    items,
+    item,
+    steps,
+    questions,
+    debt,
+    hasDebtDetails,
+    error,
+    addStep,
+    deleteAndLeave,
+  };
 }

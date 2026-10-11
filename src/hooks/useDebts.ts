@@ -11,6 +11,8 @@ type DebtsState = {
 export type UseDebts = {
   readonly owedToUs: readonly Debt[];
   readonly weOwe: readonly Debt[];
+  /** The details of every visible item that is or was a debt, by item id. */
+  readonly detailsByItem: ReadonlyMap<string, DebtDetails>;
   readonly error: string | null;
   readonly addDebt: (newDebt: NewDebt) => Promise<boolean>;
 };
@@ -41,17 +43,21 @@ export function useDebts(items: readonly Item[], reloadItems: () => void): UseDe
     };
   }, [debtKey]);
 
+  const detailsByItem = useMemo(
+    () => new Map(state.details.map((details) => [details.item_id, details])),
+    [state.details],
+  );
+
   const debts = useMemo(() => {
-    const byItem = new Map(state.details.map((details) => [details.item_id, details]));
     const result: Debt[] = [];
     for (const item of debtItems) {
-      const details = byItem.get(item.id);
+      const details = detailsByItem.get(item.id);
       if (details !== undefined) {
         result.push({ item, details });
       }
     }
     return result;
-  }, [debtItems, state.details]);
+  }, [debtItems, detailsByItem]);
 
   const addDebt = useCallback(
     async (newDebt: NewDebt): Promise<boolean> => {
@@ -70,6 +76,7 @@ export function useDebts(items: readonly Item[], reloadItems: () => void): UseDe
   return {
     owedToUs: debts.filter((debt) => debt.details.direction === 'owed_to_us'),
     weOwe: debts.filter((debt) => debt.details.direction === 'we_owe'),
+    detailsByItem,
     error: state.error,
     addDebt,
   };

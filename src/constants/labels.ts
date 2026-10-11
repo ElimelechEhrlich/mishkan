@@ -26,6 +26,7 @@ const kind = {
   debt: 'חוב',
   missing_item: 'פריט חסר',
   shopping_run: 'סבב קניות',
+  question: 'שאלה',
 } as const satisfies Record<ItemKind, string>;
 
 const shoppingCategory = {
@@ -136,6 +137,8 @@ export const labels = {
     markNotBought: 'החזרה לרשימה',
     startRun: 'יציאה לסבב',
     finishRun: 'סיום הסבב',
+    markResolved: 'סימון כנפתרה',
+    markUnresolved: 'החזרה לפתוחה',
   },
   fields: {
     email: 'אימייל',
@@ -192,6 +195,7 @@ export const labels = {
     prerequisites: 'במה זה תלוי',
     dependsOnItem: 'תלוי בפריט אחר',
     steps: 'צעדים',
+    questions: 'שאלות',
     parent: 'שיוך ליעד',
     attachments: 'קבצים מצורפים',
     debt: 'פרטי החוב',
@@ -207,6 +211,20 @@ export const labels = {
   goals: {
     progressOf: 'מתוך',
     noSteps: 'אין צעדים עדיין',
+    resolved: 'סוגיות שנפתרו',
+  },
+  convert: {
+    convertTo: 'המרה ל',
+    stepsQuestion: 'מה לעשות בצעדים ובשאלות שלו?',
+    hideSteps: 'להסתיר אותם (יחזרו אם יחזור להיות יעד או סוגיה)',
+    detachSteps: 'להפוך אותם לפריטים עצמאיים',
+    hint: 'שום נתון לא נמחק בהמרה. אם חסר משהו לסוג החדש, הפריט יחכה לך ב"להשלמה".',
+  },
+  questions: {
+    answer: 'תשובה',
+    noAnswer: 'אין תשובה עדיין',
+    none: 'אין שאלות עדיין',
+    newQuestion: 'שאלה חדשה',
   },
   shopping: {
     shared: 'משותף',

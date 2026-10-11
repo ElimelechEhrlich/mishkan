@@ -29,7 +29,7 @@ export function GoalList({ items, steps, lookups, loading }: GoalListProps): Rea
         <GoalCard
           key={goal.id}
           goal={goal}
-          steps={steps.filter((step) => step.parent_id === goal.id)}
+          steps={steps.filter((step) => step.parent_id === goal.id && step.kind === 'task')}
           lookups={lookups}
           today={today}
         />

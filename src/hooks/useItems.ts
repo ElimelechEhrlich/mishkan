@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import {
   completeItem,
+  convertItem,
   createItem,
+  createQuestion,
   deleteItem,
   listOpenItems,
   listSteps,
@@ -11,7 +13,7 @@ import {
   updateItem,
 } from '../services/itemService';
 import { createMissingItem } from '../services/shoppingService';
-import type { Item, ItemUpdate, NewItem, NewMissingItem } from '../types/domain';
+import type { Conversion, Item, ItemUpdate, NewItem, NewMissingItem } from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
 
 type ItemsState = {
@@ -35,7 +37,9 @@ export type UseItems = {
   readonly reload: () => void;
   readonly addItem: (newItem: NewItem) => Promise<boolean>;
   readonly addMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
+  readonly addQuestion: (issueId: string, title: string) => void;
   readonly updateItem: (itemId: string, changes: ItemUpdate) => void;
+  readonly convertItem: (itemId: string, conversion: Conversion) => Promise<boolean>;
   readonly completeItem: (item: Item) => void;
   readonly reopenItem: (itemId: string) => void;
   readonly deleteItem: (itemId: string) => Promise<boolean>;
@@ -92,6 +96,19 @@ export function useItems(): UseItems {
     [run],
   );
 
+  const handleAddQuestion = useCallback(
+    (issueId: string, title: string): void => {
+      void run(() => createQuestion(issueId, title));
+    },
+    [run],
+  );
+
+  const handleConvert = useCallback(
+    (itemId: string, conversion: Conversion): Promise<boolean> =>
+      run(() => convertItem(itemId, conversion)),
+    [run],
+  );
+
   const handleUpdate = useCallback(
     (itemId: string, changes: ItemUpdate): void => {
       void run(() => updateItem(itemId, changes));
@@ -134,7 +151,9 @@ export function useItems(): UseItems {
     reload,
     addItem: handleAdd,
     addMissingItem: handleAddMissing,
+    addQuestion: handleAddQuestion,
     updateItem: handleUpdate,
+    convertItem: handleConvert,
     completeItem: handleComplete,
     reopenItem: handleReopen,
     deleteItem: handleDelete,

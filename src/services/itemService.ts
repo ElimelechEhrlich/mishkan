@@ -1,12 +1,13 @@
 import { nextDueDate, recurrenceOf, todayIso } from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
-import type { Item, ItemUpdate, NewItem } from '../types/domain';
+import type { Conversion, Item, ItemKind, ItemUpdate, NewItem } from '../types/domain';
 
 export async function listOpenItems(): Promise<Item[]> {
   const { data, error } = await supabase
     .from('items')
     .select('*')
     .eq('status', 'open')
+    .eq('hidden', false)
     .order('created_at', { ascending: false });
   if (error !== null) {
     throw new Error(error.message);
@@ -14,12 +15,16 @@ export async function listOpenItems(): Promise<Item[]> {
   return data;
 }
 
-/** Every step of a goal or an issue, done ones included, so progress can be shown. */
+/**
+ * Every step and question of a goal or an issue, done ones included, so progress can be shown.
+ * Steps hidden by a conversion of their parent are left out.
+ */
 export async function listSteps(): Promise<Item[]> {
   const { data, error } = await supabase
     .from('items')
     .select('*')
     .not('parent_id', 'is', null)
+    .eq('hidden', false)
     .order('created_at');
   if (error !== null) {
     throw new Error(error.message);
@@ -27,12 +32,10 @@ export async function listSteps(): Promise<Item[]> {
   return data;
 }
 
-/** The most recently closed items, newest first. */
-export async function listDoneItems(limit: number): Promise<Item[]> {
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('status', 'done')
+/** The most recently closed items, newest first; only of one kind when `kind` is given. */
+export async function listDoneItems(limit: number, kind: ItemKind | null): Promise<Item[]> {
+  const query = supabase.from('items').select('*').eq('status', 'done').eq('hidden', false);
+  const { data, error } = await (kind === null ? query : query.eq('kind', kind))
     .order('completed_at', { ascending: false })
     .limit(limit);
   if (error !== null) {
@@ -57,6 +60,40 @@ export async function createItem(newItem: NewItem): Promise<void> {
     kind: newItem.kind,
     domain_id: newItem.domainId,
     parent_id: newItem.parentId,
+  });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
+
+/** A question of an issue; its answer is filled in later. */
+export async function createQuestion(issueId: string, title: string): Promise<void> {
+  const { error } = await supabase
+    .from('items')
+    .insert({ title, kind: 'question', parent_id: issueId });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Converts an item to another kind. Nothing is deleted: fields the new kind does not use
+ * are kept and come back if it is converted back. The item then waits in
+ * "needs completion" of the current parent if the new kind lacks something.
+ */
+export async function convertItem(itemId: string, conversion: Conversion): Promise<void> {
+  const { error } = await supabase.rpc('convert_item', {
+    p_item_id: itemId,
+    p_kind: conversion.kind,
+    p_detach_steps: conversion.detachSteps,
+    ...(conversion.category === null ? {} : { p_category: conversion.category }),
+    ...(conversion.debt === null
+      ? {}
+      : {
+          p_amount: conversion.debt.amount,
+          p_counterparty: conversion.debt.counterparty,
+          p_direction: conversion.debt.direction,
+        }),
   });
   if (error !== null) {
     throw new Error(error.message);

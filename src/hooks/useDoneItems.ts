@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import { listDoneItems, reopenItem } from '../services/itemService';
-import type { Item } from '../types/domain';
+import type { Item, ItemKind } from '../types/domain';
 
 const doneLimit = 100;
 
@@ -15,18 +15,18 @@ export type UseDoneItems = DoneState & {
   readonly reopen: (itemId: string) => void;
 };
 
-/** The most recently closed items, and a way to bring one back. */
-export function useDoneItems(): UseDoneItems {
+/** The most recently closed items, only of one kind when `kind` is given, and a way to bring one back. */
+export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
   const [state, setState] = useState<DoneState>({ items: [], loading: true, error: null });
 
   const load = useCallback(async (): Promise<void> => {
     try {
-      const items = await listDoneItems(doneLimit);
+      const items = await listDoneItems(doneLimit, kind);
       setState({ items, loading: false, error: null });
     } catch (error: unknown) {
       setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
     }
-  }, []);
+  }, [kind]);
 
   useEffect(() => {
     void load();

@@ -6,7 +6,8 @@ import { needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
 import { fullTimeText } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
 import type {
-  CapturableKind,
+  Conversion,
+  ConvertibleKind,
   DebtDetails,
   EntityWithDomains,
   Item,
@@ -21,8 +22,11 @@ import { ConfirmButton } from '../ui/ConfirmButton';
 import { PropertyRow } from '../ui/PropertyRow';
 import { SelectField } from '../ui/SelectField';
 import { AttachmentList } from './AttachmentList';
+import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
 import { PrerequisiteList } from './PrerequisiteList';
+import { QuestionList } from './QuestionList';
+import { QuestionRow } from './QuestionRow';
 import { StepList } from './StepList';
 import { TimePicker } from './TimePicker';
 
@@ -30,9 +34,13 @@ type ItemEditorProps = {
   readonly item: Item;
   /** Every open item, for choosing a parent goal or a dependency. */
   readonly items: readonly Item[];
-  /** The steps of this item, when it is a goal or an issue. */
+  /** The task steps of this item, when it is a goal or an issue. */
   readonly steps: readonly Item[];
+  /** The questions of this item, when it is an issue. */
+  readonly questions: readonly Item[];
   readonly debt: DebtDetails | null;
+  /** Whether the item kept debt details from a time it was a debt. */
+  readonly hasDebtDetails: boolean;
   readonly entities: readonly EntityWithDomains[];
   readonly lookups: Lookups;
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
@@ -40,14 +48,30 @@ type ItemEditorProps = {
   readonly onReopen: (itemId: string) => void;
   readonly onDelete: (itemId: string) => void;
   readonly onAddStep: (parent: Item, title: string) => void;
+  readonly onAddQuestion: (issueId: string, title: string) => void;
+  readonly onConvert: (itemId: string, conversion: Conversion) => void;
   readonly onPrerequisitesChange: () => void;
 };
 
 type Row = 'kind' | 'domain' | 'category' | 'time' | 'parent';
 
-const kinds = ['task', 'goal', 'issue', 'note'] as const satisfies readonly CapturableKind[];
+const convertibleKinds = [
+  'task',
+  'goal',
+  'issue',
+  'note',
+  'debt',
+  'missing_item',
+] as const satisfies readonly ConvertibleKind[];
+
+function asConvertible(kind: ItemKind): ConvertibleKind | null {
+  return convertibleKinds.find((candidate) => candidate === kind) ?? null;
+}
 
 function doneLabel(kind: ItemKind, done: boolean): string {
+  if (kind === 'issue') {
+    return done ? labels.actions.markUnresolved : labels.actions.markResolved;
+  }
   if (kind === 'missing_item') {
     return done ? labels.actions.markNotBought : labels.actions.markBought;
   }
@@ -62,7 +86,9 @@ export function ItemEditor({
   item,
   items,
   steps,
+  questions,
   debt,
+  hasDebtDetails,
   entities,
   lookups,
   onUpdate,
@@ -70,6 +96,8 @@ export function ItemEditor({
   onReopen,
   onDelete,
   onAddStep,
+  onAddQuestion,
+  onConvert,
   onPrerequisitesChange,
 }: ItemEditorProps): ReactElement {
   const [openRow, setOpenRow] = useState<Row | null>(null);
@@ -86,9 +114,9 @@ export function ItemEditor({
   const isStep = item.parent_id !== null;
   const isContainer = item.kind === 'goal' || item.kind === 'issue';
   const isShopping = item.kind === 'missing_item' || item.kind === 'shopping_run';
-  const hasSchedule = item.kind !== 'note' && item.kind !== 'debt' && !isShopping;
-  const canChangeKind =
-    kinds.some((kind) => kind === item.kind) && !isStep && steps.length === 0;
+  const isQuestion = item.kind === 'question';
+  const hasSchedule = item.kind !== 'note' && item.kind !== 'debt' && !isShopping && !isQuestion;
+  const convertible = isStep ? null : asConvertible(item.kind);
   // A missing item can only move to the shopping domain of another entity.
   const domainChoices = isShopping
     ? entities.map((entity) => ({
@@ -107,7 +135,7 @@ export function ItemEditor({
     <div className="flex flex-col gap-4">
       <Card>
         <ItemTextForm key={item.id} item={item} onUpdate={onUpdate} />
-        {item.kind !== 'note' && (
+        {item.kind !== 'note' && !isQuestion && (
           <Button
             variant={done ? 'ghost' : 'soft'}
             onClick={() => {
@@ -137,7 +165,7 @@ export function ItemEditor({
       )}
 
       <section className="flex flex-col divide-y divide-line rounded-2xl bg-surface px-4 shadow-card">
-        {canChangeKind && (
+        {convertible !== null && (
           <PropertyRow
             label={labels.sections.kind}
             value={labels.kind[item.kind]}
@@ -146,18 +174,17 @@ export function ItemEditor({
               toggle('kind');
             }}
           >
-            <div className="flex flex-wrap gap-2">
-              {kinds.map((kind) => (
-                <Chip
-                  key={kind}
-                  label={labels.kind[kind]}
-                  selected={kind === item.kind}
-                  onClick={() => {
-                    update({ kind });
-                  }}
-                />
-              ))}
-            </div>
+            <ConvertPanel
+              key={item.id}
+              item={item}
+              kind={convertible}
+              hasSteps={steps.length > 0 || questions.length > 0}
+              hasDebtDetails={hasDebtDetails}
+              onConvert={(conversion) => {
+                onConvert(item.id, conversion);
+                setOpenRow(null);
+              }}
+            />
           </PropertyRow>
         )}
 
@@ -260,6 +287,26 @@ export function ItemEditor({
       {item.time_mode === 'waiting' && (
         <Card title={labels.sections.prerequisites}>
           <PrerequisiteList item={item} candidates={items} onChange={onPrerequisitesChange} />
+        </Card>
+      )}
+
+      {isQuestion && (
+        <Card title={labels.questions.answer}>
+          <ul>
+            <QuestionRow question={item} onUpdate={onUpdate} standalone />
+          </ul>
+        </Card>
+      )}
+
+      {item.kind === 'issue' && (
+        <Card title={labels.sections.questions}>
+          <QuestionList
+            questions={questions}
+            onUpdate={onUpdate}
+            onAdd={(title) => {
+              onAddQuestion(item.id, title);
+            }}
+          />
         </Card>
       )}
 

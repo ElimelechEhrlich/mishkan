@@ -114,7 +114,12 @@ export function nextDueDate(current: string | null, recurrence: Recurrence, toda
 
 /** Which tab of the open-items page shows this item. Debts and shopping have their own pages. */
 export function segmentOf(item: Item): OpenSegment | null {
-  if (item.kind === 'debt' || item.kind === 'missing_item' || item.kind === 'shopping_run') {
+  if (
+    item.kind === 'debt' ||
+    item.kind === 'missing_item' ||
+    item.kind === 'shopping_run' ||
+    item.kind === 'question'
+  ) {
     return null;
   }
   if (item.kind === 'note') {

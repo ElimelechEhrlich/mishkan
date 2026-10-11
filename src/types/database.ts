@@ -1,11 +1,19 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0003_shopping.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0004_conversions.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
 type MemberRole = 'parent' | 'child' | 'household';
 type EntityKind = 'parent' | 'personal' | 'child' | 'home' | 'couple';
 type DomainRole = 'regular' | 'shopping' | 'debts';
-type ItemKind = 'task' | 'goal' | 'issue' | 'note' | 'debt' | 'missing_item' | 'shopping_run';
+type ItemKind =
+  | 'task'
+  | 'goal'
+  | 'issue'
+  | 'note'
+  | 'debt'
+  | 'missing_item'
+  | 'shopping_run'
+  | 'question';
 type ShoppingCategory = 'food' | 'clothing' | 'urgent' | 'planned';
 type ItemTimeMode = 'scheduled' | 'recurring' | 'anytime' | 'waiting' | 'someday';
 type ItemStatus = 'open' | 'done';
@@ -138,6 +146,8 @@ export type Database = {
           previous_domain_label: string | null;
           shopping_category: ShoppingCategory | null;
           run_id: string | null;
+          hidden: boolean;
+          answer: string | null;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -160,14 +170,16 @@ export type Database = {
           previous_domain_label?: string | null;
           shopping_category?: ShoppingCategory | null;
           run_id?: string | null;
+          hidden?: boolean;
+          answer?: string | null;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
         };
+        // The kind is changed only through convert_item().
         Update: {
           title?: string;
           notes?: string | null;
-          kind?: ItemKind;
           domain_id?: string | null;
           parent_id?: string | null;
           time_mode?: ItemTimeMode | null;
@@ -177,6 +189,7 @@ export type Database = {
           status?: ItemStatus;
           shopping_category?: ShoppingCategory | null;
           run_id?: string | null;
+          answer?: string | null;
         };
         Relationships: [];
       };
@@ -287,6 +300,18 @@ export type Database = {
       };
       delete_entity: {
         Args: { p_entity_id: string };
+        Returns: undefined;
+      };
+      convert_item: {
+        Args: {
+          p_item_id: string;
+          p_kind: ItemKind;
+          p_detach_steps?: boolean;
+          p_category?: ShoppingCategory;
+          p_amount?: number;
+          p_counterparty?: string;
+          p_direction?: DebtDirection;
+        };
         Returns: undefined;
       };
       create_shopping_run: {

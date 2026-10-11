@@ -30,7 +30,9 @@ export function ItemPage(): ReactElement {
           item={item}
           items={items.items}
           steps={page.steps}
+          questions={page.questions}
           debt={page.debt}
+          hasDebtDetails={page.hasDebtDetails}
           entities={entities.entities}
           lookups={lookups}
           onUpdate={items.updateItem}
@@ -38,6 +40,10 @@ export function ItemPage(): ReactElement {
           onReopen={items.reopenItem}
           onDelete={page.deleteAndLeave}
           onAddStep={page.addStep}
+          onAddQuestion={items.addQuestion}
+          onConvert={(itemId, conversion) => {
+            void items.convertItem(itemId, conversion);
+          }}
           onPrerequisitesChange={items.reload}
         />
       )}

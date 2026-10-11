@@ -60,6 +60,28 @@ export type NewItem = {
   readonly parentId: string | null;
 };
 
+/** Kinds an item can be converted to and from; runs and questions are left out. */
+export type ConvertibleKind = Extract<
+  ItemKind,
+  'task' | 'goal' | 'issue' | 'note' | 'debt' | 'missing_item'
+>;
+
+export type DebtInput = {
+  readonly counterparty: string;
+  readonly amount: number;
+  readonly direction: DebtDirection;
+};
+
+export type Conversion = {
+  readonly kind: ConvertibleKind;
+  /** For a goal or issue that stops being one: make its steps standalone instead of hiding them. */
+  readonly detachSteps: boolean;
+  /** For a new missing item. */
+  readonly category: ShoppingCategory | null;
+  /** For a new debt that never had details. */
+  readonly debt: DebtInput | null;
+};
+
 export type NewDebt = {
   readonly counterparty: string;
   readonly amount: number;
