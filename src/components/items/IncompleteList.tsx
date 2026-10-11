@@ -10,6 +10,8 @@ type IncompleteListProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly loading: boolean;
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
+  /** Reloads the entities after a child or domain is added while choosing a domain. */
+  readonly onStructureChanged: () => Promise<void>;
 };
 
 export function IncompleteList({
@@ -17,6 +19,7 @@ export function IncompleteList({
   entities,
   loading,
   onUpdate,
+  onStructureChanged,
 }: IncompleteListProps): ReactElement {
   if (items.length === 0) {
     return loading ? <SkeletonList /> : <EmptyState text={labels.status.nothingMissing} />;
@@ -25,7 +28,13 @@ export function IncompleteList({
   return (
     <ul className="flex flex-col gap-3">
       {items.map((item) => (
-        <ItemAssign key={item.id} item={item} entities={entities} onUpdate={onUpdate} />
+        <ItemAssign
+          key={item.id}
+          item={item}
+          entities={entities}
+          onUpdate={onUpdate}
+          onStructureChanged={onStructureChanged}
+        />
       ))}
     </ul>
   );

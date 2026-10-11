@@ -1,10 +1,12 @@
-import { useState } from "react";
-import type { ReactElement } from "react";
-import { labels } from "../../constants/labels";
-import { entityTone } from "../../lib/lookups";
-import type { EntityWithDomains } from "../../types/domain";
-import { Chip } from "../ui/Chip";
-import { InlineAddChip } from "../ui/InlineAddChip";
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { labels } from '../../constants/labels';
+import { entityTone } from '../../lib/lookups';
+import type { EntityWithDomains } from '../../types/domain';
+import { useQuickStructure } from '../../hooks/useQuickStructure';
+import { Chip } from '../ui/Chip';
+import { ErrorBanner } from '../ui/ErrorBanner';
+import { InlineAddChip } from '../ui/InlineAddChip';
 
 type DomainPickerProps = {
   readonly entities: readonly EntityWithDomains[];
@@ -12,14 +14,14 @@ type DomainPickerProps = {
   readonly onChange: (domainId: string | null) => void;
   /** The entity opened at first when no domain is chosen yet. */
   readonly initialEntityId?: string | undefined;
-  /** Adds a domain to an entity; resolves to its id, or null when it failed. Without it, no adding. */
-  readonly onAddDomain?: (
-    entity: EntityWithDomains,
-    name: string,
-  ) => Promise<string | null>;
-  /** Adds a child; resolves to its id, or null when it failed. Without it, no adding. */
-  readonly onAddChild?: (name: string) => Promise<string | null>;
+  /**
+   * Reloads the entities after a child or domain is added here. Without it the picker
+   * only chooses, and offers no adding.
+   */
+  readonly onStructureChanged?: (() => Promise<void>) | undefined;
 };
+
+const noReload = (): Promise<void> => Promise.resolve();
 
 /**
  * Two taps: an entity, then one of its domains. Tapping the selected domain clears it.
@@ -30,13 +32,12 @@ export function DomainPicker({
   value,
   onChange,
   initialEntityId,
-  onAddDomain,
-  onAddChild,
+  onStructureChanged,
 }: DomainPickerProps): ReactElement {
+  const structure = useQuickStructure(entities, onStructureChanged ?? noReload);
+  const canAdd = onStructureChanged !== undefined;
   const currentEntityId =
-    entities.find((entity) =>
-      entity.domains.some((domain) => domain.id === value),
-    )?.id ??
+    entities.find((entity) => entity.domains.some((domain) => domain.id === value))?.id ??
     initialEntityId ??
     null;
   const [entityId, setEntityId] = useState<string | null>(currentEntityId);
@@ -45,34 +46,26 @@ export function DomainPicker({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-bold tracking-wide text-muted">
-          {labels.capture.entity}
-        </span>
+        <span className="text-xs font-bold tracking-wide text-muted">{labels.capture.entity}</span>
         <div className="flex flex-wrap gap-1.5">
           {entities.map((entity, index) => (
             <Chip
               key={entity.id}
               label={entity.name}
-              note={
-                entity.kind === "personal"
-                  ? labels.capture.privateMark
-                  : undefined
-              }
-              dotClass={
-                entity.id === entityId ? undefined : entityTone(index).bg
-              }
+              note={entity.kind === 'personal' ? labels.capture.privateMark : undefined}
+              dotClass={entity.id === entityId ? undefined : entityTone(index).bg}
               selected={entity.id === entityId}
               onClick={() => {
                 setEntityId(entity.id === entityId ? null : entity.id);
               }}
             />
           ))}
-          {onAddChild !== undefined && (
+          {canAdd && (
             <InlineAddChip
               label={labels.capture.newChild}
               placeholder={labels.capture.newChildName}
               onAdd={async (name) => {
-                const id = await onAddChild(name);
+                const id = await structure.addChild(name);
                 if (id !== null) {
                   setEntityId(id);
                 }
@@ -97,12 +90,12 @@ export function DomainPicker({
                 }}
               />
             ))}
-            {onAddDomain !== undefined && (
+            {canAdd && (
               <InlineAddChip
                 label={labels.capture.newDomain}
                 placeholder={labels.capture.newDomainName}
                 onAdd={async (name) => {
-                  const id = await onAddDomain(openEntity, name);
+                  const id = await structure.addDomain(openEntity, name);
                   if (id !== null) {
                     onChange(id);
                   }
@@ -112,6 +105,7 @@ export function DomainPicker({
           </div>
         </div>
       )}
+      <ErrorBanner message={structure.error} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router";
+import { useSearchParams } from 'react-router';
 
 export type AuthPaths = {
   readonly signIn: string;
@@ -12,12 +12,12 @@ export type AuthPaths = {
 /** The sign-in and sign-up screens pass an invite code along, so it is not lost on the way. */
 export function useAuthPaths(): AuthPaths {
   const [searchParams] = useSearchParams();
-  const code = searchParams.get("code");
-  const query = code === null ? "" : `?code=${encodeURIComponent(code)}`;
+  const code = searchParams.get('code');
+  const query = code === null ? '' : `?code=${encodeURIComponent(code)}`;
   return {
     signIn: `/login${query}`,
     signUp: `/signup${query}`,
-    afterSignIn: code === null ? "/" : `/onboarding${query}`,
-    confirmRedirect: `${window.location.origin}${code === null ? "/" : `/onboarding${query}`}`,
+    afterSignIn: code === null ? '/' : `/onboarding${query}`,
+    confirmRedirect: `${window.location.origin}${code === null ? '/' : `/onboarding${query}`}`,
   };
 }

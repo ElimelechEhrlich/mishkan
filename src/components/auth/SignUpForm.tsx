@@ -1,10 +1,10 @@
-import { useState } from "react";
-import type { ReactElement, SyntheticEvent } from "react";
-import { labels } from "../../constants/labels";
-import { Button } from "../ui/Button";
-import { ErrorBanner } from "../ui/ErrorBanner";
-import { TextField } from "../ui/TextField";
-import { AuthShell } from "./AuthShell";
+import { useState } from 'react';
+import type { ReactElement, SyntheticEvent } from 'react';
+import { labels } from '../../constants/labels';
+import { Button } from '../ui/Button';
+import { ErrorBanner } from '../ui/ErrorBanner';
+import { TextField } from '../ui/TextField';
+import { AuthShell } from './AuthShell';
 
 type SignUpFormProps = {
   readonly busy: boolean;
@@ -18,20 +18,14 @@ type SignUpFormProps = {
 const minPasswordLength = 6;
 
 /** A new account: email, and a password typed twice. */
-export function SignUpForm({
-  busy,
-  error,
-  onSubmit,
-  signInPath,
-}: SignUpFormProps): ReactElement {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [again, setAgain] = useState("");
+export function SignUpForm({ busy, error, onSubmit, signInPath }: SignUpFormProps): ReactElement {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [again, setAgain] = useState('');
 
   const tooShort = password.length < minPasswordLength;
-  const differ = again !== "" && again !== password;
-  const canSubmit =
-    !busy && email.trim() !== "" && !tooShort && again === password;
+  const differ = again !== '' && again !== password;
+  const canSubmit = !busy && email.trim() !== '' && !tooShort && again === password;
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -50,9 +44,7 @@ export function SignUpForm({
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card"
       >
-        <h2 className="font-display text-lg font-semibold">
-          {labels.auth.signUpTitle}
-        </h2>
+        <h2 className="font-display text-lg font-semibold">{labels.auth.signUpTitle}</h2>
         <ErrorBanner message={error} />
         <TextField
           label={labels.fields.email}
@@ -72,7 +64,7 @@ export function SignUpForm({
             onChange={setPassword}
           />
           <p
-            className={`px-0.5 text-xs ${password !== "" && tooShort ? "text-alert" : "text-muted"}`}
+            className={`px-0.5 text-xs ${password !== '' && tooShort ? 'text-alert' : 'text-muted'}`}
           >
             {labels.auth.passwordHint}
           </p>
@@ -86,11 +78,7 @@ export function SignUpForm({
             value={again}
             onChange={setAgain}
           />
-          {differ && (
-            <p className="px-0.5 text-xs text-alert">
-              {labels.auth.passwordsDiffer}
-            </p>
-          )}
+          {differ && <p className="px-0.5 text-xs text-alert">{labels.auth.passwordsDiffer}</p>}
         </div>
         <Button type="submit" disabled={!canSubmit}>
           {labels.actions.signUp}

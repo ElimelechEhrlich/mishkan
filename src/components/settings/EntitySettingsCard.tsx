@@ -1,15 +1,15 @@
-import { useState } from "react";
-import type { ReactElement } from "react";
-import { Link } from "react-router";
-import { labels } from "../../constants/labels";
-import type { UseEntitySettings } from "../../hooks/useEntitySettings";
-import type { EntityTone } from "../../lib/lookups";
-import type { EntityWithDomains } from "../../types/domain";
-import { EntityAvatar } from "../entities/EntityAvatar";
-import { AddRow } from "../ui/AddRow";
-import { ConfirmIconButton } from "../ui/ConfirmIconButton";
-import { Icon } from "../ui/Icon";
-import { InlineEdit } from "../ui/InlineEdit";
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router';
+import { labels } from '../../constants/labels';
+import type { UseEntitySettings } from '../../hooks/useEntitySettings';
+import type { EntityTone } from '../../lib/lookups';
+import type { EntityWithDomains } from '../../types/domain';
+import { EntityAvatar } from '../entities/EntityAvatar';
+import { AddRow } from '../ui/AddRow';
+import { ConfirmIconButton } from '../ui/ConfirmIconButton';
+import { Icon } from '../ui/Icon';
+import { InlineEdit } from '../ui/InlineEdit';
 
 type EntitySettingsCardProps = {
   readonly entity: EntityWithDomains;
@@ -31,16 +31,15 @@ export function EntitySettingsCard({
   featured = false,
 }: EntitySettingsCardProps): ReactElement {
   const [open, setOpen] = useState(false);
-  const isPrivate = entity.kind === "personal";
+  const isPrivate = entity.kind === 'personal';
   const canDelete =
-    entity.kind === "child" ||
-    (entity.kind === "parent" && entity.member_id === null);
+    entity.kind === 'child' || (entity.kind === 'parent' && entity.member_id === null);
   const canAddDebts =
-    (entity.kind === "parent" || entity.kind === "personal") &&
-    !entity.domains.some((domain) => domain.role === "debts");
+    (entity.kind === 'parent' || entity.kind === 'personal') &&
+    !entity.domains.some((domain) => domain.role === 'debts');
 
   return (
-    <li className={featured ? "group bg-primary-soft/50" : "group"}>
+    <li className={featured ? 'group bg-primary-soft/50' : 'group'}>
       <div className="flex items-stretch">
         <button
           type="button"
@@ -62,8 +61,8 @@ export function EntitySettingsCard({
               <span
                 className={
                   featured
-                    ? "truncate font-display text-lg font-bold"
-                    : "truncate text-[15px] font-medium"
+                    ? 'truncate font-display text-lg font-bold'
+                    : 'truncate text-[15px] font-medium'
                 }
               >
                 {entity.name}
@@ -76,7 +75,7 @@ export function EntitySettingsCard({
             </span>
             <Icon
               name="down"
-              className={`size-4 text-faint transition-transform ${open ? "rotate-180" : ""}`}
+              className={`size-4 text-faint transition-transform ${open ? 'rotate-180' : ''}`}
             />
           </span>
         </button>
@@ -131,7 +130,7 @@ export function EntitySettingsCard({
                     settings.renameDomain(domain, name);
                   }}
                 />
-                {domain.role === "shopping" ? (
+                {domain.role === 'shopping' ? (
                   <span className="flex size-10 items-center justify-center text-faint">
                     <Icon name="cart" className="size-4" />
                   </span>
@@ -157,10 +156,7 @@ export function EntitySettingsCard({
             <button
               type="button"
               onClick={() => {
-                settings.addDebtsDomain(
-                  entity,
-                  labels.settings.debtsDomainName,
-                );
+                settings.addDebtsDomain(entity, labels.settings.debtsDomainName);
               }}
               className="flex items-center gap-1.5 self-start text-[13px] font-semibold text-primary"
             >

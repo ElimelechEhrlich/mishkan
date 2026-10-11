@@ -19,8 +19,6 @@ import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
 import { DebtFields } from './DebtFields';
-import { useQuickStructure } from '../../hooks/useQuickStructure';
-import { ErrorBanner } from '../ui/ErrorBanner';
 import { DomainPicker } from './DomainPicker';
 import { QuickTimePicker } from './QuickTimePicker';
 
@@ -90,7 +88,6 @@ export function QuickAddSheet({
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
 
-  const structure = useQuickStructure(entities, onStructureChanged);
   const trimmedTitle = title.trim();
 
   const targets = shoppingTargets(entities);
@@ -136,7 +133,11 @@ export function QuickAddSheet({
     if (kind === 'missing_item') {
       return missingItemDomainId === null
         ? Promise.resolve(false)
-        : onAddMissingItem({ title: trimmedTitle, category, domainId: missingItemDomainId });
+        : onAddMissingItem({
+            title: trimmedTitle,
+            category,
+            domainId: missingItemDomainId,
+          });
     }
     if (kind === 'debt') {
       return onAddDebt({
@@ -233,7 +234,9 @@ export function QuickAddSheet({
         </div>
         <div className="flex flex-col gap-5 overflow-y-auto px-4 py-4">
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold tracking-wide text-muted">{labels.capture.kind}</span>
+            <span className="text-xs font-bold tracking-wide text-muted">
+              {labels.capture.kind}
+            </span>
             <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]">
               {kinds.map((option) => (
                 <span key={option} className="shrink-0">
@@ -279,10 +282,8 @@ export function QuickAddSheet({
                 value={domainId}
                 onChange={pickDomain}
                 initialEntityId={entityId}
-                onAddDomain={structure.addDomain}
-                onAddChild={structure.addChild}
+                onStructureChanged={onStructureChanged}
               />
-              <ErrorBanner message={structure.error} />
               {domainId === null && (
                 <p className="text-[13px] text-muted">{labels.capture.noDomainHint}</p>
               )}

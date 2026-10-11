@@ -1,5 +1,5 @@
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
 export async function getSession(): Promise<Session | null> {
   const { data, error } = await supabase.auth.getSession();
@@ -53,9 +53,7 @@ export async function signOut(): Promise<void> {
   }
 }
 
-export function onSessionChange(
-  listener: (session: Session | null) => void,
-): () => void {
+export function onSessionChange(listener: (session: Session | null) => void): () => void {
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     listener(session);
   });

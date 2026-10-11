@@ -1,6 +1,6 @@
-import type { ReactElement, ReactNode } from "react";
-import { Link } from "react-router";
-import { labels } from "../../constants/labels";
+import type { ReactElement, ReactNode } from 'react';
+import { Link } from 'react-router';
+import { labels } from '../../constants/labels';
 
 type AuthShellProps = {
   readonly children: ReactNode;
@@ -20,17 +20,13 @@ export function AuthShell({
   return (
     <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-8 p-6">
       <header className="flex flex-col items-center gap-3 text-center">
-        <img
-          src="/icons/icon.svg"
-          alt=""
-          className="size-20 rounded-3xl shadow-card"
-        />
+        <img src="/icons/icon.svg" alt="" className="size-20 rounded-3xl shadow-card" />
         <h1 className="font-display text-5xl font-bold">{labels.app.name}</h1>
         <p className="text-muted">{labels.app.tagline}</p>
       </header>
       {children}
       <p className="text-center text-sm text-muted">
-        {switchText}{" "}
+        {switchText}{' '}
         <Link to={switchTo} className="font-semibold text-primary">
           {switchLabel}
         </Link>

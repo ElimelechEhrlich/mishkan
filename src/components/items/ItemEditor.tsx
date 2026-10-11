@@ -44,6 +44,8 @@ type ItemEditorProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly lookups: Lookups;
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
+  /** Reloads the entities after a child or domain is added while choosing a domain. */
+  readonly onStructureChanged: () => Promise<void>;
   readonly onComplete: (item: Item) => void;
   readonly onReopen: (itemId: string) => void;
   readonly onDelete: (itemId: string) => void;
@@ -92,6 +94,7 @@ export function ItemEditor({
   entities,
   lookups,
   onUpdate,
+  onStructureChanged,
   onComplete,
   onReopen,
   onDelete,
@@ -210,6 +213,7 @@ export function ItemEditor({
             <DomainPicker
               entities={domainChoices}
               value={item.domain_id}
+              onStructureChanged={onStructureChanged}
               onChange={(domainId) => {
                 if (domainId !== null) {
                   update({ domain_id: domainId });

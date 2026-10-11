@@ -1,7 +1,7 @@
-import type { Session } from "@supabase/supabase-js";
-import { useCallback, useEffect, useState } from "react";
-import { toMessage } from "../lib/errors";
-import { labels } from "../constants/labels";
+import type { Session } from '@supabase/supabase-js';
+import { useCallback, useEffect, useState } from 'react';
+import { toMessage } from '../lib/errors';
+import { labels } from '../constants/labels';
 import {
   AuthFailure,
   getSession,
@@ -9,7 +9,7 @@ import {
   signIn,
   signOut,
   signUp,
-} from "../services/authService";
+} from '../services/authService';
 
 type SessionState = {
   readonly session: Session | null;
@@ -23,11 +23,7 @@ type SessionState = {
 type UseSession = SessionState & {
   readonly signIn: (email: string, password: string) => void;
   /** `redirectTo` is where the confirmation link in the email leads. */
-  readonly signUp: (
-    email: string,
-    password: string,
-    redirectTo: string,
-  ) => void;
+  readonly signUp: (email: string, password: string, redirectTo: string) => void;
   readonly signOut: () => void;
 };
 
@@ -92,27 +88,24 @@ export function useSession(): UseSession {
       });
   }, []);
 
-  const handleSignUp = useCallback(
-    (email: string, password: string, redirectTo: string): void => {
-      setState((previous) => ({ ...previous, busy: true, error: null }));
-      signUp(email, password, redirectTo)
-        .then((signedIn) => {
-          setState((previous) => ({
-            ...previous,
-            busy: false,
-            confirmationSentTo: signedIn ? null : email,
-          }));
-        })
-        .catch((error: unknown) => {
-          setState((previous) => ({
-            ...previous,
-            busy: false,
-            error: authMessage(error),
-          }));
-        });
-    },
-    [],
-  );
+  const handleSignUp = useCallback((email: string, password: string, redirectTo: string): void => {
+    setState((previous) => ({ ...previous, busy: true, error: null }));
+    signUp(email, password, redirectTo)
+      .then((signedIn) => {
+        setState((previous) => ({
+          ...previous,
+          busy: false,
+          confirmationSentTo: signedIn ? null : email,
+        }));
+      })
+      .catch((error: unknown) => {
+        setState((previous) => ({
+          ...previous,
+          busy: false,
+          error: authMessage(error),
+        }));
+      });
+  }, []);
 
   const handleSignOut = useCallback((): void => {
     signOut().catch((error: unknown) => {

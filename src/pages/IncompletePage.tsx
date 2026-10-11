@@ -25,6 +25,7 @@ export function IncompletePage(): ReactElement {
         entities={entities.entities}
         loading={items.loading}
         onUpdate={items.updateItem}
+        onStructureChanged={entities.reload}
       />
       <QuickAddSheet
         entities={entities.entities}

@@ -1,12 +1,12 @@
-import type { ReactElement } from "react";
-import { labels } from "../../constants/labels";
-import { activeSectionOf, compareEntries, todayIso } from "../../lib/itemRules";
-import type { ListEntry } from "../../lib/itemRules";
-import type { Lookups } from "../../lib/lookups";
-import type { ActiveSection, Item } from "../../types/domain";
-import { EmptyState } from "../ui/EmptyState";
-import { SkeletonList } from "../ui/SkeletonList";
-import { EntryRow } from "./EntryRow";
+import type { ReactElement } from 'react';
+import { labels } from '../../constants/labels';
+import { activeSectionOf, compareEntries, todayIso } from '../../lib/itemRules';
+import type { ListEntry } from '../../lib/itemRules';
+import type { Lookups } from '../../lib/lookups';
+import type { ActiveSection, Item } from '../../types/domain';
+import { EmptyState } from '../ui/EmptyState';
+import { SkeletonList } from '../ui/SkeletonList';
+import { EntryRow } from './EntryRow';
 
 type ItemListProps = {
   readonly entries: readonly ListEntry[];
@@ -22,14 +22,14 @@ type ItemListProps = {
 };
 
 const sections = [
-  "overdue",
-  "today",
-  "thisWeek",
-  "upcoming",
-  "undated",
+  'overdue',
+  'today',
+  'thisWeek',
+  'upcoming',
+  'undated',
 ] as const satisfies readonly ActiveSection[];
 
-const cardClass = "overflow-hidden rounded-2xl bg-surface shadow-card";
+const cardClass = 'overflow-hidden rounded-2xl bg-surface shadow-card';
 
 /** Items in one card, with goals and issues that have steps shown as one row holding their steps. */
 export function ItemList({
@@ -54,7 +54,7 @@ export function ItemList({
       <ul className={cardClass}>
         {list.map((entry) => (
           <EntryRow
-            key={`${entry.item.id}-${entry.item.due_date ?? ""}`}
+            key={`${entry.item.id}-${entry.item.due_date ?? ''}`}
             entry={entry}
             lookups={lookups}
             today={today}
@@ -83,13 +83,11 @@ export function ItemList({
           <section key={section} className="flex flex-col gap-1.5">
             <h2
               className={`flex items-center gap-1.5 px-1 text-xs font-bold tracking-wide ${
-                section === "overdue" ? "text-alert" : "text-muted"
+                section === 'overdue' ? 'text-alert' : 'text-muted'
               }`}
             >
               {labels.section[section]}
-              <span className="font-medium text-faint">
-                {String(inSection.length)}
-              </span>
+              <span className="font-medium text-faint">{String(inSection.length)}</span>
             </h2>
             {rows(inSection)}
           </section>

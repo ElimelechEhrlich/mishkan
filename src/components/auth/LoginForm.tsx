@@ -1,10 +1,10 @@
-import { useState } from "react";
-import type { ReactElement, SyntheticEvent } from "react";
-import { labels } from "../../constants/labels";
-import { Button } from "../ui/Button";
-import { ErrorBanner } from "../ui/ErrorBanner";
-import { TextField } from "../ui/TextField";
-import { AuthShell } from "./AuthShell";
+import { useState } from 'react';
+import type { ReactElement, SyntheticEvent } from 'react';
+import { labels } from '../../constants/labels';
+import { Button } from '../ui/Button';
+import { ErrorBanner } from '../ui/ErrorBanner';
+import { TextField } from '../ui/TextField';
+import { AuthShell } from './AuthShell';
 
 type LoginFormProps = {
   readonly busy: boolean;
@@ -14,14 +14,9 @@ type LoginFormProps = {
   readonly signUpPath: string;
 };
 
-export function LoginForm({
-  busy,
-  error,
-  onSubmit,
-  signUpPath,
-}: LoginFormProps): ReactElement {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export function LoginForm({ busy, error, onSubmit, signUpPath }: LoginFormProps): ReactElement {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -55,10 +50,7 @@ export function LoginForm({
           value={password}
           onChange={setPassword}
         />
-        <Button
-          type="submit"
-          disabled={busy || email.trim() === "" || password === ""}
-        >
+        <Button type="submit" disabled={busy || email.trim() === '' || password === ''}>
           {labels.actions.signIn}
         </Button>
       </form>

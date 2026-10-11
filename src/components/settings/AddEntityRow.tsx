@@ -1,9 +1,9 @@
-import { useState } from "react";
-import type { ReactElement } from "react";
-import { AddRow } from "../ui/AddRow";
-import { Icon } from "../ui/Icon";
-import { ListRow } from "../ui/ListRow";
-import type { IconName } from "../ui/Icon";
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { AddRow } from '../ui/AddRow';
+import { Icon } from '../ui/Icon';
+import { ListRow } from '../ui/ListRow';
+import type { IconName } from '../ui/Icon';
 
 type AddEntityRowProps = {
   readonly icon: IconName;
@@ -38,7 +38,7 @@ export function AddEntityRow({
         trailing={
           <Icon
             name="down"
-            className={`size-4 text-faint transition-transform ${open ? "rotate-180" : ""}`}
+            className={`size-4 text-faint transition-transform ${open ? 'rotate-180' : ''}`}
           />
         }
       />
@@ -51,9 +51,7 @@ export function AddEntityRow({
               setOpen(false);
             }}
           />
-          {hint !== undefined && (
-            <p className="text-[13px] leading-5 text-muted">{hint}</p>
-          )}
+          {hint !== undefined && <p className="text-[13px] leading-5 text-muted">{hint}</p>}
         </div>
       )}
     </li>

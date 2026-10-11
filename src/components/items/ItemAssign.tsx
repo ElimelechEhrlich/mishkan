@@ -10,13 +10,20 @@ type ItemAssignProps = {
   readonly item: Item;
   readonly entities: readonly EntityWithDomains[];
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
+  /** Reloads the entities after a child or domain is added while choosing a domain. */
+  readonly onStructureChanged: () => Promise<void>;
 };
 
 /**
  * One incomplete item. It lists what is still missing and asks for one thing
  * at a time; once that is chosen, the next one takes its place.
  */
-export function ItemAssign({ item, entities, onUpdate }: ItemAssignProps): ReactElement {
+export function ItemAssign({
+  item,
+  entities,
+  onUpdate,
+  onStructureChanged,
+}: ItemAssignProps): ReactElement {
   const missing = missingFields(item);
   const current = missing[0];
 
@@ -51,6 +58,7 @@ export function ItemAssign({ item, entities, onUpdate }: ItemAssignProps): React
         <DomainPicker
           entities={entities}
           value={null}
+          onStructureChanged={onStructureChanged}
           onChange={(domainId) => {
             if (domainId !== null) {
               onUpdate(item.id, { domain_id: domainId });

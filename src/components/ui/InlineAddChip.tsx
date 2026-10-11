@@ -1,7 +1,7 @@
-import { useState } from "react";
-import type { ReactElement } from "react";
-import { labels } from "../../constants/labels";
-import { Icon } from "./Icon";
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { labels } from '../../constants/labels';
+import { Icon } from './Icon';
 
 type InlineAddChipProps = {
   /** Shown on the chip, after a plus. */
@@ -16,11 +16,7 @@ type InlineAddChipProps = {
  * A dashed chip at the end of a row of chips that opens into a short field for adding
  * one more. It is not a form of its own, so it can sit inside another form.
  */
-export function InlineAddChip({
-  label,
-  placeholder,
-  onAdd,
-}: InlineAddChipProps): ReactElement {
+export function InlineAddChip({ label, placeholder, onAdd }: InlineAddChipProps): ReactElement {
   const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -29,7 +25,7 @@ export function InlineAddChip({
       <button
         type="button"
         onClick={() => {
-          setDraft("");
+          setDraft('');
         }}
         className="inline-flex min-h-8 items-center gap-1 rounded-full border border-dashed border-faint px-3 py-1 text-[13px] font-medium text-muted transition active:scale-[0.97]"
       >
@@ -42,7 +38,7 @@ export function InlineAddChip({
   const trimmed = draft.trim();
 
   function add(): void {
-    if (trimmed === "" || saving) {
+    if (trimmed === '' || saving) {
       return;
     }
     setSaving(true);
@@ -63,11 +59,11 @@ export function InlineAddChip({
           setDraft(event.target.value);
         }}
         onKeyDown={(event) => {
-          if (event.key === "Enter") {
+          if (event.key === 'Enter') {
             event.preventDefault();
             add();
           }
-          if (event.key === "Escape") {
+          if (event.key === 'Escape') {
             setDraft(null);
           }
         }}
@@ -76,7 +72,7 @@ export function InlineAddChip({
       <button
         type="button"
         aria-label={labels.actions.add}
-        disabled={trimmed === "" || saving}
+        disabled={trimmed === '' || saving}
         onClick={add}
         className="flex size-6 items-center justify-center rounded-full bg-primary text-white disabled:bg-line disabled:text-faint"
       >

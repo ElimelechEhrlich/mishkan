@@ -1,6 +1,6 @@
-import { useState } from "react";
-import type { ReactElement, ReactNode } from "react";
-import { Icon } from "../ui/Icon";
+import { useState } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { Icon } from '../ui/Icon';
 
 type EntityGroupProps = {
   readonly title: string;
@@ -10,11 +10,7 @@ type EntityGroupProps = {
 };
 
 /** A group of entities of one sort in settings, under a heading that folds it. */
-export function EntityGroup({
-  title,
-  count,
-  children,
-}: EntityGroupProps): ReactElement {
+export function EntityGroup({ title, count, children }: EntityGroupProps): ReactElement {
   const [open, setOpen] = useState(true);
   return (
     <section className="flex flex-col gap-1.5">
@@ -33,7 +29,7 @@ export function EntityGroup({
         <span className="flex-1" />
         <Icon
           name="down"
-          className={`size-4 text-faint transition-transform ${open ? "rotate-180" : ""}`}
+          className={`size-4 text-faint transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
       {open && (

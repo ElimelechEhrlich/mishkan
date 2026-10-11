@@ -1,18 +1,18 @@
-import { useState } from "react";
-import type { ReactElement } from "react";
-import { labels } from "../../constants/labels";
-import { useEntityProfile } from "../../hooks/useEntityProfile";
-import { formatFullDate } from "../../lib/itemRules";
-import { occasionSummary } from "../../lib/occasions";
-import type { EntityWithDomains } from "../../types/domain";
-import { AddRow } from "../ui/AddRow";
-import { ErrorBanner } from "../ui/ErrorBanner";
-import { Icon } from "../ui/Icon";
-import { PropertyRow } from "../ui/PropertyRow";
-import { DateRow } from "./DateRow";
-import { ProfileListBlock } from "./ProfileListBlock";
-import { ProfileNotes } from "./ProfileNotes";
-import { TextPropertyRow } from "./TextPropertyRow";
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { labels } from '../../constants/labels';
+import { useEntityProfile } from '../../hooks/useEntityProfile';
+import { formatFullDate } from '../../lib/itemRules';
+import { occasionSummary } from '../../lib/occasions';
+import type { EntityWithDomains } from '../../types/domain';
+import { AddRow } from '../ui/AddRow';
+import { ErrorBanner } from '../ui/ErrorBanner';
+import { Icon } from '../ui/Icon';
+import { PropertyRow } from '../ui/PropertyRow';
+import { DateRow } from './DateRow';
+import { ProfileListBlock } from './ProfileListBlock';
+import { ProfileNotes } from './ProfileNotes';
+import { TextPropertyRow } from './TextPropertyRow';
 
 type EntityProfileCardProps = {
   readonly entity: EntityWithDomains;
@@ -20,7 +20,7 @@ type EntityProfileCardProps = {
   readonly onEntityChanged: () => Promise<void>;
 };
 
-type OpenRow = "date" | "idNumber" | null;
+type OpenRow = 'date' | 'idNumber' | null;
 
 const noop = (): void => undefined;
 
@@ -37,12 +37,10 @@ export function EntityProfileCard({
   const [expanded, setExpanded] = useState(false);
   const [openRow, setOpenRow] = useState<OpenRow>(null);
   const { occasion, facts } = profile;
-  const isCouple = entity.kind === "couple";
-  const isChild = entity.kind === "child";
+  const isCouple = entity.kind === 'couple';
+  const isChild = entity.kind === 'child';
   const date = isCouple ? entity.wedding_date : entity.birth_date;
-  const afterSunset = isCouple
-    ? entity.wedding_after_sunset
-    : entity.born_after_sunset;
+  const afterSunset = isCouple ? entity.wedding_after_sunset : entity.born_after_sunset;
 
   function toggle(row: Exclude<OpenRow, null>): void {
     setOpenRow(openRow === row ? null : row);
@@ -64,9 +62,7 @@ export function EntityProfileCard({
             <Icon name="cake" className="size-5" />
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="font-display text-base font-semibold">
-              {labels.profile.title}
-            </span>
+            <span className="font-display text-base font-semibold">{labels.profile.title}</span>
             <span className="truncate text-xs text-muted">
               {occasion === null || facts === null
                 ? labels.profile.addDateHint
@@ -75,21 +71,19 @@ export function EntityProfileCard({
           </span>
           <Icon
             name="down"
-            className={`size-4 text-faint transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+            className={`size-4 text-faint transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
           />
         </button>
         {expanded && (
           <div className="flex animate-fade-in flex-col divide-y divide-line border-t border-line px-3.5">
             <DateRow
-              label={
-                isCouple ? labels.profile.weddingDate : labels.profile.birthDate
-              }
+              label={isCouple ? labels.profile.weddingDate : labels.profile.birthDate}
               date={date}
               afterSunset={afterSunset}
-              display={date === null ? "" : formatFullDate(date)}
-              open={openRow === "date"}
+              display={date === null ? '' : formatFullDate(date)}
+              open={openRow === 'date'}
               onToggle={() => {
-                toggle("date");
+                toggle('date');
               }}
               onSave={(newDate, newAfterSunset) => {
                 setOpenRow(null);
@@ -115,9 +109,7 @@ export function EntityProfileCard({
                   onToggle={noop}
                 />
                 <PropertyRow
-                  label={
-                    isCouple ? labels.profile.yearsMarried : labels.profile.age
-                  }
+                  label={isCouple ? labels.profile.yearsMarried : labels.profile.age}
                   value={`${String(facts.years)} ${labels.profile.years}`}
                   open={false}
                   onToggle={noop}
@@ -129,9 +121,9 @@ export function EntityProfileCard({
                 label={labels.profile.idNumber}
                 value={entity.id_number}
                 direction="ltr"
-                open={openRow === "idNumber"}
+                open={openRow === 'idNumber'}
                 onToggle={() => {
-                  toggle("idNumber");
+                  toggle('idNumber');
                 }}
                 onSave={(idNumber) => {
                   setOpenRow(null);
@@ -151,10 +143,7 @@ export function EntityProfileCard({
               ))}
             {isChild && (
               <div className="py-3">
-                <AddRow
-                  label={labels.profile.newList}
-                  onAdd={profile.addList}
-                />
+                <AddRow label={labels.profile.newList} onAdd={profile.addList} />
               </div>
             )}
             {isChild && (

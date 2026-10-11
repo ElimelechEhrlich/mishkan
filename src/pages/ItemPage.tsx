@@ -36,6 +36,7 @@ export function ItemPage(): ReactElement {
           entities={entities.entities}
           lookups={lookups}
           onUpdate={items.updateItem}
+          onStructureChanged={entities.reload}
           onComplete={items.completeItem}
           onReopen={items.reopenItem}
           onDelete={page.deleteAndLeave}
