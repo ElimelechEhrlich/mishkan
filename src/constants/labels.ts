@@ -395,6 +395,10 @@ export const labels = {
   scope: {
     showingOnly: 'מסונן לפי',
     byDomain: 'לפי תחומים',
+    allEntities: 'כל הישויות',
+    chooseEntity: 'לראות רק את…',
+    clear: 'הצגת הכול',
+    groups: { home: 'הבית', parents: 'הורים', children: 'ילדים' },
   },
   entityPage: {
     main: 'ראשי',

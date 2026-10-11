@@ -1,5 +1,5 @@
 import { labels } from '../constants/labels';
-import type { EntityWithDomains, Item, Member, ShoppingTarget } from '../types/domain';
+import type { EntityKind, EntityWithDomains, Item, Member, ShoppingTarget } from '../types/domain';
 
 /** The classes of one entity color: a fill, a frame and text. */
 export type EntityTone = {
@@ -93,4 +93,27 @@ export function countByEntity(
     }
   }
   return counts;
+}
+
+/** The groups entities are shown in: the home and the couple, the parents, the children. */
+export type EntityGroupKey = 'home' | 'parents' | 'children';
+
+export function entityGroupOf(kind: EntityKind): EntityGroupKey {
+  if (kind === 'home' || kind === 'couple') {
+    return 'home';
+  }
+  return kind === 'child' ? 'children' : 'parents';
+}
+
+/** Entities in their groups, in display order; empty groups are left out. */
+export function groupEntities<T extends { readonly kind: EntityKind }>(
+  entities: readonly T[],
+): { readonly key: EntityGroupKey; readonly entities: readonly T[] }[] {
+  const order: readonly EntityGroupKey[] = ['home', 'parents', 'children'];
+  return order
+    .map((key) => ({
+      key,
+      entities: entities.filter((entity) => entityGroupOf(entity.kind) === key),
+    }))
+    .filter((group) => group.entities.length > 0);
 }
