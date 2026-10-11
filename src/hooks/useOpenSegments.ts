@@ -8,9 +8,9 @@ import {
   withoutNestedSteps,
 } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
-import type { Item, OpenSegment } from '../types/domain';
+import type { Item, KindFilter, OpenSegment } from '../types/domain';
 
-const segments = ['active', 'waiting', 'someday', 'notes'] as const satisfies readonly OpenSegment[];
+const segments = ['active', 'waiting', 'someday'] as const satisfies readonly OpenSegment[];
 
 type SegmentOption = {
   readonly value: OpenSegment;
@@ -19,9 +19,12 @@ type SegmentOption = {
 };
 
 export type UseOpenSegments = {
+  /** Which kinds are shown: one, or all that run on time. */
+  readonly kind: KindFilter;
+  readonly setKind: (kind: KindFilter) => void;
   readonly segment: OpenSegment;
   readonly setSegment: (segment: OpenSegment) => void;
-  /** The tabs, each with the number of rows it holds. */
+  /** The time tabs, each with the number of rows it holds. */
   readonly options: readonly SegmentOption[];
   /** The rows of the selected tab. A step whose goal is listed is shown inside the goal. */
   readonly visible: readonly ListEntry[];
@@ -30,14 +33,26 @@ export type UseOpenSegments = {
   readonly todayCount: number;
 };
 
-/** The tab of the open-items page, and the rows it leaves visible. */
+function matchesKind(item: Item, kind: KindFilter): boolean {
+  return kind === 'all' || item.kind === kind;
+}
+
+/**
+ * The time tab (active, waiting, someday) of a list of items that run on time,
+ * and the rows it leaves visible. Each page keeps its own tab.
+ */
 export function useOpenSegments(
   items: readonly Item[],
   steps: readonly Item[],
+  initialKind: KindFilter = 'all',
 ): UseOpenSegments {
+  const [kind, setKind] = useState<KindFilter>(initialKind);
   const [segment, setSegment] = useState<OpenSegment>('active');
 
-  const rows = useMemo(() => withoutNestedSteps(items), [items]);
+  const rows = useMemo(
+    () => withoutNestedSteps(items).filter((item) => matchesKind(item, kind)),
+    [items, kind],
+  );
 
   const options = segments.map((value) => ({
     value,
@@ -67,6 +82,8 @@ export function useOpenSegments(
   }, [rows, steps]);
 
   return {
+    kind,
+    setKind,
     segment,
     setSegment,
     options,

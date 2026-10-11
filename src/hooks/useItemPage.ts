@@ -30,7 +30,7 @@ export function useItemPage(): UseItemPage {
   const { itemId } = useParams();
   const navigate = useNavigate();
   const items = useItems();
-  const debts = useDebts(items.items, items.reload);
+  const debts = useDebts(items.items);
 
   // Done steps are not in the open list, so the step list is searched as well.
   const listed =
@@ -85,6 +85,7 @@ export function useItemPage(): UseItemPage {
         kind: 'task',
         domainId: parent.domain_id,
         parentId: parent.id,
+        time: null,
       });
     },
     [addItem],

@@ -30,6 +30,7 @@ export function IncompletePage(): ReactElement {
         entities={entities.entities}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
+        onAddDebt={items.addDebt}
         entityId={scoped.scope?.id}
       />
     </PageShell>

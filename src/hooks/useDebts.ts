@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toMessage } from '../lib/errors';
-import { createDebt, listDebtDetails } from '../services/debtService';
-import type { Debt, DebtDetails, Item, NewDebt } from '../types/domain';
+import { listDebtDetails } from '../services/debtService';
+import type { Debt, DebtDetails, Item } from '../types/domain';
 
 type DebtsState = {
   readonly details: readonly DebtDetails[];
@@ -14,11 +14,10 @@ export type UseDebts = {
   /** The details of every visible item that is or was a debt, by item id. */
   readonly detailsByItem: ReadonlyMap<string, DebtDetails>;
   readonly error: string | null;
-  readonly addDebt: (newDebt: NewDebt) => Promise<boolean>;
 };
 
 /** Open debts, built from the open items of kind `debt` and their details. */
-export function useDebts(items: readonly Item[], reloadItems: () => void): UseDebts {
+export function useDebts(items: readonly Item[]): UseDebts {
   const [state, setState] = useState<DebtsState>({ details: [], error: null });
 
   const debtItems = useMemo(() => items.filter((item) => item.kind === 'debt'), [items]);
@@ -59,25 +58,10 @@ export function useDebts(items: readonly Item[], reloadItems: () => void): UseDe
     return result;
   }, [debtItems, detailsByItem]);
 
-  const addDebt = useCallback(
-    async (newDebt: NewDebt): Promise<boolean> => {
-      try {
-        await createDebt(newDebt);
-        reloadItems();
-        return true;
-      } catch (error: unknown) {
-        setState((previous) => ({ ...previous, error: toMessage(error) }));
-        return false;
-      }
-    },
-    [reloadItems],
-  );
-
   return {
     owedToUs: debts.filter((debt) => debt.details.direction === 'owed_to_us'),
     weOwe: debts.filter((debt) => debt.details.direction === 'we_owe'),
     detailsByItem,
     error: state.error,
-    addDebt,
   };
 }

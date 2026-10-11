@@ -7,6 +7,7 @@ import { IncompletePage } from '../pages/IncompletePage';
 import { ItemPage } from '../pages/ItemPage';
 import { LoginPage } from '../pages/LoginPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
+import { NotesPage } from '../pages/NotesPage';
 import { OpenItemsPage } from '../pages/OpenItemsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ShoppingPage } from '../pages/ShoppingPage';
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <OpenItemsPage /> },
           { path: '/goals', element: <GoalsPage /> },
+          { path: '/notes', element: <NotesPage /> },
           { path: '/shopping', element: <ShoppingPage /> },
           { path: '/shopping/run/:runId', element: <ShoppingRunPage /> },
           { path: '/debts', element: <DebtsPage /> },

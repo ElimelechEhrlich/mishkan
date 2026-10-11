@@ -17,6 +17,8 @@ type ItemListProps = {
   readonly onComplete: (item: Item) => void;
   /** Leaves out the domain of each row, on a page that already groups by it. */
   readonly hideDomain?: boolean;
+  /** Shown when there is nothing to list. */
+  readonly emptyText?: string;
 };
 
 const sections = ['overdue', 'today', 'upcoming', 'undated'] as const satisfies readonly ActiveSection[];
@@ -31,11 +33,12 @@ export function ItemList({
   loading,
   onComplete,
   hideDomain = false,
+  emptyText = labels.status.emptySegment,
 }: ItemListProps): ReactElement {
   const today = todayIso();
 
   if (entries.length === 0) {
-    return loading ? <SkeletonList /> : <EmptyState text={labels.status.emptySegment} />;
+    return loading ? <SkeletonList /> : <EmptyState text={emptyText} />;
   }
 
   const sorted = [...entries].sort(compareEntries);

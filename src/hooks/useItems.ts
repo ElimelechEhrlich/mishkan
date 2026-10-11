@@ -12,8 +12,16 @@ import {
   subscribeToItems,
   updateItem,
 } from '../services/itemService';
+import { createDebt } from '../services/debtService';
 import { createMissingItem } from '../services/shoppingService';
-import type { Conversion, Item, ItemUpdate, NewItem, NewMissingItem } from '../types/domain';
+import type {
+  Conversion,
+  Item,
+  ItemUpdate,
+  NewDebt,
+  NewItem,
+  NewMissingItem,
+} from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
 
 type ItemsState = {
@@ -37,6 +45,7 @@ export type UseItems = {
   readonly reload: () => void;
   readonly addItem: (newItem: NewItem) => Promise<boolean>;
   readonly addMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
+  readonly addDebt: (newDebt: NewDebt) => Promise<boolean>;
   readonly addQuestion: (issueId: string, title: string) => void;
   readonly updateItem: (itemId: string, changes: ItemUpdate) => void;
   readonly convertItem: (itemId: string, conversion: Conversion) => Promise<boolean>;
@@ -96,6 +105,11 @@ export function useItems(): UseItems {
     [run],
   );
 
+  const handleAddDebt = useCallback(
+    (newDebt: NewDebt): Promise<boolean> => run(() => createDebt(newDebt)),
+    [run],
+  );
+
   const handleAddQuestion = useCallback(
     (issueId: string, title: string): void => {
       void run(() => createQuestion(issueId, title));
@@ -151,6 +165,7 @@ export function useItems(): UseItems {
     reload,
     addItem: handleAdd,
     addMissingItem: handleAddMissing,
+    addDebt: handleAddDebt,
     addQuestion: handleAddQuestion,
     updateItem: handleUpdate,
     convertItem: handleConvert,

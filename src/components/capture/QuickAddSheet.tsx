@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
-import { shoppingTargets } from '../../lib/lookups';
+import { quickTimeChoice, todayIso } from '../../lib/itemRules';
+import { debtHolders, shoppingTargets } from '../../lib/lookups';
 import type {
-  CapturableKind,
+  ConvertibleKind,
+  DebtDirection,
   EntityWithDomains,
+  NewDebt,
   NewItem,
   NewMissingItem,
+  QuickTime,
   ShoppingCategory,
 } from '../../types/domain';
 import { MissingItemFields } from '../shopping/MissingItemFields';
@@ -14,72 +18,97 @@ import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
+import { DebtFields } from './DebtFields';
 import { DomainPicker } from './DomainPicker';
+import { QuickTimePicker } from './QuickTimePicker';
 
 type QuickAddSheetProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly onAdd: (newItem: NewItem) => Promise<boolean>;
   readonly onAddMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
+  readonly onAddDebt: (newDebt: NewDebt) => Promise<boolean>;
   /** The kind that is selected when the sheet opens. */
-  readonly defaultKind?: CapturableKind;
+  readonly defaultKind?: ConvertibleKind;
   /** Opens the sheet right away, for the "new item" home-screen shortcut. */
   readonly initiallyOpen?: boolean;
-  /** On an entity's page: the item is for this entity unless changed. */
+  /** The chosen entity: the item is for it unless changed. */
   readonly entityId?: string | undefined;
   /** Opens on this domain; a shopping domain opens as a missing item for its entity. */
   readonly initialDomainId?: string | undefined;
 };
-
-/** A missing item can be added here too; it then asks for its kind and whom it is for. */
-type QuickAddKind = CapturableKind | 'missing_item';
 
 const kinds = [
   'task',
   'goal',
   'issue',
   'note',
+  'debt',
   'missing_item',
-] as const satisfies readonly QuickAddKind[];
+] as const satisfies readonly ConvertibleKind[];
 
 /**
- * The floating add button and the sheet it opens. Only the title is required,
- * except for a missing item, which always lands in a shopping domain (the home's by default).
+ * The floating add button and the sheet it opens. The fields follow the kind:
+ * a domain and when for tasks and goals, a domain for issues and notes, direction,
+ * amount and holder for a debt, and kind and whom for a missing item.
+ * Only the title is required, except where the kind cannot be saved without more.
  */
 export function QuickAddSheet({
   entities,
   onAdd,
   onAddMissingItem,
+  onAddDebt,
   defaultKind = 'task',
   initiallyOpen = false,
   entityId,
   initialDomainId,
 }: QuickAddSheetProps): ReactElement {
-  const [open, setOpen] = useState(initiallyOpen);
-  const [title, setTitle] = useState('');
   const initialIsShopping = entities.some((entity) =>
     entity.domains.some((domain) => domain.id === initialDomainId && domain.role === 'shopping'),
   );
-  const [kind, setKind] = useState<QuickAddKind>(
+  const [open, setOpen] = useState(initiallyOpen);
+  const [title, setTitle] = useState('');
+  const [kind, setKind] = useState<ConvertibleKind>(
     initialIsShopping ? 'missing_item' : defaultKind,
   );
   const [domainId, setDomainId] = useState<string | null>(
     initialIsShopping ? null : (initialDomainId ?? null),
   );
+  const [quickTime, setQuickTime] = useState<QuickTime | null>(null);
   const [category, setCategory] = useState<ShoppingCategory>('food');
   const [shoppingDomainId, setShoppingDomainId] = useState<string | null>(
     initialIsShopping ? (initialDomainId ?? null) : null,
   );
+  const [direction, setDirection] = useState<DebtDirection>('owed_to_us');
+  const [amountText, setAmountText] = useState('');
+  const [debtDomainId, setDebtDomainId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
 
   const trimmedTitle = title.trim();
+
   const targets = shoppingTargets(entities);
-  const entityTarget = targets.find((target) => target.entity.id === entityId);
   const missingItemDomainId =
-    shoppingDomainId ?? entityTarget?.domainId ?? targets[0]?.domainId ?? null;
+    shoppingDomainId ??
+    targets.find((target) => target.entity.id === entityId)?.domainId ??
+    targets[0]?.domainId ??
+    null;
+
+  const holders = debtHolders(entities);
+  const chosenDebtDomainId =
+    debtDomainId ??
+    holders.find((holder) => holder.entity.id === entityId)?.domainId ??
+    holders[0]?.domainId ??
+    null;
+  const amount = Number(amountText);
+  const amountValid = Number.isFinite(amount) && amount > 0;
+
+  const asksTime = kind === 'task' || kind === 'goal';
   const canSave =
-    trimmedTitle !== '' && !saving && (kind !== 'missing_item' || missingItemDomainId !== null);
+    trimmedTitle !== '' &&
+    !saving &&
+    (kind !== 'missing_item' || missingItemDomainId !== null) &&
+    (kind !== 'debt' || amountValid);
 
   /**
    * Choosing an entity's shopping domain means something to buy: the item becomes
@@ -103,7 +132,21 @@ export function QuickAddSheet({
         ? Promise.resolve(false)
         : onAddMissingItem({ title: trimmedTitle, category, domainId: missingItemDomainId });
     }
-    return onAdd({ title: trimmedTitle, kind, domainId, parentId: null });
+    if (kind === 'debt') {
+      return onAddDebt({
+        counterparty: trimmedTitle,
+        amount,
+        direction,
+        domainId: chosenDebtDomainId,
+      });
+    }
+    return onAdd({
+      title: trimmedTitle,
+      kind,
+      domainId,
+      parentId: null,
+      time: asksTime && quickTime !== null ? quickTimeChoice(quickTime, todayIso()) : null,
+    });
   }
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
@@ -117,6 +160,8 @@ export function QuickAddSheet({
       if (saved) {
         setTitle('');
         setDomainId(null);
+        setQuickTime(null);
+        setAmountText('');
         setPickerVersion((version) => version + 1);
         setOpen(false);
       }
@@ -166,14 +211,14 @@ export function QuickAddSheet({
             <span className="size-10" />
           </div>
           <label className="sr-only" htmlFor="quick-add-title">
-            {labels.fields.itemTitle}
+            {labels.titlePrompt[kind]}
           </label>
           <input
             id="quick-add-title"
             value={title}
             autoFocus
             autoComplete="off"
-            placeholder={labels.fields.itemTitle}
+            placeholder={labels.titlePrompt[kind]}
             onChange={(event) => {
               setTitle(event.target.value);
             }}
@@ -197,7 +242,8 @@ export function QuickAddSheet({
               ))}
             </div>
           </div>
-          {kind === 'missing_item' ? (
+
+          {kind === 'missing_item' && (
             <MissingItemFields
               category={category}
               onCategoryChange={setCategory}
@@ -205,7 +251,21 @@ export function QuickAddSheet({
               domainId={missingItemDomainId}
               onDomainChange={setShoppingDomainId}
             />
-          ) : (
+          )}
+
+          {kind === 'debt' && (
+            <DebtFields
+              direction={direction}
+              onDirectionChange={setDirection}
+              amount={amountText}
+              onAmountChange={setAmountText}
+              holders={holders}
+              domainId={chosenDebtDomainId}
+              onDomainChange={setDebtDomainId}
+            />
+          )}
+
+          {kind !== 'missing_item' && kind !== 'debt' && (
             <div className="flex flex-col gap-3">
               <DomainPicker
                 key={pickerVersion}
@@ -219,6 +279,8 @@ export function QuickAddSheet({
               )}
             </div>
           )}
+
+          {asksTime && <QuickTimePicker value={quickTime} onChange={setQuickTime} />}
         </div>
         <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex flex-col">

@@ -59,6 +59,7 @@ export function EntityPage(): ReactElement {
         entities={entities.entities}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
+        onAddDebt={items.addDebt}
         entityId={entity?.id}
         initialDomainId={addRequest?.domainId}
         initiallyOpen={addRequest !== null}

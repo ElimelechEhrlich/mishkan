@@ -3,8 +3,10 @@ import type {
   Item,
   MissingField,
   OpenSegment,
+  QuickTime,
   Recurrence,
   ShoppingCategory,
+  TimeChoice,
 } from '../types/domain';
 
 /** The categories of a missing item, in the order the shopping list shows them. */
@@ -49,6 +51,18 @@ export function todayIso(): string {
 
 function fromIsoDate(isoDate: string): Date {
   return new Date(`${isoDate}T00:00:00`);
+}
+
+/** The time a quick choice in the add sheet stands for. */
+export function quickTimeChoice(quick: QuickTime, today: string): TimeChoice {
+  if (quick === 'today' || quick === 'tomorrow') {
+    return {
+      time_mode: 'scheduled',
+      due_date: quick === 'today' ? today : addDays(today, 1),
+      recurrence_rule: null,
+    };
+  }
+  return { time_mode: quick, due_date: null, recurrence_rule: null };
 }
 
 export function addDays(isoDate: string, days: number): string {
@@ -112,18 +126,16 @@ export function nextDueDate(current: string | null, recurrence: Recurrence, toda
   return toIsoDate(date);
 }
 
-/** Which tab of the open-items page shows this item. Debts and shopping have their own pages. */
+/** Which time tab shows this item. Notes, debts and shopping have no time and their own pages. */
 export function segmentOf(item: Item): OpenSegment | null {
   if (
     item.kind === 'debt' ||
+    item.kind === 'note' ||
     item.kind === 'missing_item' ||
     item.kind === 'shopping_run' ||
     item.kind === 'question'
   ) {
     return null;
-  }
-  if (item.kind === 'note') {
-    return 'notes';
   }
   if (item.time_mode === 'waiting') {
     return 'waiting';
@@ -167,7 +179,10 @@ export type ListEntry = {
 
 export function toListEntries(items: readonly Item[], allSteps: readonly Item[]): ListEntry[] {
   return items.map((item) => {
-    const steps = isContainer(item) ? allSteps.filter((step) => step.parent_id === item.id) : [];
+    // Questions of an issue are not steps; they are listed on the issue's page.
+    const steps = isContainer(item)
+      ? allSteps.filter((step) => step.parent_id === item.id && step.kind === 'task')
+      : [];
     const dueDates = [item, ...steps.filter((step) => step.status === 'open')]
       .map((entry) => entry.due_date)
       .filter((date) => date !== null);

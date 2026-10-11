@@ -39,7 +39,13 @@ export type MissingField = 'domain' | 'time';
 export type Recurrence = 'daily' | 'weekly' | 'monthly';
 
 /** The tabs of the open-items page. */
-export type OpenSegment = 'active' | 'waiting' | 'someday' | 'notes';
+export type OpenSegment = 'active' | 'waiting' | 'someday';
+
+/** Which kinds the main list shows: one of them, or all that run on time. */
+export type KindFilter = 'all' | 'task' | 'goal' | 'issue';
+
+/** The quick choices of when, offered when adding a task or a goal. */
+export type QuickTime = 'today' | 'tomorrow' | 'anytime' | 'someday';
 
 /** The groups inside the "active" tab. */
 export type ActiveSection = 'overdue' | 'today' | 'upcoming' | 'undated';
@@ -58,6 +64,8 @@ export type NewItem = {
   readonly kind: CapturableKind;
   readonly domainId: string | null;
   readonly parentId: string | null;
+  /** When it is due; null leaves it for "needs completion". */
+  readonly time: TimeChoice | null;
 };
 
 /** Kinds an item can be converted to and from; runs and questions are left out. */

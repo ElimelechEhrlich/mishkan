@@ -6,6 +6,7 @@ import { ItemList } from '../components/items/ItemList';
 import { SummaryTiles } from '../components/items/SummaryTiles';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
+import { Segmented } from '../components/ui/Segmented';
 import { Tabs } from '../components/ui/Tabs';
 import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
@@ -16,6 +17,11 @@ import { useOpenSegments } from '../hooks/useOpenSegments';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 import { formatToday } from '../lib/itemRules';
+import type { KindFilter } from '../types/domain';
+
+const kindOptions = (['task', 'goal', 'issue', 'all'] as const satisfies readonly KindFilter[]).map(
+  (value) => ({ value, label: labels.kindFilter[value] }),
+);
 
 export function OpenItemsPage(): ReactElement {
   const { members, scopeId, setScope } = useHouseholdContext();
@@ -23,7 +29,7 @@ export function OpenItemsPage(): ReactElement {
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
   const scoped = useScopedItems(items, entities.entities);
-  const view = useOpenSegments(scoped.assigned, scoped.steps);
+  const view = useOpenSegments(scoped.assigned, scoped.steps, 'task');
   const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
   const [searchParams] = useSearchParams();
 
@@ -45,6 +51,7 @@ export function OpenItemsPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
+      <Segmented options={kindOptions} value={view.kind} onChange={view.setKind} />
       <Tabs options={view.options} value={view.segment} onChange={view.setSegment} />
       <ItemList
         entries={view.visible}
@@ -57,6 +64,7 @@ export function OpenItemsPage(): ReactElement {
         entities={entities.entities}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
+        onAddDebt={items.addDebt}
         initiallyOpen={searchParams.has('new')}
         entityId={scoped.scope?.id}
       />

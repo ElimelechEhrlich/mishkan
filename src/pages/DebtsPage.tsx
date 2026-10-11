@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { DebtForm } from '../components/debts/DebtForm';
+import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { DebtSection } from '../components/debts/DebtSection';
 import { DebtSummary } from '../components/debts/DebtSummary';
 import { ScopeBar } from '../components/entities/ScopeBar';
@@ -12,14 +12,13 @@ import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
-import { findDebtDomainId } from '../lib/lookups';
 
 export function DebtsPage(): ReactElement {
   const { scopeId, setScope } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const scoped = useScopedItems(items, entities.entities);
-  const debts = useDebts(scoped.items, items.reload);
+  const debts = useDebts(scoped.items);
   const isEmpty = debts.owedToUs.length === 0 && debts.weOwe.length === 0;
 
   return (
@@ -27,7 +26,6 @@ export function DebtsPage(): ReactElement {
       <ErrorBanner message={debts.error ?? items.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <DebtSummary owedToUs={debts.owedToUs} weOwe={debts.weOwe} />
-      <DebtForm domainId={findDebtDomainId(entities.entities, scoped.scope)} onAdd={debts.addDebt} />
       <DebtSection
         title={labels.debtDirection.owed_to_us}
         debts={debts.owedToUs}
@@ -41,6 +39,14 @@ export function DebtsPage(): ReactElement {
         onClose={items.completeItem}
       />
       {isEmpty && !items.loading && <EmptyState text={labels.status.noDebts} />}
+      <QuickAddSheet
+        entities={entities.entities}
+        onAdd={items.addItem}
+        onAddMissingItem={items.addMissingItem}
+        onAddDebt={items.addDebt}
+        defaultKind="debt"
+        entityId={scoped.scope?.id}
+      />
     </PageShell>
   );
 }

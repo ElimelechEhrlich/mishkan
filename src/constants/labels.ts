@@ -1,10 +1,13 @@
 import type {
   ActiveSection,
+  ConvertibleKind,
   DebtDirection,
   EntityKind,
   ItemKind,
   MissingField,
+  KindFilter,
   OpenSegment,
+  QuickTime,
   Recurrence,
   ShoppingCategory,
   TimeMode,
@@ -51,8 +54,31 @@ const segment = {
   active: 'פעילות',
   waiting: 'ממתינות',
   someday: 'על המדף',
-  notes: 'פתקים',
 } as const satisfies Record<OpenSegment, string>;
+
+/** What the title field of the add sheet asks for, by the kind being added. */
+const titlePrompt = {
+  task: 'מה צריך לעשות?',
+  goal: 'מה רוצים להשיג?',
+  issue: 'מה הסוגיה?',
+  note: 'מה לזכור?',
+  debt: 'מי?',
+  missing_item: 'מה חסר?',
+} as const satisfies Record<ConvertibleKind, string>;
+
+const kindFilter = {
+  all: 'הכול',
+  task: 'משימות',
+  goal: 'יעדים',
+  issue: 'סוגיות',
+} as const satisfies Record<KindFilter, string>;
+
+const quickTime = {
+  today: 'היום',
+  tomorrow: 'מחר',
+  anytime: 'ללא מועד',
+  someday: 'על המדף',
+} as const satisfies Record<QuickTime, string>;
 
 const section = {
   overdue: 'באיחור',
@@ -82,6 +108,7 @@ export const labels = {
   pages: {
     open: 'משימות',
     goals: 'יעדים וסוגיות',
+    notes: 'פתקים',
     shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
@@ -94,6 +121,7 @@ export const labels = {
   nav: {
     open: 'משימות',
     goals: 'יעדים',
+    notes: 'פתקים',
     shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
@@ -109,6 +137,7 @@ export const labels = {
     notSet: 'לא נבחר',
     noDoneItems: 'עוד לא סומנו פריטים כבוצעו',
     noMissingItems: 'לא חסר כלום',
+    noNotes: 'אין פתקים',
     runNotFound: 'הסבב הסתיים או נמחק.',
     entityNotFound: 'הישות לא נמצאה. ייתכן שהיא נמחקה.',
   },
@@ -176,6 +205,9 @@ export const labels = {
     kind: 'סוג',
     privateMark: 'פרטי',
     noDomainHint: 'בלי תחום, הפריט נשמר רק אצלך עד שתשייך אותו.',
+    when: 'מתי',
+    noTimeHint: 'בלי זמן, הפריט יחכה ב"להשלמה".',
+    debtOf: 'של מי החוב',
   },
   filter: {
     all: 'הכול',
@@ -295,6 +327,9 @@ export const labels = {
   recurrence,
   segment,
   section,
+  kindFilter,
+  quickTime,
+  titlePrompt,
   debtDirection,
   entityKind,
   shoppingCategory,

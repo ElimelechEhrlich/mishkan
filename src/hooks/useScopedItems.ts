@@ -10,6 +10,10 @@ export type ScopedItems = {
   readonly assigned: readonly Item[];
   readonly incomplete: readonly Item[];
   readonly steps: readonly Item[];
+  /** Open goals and issues. */
+  readonly goals: readonly Item[];
+  /** Open notes. */
+  readonly notes: readonly Item[];
   /** Whether an item belongs to the chosen entity; always true when everything is shown. */
   readonly inScope: (item: Item) => boolean;
 };
@@ -23,25 +27,19 @@ export function useScopedItems(
   const scope = entities.find((entity) => entity.id === scopeId);
 
   return useMemo(() => {
-    if (scope === undefined) {
-      return {
-        scope,
-        items: items.items,
-        assigned: items.assigned,
-        incomplete: items.incomplete,
-        steps: items.steps,
-        inScope: (): boolean => true,
-      };
-    }
-    const domainIds = new Set(scope.domains.map((domain) => domain.id));
+    const domainIds =
+      scope === undefined ? null : new Set(scope.domains.map((domain) => domain.id));
     const inScope = (item: Item): boolean =>
-      item.domain_id !== null && domainIds.has(item.domain_id);
+      domainIds === null || (item.domain_id !== null && domainIds.has(item.domain_id));
+    const scopedItems = items.items.filter(inScope);
     return {
       scope,
-      items: items.items.filter(inScope),
+      items: scopedItems,
       assigned: items.assigned.filter(inScope),
       incomplete: items.incomplete.filter(inScope),
       steps: items.steps.filter(inScope),
+      goals: scopedItems.filter((item) => item.kind === 'goal' || item.kind === 'issue'),
+      notes: scopedItems.filter((item) => item.kind === 'note'),
       inScope,
     };
   }, [scope, items.items, items.assigned, items.incomplete, items.steps]);
