@@ -67,6 +67,7 @@ export function EntityPage(): ReactElement {
       <QuickAddSheet
         key={`add-${entity?.id ?? ''}-${String(addRequest?.key ?? 0)}`}
         entities={entities.entities}
+        onStructureChanged={entities.reload}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}

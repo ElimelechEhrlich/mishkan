@@ -41,6 +41,7 @@ export function DebtsPage(): ReactElement {
       {isEmpty && !items.loading && <EmptyState text={labels.status.noDebts} />}
       <QuickAddSheet
         entities={entities.entities}
+        onStructureChanged={entities.reload}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}

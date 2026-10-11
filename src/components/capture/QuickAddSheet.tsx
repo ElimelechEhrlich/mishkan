@@ -19,6 +19,8 @@ import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
 import { DebtFields } from './DebtFields';
+import { useQuickStructure } from '../../hooks/useQuickStructure';
+import { ErrorBanner } from '../ui/ErrorBanner';
 import { DomainPicker } from './DomainPicker';
 import { QuickTimePicker } from './QuickTimePicker';
 
@@ -27,6 +29,8 @@ type QuickAddSheetProps = {
   readonly onAdd: (newItem: NewItem) => Promise<boolean>;
   readonly onAddMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
   readonly onAddDebt: (newDebt: NewDebt) => Promise<boolean>;
+  /** Reloads the entities after a child or a domain is added from the sheet. */
+  readonly onStructureChanged: () => Promise<void>;
   /** The kind that is selected when the sheet opens. */
   readonly defaultKind?: ConvertibleKind;
   /** Opens the sheet right away, for the "new item" home-screen shortcut. */
@@ -57,6 +61,7 @@ export function QuickAddSheet({
   onAdd,
   onAddMissingItem,
   onAddDebt,
+  onStructureChanged,
   defaultKind = 'task',
   initiallyOpen = false,
   entityId,
@@ -85,6 +90,7 @@ export function QuickAddSheet({
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
 
+  const structure = useQuickStructure(entities, onStructureChanged);
   const trimmedTitle = title.trim();
 
   const targets = shoppingTargets(entities);
@@ -273,7 +279,10 @@ export function QuickAddSheet({
                 value={domainId}
                 onChange={pickDomain}
                 initialEntityId={entityId}
+                onAddDomain={structure.addDomain}
+                onAddChild={structure.addChild}
               />
+              <ErrorBanner message={structure.error} />
               {domainId === null && (
                 <p className="text-[13px] text-muted">{labels.capture.noDomainHint}</p>
               )}

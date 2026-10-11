@@ -32,17 +32,22 @@ type NewEntity = {
   readonly sortOrder: number;
 };
 
-/** The database opens the basic domains of the kind on its own. */
-export async function createEntity(newEntity: NewEntity): Promise<void> {
-  const { error } = await supabase.from('entities').insert({
-    household_id: newEntity.householdId,
-    kind: newEntity.kind,
-    name: newEntity.name,
-    sort_order: newEntity.sortOrder,
-  });
+/** The database opens the basic domains of the kind on its own. Returns the new id. */
+export async function createEntity(newEntity: NewEntity): Promise<string> {
+  const { data, error } = await supabase
+    .from('entities')
+    .insert({
+      household_id: newEntity.householdId,
+      kind: newEntity.kind,
+      name: newEntity.name,
+      sort_order: newEntity.sortOrder,
+    })
+    .select('id')
+    .single();
   if (error !== null) {
     throw new Error(error.message);
   }
+  return data.id;
 }
 
 export async function renameEntity(entityId: string, name: string): Promise<void> {
@@ -67,17 +72,22 @@ type NewDomain = {
   readonly sortOrder: number;
 };
 
-/** The database copies the household from the entity. */
-export async function createDomain(newDomain: NewDomain): Promise<void> {
-  const { error } = await supabase.from('domains').insert({
-    entity_id: newDomain.entityId,
-    name: newDomain.name,
-    role: newDomain.role,
-    sort_order: newDomain.sortOrder,
-  });
+/** The database copies the household from the entity. Returns the new id. */
+export async function createDomain(newDomain: NewDomain): Promise<string> {
+  const { data, error } = await supabase
+    .from('domains')
+    .insert({
+      entity_id: newDomain.entityId,
+      name: newDomain.name,
+      role: newDomain.role,
+      sort_order: newDomain.sortOrder,
+    })
+    .select('id')
+    .single();
   if (error !== null) {
     throw new Error(error.message);
   }
+  return data.id;
 }
 
 export async function updateDomain(domainId: string, changes: DomainUpdate): Promise<void> {

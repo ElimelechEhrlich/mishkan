@@ -203,6 +203,10 @@ export const labels = {
     when: 'מתי',
     noTimeHint: 'בלי זמן, הפריט יחכה ב"להשלמה".',
     debtOf: 'של מי החוב',
+    newChild: 'ילד/ה',
+    newChildName: 'שם הילד/ה',
+    newDomain: 'תחום',
+    newDomainName: 'שם התחום',
   },
   filter: {
     all: 'הכול',

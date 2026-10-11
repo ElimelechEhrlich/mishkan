@@ -27,7 +27,8 @@ export type UseEntitySettings = {
   readonly removeDomain: (domain: Domain) => void;
 };
 
-function nextSortOrder(rows: readonly { readonly sort_order: number }[]): number {
+/** One more than the highest sort order, to place a new row last. */
+export function nextSortOrder(rows: readonly { readonly sort_order: number }[]): number {
   return rows.reduce((highest, row) => Math.max(highest, row.sort_order), 0) + 1;
 }
 
@@ -40,7 +41,7 @@ export function useEntitySettings(
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    (change: () => Promise<void>): void => {
+    (change: () => Promise<unknown>): void => {
       change()
         .then(reload)
         .then(() => {

@@ -59,6 +59,7 @@ export function OverviewPage(): ReactElement {
       <OverviewCards overview={overview} lookups={lookups} onComplete={items.completeItem} />
       <QuickAddSheet
         entities={entities.entities}
+        onStructureChanged={entities.reload}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
