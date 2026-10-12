@@ -29,10 +29,18 @@ import { useTopicSections } from '../hooks/useTopicSections';
 import { useWeekSummary } from '../hooks/useWeekSummary';
 import { formatToday } from '../lib/itemRules';
 
-const homeViews = [
-  { value: 'kind', label: labels.homeView.kind },
-  { value: 'domain', label: labels.homeView.domain },
-] as const;
+/** By domain is called a list while one domain is chosen. */
+function homeViews(
+  oneDomain: boolean,
+): readonly [
+  { readonly value: 'kind'; readonly label: string },
+  { readonly value: 'domain'; readonly label: string },
+] {
+  return [
+    { value: 'kind', label: labels.homeView.kind },
+    { value: 'domain', label: oneDomain ? labels.listView.oneDomain : labels.homeView.domain },
+  ];
+}
 
 export function OverviewPage(): ReactElement {
   const { members, scopeId, setScope, homeView, setHomeView } = useHouseholdContext();
@@ -70,7 +78,11 @@ export function OverviewPage(): ReactElement {
         counts={entityCounts.counts}
       />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={chooseTopic} />
-      <Segmented options={homeViews} value={homeView} onChange={setHomeView} />
+      <Segmented
+        options={homeViews(scoped.topic !== null)}
+        value={homeView}
+        onChange={setHomeView}
+      />
       <div
         key={scopeId ?? 'all'}
         className={`flex flex-col gap-4 ${

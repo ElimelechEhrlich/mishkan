@@ -604,6 +604,8 @@ export const labels = {
     time: 'לפי זמן',
     latest: 'אחרונים',
     domain: 'לפי תחום',
+    /** With one domain chosen there is nothing to arrange by domain: it is a plain list. */
+    oneDomain: 'רשימה',
   },
   inMain: {
     label: 'בראשי עם כולם',
