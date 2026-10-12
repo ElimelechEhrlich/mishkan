@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import {
@@ -12,7 +13,7 @@ import {
   mainCircle,
   scopeOptions,
 } from '../../lib/lookups';
-import { everythingFlight, flyWhile } from '../../lib/flight';
+import { everythingFlight, flightDuration, flyWhile } from '../../lib/flight';
 import { useHouseholdContext } from '../../hooks/useRouteContext';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
@@ -29,6 +30,12 @@ type ScopeBarProps = {
   /** Reloads the entities after a change made from the chosen entity's sheet. */
   readonly onEntityChanged: () => Promise<void>;
 };
+
+/**
+ * Where, while the carousel turns, "everything" leaves for the header and comes back: half
+ * way past its last place. It always takes off from and lands on this very spot.
+ */
+const gate = everythingReach + 0.5;
 
 /** How far the finger moves the carousel by one place, in pixels. */
 const stepWidth = 80;
@@ -79,6 +86,12 @@ export function ScopeBar({
   const up = everythingUp ?? index > everythingReach;
   const upRef = useRef(up);
   upRef.current = up;
+  /**
+   * After coming back down while the carousel still turns: first it lands where it left
+   * ("hold"), then it catches up along the carousel to its own place ("chase").
+   */
+  const [landing, setLanding] = useState<'hold' | 'chase' | null>(null);
+  const landingTimer = useRef(0);
   const canOpenSheet = scope !== undefined;
 
   function go(next: number): void {
@@ -99,6 +112,7 @@ export function ScopeBar({
   useEffect(() => {
     return (): void => {
       cancelAnimationFrame(frame.current);
+      window.clearTimeout(landingTimer.current);
       setEverythingUp(null);
     };
   }, [setEverythingUp]);
@@ -106,17 +120,34 @@ export function ScopeBar({
   function moveTo(position: number): void {
     movingRef.current = position;
     // "Everything" goes up to the header, or comes back down, just as the carousel passes
-    // its place, on the carousel's own pace.
-    const nowUp = position > everythingReach + 0.5;
-    if (nowUp !== upRef.current) {
-      upRef.current = nowUp;
-      flyWhile(everythingFlight, () => {
-        setMoving(position);
-        setEverythingUp(nowUp);
-      });
-    } else {
+    // the gate, on the carousel's own pace and always on the same arc.
+    const nowUp = position > gate;
+    if (nowUp === upRef.current) {
       setMoving(position);
+      return;
     }
+    upRef.current = nowUp;
+    window.clearTimeout(landingTimer.current);
+    if (nowUp) {
+      // Drawn at the gate first, so it takes off from there however fast the carousel turns.
+      flushSync(() => {
+        setLanding(null);
+        setMoving(position);
+      });
+      flyWhile(everythingFlight, () => {
+        setEverythingUp(true);
+      });
+      return;
+    }
+    flyWhile(everythingFlight, () => {
+      setMoving(position);
+      setEverythingUp(false);
+      setLanding('hold');
+    });
+    landingTimer.current = window.setTimeout(() => {
+      setLanding('chase');
+      // Once the flight has let go of the circle (it keeps it a little past its time).
+    }, flightDuration + 50);
   }
 
   /** Comes to rest on a place and makes it the choice. */
@@ -126,6 +157,7 @@ export function ScopeBar({
     const target = options[next];
     setMoving(null);
     setEverythingUp(null);
+    setLanding((current) => (current === 'chase' ? null : current));
     if (target !== undefined && next !== index) {
       onChange(target);
     }
@@ -231,15 +263,25 @@ export function ScopeBar({
         }}
       >
         {options.map((option, position) => {
-          const distance = position - (moving ?? index);
+          const isAll = option === null;
+          let distance = position - (moving ?? index);
+          if (isAll && landing === 'hold') {
+            // Landing back where it left, while the carousel goes on turning.
+            distance = -gate;
+          } else if (isAll && moving !== null && landing === null) {
+            // While the carousel turns away from it, it goes no further than the gate.
+            distance = Math.max(distance, -gate);
+          }
           const away = Math.abs(distance);
           // "Everything" waits in the header once the carousel is past it.
-          const hidden = option === null ? up : away > carouselReach + (moving === null ? 0 : 1);
+          const hidden = isAll ? up : away > carouselReach + (moving === null ? 0 : 1);
           if (hidden) {
             return null;
           }
           const entity = ordered.find((candidate) => candidate.id === option);
           const place = carouselPlace(away);
+          // Catching up after landing, it follows its place with the carousel's resting pace.
+          const smooth = moving === null || (isAll && landing === 'chase');
           const middle = away < 0.5;
           return (
             <button
@@ -263,7 +305,7 @@ export function ScopeBar({
                 }
               }}
               className={`absolute top-1/2 left-1/2 rounded-full ${
-                moving === null ? 'transition-[transform,opacity] duration-300 ease-out' : ''
+                smooth ? 'transition-[transform,opacity] duration-300 ease-out' : ''
               }`}
               style={{
                 transform: `translate(calc(-50% + ${String(-Math.sign(distance) * place.offset)}px), -50%) scale(${String(place.scale)})`,
