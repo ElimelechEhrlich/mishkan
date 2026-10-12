@@ -8,7 +8,9 @@
   "git": {
     "deploymentEnabled": {
       "ci-debug": false,
-      "ci-dist": false
+      "ci-dist": false,
+      "ccr-d57526db-x5mb2b": false,
+      "ccr-*": false
     }
   },
   "headers": [
