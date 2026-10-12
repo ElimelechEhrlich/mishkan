@@ -15,6 +15,8 @@ self.addEventListener('push', (event) => {
       dir: 'rtl',
       lang: 'he',
       data: { url: data.url || '/' },
+      // A newer notice of the same kind (such as the evening nudge) replaces the older one.
+      ...(data.tag ? { tag: data.tag, renotify: true } : {}),
     }),
   );
 });

@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0015_circle.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0016_completion_nudges.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -54,6 +54,8 @@ export type Database = {
           color: string | null;
           role: MemberRole;
           user_id: string | null;
+          /** When the parent was last nudged to complete what waits for them. */
+          completion_nudged_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -63,6 +65,7 @@ export type Database = {
           color?: string | null;
           role: MemberRole;
           user_id?: string | null;
+          completion_nudged_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -72,6 +75,7 @@ export type Database = {
           color?: string | null;
           role?: MemberRole;
           user_id?: string | null;
+          completion_nudged_at?: string | null;
           created_at?: string;
         };
         Relationships: [];
