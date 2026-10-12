@@ -6,7 +6,7 @@ export const everythingFlight = 'everything';
 /** The carousel's own pace: Tailwind's duration-300 with ease-out. */
 const duration = 300;
 const easeOut = 'cubic-bezier(0, 0, 0.2, 1)';
-/** Sideways it starts slowly, so the circle first rises and then slides over: an arc. */
+/** One way of an arc starts slowly, so the circle first rises and then slides over. */
 const easeIn = 'cubic-bezier(0.4, 0, 1, 1)';
 
 function find(name: string): HTMLElement | null {
@@ -55,8 +55,13 @@ export function flyWhile(name: string, update: () => void): void {
   inner.style.scale = String(from.width / to.width);
   // Starts from there in this frame, then moves on the next one, like the carousel.
   void target.getBoundingClientRect();
-  target.style.transition = `translate ${String(duration)}ms ${easeOut}`;
-  inner.style.transition = `translate ${String(duration)}ms ${easeIn}, scale ${String(duration)}ms ${easeOut}`;
+  // Going up it first rises, then slides over; coming down it goes back on the same arc,
+  // first sliding over and then dropping, so it returns the way it left.
+  const rising = dy > 0;
+  const upDown = rising ? easeOut : easeIn;
+  const sideways = rising ? easeIn : easeOut;
+  target.style.transition = `translate ${String(duration)}ms ${upDown}`;
+  inner.style.transition = `translate ${String(duration)}ms ${sideways}, scale ${String(duration)}ms ${easeOut}`;
   target.style.translate = '';
   inner.style.translate = '';
   inner.style.scale = '';
