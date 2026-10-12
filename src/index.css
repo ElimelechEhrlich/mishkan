@@ -166,3 +166,15 @@ body {
     opacity: 0.45;
   }
 }
+
+/* Only the "everything" circle moves between the carousel and the header; the rest of the
+   page changes in place, with its own animations. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(everything) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

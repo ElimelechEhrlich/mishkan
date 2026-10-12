@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { labels } from '../../constants/labels';
+import { everythingTransitionName } from '../../lib/viewTransition';
 import { BottomNav } from './BottomNav';
 import { Icon } from './Icon';
 import { IconButton } from './IconButton';
@@ -73,9 +74,12 @@ export function PageShell({
                 type="button"
                 aria-label={labels.scope.toEverything}
                 onClick={toEverything}
-                className="flex size-10 animate-fade-in items-center justify-center rounded-xl bg-primary-soft text-primary transition active:scale-95"
+                style={{ viewTransitionName: everythingTransitionName }}
+                className="me-1 block rounded-full bg-surface p-0.5 shadow-raised transition active:scale-95"
               >
-                <Icon name="home" className="size-5.5" />
+                <span className="flex size-10 items-center justify-center rounded-full bg-primary text-white">
+                  <Icon name="home" className="size-5" />
+                </span>
               </button>
             )}
             <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>

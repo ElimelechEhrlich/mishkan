@@ -121,6 +121,12 @@ export function groupEntities<T extends { readonly kind: EntityKind }>(
 /** How many places on each side of the chosen one the entity carousel shows. */
 export const carouselReach = 2;
 
+/**
+ * How far "everything" may be from the chosen one and still show in the carousel; beyond
+ * that it moves up to the header.
+ */
+export const everythingReach = 1;
+
 /** The choices of the entity carousel in order: everything (null) first, then each entity. */
 export function scopeOptions(
   entities: readonly { readonly id: string; readonly kind: EntityKind }[],

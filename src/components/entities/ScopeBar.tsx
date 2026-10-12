@@ -1,7 +1,14 @@
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { carouselReach, entityTone, groupEntities, scopeOptions } from '../../lib/lookups';
+import {
+  carouselReach,
+  entityTone,
+  everythingReach,
+  groupEntities,
+  scopeOptions,
+} from '../../lib/lookups';
+import { everythingTransitionName, withViewTransition } from '../../lib/viewTransition';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { AvatarPicker } from './AvatarPicker';
@@ -46,7 +53,15 @@ export function ScopeBar({
 
   function go(next: number): void {
     const target = options[Math.max(0, Math.min(options.length - 1, next))];
-    if (target !== undefined && next !== index) {
+    if (target === undefined || next === index) {
+      return;
+    }
+    // When "everything" moves between the carousel and the header, it is seen flying there.
+    if (index > everythingReach !== next > everythingReach) {
+      withViewTransition(() => {
+        onChange(target);
+      });
+    } else {
       onChange(target);
     }
   }
@@ -78,7 +93,7 @@ export function ScopeBar({
         {options.map((option, position) => {
           const distance = position - index;
           const away = Math.abs(distance);
-          if (away > carouselReach) {
+          if (away > carouselReach || (option === null && away > everythingReach)) {
             return null;
           }
           const entity = ordered.find((candidate) => candidate.id === option);
@@ -106,6 +121,7 @@ export function ScopeBar({
                 transform: `translate(calc(-50% + ${String(-Math.sign(distance) * (offsets[away] ?? 0))}px), -50%) scale(${String(scale)})`,
                 opacity: away === 0 ? 1 : away === 1 ? 0.85 : 0.35,
                 zIndex: 10 - away,
+                viewTransitionName: option === null ? everythingTransitionName : undefined,
               }}
             >
               <span
