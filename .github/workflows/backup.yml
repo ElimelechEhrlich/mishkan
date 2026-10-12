@@ -1,0 +1,108 @@
+name: Backup
+
+# Every night, and on demand from the Actions tab, a full copy of the database (and, when
+# the service key is given, the attached files) is taken, encrypted with BACKUP_PASSPHRASE
+# and kept as a run artifact for 30 days. BACKUP.md says how to restore it.
+#
+# Secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_DB_URL            the Session pooler connection string, password included
+#   BACKUP_PASSPHRASE          the passphrase the backup is encrypted with
+#   SUPABASE_URL               optional, with the next one: also back up attached files
+#   SUPABASE_SERVICE_ROLE_KEY  optional
+
+on:
+  schedule:
+    # 01:17 UTC: 03:17 or 04:17 in Israel, when nobody is using the app.
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Check the secrets
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$PASSPHRASE" ]; then
+            echo "::error::SUPABASE_DB_URL and BACKUP_PASSPHRASE must be set as repository secrets."
+            exit 1
+          fi
+
+      - name: Install the PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      - name: Dump the database
+        run: |
+          set -euo pipefail
+          PG=/usr/lib/postgresql/17/bin
+          mkdir -p backup
+          # The app's own tables: structure, data and who may use what (the app's security
+          # rests on those grants, so they are kept).
+          "$PG/pg_dump" "$DB_URL" --format=custom --no-owner \
+            --schema=public --file=backup/public.dump
+          # Who can sign in: the accounts and their sign-in methods, data only (a new
+          # Supabase project already has the tables).
+          "$PG/pg_dump" "$DB_URL" --format=custom --data-only \
+            --table=auth.users --table=auth.identities --file=backup/auth.dump
+          # The list of attached files, to match with the files below.
+          "$PG/pg_dump" "$DB_URL" --format=custom --data-only \
+            --table=storage.buckets --table=storage.objects --file=backup/storage.dump
+          "$PG/pg_restore" --list backup/public.dump | grep -c 'TABLE DATA' \
+            | xargs -I{} echo "tables with data: {}"
+
+      - name: Download the attached files
+        if: env.SUPABASE_URL != '' && env.SERVICE_KEY != ''
+        run: |
+          set -euo pipefail
+          mkdir -p backup/files
+          /usr/lib/postgresql/17/bin/psql "$DB_URL" -At -c "select bucket_id || '/' || name from storage.objects where name not like '%/.emptyFolderPlaceholder'" \
+            > backup/files.txt
+          count=0
+          while IFS= read -r path; do
+            [ -z "$path" ] && continue
+            mkdir -p "backup/files/$(dirname "$path")"
+            # File names may hold Hebrew or spaces, so the address is encoded.
+            encoded=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$path")
+            curl -fsS -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
+              -o "backup/files/$path" "$SUPABASE_URL/storage/v1/object/authenticated/$encoded"
+            count=$((count + 1))
+          done < backup/files.txt
+          echo "files: $count"
+
+      - name: Encrypt
+        run: |
+          set -euo pipefail
+          name="mishkan-$(date -u +%Y-%m-%d)"
+          tar -czf "$name.tar.gz" -C backup .
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --output "$name.tar.gz.gpg" "$name.tar.gz" <<< "$PASSPHRASE"
+          rm -rf backup "$name.tar.gz"
+          ls -l "$name.tar.gz.gpg"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAME }}
+          path: ${{ env.NAME }}.tar.gz.gpg
+          retention-days: 30
+          if-no-files-found: error
