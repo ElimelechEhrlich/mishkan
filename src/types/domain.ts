@@ -170,4 +170,7 @@ export type HouseholdContext = SessionContext & {
   /** The entity every tab is narrowed to, or null for everything. */
   readonly scopeId: string | null;
   readonly setScope: (entityId: string | null) => void;
+  /** The domain name, such as בריאות, the time tabs are narrowed to, or null for all. */
+  readonly topic: string | null;
+  readonly setTopic: (topic: string | null) => void;
 };

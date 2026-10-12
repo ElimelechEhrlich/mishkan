@@ -117,3 +117,44 @@ export function groupEntities<T extends { readonly kind: EntityKind }>(
     }))
     .filter((group) => group.entities.length > 0);
 }
+
+/** The name of a domain as a topic shared across entities, such as בריאות. */
+function topicName(name: string): string {
+  return name.trim();
+}
+
+/**
+ * The topics of the regular domains: each name once, the ones most entities share first,
+ * then in the order the entities come. Shopping and debts are left out; they have tabs of
+ * their own.
+ */
+export function domainTopics(entities: readonly EntityWithDomains[]): string[] {
+  const counts = new Map<string, number>();
+  for (const entity of entities) {
+    for (const domain of entity.domains) {
+      if (domain.role === 'regular') {
+        const name = topicName(domain.name);
+        counts.set(name, (counts.get(name) ?? 0) + 1);
+      }
+    }
+  }
+  const firstSeen = [...counts.keys()];
+  return [...firstSeen].sort(
+    (a, b) =>
+      (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || firstSeen.indexOf(a) - firstSeen.indexOf(b),
+  );
+}
+
+/** The ids of every domain of a topic, across all entities. */
+export function topicDomainIds(
+  entities: readonly EntityWithDomains[],
+  topic: string,
+): ReadonlySet<string> {
+  return new Set(
+    entities.flatMap((entity) =>
+      entity.domains
+        .filter((domain) => domain.role === 'regular' && topicName(domain.name) === topic)
+        .map((domain) => domain.id),
+    ),
+  );
+}

@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { ScopeBar } from '../components/entities/ScopeBar';
+import { TopicBar } from '../components/entities/TopicBar';
 import { AllKindsToggle } from '../components/items/AllKindsToggle';
 import { ItemList } from '../components/items/ItemList';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
@@ -16,13 +17,13 @@ import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 
 export function OpenItemsPage(): ReactElement {
-  const { members, scopeId, setScope } = useHouseholdContext();
+  const { members, scopeId, setScope, setTopic } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
-  const scoped = useScopedItems(items, entities.entities);
+  const scoped = useScopedItems(items, entities.entities, true);
   const view = useOpenSegments(scoped.assigned, scoped.steps, 'task');
-  const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
+  const entityCounts = useEntityCounts(items.items.filter(scoped.inTopic), lookups.domainEntities);
 
   return (
     <PageShell
@@ -36,6 +37,7 @@ export function OpenItemsPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
       <Tabs
         options={view.options}
         value={view.segment}

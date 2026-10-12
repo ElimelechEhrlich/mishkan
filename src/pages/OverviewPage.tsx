@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { EntityProfileCard } from '../components/entities/EntityProfileCard';
 import { ScopeBar } from '../components/entities/ScopeBar';
+import { TopicBar } from '../components/entities/TopicBar';
 import { SummaryTiles } from '../components/items/SummaryTiles';
 import { OverviewCards } from '../components/overview/OverviewCards';
 import { WeekSummaryCard } from '../components/overview/WeekSummaryCard';
@@ -22,13 +23,13 @@ import { useWeekSummary } from '../hooks/useWeekSummary';
 import { formatToday } from '../lib/itemRules';
 
 export function OverviewPage(): ReactElement {
-  const { members, scopeId, setScope } = useHouseholdContext();
+  const { members, scopeId, setScope, setTopic } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
-  const scoped = useScopedItems(items, entities.entities);
+  const scoped = useScopedItems(items, entities.entities, true);
   const overview = useOverview(scoped.items, scoped.assigned, scoped.steps);
-  const entityCounts = useEntityCounts(items.items, lookups.domainEntities);
+  const entityCounts = useEntityCounts(items.items.filter(scoped.inTopic), lookups.domainEntities);
   const [searchParams] = useSearchParams();
   const week = useWeekSummary(scoped.inScope, members, items.items);
   const profile = useProfileHost(scoped.scope, entities, items);
@@ -47,6 +48,7 @@ export function OverviewPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
       {profile.profileEntity !== undefined && (
         <EntityProfileCard
           key={`profile-${profile.profileEntity.id}`}
@@ -59,7 +61,12 @@ export function OverviewPage(): ReactElement {
         today={overview.today}
         incomplete={scoped.incomplete.length}
       />
-      <OverviewCards overview={overview} lookups={lookups} onComplete={items.completeItem} />
+      <OverviewCards
+        overview={overview}
+        lookups={lookups}
+        onComplete={items.completeItem}
+        narrowed={scoped.topic !== null}
+      />
       <WeekSummaryCard summary={week} overdue={overview.overdue} thisWeek={overview.thisWeek} />
       <QuickAddSheet
         entities={entities.entities}

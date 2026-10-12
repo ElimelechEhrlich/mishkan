@@ -452,6 +452,11 @@ export const labels = {
     missingCount: 'פריטים חסרים',
     noDebts: 'אין חובות פתוחים',
   },
+  topic: {
+    label: 'סינון לפי תחום',
+    all: 'כל התחומים',
+    empty: 'אין פריטים פתוחים בתחום הזה',
+  },
   allKinds: {
     toggle: 'כל הסוגים',
   },
