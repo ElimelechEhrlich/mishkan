@@ -173,4 +173,10 @@ export type HouseholdContext = SessionContext & {
   /** The domain name, such as בריאות, the time tabs are narrowed to, or null for all. */
   readonly topic: string | null;
   readonly setTopic: (topic: string | null) => void;
+  /** How the main page arranges what is open: by kind, or by domain. */
+  readonly homeView: HomeView;
+  readonly setHomeView: (view: HomeView) => void;
 };
+
+/** The two arrangements of the main page. */
+export type HomeView = 'kind' | 'domain';

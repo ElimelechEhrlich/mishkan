@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import type { DomainSection } from '../../hooks/useEntityPage';
+import type { DomainSection } from '../../hooks/useEntitySections';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { ItemList } from '../items/ItemList';

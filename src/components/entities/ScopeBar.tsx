@@ -1,19 +1,22 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
+import { useShowByDomain } from '../../hooks/useShowByDomain';
 import { entityTone, groupEntities } from '../../lib/lookups';
-import type { Entity } from '../../types/domain';
+import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
+import { AvatarPicker } from './AvatarPicker';
 import { EntityAvatar } from './EntityAvatar';
 
 type ScopeBarProps = {
-  readonly entities: readonly (Entity & { readonly avatarUrl?: string | null })[];
+  readonly entities: readonly EntityWithDomains[];
   /** The entity every tab is narrowed to, or null for everything. */
   readonly scopeId: string | null;
   readonly onChange: (entityId: string | null) => void;
   /** Open rows per entity id; left out where counts would not match the page. */
   readonly counts?: ReadonlyMap<string, number> | undefined;
+  /** When given, tapping the chosen entity's picture changes it; then this reloads. */
+  readonly onAvatarChanged?: (() => Promise<void>) | undefined;
 };
 
 /** How far from the middle the pictures sit, one and two places away, in pixels. */
@@ -26,13 +29,22 @@ const swipeDistance = 40;
  * its neighbours smaller on each side. Tapping a neighbour, the arrows or a swipe moves
  * to it. "Everything" comes first; the choice narrows every tab until it is changed.
  */
-export function ScopeBar({ entities, scopeId, onChange, counts }: ScopeBarProps): ReactElement {
+export function ScopeBar({
+  entities,
+  scopeId,
+  onChange,
+  counts,
+  onAvatarChanged,
+}: ScopeBarProps): ReactElement {
   const ordered = groupEntities(entities).flatMap((group) => group.entities);
   const options: readonly (string | null)[] = [null, ...ordered.map((entity) => entity.id)];
   const found = options.indexOf(scopeId);
   const index = found === -1 ? 0 : found;
   const scope = ordered.find((entity) => entity.id === scopeId);
   const touchStart = useRef<number | null>(null);
+  const [picking, setPicking] = useState(false);
+  const byDomain = useShowByDomain();
+  const canChangeAvatar = scope !== undefined && onAvatarChanged !== undefined;
 
   function go(next: number): void {
     const target = options[Math.max(0, Math.min(options.length - 1, next))];
@@ -78,10 +90,18 @@ export function ScopeBar({ entities, scopeId, onChange, counts }: ScopeBarProps)
               key={option ?? 'all'}
               type="button"
               aria-pressed={away === 0}
-              aria-label={entity?.name ?? labels.entityPage.everything}
-              tabIndex={away === 0 ? -1 : 0}
+              aria-label={
+                away === 0 && canChangeAvatar
+                  ? labels.avatar.change
+                  : (entity?.name ?? labels.entityPage.everything)
+              }
+              tabIndex={away === 0 && !canChangeAvatar ? -1 : 0}
               onClick={() => {
-                go(position);
+                if (away === 0) {
+                  setPicking(canChangeAvatar);
+                } else {
+                  go(position);
+                }
               }}
               className="absolute top-1/2 left-1/2 rounded-full transition-[transform,opacity] duration-300 ease-out"
               style={{
@@ -105,6 +125,11 @@ export function ScopeBar({ entities, scopeId, onChange, counts }: ScopeBarProps)
                   />
                 )}
               </span>
+              {away === 0 && canChangeAvatar && (
+                <span className="absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card">
+                  <Icon name="edit" className="size-4" />
+                </span>
+              )}
             </button>
           );
         })}
@@ -149,14 +174,27 @@ export function ScopeBar({ entities, scopeId, onChange, counts }: ScopeBarProps)
                 }`}
           </span>
         </div>
-        <Link
-          to={scope === undefined ? '/domains' : `/entity/${scope.id}`}
-          className="flex h-9 items-center gap-1 rounded-full bg-primary-soft px-4 text-[13px] font-semibold text-primary transition active:scale-95"
-        >
-          {labels.scope.byDomain}
-          <Icon name="forward" className="size-4" />
-        </Link>
+        {byDomain.available && (
+          <button
+            type="button"
+            onClick={byDomain.show}
+            className="flex h-9 items-center gap-1 rounded-full bg-primary-soft px-4 text-[13px] font-semibold text-primary transition active:scale-95"
+          >
+            {labels.scope.byDomain}
+            <Icon name="forward" className="size-4" />
+          </button>
+        )}
       </div>
+      {picking && scope !== undefined && onAvatarChanged !== undefined && (
+        <AvatarPicker
+          entity={scope}
+          tone={entityTone(entities.indexOf(scope))}
+          onChanged={onAvatarChanged}
+          onClose={() => {
+            setPicking(false);
+          }}
+        />
+      )}
     </div>
   );
 }
