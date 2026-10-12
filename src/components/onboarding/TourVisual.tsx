@@ -3,16 +3,8 @@ import { labels } from '../../constants/labels';
 import { Icon } from '../ui/Icon';
 import type { IconName } from '../ui/Icon';
 
-export type TourStep =
-  | 'welcome'
-  | 'kinds'
-  | 'arenas'
-  | 'domains'
-  | 'profile'
-  | 'add'
-  | 'incomplete'
-  | 'tabs'
-  | 'notify';
+/** The pages of the tour, by name; their words are in labels.tour.pages. */
+export type TourStep = keyof typeof labels.tour.pages;
 
 type TourVisualProps = {
   readonly step: TourStep;
@@ -37,6 +29,8 @@ const kindIcons: readonly IconName[] = [
   'wallet',
 ];
 
+const purposeIcons: readonly IconName[] = ['plus', 'grid', 'calendar'];
+
 const tabs: readonly { readonly icon: IconName; readonly label: string }[] = [
   { icon: 'home', label: labels.nav.home },
   { icon: 'list', label: labels.nav.open },
@@ -51,7 +45,106 @@ const tabs: readonly { readonly icon: IconName; readonly label: string }[] = [
 export function TourVisual({ step }: TourVisualProps): ReactElement {
   switch (step) {
     case 'welcome':
-      return <img src="/icons/icon.svg" alt="" className="size-28 rounded-[32px] shadow-raised" />;
+    case 'begin':
+      return <img src="/icons/icon.svg" alt="" className="size-24 rounded-[28px] shadow-raised" />;
+    case 'purpose':
+      return (
+        <div className="flex gap-3">
+          {labels.tour.purposeSample.map((word, index) => (
+            <span
+              key={word}
+              className="flex w-24 flex-col items-center gap-2 rounded-2xl bg-surface py-3 text-sm font-semibold shadow-card"
+            >
+              <span className="flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                <Icon name={purposeIcons[index] ?? 'plus'} className="size-5.5" />
+              </span>
+              {word}
+            </span>
+          ))}
+        </div>
+      );
+    case 'time':
+      return (
+        <div className="flex max-w-80 flex-wrap justify-center gap-2">
+          {labels.tour.timeSample.map((word, index) => (
+            <span
+              key={word}
+              className={`rounded-full px-3.5 py-1.5 text-[15px] font-medium ${
+                index === 0 ? 'bg-primary text-white' : 'bg-surface text-ink shadow-card'
+              }`}
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      );
+    case 'home':
+      return (
+        <div className="flex w-72 flex-col gap-2.5">
+          <div className="flex gap-0.5 rounded-xl bg-line/80 p-0.5 text-[13px]">
+            <span className="flex-1 rounded-[10px] bg-surface py-1.5 font-semibold shadow-raised">
+              {labels.homeView.kind}
+            </span>
+            <span className="flex-1 py-1.5 text-muted">{labels.homeView.domain}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {labels.tour.homeTiles.map((tile, index) => (
+              <span
+                key={tile}
+                className="flex flex-col items-start rounded-xl bg-surface px-2.5 py-2 shadow-card"
+              >
+                <span
+                  className={`font-display text-xl font-bold ${index === 0 ? 'text-alert' : ''}`}
+                >
+                  {String(index + 1)}
+                </span>
+                <span className="text-xs text-muted">{tile}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    case 'appointments':
+      return (
+        <div className="flex w-72 flex-col gap-1 rounded-2xl bg-surface p-3.5 text-start shadow-card">
+          <span className="flex items-center justify-between gap-2">
+            <span className="text-[15px] font-semibold">{labels.tour.appointmentSample}</span>
+            <span className="text-xs font-semibold text-primary">
+              {labels.tour.appointmentWhen}
+            </span>
+          </span>
+          <span className="flex items-center gap-1 text-xs text-muted">
+            <Icon name="pin" className="size-3.5" />
+            {labels.tour.appointmentPlace}
+          </span>
+        </div>
+      );
+    case 'shopping':
+      return (
+        <div className="flex gap-3">
+          {(['cart', 'wallet'] as const).map((icon) => (
+            <span
+              key={icon}
+              className="flex size-20 items-center justify-center rounded-[24px] bg-surface text-primary shadow-card"
+            >
+              <Icon name={icon} className="size-10" />
+            </span>
+          ))}
+        </div>
+      );
+    case 'more':
+      return (
+        <div className="flex gap-2 rounded-2xl bg-surface p-2 shadow-card">
+          {(['search', 'done', 'settings'] as const).map((icon) => (
+            <span
+              key={icon}
+              className="flex size-14 items-center justify-center rounded-xl text-muted"
+            >
+              <Icon name={icon} className="size-7" />
+            </span>
+          ))}
+        </div>
+      );
     case 'kinds':
       return (
         <ul className="flex w-full max-w-80 flex-col overflow-hidden rounded-2xl bg-surface text-start shadow-card">

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { TourVisual } from './TourVisual';
 import type { TourStep } from './TourVisual';
 
@@ -9,34 +10,43 @@ type WelcomeTourProps = {
   readonly onClose: () => void;
 };
 
-const steps: readonly { readonly step: TourStep; readonly title: string; readonly text: string }[] =
-  [
-    { step: 'welcome', title: labels.tour.welcomeTitle, text: labels.tour.welcomeText },
-    { step: 'kinds', title: labels.tour.kindsTitle, text: labels.tour.kindsText },
-    { step: 'arenas', title: labels.tour.arenasTitle, text: labels.tour.arenasText },
-    { step: 'domains', title: labels.tour.domainsTitle, text: labels.tour.domainsText },
-    { step: 'profile', title: labels.tour.profileTitle, text: labels.tour.profileText },
-    { step: 'add', title: labels.tour.addTitle, text: labels.tour.addText },
-    { step: 'incomplete', title: labels.tour.incompleteTitle, text: labels.tour.incompleteText },
-    { step: 'tabs', title: labels.tour.tabsTitle, text: labels.tour.tabsText },
-    { step: 'notify', title: labels.tour.notifyTitle, text: labels.tour.notifyText },
-  ];
+/** The pages in order: why, the building blocks, then each part of the app, then how to start. */
+const steps: readonly TourStep[] = [
+  'welcome',
+  'purpose',
+  'arenas',
+  'domains',
+  'kinds',
+  'time',
+  'add',
+  'incomplete',
+  'home',
+  'tabs',
+  'appointments',
+  'shopping',
+  'profile',
+  'notify',
+  'more',
+  'begin',
+];
 
 /** How far a finger has to move to turn a page. */
 const swipeDistance = 50;
 
 /**
- * A few short pages that explain the app the first time it opens: one idea per page,
- * a picture drawn like the real screen, big buttons, and a swipe to move on.
+ * The tour that explains the app the first time it opens: what it is for, its building
+ * blocks, and every part of it, one idea per page, with a picture drawn like the real
+ * screen and a few short points. Big buttons, and a swipe to move on.
  */
 export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState<'next' | 'previous'>('next');
   const touchStart = useRef<number | null>(null);
-  const current = steps[index];
-  if (current === undefined) {
+  const step = steps[index];
+  if (step === undefined) {
     return null;
   }
+  const page = labels.tour.pages[step];
   const last = index === steps.length - 1;
 
   function go(next: number): void {
@@ -55,7 +65,7 @@ export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null 
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={current.title}
+      aria-label={page.title}
       className="fixed inset-0 z-50 flex flex-col bg-paper pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
       onTouchStart={(event) => {
         touchStart.current = event.touches[0]?.clientX ?? null;
@@ -75,8 +85,8 @@ export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null 
         }
       }}
     >
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-6">
-        <div className="flex h-14 items-center justify-between">
+      <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col px-6">
+        <div className="flex h-14 shrink-0 items-center justify-between">
           <span className="text-sm text-muted">
             {String(index + 1)} {labels.tour.stepOf} {String(steps.length)}
           </span>
@@ -91,27 +101,41 @@ export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null 
           )}
         </div>
 
-        <div
-          key={current.step}
-          className={`flex flex-1 flex-col items-center justify-center gap-10 text-center ${
-            direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
-          }`}
-        >
-          <div className="flex min-h-36 items-center justify-center">
-            <TourVisual step={current.step} />
-          </div>
-          <div className="flex flex-col gap-3">
-            <h2 className="font-display text-[28px] leading-9 font-bold">{current.title}</h2>
-            <p className="text-[17px] leading-7 text-ink/75">{current.text}</p>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none]">
+          <div
+            key={step}
+            className={`my-auto flex flex-col items-center gap-7 py-2 text-center ${
+              direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
+            }`}
+          >
+            <div className="flex min-h-28 items-center justify-center">
+              <TourVisual step={step} />
+            </div>
+            <div className="flex flex-col gap-3">
+              <h2 className="font-display text-[26px] leading-8 font-bold">{page.title}</h2>
+              <p className="text-[16px] leading-7 text-ink/75">{page.text}</p>
+            </div>
+            {page.points.length > 0 && (
+              <ul className="flex w-full flex-col gap-2.5 text-start">
+                {page.points.map((point) => (
+                  <li key={point} className="flex gap-2.5 text-[15px] leading-6">
+                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                      <Icon name="check" className="size-3.5" />
+                    </span>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-5 pt-4 pb-6">
-          <div className="flex justify-center gap-2" aria-hidden="true">
+        <div className="flex shrink-0 flex-col gap-4 pt-3 pb-5">
+          <div className="flex justify-center gap-1.5" aria-hidden="true">
             {steps.map((item, dot) => (
               <span
-                key={item.step}
-                className={`h-2 rounded-full transition-all ${dot === index ? 'w-6 bg-primary' : 'w-2 bg-line'}`}
+                key={item}
+                className={`h-1.5 rounded-full transition-all ${dot === index ? 'w-5 bg-primary' : 'w-1.5 bg-line'}`}
               />
             ))}
           </div>
