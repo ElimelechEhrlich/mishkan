@@ -9,13 +9,12 @@ import {
   entityTone,
   everythingReach,
   glideTarget,
-  glideTime,
   groupEntities,
   mainCircle,
   scopeOptions,
 } from '../../lib/lookups';
 import { everythingFlight, flyDownAndOn, flyWhile } from '../../lib/flight';
-import { useHouseholdContext } from '../../hooks/useRouteContext';
+import { setEverythingUp, useEverythingUp } from '../../hooks/useEverythingUp';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { EntitySheet } from './EntitySheet';
@@ -37,6 +36,10 @@ type ScopeBarProps = {
  * way past its last place. It always takes off from and lands on this very spot.
  */
 const gate = everythingReach + 0.5;
+
+/** The shortest and longest a glide to rest takes, in milliseconds. */
+const glideShortest = 260;
+const glideLongest = 900;
 
 /** How far the finger moves the carousel by one place, in pixels. */
 const stepWidth = 80;
@@ -82,7 +85,7 @@ export function ScopeBar({
   const swiped = useRef(false);
   const circle = mainCircle(entities);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const { everythingUp, setEverythingUp } = useHouseholdContext();
+  const everythingUp = useEverythingUp();
   /** Where "everything" is: in the header past its reach, or in the carousel. */
   const up = everythingUp ?? index > everythingReach;
   const upRef = useRef(up);
@@ -94,6 +97,8 @@ export function ScopeBar({
    */
   const [held, setHeld] = useState<number | null>(null);
   const heldRef = useRef<number | null>(null);
+  /** A place the carousel came to rest on, waiting for "everything" to get home first. */
+  const pending = useRef<number | null>(null);
   /** Stops the way down while it is still going. */
   const stopLanding = useRef<() => void>(() => undefined);
   /** Where the carousel rests, for the way down that runs between renders. */
@@ -127,7 +132,7 @@ export function ScopeBar({
       stopLanding.current();
       setEverythingUp(null);
     };
-  }, [setEverythingUp]);
+  }, []);
 
   function moveTo(position: number): void {
     movingRef.current = position;
@@ -170,14 +175,32 @@ export function ScopeBar({
         },
         done: () => {
           hold(null);
+          // The carousel came to rest while it was still on its way: now it can be chosen.
+          if (pending.current !== null) {
+            choose(pending.current);
+          }
         },
       },
     );
   }
 
-  /** Comes to rest on a place and makes it the choice. */
+  /**
+   * Comes to rest on a place. It becomes the choice, and the page below is drawn for it, only
+   * once nothing moves any more ("everything" may still be on its way down), so drawing the
+   * page never holds up a frame of the motion.
+   */
   function settle(next: number): void {
     cancelAnimationFrame(frame.current);
+    moveTo(next);
+    if (heldRef.current === null) {
+      choose(next);
+    } else {
+      pending.current = next;
+    }
+  }
+
+  function choose(next: number): void {
+    pending.current = null;
     movingRef.current = null;
     const target = options[next];
     setMoving(null);
@@ -187,19 +210,29 @@ export function ScopeBar({
     }
   }
 
-  /** Lets the carousel go on from where the finger left it, slowing down to a place. */
+  /**
+   * Lets the carousel go on from where the finger left it, at the finger's speed, slowing
+   * down to stand still exactly on a place, without a long crawl at the end.
+   */
   function glide(from: number, speed: number, origin: number): void {
     const target = glideTarget(from, speed, origin, options.length);
+    const distance = target - from;
+    // Easing out on a cubic starts at three times the average speed; matching it to the
+    // finger's sets how long the way takes.
+    const toward = Math.abs(speed) > 0 && Math.sign(speed) === Math.sign(distance);
+    const duration = Math.max(
+      glideShortest,
+      Math.min(glideLongest, toward ? (3 * Math.abs(distance)) / Math.abs(speed) : glideShortest),
+    );
     const start = performance.now();
     const tick = (now: number): void => {
-      const position = target + (from - target) * Math.exp(-(now - start) / glideTime);
-      // The last few pixels are left to the resting transition, so the choice is not held back.
-      if (Math.abs(position - target) < 0.08) {
+      const time = Math.min(1, (now - start) / duration);
+      if (time >= 1) {
         settle(target);
-      } else {
-        moveTo(position);
-        frame.current = requestAnimationFrame(tick);
+        return;
       }
+      moveTo(from + distance * (1 - (1 - time) ** 3));
+      frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
   }
@@ -220,6 +253,7 @@ export function ScopeBar({
           const finger = event.touches[0];
           // A finger on a gliding carousel catches it where it is.
           cancelAnimationFrame(frame.current);
+          pending.current = null;
           swiped.current = movingRef.current !== null;
           touch.current =
             finger === undefined

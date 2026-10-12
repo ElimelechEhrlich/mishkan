@@ -191,7 +191,7 @@ export type Track = {
  * How briskly the circle goes down and on: a spring that sets off from standing and settles
  * without overshooting, in radians per second.
  */
-const spring = 14;
+const spring = 17;
 
 /**
  * Brings the circle down from the header along the arc it went up and, without stopping,
@@ -235,7 +235,7 @@ export function flyDownAndOn(name: string, update: () => void, track: Track): ()
       }
       track.moveTo(travelled - arc.length);
     }
-    if (!target.isConnected || (Math.abs(goal - travelled) < 0.5 && Math.abs(speed) < 5)) {
+    if (!target.isConnected || (Math.abs(goal - travelled) < 1 && Math.abs(speed) < 25)) {
       arc.clear();
       track.done();
       return;

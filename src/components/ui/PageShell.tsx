@@ -1,8 +1,9 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { labels } from '../../constants/labels';
-import { everythingFlight } from '../../lib/flight';
+import type { EverythingShortcut } from '../../hooks/useEverythingShortcut';
 import { BottomNav } from './BottomNav';
+import { EverythingButton } from './EverythingButton';
 import { Icon } from './Icon';
 import { IconButton } from './IconButton';
 
@@ -18,8 +19,8 @@ type PageShellProps = {
   readonly heading?: ReactNode;
   /** Leaves out the bottom bar, so a page typed into keeps the space above the keyboard. */
   readonly hideNav?: boolean;
-  /** When given, a button in the header goes straight back to everything. */
-  readonly toEverything?: (() => void) | undefined;
+  /** When given, a button in the header goes straight back to everything, once it is away. */
+  readonly toEverything?: EverythingShortcut | undefined;
 };
 
 const headerLinkClass =
@@ -69,21 +70,7 @@ export function PageShell({
                 {title}
               </h1>
             </div>
-            {toEverything !== undefined && (
-              <button
-                type="button"
-                aria-label={labels.scope.toEverything}
-                onClick={toEverything}
-                data-flight={everythingFlight}
-                className="me-1 block rounded-full active:opacity-80"
-              >
-                <span className="block rounded-full bg-surface p-0.5 shadow-raised">
-                  <span className="flex size-10 items-center justify-center rounded-full bg-primary text-white">
-                    <Icon name="home" className="size-5" />
-                  </span>
-                </span>
-              </button>
-            )}
+            {toEverything !== undefined && <EverythingButton shortcut={toEverything} />}
             <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>
               <Icon name="search" className="size-5.5" />
             </Link>
