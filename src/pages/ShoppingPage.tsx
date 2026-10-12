@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { ScopeBar } from '../components/entities/ScopeBar';
+import { CategoryBar } from '../components/shopping/CategoryBar';
 import { MisplacedItems } from '../components/shopping/MisplacedItems';
 import { MissingItemForm } from '../components/shopping/MissingItemForm';
 import { RunCard } from '../components/shopping/RunCard';
@@ -8,6 +9,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
+import { useCategoryFilter } from '../hooks/useCategoryFilter';
 import { useEntities } from '../hooks/useEntities';
 import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useItems } from '../hooks/useItems';
@@ -21,6 +23,7 @@ export function ShoppingPage(): ReactElement {
   const items = useItems();
   const scoped = useScopedItems(items, entities.entities);
   const shopping = useShopping(items, entities.entities, scoped.scope);
+  const filter = useCategoryFilter(shopping.shared, shopping.personal);
   const isEmpty =
     shopping.shared.length === 0 &&
     shopping.personal.length === 0 &&
@@ -36,6 +39,7 @@ export function ShoppingPage(): ReactElement {
     >
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
+      <CategoryBar options={filter.options} value={filter.category} onChange={filter.setCategory} />
       <MissingItemForm
         key={scoped.scope?.id ?? 'all'}
         targets={shopping.targets}
@@ -53,7 +57,7 @@ export function ShoppingPage(): ReactElement {
       )}
       <ShoppingSection
         title={labels.shopping.shared}
-        groups={shopping.shared}
+        groups={filter.shared}
         entityNames={shopping.entityNames}
         onBuy={shopping.toggleBought}
         onStartRun={(category) => {
@@ -62,7 +66,7 @@ export function ShoppingPage(): ReactElement {
       />
       <ShoppingSection
         title={labels.shopping.private}
-        groups={shopping.personal}
+        groups={filter.personal}
         entityNames={shopping.entityNames}
         onBuy={shopping.toggleBought}
         onStartRun={(category) => {
