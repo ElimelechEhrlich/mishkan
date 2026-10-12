@@ -138,6 +138,10 @@ export function segmentOf(item: Item): OpenSegment | null {
   ) {
     return null;
   }
+  // An issue has no time of its own; its steps carry the dates.
+  if (item.kind === 'issue') {
+    return 'active';
+  }
   if (item.time_mode === 'waiting') {
     return 'waiting';
   }
@@ -218,7 +222,9 @@ export function toListEntries(items: readonly Item[], allSteps: readonly Item[])
     const steps = isContainer(item)
       ? allSteps.filter((step) => step.parent_id === item.id && step.kind === 'task')
       : [];
-    const dueDates = [item, ...steps.filter((step) => step.status === 'open')]
+    // An issue's own date, if one is left from a conversion, is not used: only its steps count.
+    const dated = item.kind === 'issue' ? [] : [item];
+    const dueDates = [...dated, ...steps.filter((step) => step.status === 'open')]
       .map((entry) => entry.due_date)
       .filter((date) => date !== null);
     const dueDate = dueDates.reduce<string | null>(

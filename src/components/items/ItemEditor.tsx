@@ -142,8 +142,14 @@ export function ItemEditor({
   const isShopping = item.kind === 'missing_item' || item.kind === 'shopping_run';
   const isQuestion = item.kind === 'question';
   const isAppointment = item.kind === 'appointment';
+  // An issue has no time of its own: the dates are on its steps.
   const hasSchedule =
-    item.kind !== 'note' && item.kind !== 'debt' && !isShopping && !isQuestion && !isAppointment;
+    item.kind !== 'note' &&
+    item.kind !== 'debt' &&
+    item.kind !== 'issue' &&
+    !isShopping &&
+    !isQuestion &&
+    !isAppointment;
   const healthDomain = entities.some((entity) =>
     entity.domains.some(
       (domain) =>
