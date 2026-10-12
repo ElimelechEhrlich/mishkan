@@ -119,6 +119,24 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
           </span>
         </div>
       );
+    case 'circle':
+      return (
+        <div className="flex items-center gap-3">
+          <span className="flex size-20 items-center justify-center rounded-full border-4 border-surface bg-entity-2 text-white shadow-card">
+            <Icon name="users" className="size-9" />
+          </span>
+          <div className="flex flex-col gap-1.5">
+            {labels.tour.circleSample.map((name) => (
+              <span
+                key={name}
+                className="rounded-full bg-surface px-3.5 py-1.5 text-[14px] font-medium shadow-card"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
     case 'shopping':
       return (
         <div className="flex gap-3">

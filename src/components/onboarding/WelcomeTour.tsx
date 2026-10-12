@@ -16,6 +16,7 @@ const steps: readonly TourStep[] = [
   'purpose',
   'arenas',
   'domains',
+  'circle',
   'kinds',
   'time',
   'add',
