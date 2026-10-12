@@ -1,6 +1,6 @@
 -- =====================================================================
 -- 0016 - A nudge to complete what is waiting
--- Twice a day, at 13:00 and at 20:30 Israel time, a parent whose "needs
+-- Twice a day, at 14:00 and at 21:30 Israel time, a parent whose "needs
 -- completion" list is not empty gets one notification on their devices,
 -- saying how many items wait there. The send-reminders edge function, which
 -- a cron job already calls every few minutes, sends it. A parent with nothing
@@ -23,8 +23,8 @@ language sql security definer set search_path = '' as $$
   ),
   slot as (
     select case
-             when local_now::time >= time '20:30' then (local_now::date + time '20:30')
-             when local_now::time >= time '13:00' then (local_now::date + time '13:00')
+             when local_now::time >= time '21:30' then (local_now::date + time '21:30')
+             when local_now::time >= time '14:00' then (local_now::date + time '14:00')
            end at time zone 'Asia/Jerusalem' as at
     from now_here
   ),
