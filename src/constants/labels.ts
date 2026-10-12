@@ -578,7 +578,6 @@ export const labels = {
   },
   overview: {
     title: 'ראשי',
-    andMore: 'ועוד',
     nothingOpen: 'אין פריטים פתוחים',
     tasks: 'משימות',
     goals: 'יעדים',

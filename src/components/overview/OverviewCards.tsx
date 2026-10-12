@@ -32,8 +32,8 @@ function counts(groups: TimeGroups): Record<'active' | 'waiting' | 'someday', nu
 }
 
 /**
- * The main page: a folding card per kind. Tasks open on their active group;
- * everything else stays folded to its one-line summary, so the whole picture fits.
+ * The main page: a folding card per kind, folded to its one-line summary so the whole
+ * picture fits. Opening a card shows its time groups, the near ones open, with every row.
  */
 export function OverviewCards({
   overview,
@@ -119,7 +119,6 @@ export function OverviewCards({
           summary={timeGroupsSummary(counts(overview.tasks))}
           to="/tasks"
           linkLabel={labels.overview.allTasks}
-          defaultOpen
         >
           {timeCard(overview.tasks, true)}
         </OverviewCard>

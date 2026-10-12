@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { labels } from '../../constants/labels';
 import { compareEntries, todayIso } from '../../lib/itemRules';
 import type { ListEntry } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
@@ -14,20 +13,17 @@ type TimeGroupProps = {
   readonly lookups: Lookups;
   readonly onComplete: (item: Item) => void;
   readonly defaultOpen?: boolean;
-  /** How many rows to show before "and N more". */
-  readonly limit?: number;
   /** Overdue groups show their name in red. */
   readonly alert?: boolean;
 };
 
-/** One time group inside an overview card: a header that folds, and its first few rows. */
+/** One time group inside an overview card: a header that folds, and all of its rows. */
 export function TimeGroup({
   label,
   entries,
   lookups,
   onComplete,
   defaultOpen = false,
-  limit = 3,
   alert = false,
 }: TimeGroupProps): ReactElement | null {
   const [open, setOpen] = useState(defaultOpen);
@@ -37,8 +33,7 @@ export function TimeGroup({
   }
 
   const today = todayIso();
-  const shown = [...entries].sort(compareEntries).slice(0, limit);
-  const more = entries.length - shown.length;
+  const shown = [...entries].sort(compareEntries);
 
   return (
     <div className="flex flex-col border-t border-line first:border-t-0">
@@ -75,11 +70,6 @@ export function TimeGroup({
               hideDomain={false}
             />
           ))}
-          {more > 0 && (
-            <li className="border-t border-line px-3.5 py-2 text-xs text-muted">
-              {labels.overview.andMore} {String(more)}
-            </li>
-          )}
         </ul>
       )}
     </div>
