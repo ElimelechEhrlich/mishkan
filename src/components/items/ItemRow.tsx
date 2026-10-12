@@ -51,7 +51,7 @@ export function ItemRow({
     <li
       className={`group flex gap-3 ps-3.5 transition duration-300 ${completing ? 'opacity-40' : ''}`}
     >
-      <span className="w-5.5 shrink-0 pt-3">
+      <span className="w-5.5 shrink-0 pt-2">
         {item.kind !== 'note' && (
           <CheckButton
             checked={completing}
@@ -68,11 +68,11 @@ export function ItemRow({
       </span>
       <Link
         to={`/item/${item.id}`}
-        className="flex min-w-0 flex-1 items-start gap-3 border-t border-line py-3 pe-3.5 group-first:border-t-0 active:opacity-70"
+        className="flex min-w-0 flex-1 items-start gap-3 border-t border-line py-2 pe-3.5 group-first:border-t-0 active:opacity-70"
       >
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span
-            className={`text-[15px] leading-snug font-medium break-words ${completing ? 'line-through' : ''}`}
+            className={`text-[14px] leading-snug font-medium break-words ${completing ? 'line-through' : ''}`}
           >
             {item.title}
           </span>

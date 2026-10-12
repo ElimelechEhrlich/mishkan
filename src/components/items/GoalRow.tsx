@@ -39,13 +39,13 @@ export function GoalRow({
 
   return (
     <li className="group flex gap-3 ps-3.5">
-      <span className="w-5.5 shrink-0 pt-3.5">
+      <span className="w-5.5 shrink-0 pt-2.5">
         <Icon name="target" className={`size-5.5 ${tone?.text ?? 'text-muted'}`} />
       </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-2 border-t border-line py-3 pe-3.5 group-first:border-t-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 border-t border-line py-2 pe-3.5 group-first:border-t-0">
         <Link to={`/item/${goal.id}`} className="flex items-start gap-3 active:opacity-70">
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-[15px] leading-snug font-semibold break-words">{goal.title}</span>
+            <span className="text-[14px] leading-snug font-semibold break-words">{goal.title}</span>
             <ItemMeta
               item={goal}
               lookups={lookups}
