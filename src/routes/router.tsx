@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { AppointmentsPage } from '../pages/AppointmentsPage';
 import { DebtsPage } from '../pages/DebtsPage';
+import { DomainsPage } from '../pages/DomainsPage';
 import { DonePage } from '../pages/DonePage';
 import { EntityPage } from '../pages/EntityPage';
 import { GoalsPage } from '../pages/GoalsPage';
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
           { path: '/incomplete', element: <IncompletePage /> },
           { path: '/item/:itemId', element: <ItemPage /> },
           { path: '/entity/:entityId', element: <EntityPage /> },
+          { path: '/domains', element: <DomainsPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/done', element: <DonePage /> },
           { path: '/search', element: <SearchPage /> },

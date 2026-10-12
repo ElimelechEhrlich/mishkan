@@ -158,3 +158,35 @@ export function topicDomainIds(
     ),
   );
 }
+
+/** One topic across all entities, with the open rows of every domain of that name. */
+export type TopicGroup<T> = {
+  readonly topic: string;
+  readonly rows: readonly T[];
+};
+
+/**
+ * Rows grouped by the topic of their domain, in the order of `domainTopics`.
+ * Topics with nothing in them are left out; so are rows outside a regular domain.
+ */
+export function groupByTopic<T extends { readonly item: { readonly domain_id: string | null } }>(
+  entities: readonly EntityWithDomains[],
+  rows: readonly T[],
+): TopicGroup<T>[] {
+  const topicOf = new Map<string, string>();
+  for (const entity of entities) {
+    for (const domain of entity.domains) {
+      if (domain.role === 'regular') {
+        topicOf.set(domain.id, topicName(domain.name));
+      }
+    }
+  }
+  return domainTopics(entities)
+    .map((topic) => ({
+      topic,
+      rows: rows.filter(
+        (row) => row.item.domain_id !== null && topicOf.get(row.item.domain_id) === topic,
+      ),
+    }))
+    .filter((group) => group.rows.length > 0);
+}

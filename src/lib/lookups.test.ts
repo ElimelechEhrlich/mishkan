@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { domainTopics, topicDomainIds } from './lookups';
+import { domainTopics, groupByTopic, topicDomainIds } from './lookups';
 import type { EntityWithDomains } from '../types/domain';
 
 type DomainSpec = readonly [id: string, name: string, role?: 'regular' | 'shopping' | 'debts'];
@@ -61,5 +61,18 @@ describe('topicDomainIds', () => {
   it('finds the domains of a topic in every entity', () => {
     expect([...topicDomainIds(entities, 'בריאות')]).toEqual(['a2', 'b2']);
     expect(topicDomainIds(entities, 'קניות').size).toBe(0);
+  });
+});
+
+describe('groupByTopic', () => {
+  it('gathers rows of every entity under their topic and leaves out empty ones', () => {
+    const rows = [
+      { item: { domain_id: 'b2' } },
+      { item: { domain_id: 'a2' } },
+      { item: { domain_id: 'h2' } },
+    ];
+    const groups = groupByTopic(entities, rows);
+    expect(groups.map((group) => group.topic)).toEqual(['בריאות']);
+    expect(groups[0]?.rows).toHaveLength(2);
   });
 });

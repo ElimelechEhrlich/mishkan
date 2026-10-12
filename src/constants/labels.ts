@@ -150,6 +150,7 @@ export const labels = {
     home: 'ראשי',
     open: 'משימות',
     allItems: 'כל הפריטים',
+    byDomain: 'לפי תחומים',
     appointments: 'תורים ופגישות',
     goals: 'יעדים וסוגיות',
     notes: 'פתקים',

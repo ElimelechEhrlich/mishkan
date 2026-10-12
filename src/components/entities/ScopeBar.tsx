@@ -149,15 +149,13 @@ export function ScopeBar({ entities, scopeId, onChange, counts }: ScopeBarProps)
                 }`}
           </span>
         </div>
-        {scope !== undefined && (
-          <Link
-            to={`/entity/${scope.id}`}
-            className="flex h-9 items-center gap-1 rounded-full bg-primary-soft px-4 text-[13px] font-semibold text-primary transition active:scale-95"
-          >
-            {labels.scope.byDomain}
-            <Icon name="forward" className="size-4" />
-          </Link>
-        )}
+        <Link
+          to={scope === undefined ? '/domains' : `/entity/${scope.id}`}
+          className="flex h-9 items-center gap-1 rounded-full bg-primary-soft px-4 text-[13px] font-semibold text-primary transition active:scale-95"
+        >
+          {labels.scope.byDomain}
+          <Icon name="forward" className="size-4" />
+        </Link>
       </div>
     </div>
   );
