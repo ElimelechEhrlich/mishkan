@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0010_entity_avatars.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0011_appointments.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -13,7 +13,9 @@ type ItemKind =
   | 'debt'
   | 'missing_item'
   | 'shopping_run'
-  | 'question';
+  | 'question'
+  | 'appointment';
+type MeetingPlace = 'in_person' | 'phone' | 'video';
 type ShoppingCategory = 'food' | 'clothing' | 'urgent' | 'planned';
 type ItemTimeMode = 'scheduled' | 'recurring' | 'anytime' | 'waiting' | 'someday';
 type ItemStatus = 'open' | 'done';
@@ -176,6 +178,12 @@ export type Database = {
           auto_key: string | null;
           reminder_sent_at: string | null;
           remind_member_ids: string[] | null;
+          starts_at: string | null;
+          place_kind: MeetingPlace | null;
+          place: string | null;
+          meeting_url: string | null;
+          with_whom: string | null;
+          series_id: string | null;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -201,6 +209,12 @@ export type Database = {
           hidden?: boolean;
           answer?: string | null;
           auto_key?: string | null;
+          starts_at?: string | null;
+          place_kind?: MeetingPlace | null;
+          place?: string | null;
+          meeting_url?: string | null;
+          with_whom?: string | null;
+          series_id?: string | null;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -220,6 +234,11 @@ export type Database = {
           shopping_category?: ShoppingCategory | null;
           run_id?: string | null;
           answer?: string | null;
+          starts_at?: string | null;
+          place_kind?: MeetingPlace | null;
+          place?: string | null;
+          meeting_url?: string | null;
+          with_whom?: string | null;
         };
         Relationships: [];
       };
@@ -400,6 +419,18 @@ export type Database = {
         };
         Returns: undefined;
       };
+      create_appointments: {
+        Args: {
+          p_title: string;
+          p_domain_id: string | null;
+          p_starts: string[];
+          p_place_kind: MeetingPlace | null;
+          p_place: string | null;
+          p_meeting_url: string | null;
+          p_with_whom: string | null;
+        };
+        Returns: number;
+      };
       set_auto_reminder_recipients: {
         Args: { p_member_ids: string[] | null };
         Returns: undefined;
@@ -436,6 +467,7 @@ export type Database = {
       item_time_mode: ItemTimeMode;
       item_status: ItemStatus;
       debt_direction: DebtDirection;
+      meeting_place: MeetingPlace;
     };
     CompositeTypes: {
       [_ in never]: never;

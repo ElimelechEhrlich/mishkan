@@ -45,6 +45,7 @@ export function DebtsPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
         defaultKind="debt"
         entityId={scoped.scope?.id}
       />

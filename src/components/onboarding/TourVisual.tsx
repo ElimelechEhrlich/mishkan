@@ -27,11 +27,20 @@ const entityColors = [
   'bg-entity-1',
 ] as const;
 
-const kindIcons: readonly IconName[] = ['list', 'target', 'alert', 'note', 'cart', 'wallet'];
+const kindIcons: readonly IconName[] = [
+  'list',
+  'calendar',
+  'target',
+  'alert',
+  'note',
+  'cart',
+  'wallet',
+];
 
 const tabs: readonly { readonly icon: IconName; readonly label: string }[] = [
   { icon: 'home', label: labels.nav.home },
   { icon: 'list', label: labels.nav.open },
+  { icon: 'calendar', label: labels.nav.appointments },
   { icon: 'target', label: labels.nav.goals },
   { icon: 'note', label: labels.nav.notes },
   { icon: 'cart', label: labels.nav.shopping },
@@ -155,7 +164,7 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
       );
     case 'tabs':
       return (
-        <div className="grid w-full max-w-80 grid-cols-6 rounded-2xl bg-surface py-2 shadow-card">
+        <div className="grid w-full max-w-80 grid-cols-7 rounded-2xl bg-surface py-2 shadow-card">
           {tabs.map((tab, index) => (
             <span
               key={tab.label}

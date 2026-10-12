@@ -1,6 +1,19 @@
-import { nextDueDate, recurrenceOf, todayIso } from '../lib/itemRules';
+import {
+  fromLocalDateTime,
+  nextDueDate,
+  recurrenceOf,
+  seriesStarts,
+  todayIso,
+} from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
-import type { Conversion, Item, ItemKind, ItemUpdate, NewItem } from '../types/domain';
+import type {
+  Conversion,
+  Item,
+  ItemKind,
+  ItemUpdate,
+  NewAppointment,
+  NewItem,
+} from '../types/domain';
 
 export async function listOpenItems(): Promise<Item[]> {
   const { data, error } = await supabase
@@ -80,6 +93,27 @@ export async function createItem(newItem: NewItem): Promise<void> {
   if (error !== null) {
     throw new Error(error.message);
   }
+}
+
+/**
+ * One appointment, or a series of separate ones that share a series id. The database
+ * sets the day each is listed on and its reminders. Returns how many were made.
+ */
+export async function createAppointments(appointment: NewAppointment): Promise<number> {
+  const starts = seriesStarts(appointment.startsAt, appointment.repeat, appointment.count);
+  const { data, error } = await supabase.rpc('create_appointments', {
+    p_title: appointment.title,
+    p_domain_id: appointment.domainId,
+    p_starts: starts.map(fromLocalDateTime),
+    p_place_kind: appointment.placeKind,
+    p_place: appointment.place,
+    p_meeting_url: appointment.meetingUrl,
+    p_with_whom: appointment.withWhom,
+  });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
 }
 
 /** A question of an issue; its answer is filled in later. */

@@ -5,7 +5,15 @@ type TextFieldProps = {
   readonly label: string;
   readonly value: string;
   readonly onChange: (value: string) => void;
-  readonly type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local' | 'number';
+  readonly type?:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'date'
+    | 'datetime-local'
+    | 'number'
+    | 'tel'
+    | 'url';
   readonly direction?: 'rtl' | 'ltr';
   readonly autoFocus?: boolean;
   readonly autoComplete?: string;
@@ -26,7 +34,10 @@ export function TextField({
   const id = useId();
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
-      <label htmlFor={id} className={compact ? 'sr-only' : 'px-0.5 text-[13px] font-medium text-muted'}>
+      <label
+        htmlFor={id}
+        className={compact ? 'sr-only' : 'px-0.5 text-[13px] font-medium text-muted'}
+      >
         {label}
       </label>
       <input
@@ -37,7 +48,7 @@ export function TextField({
         autoFocus={autoFocus}
         autoComplete={autoComplete}
         placeholder={compact ? label : undefined}
-        inputMode={type === 'number' ? 'decimal' : undefined}
+        inputMode={type === 'number' ? 'decimal' : type === 'tel' ? 'tel' : undefined}
         onChange={(event) => {
           onChange(event.target.value);
         }}

@@ -21,6 +21,8 @@ import { Chip } from '../ui/Chip';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { PropertyRow } from '../ui/PropertyRow';
 import { SelectField } from '../ui/SelectField';
+import { AppointmentActions } from './AppointmentActions';
+import { AppointmentRows } from './AppointmentRows';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
@@ -62,7 +64,7 @@ type ItemEditorProps = {
 /** When a reminder rings, and for whom when it is not for everyone. */
 function reminderText(item: Item, people: readonly ReminderPerson[]): string {
   if (item.remind_at === null) {
-    return labels.push.noReminder;
+    return item.kind === 'appointment' ? labels.push.appointmentAuto : labels.push.noReminder;
   }
   const when = formatReminder(item.remind_at);
   if (item.remind_member_ids === null) {
@@ -139,7 +141,15 @@ export function ItemEditor({
   const isContainer = item.kind === 'goal' || item.kind === 'issue';
   const isShopping = item.kind === 'missing_item' || item.kind === 'shopping_run';
   const isQuestion = item.kind === 'question';
-  const hasSchedule = item.kind !== 'note' && item.kind !== 'debt' && !isShopping && !isQuestion;
+  const isAppointment = item.kind === 'appointment';
+  const hasSchedule =
+    item.kind !== 'note' && item.kind !== 'debt' && !isShopping && !isQuestion && !isAppointment;
+  const healthDomain = entities.some((entity) =>
+    entity.domains.some(
+      (domain) =>
+        domain.id === item.domain_id && domain.name.includes(labels.appointment.healthDomain),
+    ),
+  );
   const convertible = isStep ? null : asConvertible(item.kind);
   // A missing item can only move to the shopping domain of another entity, and anything
   // else stays out of shopping domains (it becomes a missing item by converting it).
@@ -149,9 +159,12 @@ export function ItemEditor({
   }));
   const done = item.status === 'done';
 
-  const domainLabel = item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
+  const domainLabel =
+    item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
   const timeLabel = fullTimeText(item, todayIso());
-  const goals = items.filter((candidate) => candidate.kind === 'goal' || candidate.kind === 'issue');
+  const goals = items.filter(
+    (candidate) => candidate.kind === 'goal' || candidate.kind === 'issue',
+  );
   const parentTitle = goals.find((goal) => goal.id === item.parent_id)?.title;
 
   return (
@@ -172,6 +185,7 @@ export function ItemEditor({
             {doneLabel(item.kind, done)}
           </Button>
         )}
+        {isAppointment && <AppointmentActions item={item} />}
       </Card>
 
       {debt !== null && (
@@ -270,6 +284,24 @@ export function ItemEditor({
               ))}
             </div>
           </PropertyRow>
+        )}
+
+        {isAppointment && (
+          <AppointmentRows
+            key={[
+              item.id,
+              item.starts_at,
+              item.place_kind,
+              item.place,
+              item.meeting_url,
+              item.with_whom,
+            ].join('|')}
+            item={item}
+            health={healthDomain}
+            onUpdate={(changes) => {
+              onUpdate(item.id, changes);
+            }}
+          />
         )}
 
         {hasSchedule && (

@@ -3,6 +3,7 @@ import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
 import { activeSections, splitBySection, todayIso } from '../../lib/itemRules';
 import { timeGroupsSummary } from '../../lib/itemText';
+import type { ListEntry } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Overview, TimeGroups } from '../../hooks/useOverview';
 import type { Item } from '../../types/domain';
@@ -30,8 +31,8 @@ function counts(groups: TimeGroups): Record<'active' | 'waiting' | 'someday', nu
 export function OverviewCards({ overview, lookups, onComplete }: OverviewCardsProps): ReactElement {
   const today = todayIso();
   /** Active items split by how soon they are due; the near groups open on the tasks card. */
-  const timeCard = (groups: TimeGroups, openNear: boolean): ReactElement => {
-    const sections = splitBySection(groups.active, today);
+  const sectionGroups = (entries: readonly ListEntry[], openNear: boolean): ReactElement => {
+    const sections = splitBySection(entries, today);
     return (
       <>
         {activeSections.map((section) => (
@@ -47,6 +48,14 @@ export function OverviewCards({ overview, lookups, onComplete }: OverviewCardsPr
             }
           />
         ))}
+      </>
+    );
+  };
+
+  const timeCard = (groups: TimeGroups, openNear: boolean): ReactElement => {
+    return (
+      <>
+        {sectionGroups(groups.active, openNear)}
         <TimeGroup
           label={labels.segment.waiting}
           entries={groups.waiting}
@@ -88,6 +97,21 @@ export function OverviewCards({ overview, lookups, onComplete }: OverviewCardsPr
         defaultOpen
       >
         {timeCard(overview.tasks, true)}
+      </OverviewCard>
+
+      <OverviewCard
+        icon="calendar"
+        title={labels.overview.appointments}
+        summary={
+          overview.appointments.length === 0
+            ? labels.appointment.noAppointments
+            : `${String(overview.appointments.length)} ${labels.overview.appointmentsCount}`
+        }
+        to="/appointments"
+        linkLabel={labels.overview.allAppointments}
+        defaultOpen={overview.appointments.length > 0}
+      >
+        {sectionGroups(overview.appointments, true)}
       </OverviewCard>
 
       <OverviewCard

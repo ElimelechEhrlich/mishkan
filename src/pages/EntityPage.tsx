@@ -74,6 +74,7 @@ export function EntityPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
         entityId={entity?.id}
         initialDomainId={addRequest?.domainId}
         initiallyOpen={addRequest !== null}

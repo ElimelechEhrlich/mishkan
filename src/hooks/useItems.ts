@@ -4,6 +4,7 @@ import { toMessage } from '../lib/errors';
 import {
   completeItem,
   convertItem,
+  createAppointments,
   createItem,
   createQuestion,
   deleteItem,
@@ -19,6 +20,7 @@ import type {
   Conversion,
   Item,
   ItemUpdate,
+  NewAppointment,
   NewDebt,
   NewItem,
   NewMissingItem,
@@ -47,6 +49,7 @@ export type UseItems = {
   readonly addItem: (newItem: NewItem) => Promise<boolean>;
   readonly addMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
   readonly addDebt: (newDebt: NewDebt) => Promise<boolean>;
+  readonly addAppointments: (appointment: NewAppointment) => Promise<boolean>;
   readonly addQuestion: (issueId: string, title: string) => void;
   readonly updateItem: (itemId: string, changes: ItemUpdate) => void;
   readonly convertItem: (itemId: string, conversion: Conversion) => Promise<boolean>;
@@ -123,6 +126,14 @@ export function useItems(): UseItems {
     [run],
   );
 
+  const handleAddAppointments = useCallback(
+    (appointment: NewAppointment): Promise<boolean> =>
+      run(async () => {
+        await createAppointments(appointment);
+      }),
+    [run],
+  );
+
   const handleAddQuestion = useCallback(
     (issueId: string, title: string): void => {
       void run(() => createQuestion(issueId, title));
@@ -179,6 +190,7 @@ export function useItems(): UseItems {
     addItem: handleAdd,
     addMissingItem: handleAddMissing,
     addDebt: handleAddDebt,
+    addAppointments: handleAddAppointments,
     addQuestion: handleAddQuestion,
     updateItem: handleUpdate,
     convertItem: handleConvert,

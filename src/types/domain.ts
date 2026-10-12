@@ -26,6 +26,7 @@ export type EntityKind = Enums['entity_kind'];
 export type DomainRole = Enums['domain_role'];
 export type DebtDirection = Enums['debt_direction'];
 export type ShoppingCategory = Enums['shopping_category'];
+export type MeetingPlace = Enums['meeting_place'];
 
 export type EntityWithDomains = Entity & {
   readonly domains: readonly Domain[];
@@ -84,6 +85,9 @@ export type ConvertibleKind = Extract<
   'task' | 'goal' | 'issue' | 'note' | 'debt' | 'missing_item'
 >;
 
+/** Kinds the add sheet makes: the convertible ones and appointments, which keep their kind. */
+export type AddableKind = ConvertibleKind | 'appointment';
+
 export type DebtInput = {
   readonly counterparty: string;
   readonly amount: number;
@@ -98,6 +102,24 @@ export type Conversion = {
   readonly category: ShoppingCategory | null;
   /** For a new debt that never had details. */
   readonly debt: DebtInput | null;
+};
+
+/** How often a series of appointments repeats; 'none' makes one appointment. */
+export type AppointmentRepeat = 'none' | 'weekly' | 'biweekly' | 'monthly';
+
+export type NewAppointment = {
+  readonly title: string;
+  readonly domainId: string | null;
+  /** The first one, as a local date and time (YYYY-MM-DDTHH:mm). */
+  readonly startsAt: string;
+  readonly repeat: AppointmentRepeat;
+  /** How many appointments in all, the first included. */
+  readonly count: number;
+  readonly placeKind: MeetingPlace | null;
+  /** An address in person, a phone number by phone. */
+  readonly place: string | null;
+  readonly meetingUrl: string | null;
+  readonly withWhom: string | null;
 };
 
 export type NewDebt = {

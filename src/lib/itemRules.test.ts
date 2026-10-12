@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeSectionOf, addDays, missingFields, splitBySection } from './itemRules';
+import { activeSectionOf, addDays, missingFields, seriesStarts, splitBySection } from './itemRules';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-11';
@@ -32,6 +32,12 @@ function item(overrides: Partial<Item>): Item {
     auto_key: null,
     reminder_sent_at: null,
     remind_member_ids: null,
+    starts_at: null,
+    place_kind: null,
+    place: null,
+    meeting_url: null,
+    with_whom: null,
+    series_id: null,
     ...overrides,
   };
 }
@@ -70,5 +76,36 @@ describe('missingFields', () => {
     expect(missingFields(item({ domain_id: null, time_mode: null }))).toEqual(['domain', 'time']);
     expect(missingFields(item({ kind: 'note', time_mode: null }))).toEqual([]);
     expect(missingFields(item({ kind: 'note', domain_id: null }))).toEqual(['domain']);
+  });
+});
+
+describe('seriesStarts', () => {
+  it('makes one appointment when it does not repeat', () => {
+    expect(seriesStarts('2026-10-12T09:30', 'none', 5)).toEqual(['2026-10-12T09:30']);
+  });
+
+  it('repeats weekly and every two weeks', () => {
+    expect(seriesStarts('2026-10-12T09:30', 'weekly', 3)).toEqual([
+      '2026-10-12T09:30',
+      '2026-10-19T09:30',
+      '2026-10-26T09:30',
+    ]);
+    expect(seriesStarts('2026-12-28T16:00', 'biweekly', 2)).toEqual([
+      '2026-12-28T16:00',
+      '2027-01-11T16:00',
+    ]);
+  });
+
+  it('keeps the day of the month, or the last day of a shorter month', () => {
+    expect(seriesStarts('2027-01-31T08:00', 'monthly', 3)).toEqual([
+      '2027-01-31T08:00',
+      '2027-02-28T08:00',
+      '2027-03-31T08:00',
+    ]);
+  });
+
+  it('keeps the count within bounds', () => {
+    expect(seriesStarts('2026-10-12T09:30', 'weekly', 0)).toHaveLength(1);
+    expect(seriesStarts('2026-10-12T09:30', 'weekly', 500)).toHaveLength(104);
   });
 });

@@ -1,9 +1,11 @@
 import type {
   ActiveSection,
-  ConvertibleKind,
+  AddableKind,
+  AppointmentRepeat,
   DebtDirection,
   EntityKind,
   ItemKind,
+  MeetingPlace,
   MissingField,
   OpenSegment,
   QuickTime,
@@ -29,6 +31,7 @@ const kind = {
   missing_item: 'פריט חסר',
   shopping_run: 'סבב קניות',
   question: 'שאלה',
+  appointment: 'תור/פגישה',
 } as const satisfies Record<ItemKind, string>;
 
 const shoppingCategory = {
@@ -63,7 +66,21 @@ const titlePrompt = {
   note: 'מה לזכור?',
   debt: 'מי?',
   missing_item: 'מה חסר?',
-} as const satisfies Record<ConvertibleKind, string>;
+  appointment: 'איזה תור או פגישה?',
+} as const satisfies Record<AddableKind, string>;
+
+const meetingPlace = {
+  in_person: 'פרונטלי',
+  phone: 'טלפוני',
+  video: 'וידאו',
+} as const satisfies Record<MeetingPlace, string>;
+
+const appointmentRepeat = {
+  none: 'פעם אחת',
+  weekly: 'כל שבוע',
+  biweekly: 'כל שבועיים',
+  monthly: 'כל חודש',
+} as const satisfies Record<AppointmentRepeat, string>;
 
 const quickTime = {
   today: 'היום',
@@ -133,6 +150,7 @@ export const labels = {
     home: 'ראשי',
     open: 'משימות',
     allItems: 'כל הפריטים',
+    appointments: 'תורים ופגישות',
     goals: 'יעדים וסוגיות',
     notes: 'פתקים',
     shopping: 'קניות',
@@ -147,6 +165,7 @@ export const labels = {
   nav: {
     home: 'ראשי',
     open: 'משימות',
+    appointments: 'תורים',
     goals: 'יעדים',
     notes: 'פתקים',
     shopping: 'קניות',
@@ -246,6 +265,39 @@ export const labels = {
   filter: {
     all: 'הכול',
   },
+  appointment: {
+    when: 'מתי',
+    where: 'איפה',
+    withWhom: 'עם מי',
+    address: 'כתובת',
+    phone: 'מספר טלפון',
+    meetingUrl: 'קישור לפגישה',
+    join: 'כניסה לפגישה',
+    call: 'חיוג',
+    repeat: 'חזרה',
+    count: 'כמה פגישות בסך הכול',
+    atMost: 'לכל היותר',
+    seriesHint: 'כל פגישה נשמרת בנפרד, ואפשר להזיז או לבטל כל אחת לבד.',
+    reminderHint: 'תזכורת תגיע יום לפני ושעה לפני.',
+    noPlace: 'לא נקבע',
+    noAppointments: 'אין תורים ופגישות פתוחים',
+    healthDomain: 'בריאות',
+    doctors: [
+      'רופא/ת משפחה',
+      'רופא/ת ילדים',
+      'רופא/ת שיניים',
+      'רופא/ת עיניים',
+      'רופא/ת עור',
+      'אף אוזן גרון',
+      'אורתופד/ית',
+      'גינקולוג/ית',
+      'קלינאי/ת תקשורת',
+      'פיזיותרפיסט/ית',
+      'ריפוי בעיסוק',
+      'פסיכולוג/ית',
+      'אחות טיפת חלב',
+    ],
+  },
   item: {
     separator: ' · ',
     today: 'היום',
@@ -307,6 +359,7 @@ export const labels = {
     kindsText: 'כל דבר שצריך לזכור נכנס לכאן, כסוג שמתאים לו. אפשר תמיד להפוך פריט מסוג אחד לאחר.',
     kindsSample: [
       'משימה: משהו לעשות, להיום או לשבוע הבא',
+      'תור/פגישה: בתאריך ושעה, עם תזכורת יום ושעה לפני',
       'יעד: משהו גדול, מחולק לצעדים קטנים',
       'סוגיה: משהו לפתור, עם שאלות ומידע',
       'פתק: מידע לשמור, כמו קוד השער',
@@ -340,7 +393,7 @@ export const labels = {
     profileChips: ['ציור', 'ריקוד', 'קריאה'],
     notifyTitle: 'תזכורות לטלפון',
     notifyText:
-      'בהגדרות מפעילים התראות, ואז תקבלו תזכורת בזמן שקבעתם, וגם שבוע לפני ימי הולדת עבריים ויום הנישואין.',
+      'בהגדרות מפעילים התראות, ואז תקבלו תזכורת בזמן שקבעתם, יום ושעה לפני כל תור או פגישה, וגם שבוע לפני ימי הולדת עבריים ויום הנישואין.',
   },
   push: {
     title: 'התראות',
@@ -354,6 +407,7 @@ export const labels = {
     hint: 'תזכורות שקבעתם לפריטים, וימי הולדת ונישואין, יגיעו כהתראה לכל מכשיר שבו ההתראות פעילות.',
     reminder: 'תזכורת',
     noReminder: 'בלי תזכורת',
+    appointmentAuto: 'יום לפני ושעה לפני',
     clearReminder: 'הסרת התזכורת',
     reminderHint: 'ההתראה תגיע לכל מכשיר שבו מי שנבחר הפעיל התראות.',
     forWhom: 'למי',
@@ -385,6 +439,9 @@ export const labels = {
     notes: 'פתקים',
     shopping: 'קניות',
     debts: 'חובות',
+    appointments: 'תורים ופגישות',
+    allAppointments: 'לכל התורים והפגישות',
+    appointmentsCount: 'קרובים',
     allTasks: 'לכל המשימות',
     allGoals: 'לכל היעדים והסוגיות',
     allNotes: 'לכל הפתקים',
@@ -407,39 +464,48 @@ export const labels = {
     categories: [
       {
         name: 'אנשים',
-        emojis: '👶 👧 🧒 👦 👩 🧑 👨 👩‍🦱 👨‍🦱 👩‍🦰 👨‍🦰 👱‍♀️ 👱‍♂️ 👩‍🦳 👨‍🦳 👩‍🦲 👨‍🦲 🧔 🧔‍♂️ 👵 🧓 👴 👲 👳‍♀️ 👳‍♂️ 🧕 👸 🤴 👰 🤵 🤰 🤱 👼 🧑‍🎓 👩‍🎓 👨‍🎓 🧑‍🏫 👩‍🏫 👨‍🏫 🧑‍⚕️ 👩‍⚕️ 👨‍⚕️ 🧑‍🍳 👩‍🍳 👨‍🍳 🧑‍💻 👩‍💻 👨‍💻 🧑‍🔧 👩‍🔧 👨‍🔧 🧑‍🎨 👩‍🎨 👨‍🎨 🧑‍🚀 👮 💂 🕵️ 🦸 🦸‍♀️ 🦹 🧙 🧚 🧜‍♀️ 🧞',
+        emojis:
+          '👶 👧 🧒 👦 👩 🧑 👨 👩‍🦱 👨‍🦱 👩‍🦰 👨‍🦰 👱‍♀️ 👱‍♂️ 👩‍🦳 👨‍🦳 👩‍🦲 👨‍🦲 🧔 🧔‍♂️ 👵 🧓 👴 👲 👳‍♀️ 👳‍♂️ 🧕 👸 🤴 👰 🤵 🤰 🤱 👼 🧑‍🎓 👩‍🎓 👨‍🎓 🧑‍🏫 👩‍🏫 👨‍🏫 🧑‍⚕️ 👩‍⚕️ 👨‍⚕️ 🧑‍🍳 👩‍🍳 👨‍🍳 🧑‍💻 👩‍💻 👨‍💻 🧑‍🔧 👩‍🔧 👨‍🔧 🧑‍🎨 👩‍🎨 👨‍🎨 🧑‍🚀 👮 💂 🕵️ 🦸 🦸‍♀️ 🦹 🧙 🧚 🧜‍♀️ 🧞',
       },
       {
         name: 'משפחה ובית',
-        emojis: '🏠 🏡 🏘️ 🏰 🏯 ⛺ 🛖 🏢 💑 👪 👨‍👩‍👧 👨‍👩‍👦 👨‍👩‍👧‍👦 👨‍👩‍👦‍👦 👨‍👩‍👧‍👧 👩‍👦 👩‍👧 👨‍👦 👨‍👧 💏 💍 💒 🫶 🤝 ❤️ 🧡 💛 💚 💙 💜 🤎 🖤 🤍 💖 💝 💕 🕯️ 🛋️ 🛏️ 🪴 🔑 🗝️',
+        emojis:
+          '🏠 🏡 🏘️ 🏰 🏯 ⛺ 🛖 🏢 💑 👪 👨‍👩‍👧 👨‍👩‍👦 👨‍👩‍👧‍👦 👨‍👩‍👦‍👦 👨‍👩‍👧‍👧 👩‍👦 👩‍👧 👨‍👦 👨‍👧 💏 💍 💒 🫶 🤝 ❤️ 🧡 💛 💚 💙 💜 🤎 🖤 🤍 💖 💝 💕 🕯️ 🛋️ 🛏️ 🪴 🔑 🗝️',
       },
       {
         name: 'פרצופים',
-        emojis: '😀 😃 😄 😁 😊 🙂 😉 😍 🥰 😘 😎 🤓 🧐 🤗 🤩 🥳 😇 🤠 😺 😸 😻 🙈 🙉 🙊 👻 🤖 👽 🎃 😴 🤔 😜 🤪',
+        emojis:
+          '😀 😃 😄 😁 😊 🙂 😉 😍 🥰 😘 😎 🤓 🧐 🤗 🤩 🥳 😇 🤠 😺 😸 😻 🙈 🙉 🙊 👻 🤖 👽 🎃 😴 🤔 😜 🤪',
       },
       {
         name: 'חיות',
-        emojis: '🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🐤 🦆 🦅 🦉 🦄 🐝 🦋 🐞 🐢 🐍 🦎 🐙 🐬 🐳 🐟 🐠 🦈 🐘 🦒 🦓 🐪 🐎 🐑 🐐 🦌 🐿️ 🦔 🦜 🦩 🦚 🐲',
+        emojis:
+          '🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🐤 🦆 🦅 🦉 🦄 🐝 🦋 🐞 🐢 🐍 🦎 🐙 🐬 🐳 🐟 🐠 🦈 🐘 🦒 🦓 🐪 🐎 🐑 🐐 🦌 🐿️ 🦔 🦜 🦩 🦚 🐲',
       },
       {
         name: 'טבע',
-        emojis: '🌸 🌼 🌻 🌺 🌹 🌷 💐 🌱 🌿 🍀 🌳 🌲 🌴 🌵 🍁 🍂 🍄 🌈 ☀️ 🌤️ ⛅ 🌧️ ❄️ ⛄ 🔥 💧 🌊 🌙 ⭐ 🌟 ✨ ⚡ 🌍 🏔️ 🏝️',
+        emojis:
+          '🌸 🌼 🌻 🌺 🌹 🌷 💐 🌱 🌿 🍀 🌳 🌲 🌴 🌵 🍁 🍂 🍄 🌈 ☀️ 🌤️ ⛅ 🌧️ ❄️ ⛄ 🔥 💧 🌊 🌙 ⭐ 🌟 ✨ ⚡ 🌍 🏔️ 🏝️',
       },
       {
         name: 'אוכל',
-        emojis: '🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍒 🍑 🥭 🍍 🥥 🥝 🥑 🥕 🌽 🥦 🍅 🍞 🥐 🥨 🧀 🥚 🍳 🥞 🍕 🍔 🌭 🍟 🥗 🍝 🍣 🍦 🍩 🍪 🎂 🧁 🍫 🍬 🍭 🍯 ☕ 🍵 🧃 🥛',
+        emojis:
+          '🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍒 🍑 🥭 🍍 🥥 🥝 🥑 🥕 🌽 🥦 🍅 🍞 🥐 🥨 🧀 🥚 🍳 🥞 🍕 🍔 🌭 🍟 🥗 🍝 🍣 🍦 🍩 🍪 🎂 🧁 🍫 🍬 🍭 🍯 ☕ 🍵 🧃 🥛',
       },
       {
         name: 'תחביבים',
-        emojis: '⚽ 🏀 🏈 ⚾ 🎾 🏐 🏓 🏸 🥊 🥋 ⛳ 🏊 🚴 🏃 🧗 🤸 ⛷️ 🏄 🛹 🛼 ⛸️ 🎣 🎨 🖌️ 🎭 🎬 🎤 🎧 🎵 🎶 🎹 🎸 🎻 🥁 🎺 🎷 📚 📖 ✏️ 🧩 ♟️ 🎲 🎮 🧸 🪀 🪁 🧶 🧵 📷 🔭 🔬 🧪',
+        emojis:
+          '⚽ 🏀 🏈 ⚾ 🎾 🏐 🏓 🏸 🥊 🥋 ⛳ 🏊 🚴 🏃 🧗 🤸 ⛷️ 🏄 🛹 🛼 ⛸️ 🎣 🎨 🖌️ 🎭 🎬 🎤 🎧 🎵 🎶 🎹 🎸 🎻 🥁 🎺 🎷 📚 📖 ✏️ 🧩 ♟️ 🎲 🎮 🧸 🪀 🪁 🧶 🧵 📷 🔭 🔬 🧪',
       },
       {
         name: 'חפצים ותחבורה',
-        emojis: '🚗 🚕 🚙 🚌 🏎️ 🚓 🚑 🚒 🚜 🚲 🛴 🏍️ 🚂 🚀 ✈️ 🚁 ⛵ 🚤 🛳️ 💼 🎒 👑 🎩 🧢 👓 🕶️ ⌚ 📱 💻 🖥️ 🎁 🎈 🎉 🎊 🏆 🥇 🏅 🎖️ 💡 🔧 🔨 🧰 🧲 💰 📌 ✂️ 🧭',
+        emojis:
+          '🚗 🚕 🚙 🚌 🏎️ 🚓 🚑 🚒 🚜 🚲 🛴 🏍️ 🚂 🚀 ✈️ 🚁 ⛵ 🚤 🛳️ 💼 🎒 👑 🎩 🧢 👓 🕶️ ⌚ 📱 💻 🖥️ 🎁 🎈 🎉 🎊 🏆 🥇 🏅 🎖️ 💡 🔧 🔨 🧰 🧲 💰 📌 ✂️ 🧭',
       },
       {
         name: 'סמלים',
-        emojis: '✡️ 🕎 📜 🕍 🔯 ☮️ ♾️ ✅ ❗ ❓ 💯 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🔶 🔷 💎 🎯 🧿 🪬 🍀 🌀 ♥️ ♦️ ♣️ ♠️',
+        emojis:
+          '✡️ 🕎 📜 🕍 🔯 ☮️ ♾️ ✅ ❗ ❓ 💯 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🔶 🔷 💎 🎯 🧿 🪬 🍀 🌀 ♥️ ♦️ ♣️ ♠️',
       },
     ],
     custom: 'או להקליד אימוג׳י משלך',
@@ -558,6 +624,8 @@ export const labels = {
   quickTime,
   titlePrompt,
   debtDirection,
+  meetingPlace,
+  appointmentRepeat,
   entityKind,
   shoppingCategory,
 } as const;

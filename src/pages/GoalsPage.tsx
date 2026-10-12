@@ -46,6 +46,7 @@ export function GoalsPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
         defaultKind="goal"
         entityId={scoped.scope?.id}
       />

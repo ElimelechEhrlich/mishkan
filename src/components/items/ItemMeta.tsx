@@ -2,9 +2,16 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { recurrenceOf } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
-import type { Item } from '../../types/domain';
+import type { Item, MeetingPlace } from '../../types/domain';
 import { DueText } from './DueText';
 import { Icon } from '../ui/Icon';
+import type { IconName } from '../ui/Icon';
+
+const placeIcons = {
+  in_person: 'pin',
+  phone: 'phone',
+  video: 'video',
+} as const satisfies Record<MeetingPlace, IconName>;
 
 type ItemMetaProps = {
   readonly item: Item;
@@ -27,7 +34,8 @@ export function ItemMeta({
   showTime = false,
   extra,
 }: ItemMetaProps): ReactElement {
-  const domainLabel = item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
+  const domainLabel =
+    item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
   const recurrence = recurrenceOf(item.recurrence_rule);
 
@@ -42,6 +50,15 @@ export function ItemMeta({
         <span className="inline-flex items-center gap-1.5">
           {tone !== undefined && <span className={`size-1.5 rounded-full ${tone.bg}`} />}
           {domainLabel}
+        </span>
+      )}
+      {item.kind === 'appointment' && item.with_whom !== null && <span>{item.with_whom}</span>}
+      {item.kind === 'appointment' && item.place_kind !== null && (
+        <span className="inline-flex items-center gap-1">
+          <Icon name={placeIcons[item.place_kind]} className="size-3" />
+          {item.place_kind === 'in_person' && item.place !== null
+            ? item.place
+            : labels.meetingPlace[item.place_kind]}
         </span>
       )}
       {recurrence !== null && (

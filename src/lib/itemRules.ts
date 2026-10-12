@@ -1,5 +1,6 @@
 import type {
   ActiveSection,
+  AppointmentRepeat,
   Item,
   MissingField,
   OpenSegment,
@@ -228,10 +229,21 @@ export function toListEntries(items: readonly Item[], allSteps: readonly Item[])
   });
 }
 
-/** By due date (undated last), then newest first. */
+/** By due date (undated last), then by start time on the same day, then newest first. */
 export function compareEntries(a: ListEntry, b: ListEntry): number {
   if (a.dueDate !== null && b.dueDate !== null && a.dueDate !== b.dueDate) {
     return a.dueDate < b.dueDate ? -1 : 1;
+  }
+  const aStarts = a.item.starts_at;
+  const bStarts = b.item.starts_at;
+  if (aStarts !== null && bStarts !== null && aStarts !== bStarts) {
+    return aStarts < bStarts ? -1 : 1;
+  }
+  if (aStarts !== null && bStarts === null && a.dueDate === b.dueDate) {
+    return -1;
+  }
+  if (aStarts === null && bStarts !== null && a.dueDate === b.dueDate) {
+    return 1;
   }
   if (a.dueDate === null && b.dueDate !== null) {
     return 1;
@@ -279,4 +291,53 @@ const reminderFormat = new Intl.DateTimeFormat('he-IL', {
 /** A reminder time as people read it: day, month and time. */
 export function formatReminder(timestamp: string): string {
   return reminderFormat.format(new Date(timestamp));
+}
+
+const clockFormat = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+/** The local time of a timestamp, such as 09:30. */
+export function formatClock(timestamp: string): string {
+  return clockFormat.format(new Date(timestamp));
+}
+
+/** How many appointments a series may hold, as the database allows. */
+export const maxAppointments = 104;
+
+export const appointmentRepeats = [
+  'none',
+  'weekly',
+  'biweekly',
+  'monthly',
+] as const satisfies readonly AppointmentRepeat[];
+
+/**
+ * The local start times of a series, from the first one (YYYY-MM-DDTHH:mm), as
+ * datetime-local values. A monthly series keeps the day of the month, or the
+ * last day of a shorter month.
+ */
+export function seriesStarts(first: string, repeat: AppointmentRepeat, count: number): string[] {
+  const [datePart = '', timePart = ''] = first.split('T');
+  const total = repeat === 'none' ? 1 : Math.min(Math.max(Math.trunc(count), 1), maxAppointments);
+  const starts: string[] = [];
+  for (let index = 0; index < total; index += 1) {
+    starts.push(`${seriesDate(datePart, repeat, index)}T${timePart}`);
+  }
+  return starts;
+}
+
+function seriesDate(firstDate: string, repeat: AppointmentRepeat, index: number): string {
+  if (repeat === 'weekly') {
+    return addDays(firstDate, 7 * index);
+  }
+  if (repeat === 'biweekly') {
+    return addDays(firstDate, 14 * index);
+  }
+  if (repeat === 'monthly') {
+    const start = fromIsoDate(firstDate);
+    const target = new Date(start.getFullYear(), start.getMonth() + index, 1);
+    const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+    target.setDate(Math.min(start.getDate(), lastDay));
+    return toIsoDate(target);
+  }
+  return firstDate;
 }

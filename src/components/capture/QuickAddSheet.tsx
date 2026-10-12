@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
-import { quickTimeChoice, todayIso } from '../../lib/itemRules';
+import { quickTimeChoice, seriesStarts, todayIso } from '../../lib/itemRules';
 import { debtHolders, shoppingTargets } from '../../lib/lookups';
 import type {
-  ConvertibleKind,
+  AddableKind,
   DebtDirection,
   EntityWithDomains,
+  NewAppointment,
   NewDebt,
   NewItem,
   NewMissingItem,
@@ -18,6 +19,8 @@ import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
+import { AppointmentFields, emptyAppointmentDraft } from './AppointmentFields';
+import type { AppointmentDraft } from './AppointmentFields';
 import { DebtFields } from './DebtFields';
 import { DomainPicker } from './DomainPicker';
 import { QuickTimePicker } from './QuickTimePicker';
@@ -27,10 +30,11 @@ type QuickAddSheetProps = {
   readonly onAdd: (newItem: NewItem) => Promise<boolean>;
   readonly onAddMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
   readonly onAddDebt: (newDebt: NewDebt) => Promise<boolean>;
+  readonly onAddAppointments: (appointment: NewAppointment) => Promise<boolean>;
   /** Reloads the entities after a child or a domain is added from the sheet. */
   readonly onStructureChanged: () => Promise<void>;
   /** The kind that is selected when the sheet opens. */
-  readonly defaultKind?: ConvertibleKind;
+  readonly defaultKind?: AddableKind;
   /** Opens the sheet right away, for the "new item" home-screen shortcut. */
   readonly initiallyOpen?: boolean;
   /** The chosen entity: the item is for it unless changed. */
@@ -41,12 +45,19 @@ type QuickAddSheetProps = {
 
 const kinds = [
   'task',
+  'appointment',
   'goal',
   'issue',
   'note',
   'debt',
   'missing_item',
-] as const satisfies readonly ConvertibleKind[];
+] as const satisfies readonly AddableKind[];
+
+/** Empty text is stored as nothing. */
+function textOrNull(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
 
 /**
  * The floating add button and the sheet it opens. The fields follow the kind:
@@ -59,6 +70,7 @@ export function QuickAddSheet({
   onAdd,
   onAddMissingItem,
   onAddDebt,
+  onAddAppointments,
   onStructureChanged,
   defaultKind = 'task',
   initiallyOpen = false,
@@ -70,9 +82,7 @@ export function QuickAddSheet({
   );
   const [open, setOpen] = useState(initiallyOpen);
   const [title, setTitle] = useState('');
-  const [kind, setKind] = useState<ConvertibleKind>(
-    initialIsShopping ? 'missing_item' : defaultKind,
-  );
+  const [kind, setKind] = useState<AddableKind>(initialIsShopping ? 'missing_item' : defaultKind);
   const [domainId, setDomainId] = useState<string | null>(
     initialIsShopping ? null : (initialDomainId ?? null),
   );
@@ -84,6 +94,7 @@ export function QuickAddSheet({
   const [direction, setDirection] = useState<DebtDirection>('owed_to_us');
   const [amountText, setAmountText] = useState('');
   const [debtDomainId, setDebtDomainId] = useState<string | null>(null);
+  const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointmentDraft);
   const [saving, setSaving] = useState(false);
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
@@ -107,9 +118,15 @@ export function QuickAddSheet({
   const amountValid = Number.isFinite(amount) && amount > 0;
 
   const asksTime = kind === 'task' || kind === 'goal';
+  const healthDomain = entities.some((entity) =>
+    entity.domains.some(
+      (domain) => domain.id === domainId && domain.name.includes(labels.appointment.healthDomain),
+    ),
+  );
   const canSave =
     trimmedTitle !== '' &&
     !saving &&
+    (kind !== 'appointment' || appointment.startsAt !== '') &&
     (kind !== 'missing_item' || missingItemDomainId !== null) &&
     (kind !== 'debt' || amountValid);
 
@@ -138,6 +155,22 @@ export function QuickAddSheet({
             category,
             domainId: missingItemDomainId,
           });
+    }
+    if (kind === 'appointment') {
+      const placeKind = appointment.placeKind;
+      return onAddAppointments({
+        title: trimmedTitle,
+        domainId,
+        startsAt: appointment.startsAt,
+        repeat: appointment.repeat,
+        count: seriesStarts(appointment.startsAt, appointment.repeat, Number(appointment.count))
+          .length,
+        placeKind,
+        place:
+          placeKind === 'in_person' || placeKind === 'phone' ? textOrNull(appointment.place) : null,
+        meetingUrl: placeKind === 'video' ? textOrNull(appointment.meetingUrl) : null,
+        withWhom: textOrNull(appointment.withWhom),
+      });
     }
     if (kind === 'debt') {
       return onAddDebt({
@@ -169,6 +202,7 @@ export function QuickAddSheet({
         setDomainId(null);
         setQuickTime(null);
         setAmountText('');
+        setAppointment(emptyAppointmentDraft);
         setPickerVersion((version) => version + 1);
         setOpen(false);
       }
@@ -288,6 +322,16 @@ export function QuickAddSheet({
                 <p className="text-[13px] text-muted">{labels.capture.noDomainHint}</p>
               )}
             </div>
+          )}
+
+          {kind === 'appointment' && (
+            <AppointmentFields
+              draft={appointment}
+              health={healthDomain}
+              onChange={(changes) => {
+                setAppointment((current) => ({ ...current, ...changes }));
+              }}
+            />
           )}
 
           {asksTime && <QuickTimePicker value={quickTime} onChange={setQuickTime} />}

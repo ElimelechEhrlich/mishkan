@@ -12,6 +12,8 @@ export type ScopedItems = {
   readonly steps: readonly Item[];
   /** Open goals and issues. */
   readonly goals: readonly Item[];
+  /** Open appointments that are fully assigned. */
+  readonly appointments: readonly Item[];
   /** Open notes. */
   readonly notes: readonly Item[];
   /** Whether an item belongs to the chosen entity; always true when everything is shown. */
@@ -40,6 +42,7 @@ export function useScopedItems(
       steps: items.steps.filter(inScope),
       goals: scopedItems.filter((item) => item.kind === 'goal' || item.kind === 'issue'),
       notes: scopedItems.filter((item) => item.kind === 'note'),
+      appointments: items.assigned.filter((item) => inScope(item) && item.kind === 'appointment'),
       inScope,
     };
   }, [scope, items.items, items.assigned, items.incomplete, items.steps]);

@@ -1,6 +1,6 @@
 import { labels } from '../constants/labels';
 import type { Item, OpenSegment } from '../types/domain';
-import { addDays, formatDueDate, recurrenceOf } from './itemRules';
+import { addDays, formatClock, formatDueDate, recurrenceOf } from './itemRules';
 
 function dateText(dueDate: string, today: string): string {
   if (dueDate === today) {
@@ -16,6 +16,9 @@ function dateText(dueDate: string, today: string): string {
 export function timeText(item: Item, today: string): string | null {
   if (item.time_mode === null) {
     return null;
+  }
+  if (item.kind === 'appointment' && item.starts_at !== null && item.due_date !== null) {
+    return `${dateText(item.due_date, today)} ${formatClock(item.starts_at)}`;
   }
   if (item.due_date !== null) {
     return dateText(item.due_date, today);

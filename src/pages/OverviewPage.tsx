@@ -67,6 +67,7 @@ export function OverviewPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
         initiallyOpen={searchParams.has('new')}
         entityId={scoped.scope?.id}
       />

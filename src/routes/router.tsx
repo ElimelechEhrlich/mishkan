@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router';
+import { AppointmentsPage } from '../pages/AppointmentsPage';
 import { DebtsPage } from '../pages/DebtsPage';
 import { DonePage } from '../pages/DonePage';
 import { EntityPage } from '../pages/EntityPage';
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <OverviewPage /> },
           { path: '/tasks', element: <OpenItemsPage /> },
+          { path: '/appointments', element: <AppointmentsPage /> },
           { path: '/goals', element: <GoalsPage /> },
           { path: '/notes', element: <NotesPage /> },
           { path: '/shopping', element: <ShoppingPage /> },

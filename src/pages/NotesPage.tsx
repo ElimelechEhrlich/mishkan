@@ -38,6 +38,7 @@ export function NotesPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
         defaultKind="note"
         entityId={scoped.scope?.id}
       />

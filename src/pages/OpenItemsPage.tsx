@@ -55,6 +55,7 @@ export function OpenItemsPage(): ReactElement {
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
         entityId={scoped.scope?.id}
       />
     </PageShell>
