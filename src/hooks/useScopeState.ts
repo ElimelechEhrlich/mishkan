@@ -14,6 +14,12 @@ export type ScopeState = {
   /** How the tabs of a kind arrange their list: by time, or by domain. */
   readonly listView: ListView;
   readonly setListView: (view: ListView) => void;
+  /**
+   * While the entity carousel turns, whether "everything" has gone up to the header; null
+   * at rest, when the chosen entity decides.
+   */
+  readonly everythingUp: boolean | null;
+  readonly setEverythingUp: (up: boolean | null) => void;
 };
 
 /**
@@ -26,5 +32,17 @@ export function useScopeState(): ScopeState {
   const [topic, setTopic] = useState<string | null>(null);
   const [homeView, setHomeView] = useState<HomeView>('kind');
   const [listView, setListView] = useState<ListView>('time');
-  return { scopeId, setScope, topic, setTopic, homeView, setHomeView, listView, setListView };
+  const [everythingUp, setEverythingUp] = useState<boolean | null>(null);
+  return {
+    scopeId,
+    setScope,
+    topic,
+    setTopic,
+    homeView,
+    setHomeView,
+    listView,
+    setListView,
+    everythingUp,
+    setEverythingUp,
+  };
 }

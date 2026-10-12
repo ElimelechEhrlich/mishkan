@@ -10,9 +10,10 @@ import { useHouseholdContext } from './useRouteContext';
 export function useEverythingShortcut(
   entities: readonly EntityWithDomains[],
 ): (() => void) | undefined {
-  const { scopeId, setScope } = useHouseholdContext();
+  const { scopeId, setScope, everythingUp } = useHouseholdContext();
   const index = scopeOptions(entities).indexOf(scopeId);
-  if (index <= everythingReach) {
+  // While the carousel turns, "everything" goes up and down with it, not with the choice.
+  if (!(everythingUp ?? index > everythingReach)) {
     return undefined;
   }
   return (): void => {

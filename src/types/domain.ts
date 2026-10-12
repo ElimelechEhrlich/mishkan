@@ -179,6 +179,12 @@ export type HouseholdContext = SessionContext & {
   /** How the tabs of a kind arrange their list: by time, or by domain. */
   readonly listView: ListView;
   readonly setListView: (view: ListView) => void;
+  /**
+   * While the entity carousel turns, whether "everything" has gone up to the header; null
+   * at rest, when the chosen entity decides.
+   */
+  readonly everythingUp: boolean | null;
+  readonly setEverythingUp: (up: boolean | null) => void;
 };
 
 /** The two arrangements of the main page. */

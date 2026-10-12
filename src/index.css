@@ -82,6 +82,12 @@ body,
   min-height: 100dvh;
 }
 
+/* Nothing sliding in from the side (a page changing entity, the carousel) may widen the
+   page and shake it sideways. Clip, unlike hidden, keeps the sticky header working. */
+#root {
+  overflow-x: clip;
+}
+
 body {
   background: var(--color-paper);
   color: var(--color-ink);

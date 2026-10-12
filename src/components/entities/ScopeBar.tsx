@@ -13,6 +13,7 @@ import {
   scopeOptions,
 } from '../../lib/lookups';
 import { everythingFlight, flyWhile } from '../../lib/flight';
+import { useHouseholdContext } from '../../hooks/useRouteContext';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { EntitySheet } from './EntitySheet';
@@ -73,6 +74,11 @@ export function ScopeBar({
   const swiped = useRef(false);
   const circle = mainCircle(entities);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { everythingUp, setEverythingUp } = useHouseholdContext();
+  /** Where "everything" is: in the header past its reach, or in the carousel. */
+  const up = everythingUp ?? index > everythingReach;
+  const upRef = useRef(up);
+  upRef.current = up;
   const canOpenSheet = scope !== undefined;
 
   function go(next: number): void {
@@ -93,12 +99,24 @@ export function ScopeBar({
   useEffect(() => {
     return (): void => {
       cancelAnimationFrame(frame.current);
+      setEverythingUp(null);
     };
-  }, []);
+  }, [setEverythingUp]);
 
-  function moveTo(position: number | null): void {
+  function moveTo(position: number): void {
     movingRef.current = position;
-    setMoving(position);
+    // "Everything" goes up to the header, or comes back down, just as the carousel passes
+    // its place, on the carousel's own pace.
+    const nowUp = position > everythingReach + 0.5;
+    if (nowUp !== upRef.current) {
+      upRef.current = nowUp;
+      flyWhile(everythingFlight, () => {
+        setMoving(position);
+        setEverythingUp(nowUp);
+      });
+    } else {
+      setMoving(position);
+    }
   }
 
   /** Comes to rest on a place and makes it the choice. */
@@ -106,18 +124,10 @@ export function ScopeBar({
     cancelAnimationFrame(frame.current);
     movingRef.current = null;
     const target = options[next];
-    if (target === undefined || next === index) {
-      setMoving(null);
-      return;
-    }
-    const update = (): void => {
-      setMoving(null);
+    setMoving(null);
+    setEverythingUp(null);
+    if (target !== undefined && next !== index) {
       onChange(target);
-    };
-    if (index > everythingReach !== next > everythingReach) {
-      flyWhile(everythingFlight, update);
-    } else {
-      update();
     }
   }
 
@@ -149,7 +159,7 @@ export function ScopeBar({
   return (
     <div className="flex flex-col items-center gap-1">
       <div
-        className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y"
+        className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
         onTouchStart={(event) => {
           const finger = event.touches[0];
           // A finger on a gliding carousel catches it where it is.
@@ -223,21 +233,13 @@ export function ScopeBar({
         {options.map((option, position) => {
           const distance = position - (moving ?? index);
           const away = Math.abs(distance);
-          // "Everything" waits in the header once the carousel is past it; while the
-          // carousel turns away from it, it fades out but stays, so it can fly from there.
-          const hidden =
-            option === null
-              ? index > everythingReach || (moving === null && away > everythingReach)
-              : away > carouselReach + (moving === null ? 0 : 1);
+          // "Everything" waits in the header once the carousel is past it.
+          const hidden = option === null ? up : away > carouselReach + (moving === null ? 0 : 1);
           if (hidden) {
             return null;
           }
           const entity = ordered.find((candidate) => candidate.id === option);
           const place = carouselPlace(away);
-          const opacity =
-            option === null && away > everythingReach
-              ? Math.max(0, everythingReach + 1 - away) * place.opacity
-              : place.opacity;
           const middle = away < 0.5;
           return (
             <button
@@ -265,7 +267,7 @@ export function ScopeBar({
               }`}
               style={{
                 transform: `translate(calc(-50% + ${String(-Math.sign(distance) * place.offset)}px), -50%) scale(${String(place.scale)})`,
-                opacity,
+                opacity: place.opacity,
                 zIndex: 10 - Math.round(away),
               }}
             >
