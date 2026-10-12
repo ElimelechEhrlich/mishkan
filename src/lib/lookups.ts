@@ -243,20 +243,50 @@ export function mainCircle<T extends { readonly kind: EntityKind; readonly creat
     >((first, entity) => (first === undefined || entity.created_at < first.created_at ? entity : first), undefined);
 }
 
-/** The shortest move of a finger that turns the carousel. */
-const swipeMin = 40;
+/** Where a picture sits, by how many places it is from the middle: 0, 1, 2 and out of sight. */
+const placeOffsets = [0, 92, 154, 196] as const;
+const placeScales = [1, 0.62, 0.42, 0.3] as const;
+const placeOpacities = [1, 0.85, 0.35, 0] as const;
+
+function between(points: readonly number[], away: number): number {
+  const last = points.length - 1;
+  const at = Math.max(0, Math.min(last, away));
+  const below = Math.min(last - 1, Math.floor(at));
+  const low = points[below] ?? 0;
+  const high = points[below + 1] ?? low;
+  return low + (high - low) * (at - below);
+}
 
 /**
- * How many places a swipe turns the carousel: one for a slow or short one, more the faster
- * and longer the finger moved. `distance` is in pixels, `ms` how long the finger was down.
+ * How far to the side (in pixels), how large and how clear a carousel picture is, by how
+ * many places it is from the middle. Between places, while the finger moves it, it is
+ * part way between the two.
  */
-export function swipeSteps(distance: number, ms: number): number {
-  const length = Math.abs(distance);
-  if (length < swipeMin) {
-    return 0;
+export function carouselPlace(away: number): {
+  readonly offset: number;
+  readonly scale: number;
+  readonly opacity: number;
+} {
+  return {
+    offset: between(placeOffsets, away),
+    scale: between(placeScales, away),
+    opacity: between(placeOpacities, away),
+  };
+}
+
+/** How long a flicked carousel keeps going, in milliseconds: it slows down by this much. */
+export const glideTime = 280;
+
+/**
+ * Where a flicked carousel comes to rest: it keeps going on from `from` at the finger's
+ * speed (places per millisecond) and slows down, so a faster flick goes further. A swipe
+ * that moved it a little from where it started still turns one place.
+ */
+export function glideTarget(from: number, speed: number, origin: number, count: number): number {
+  const start = Math.round(origin);
+  let target = Math.round(from + speed * glideTime);
+  if (target === start && Math.abs(from - start) > 0.2) {
+    target = start + Math.sign(from - start);
   }
-  const speed = length / Math.max(ms, 1);
-  const bySpeed = speed > 0.5 ? Math.floor((speed - 0.5) / 0.35) : 0;
-  const byLength = Math.floor(length / 160);
-  return 1 + Math.max(bySpeed, byLength);
+  return Math.max(0, Math.min(count - 1, target));
 }

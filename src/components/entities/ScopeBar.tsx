@@ -1,14 +1,16 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import {
+  carouselPlace,
   carouselReach,
   entityTone,
   everythingReach,
+  glideTarget,
+  glideTime,
   groupEntities,
   mainCircle,
   scopeOptions,
-  swipeSteps,
 } from '../../lib/lookups';
 import { everythingFlight, flyWhile } from '../../lib/flight';
 import type { EntityWithDomains } from '../../types/domain';
@@ -27,8 +29,23 @@ type ScopeBarProps = {
   readonly onEntityChanged: () => Promise<void>;
 };
 
-/** How far from the middle the pictures sit, one and two places away, in pixels. */
-const offsets = [0, 92, 154] as const;
+/** How far the finger moves the carousel by one place, in pixels. */
+const stepWidth = 80;
+/** The finger's speed is taken from its last moves, this long back, in milliseconds. */
+const speedWindow = 100;
+/** Past either end the carousel follows the finger only this much, and springs back. */
+const edgePull = 0.3;
+/** A finger that moved less than this, in pixels, is still a tap. */
+const tapSlop = 8;
+
+type Touch = {
+  readonly x: number;
+  readonly y: number;
+  readonly from: number;
+  /** Whether the finger moves sideways (turning the carousel) or up and down; null until known. */
+  sideways: boolean | null;
+  samples: { readonly x: number; readonly at: number }[];
+};
 
 /**
  * Who the tabs are showing, as a row of pictures: the chosen one large in the middle,
@@ -47,7 +64,13 @@ export function ScopeBar({
   const found = options.indexOf(scopeId);
   const index = found === -1 ? 0 : found;
   const scope = ordered.find((entity) => entity.id === scopeId);
-  const touchStart = useRef<{ readonly x: number; readonly at: number } | null>(null);
+  const touch = useRef<Touch | null>(null);
+  /** Where the carousel is while a finger moves it or it glides on, in places; null at rest. */
+  const [moving, setMoving] = useState<number | null>(null);
+  const movingRef = useRef<number | null>(null);
+  const frame = useRef(0);
+  /** Set when a finger turned the carousel, so the tap that ends it opens nothing. */
+  const swiped = useRef(false);
   const circle = mainCircle(entities);
   const [sheetOpen, setSheetOpen] = useState(false);
   const canOpenSheet = scope !== undefined;
@@ -67,68 +90,187 @@ export function ScopeBar({
     }
   }
 
-  const count = scope === undefined ? 0 : (counts?.get(scope.id) ?? 0);
+  useEffect(() => {
+    return (): void => {
+      cancelAnimationFrame(frame.current);
+    };
+  }, []);
+
+  function moveTo(position: number | null): void {
+    movingRef.current = position;
+    setMoving(position);
+  }
+
+  /** Comes to rest on a place and makes it the choice. */
+  function settle(next: number): void {
+    cancelAnimationFrame(frame.current);
+    movingRef.current = null;
+    const target = options[next];
+    if (target === undefined || next === index) {
+      setMoving(null);
+      return;
+    }
+    const update = (): void => {
+      setMoving(null);
+      onChange(target);
+    };
+    if (index > everythingReach !== next > everythingReach) {
+      flyWhile(everythingFlight, update);
+    } else {
+      update();
+    }
+  }
+
+  /** Lets the carousel go on from where the finger left it, slowing down to a place. */
+  function glide(from: number, speed: number, origin: number): void {
+    const target = glideTarget(from, speed, origin, options.length);
+    const start = performance.now();
+    const tick = (now: number): void => {
+      const position = target + (from - target) * Math.exp(-(now - start) / glideTime);
+      // The last few pixels are left to the resting transition, so the choice is not held back.
+      if (Math.abs(position - target) < 0.08) {
+        settle(target);
+      } else {
+        moveTo(position);
+        frame.current = requestAnimationFrame(tick);
+      }
+    };
+    frame.current = requestAnimationFrame(tick);
+  }
+
+  // While the carousel turns, the name below follows the picture nearest the middle.
+  const nearest =
+    moving === null
+      ? scopeId
+      : options[Math.max(0, Math.min(options.length - 1, Math.round(moving)))];
+  const shown = ordered.find((entity) => entity.id === nearest);
+  const count = shown === undefined ? 0 : (counts?.get(shown.id) ?? 0);
 
   return (
     <div className="flex flex-col items-center gap-1">
       <div
         className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y"
         onTouchStart={(event) => {
-          const x = event.touches[0]?.clientX;
-          touchStart.current = x === undefined ? null : { x, at: event.timeStamp };
+          const finger = event.touches[0];
+          // A finger on a gliding carousel catches it where it is.
+          cancelAnimationFrame(frame.current);
+          swiped.current = movingRef.current !== null;
+          touch.current =
+            finger === undefined
+              ? null
+              : {
+                  x: finger.clientX,
+                  y: finger.clientY,
+                  from: movingRef.current ?? index,
+                  sideways: null,
+                  samples: [{ x: finger.clientX, at: event.timeStamp }],
+                };
         }}
-        onTouchEnd={(event) => {
-          const start = touchStart.current;
-          const end = event.changedTouches[0]?.clientX;
-          touchStart.current = null;
-          if (start === null || end === undefined) {
+        onTouchMove={(event) => {
+          const current = touch.current;
+          const finger = event.touches[0];
+          if (current === null || finger === undefined) {
             return;
           }
-          // A faster or longer swipe turns more places. Right to left: the next one waits on
-          // the left, so a swipe to the right brings it.
-          const moved = end - start.x;
-          const steps = swipeSteps(moved, event.timeStamp - start.at);
-          if (steps > 0) {
-            go(index + (moved > 0 ? steps : -steps));
+          const dx = finger.clientX - current.x;
+          if (current.sideways === null) {
+            const dy = finger.clientY - current.y;
+            if (Math.max(Math.abs(dx), Math.abs(dy)) < tapSlop) {
+              return;
+            }
+            current.sideways = Math.abs(dx) > Math.abs(dy);
           }
+          if (!current.sideways) {
+            return;
+          }
+          swiped.current = true;
+          current.samples = [
+            ...current.samples.filter((sample) => event.timeStamp - sample.at <= speedWindow),
+            { x: finger.clientX, at: event.timeStamp },
+          ];
+          // Right to left: the next one waits on the left, so moving the finger right brings it.
+          const position = current.from + dx / stepWidth;
+          const last = options.length - 1;
+          moveTo(
+            position < 0
+              ? position * edgePull
+              : position > last
+                ? last + (position - last) * edgePull
+                : position,
+          );
+        }}
+        onTouchEnd={(event) => {
+          const current = touch.current;
+          touch.current = null;
+          const position = movingRef.current;
+          if (current === null || position === null) {
+            return;
+          }
+          const first = current.samples[0];
+          const latest = current.samples[current.samples.length - 1];
+          // A finger that stopped before it let go throws nothing.
+          const speed =
+            current.sideways !== true ||
+            first === undefined ||
+            latest === undefined ||
+            latest.at === first.at ||
+            event.timeStamp - latest.at > speedWindow
+              ? 0
+              : (latest.x - first.x) / (latest.at - first.at) / stepWidth;
+          glide(position, speed, current.from);
         }}
       >
         {options.map((option, position) => {
-          const distance = position - index;
+          const distance = position - (moving ?? index);
           const away = Math.abs(distance);
-          if (away > carouselReach || (option === null && away > everythingReach)) {
+          // "Everything" waits in the header once the carousel is past it; while the
+          // carousel turns away from it, it fades out but stays, so it can fly from there.
+          const hidden =
+            option === null
+              ? index > everythingReach || (moving === null && away > everythingReach)
+              : away > carouselReach + (moving === null ? 0 : 1);
+          if (hidden) {
             return null;
           }
           const entity = ordered.find((candidate) => candidate.id === option);
-          const scale = away === 0 ? 1 : away === 1 ? 0.62 : 0.42;
+          const place = carouselPlace(away);
+          const opacity =
+            option === null && away > everythingReach
+              ? Math.max(0, everythingReach + 1 - away) * place.opacity
+              : place.opacity;
+          const middle = away < 0.5;
           return (
             <button
               key={option ?? 'all'}
               type="button"
               data-flight={option === null ? everythingFlight : undefined}
-              aria-pressed={away === 0}
+              aria-pressed={position === index}
               aria-label={
-                away === 0 && canOpenSheet
+                position === index && canOpenSheet
                   ? labels.scope.openEntity
                   : (entity?.name ?? labels.entityPage.everything)
               }
-              tabIndex={away === 0 && !canOpenSheet ? -1 : 0}
+              tabIndex={position === index && !canOpenSheet ? -1 : 0}
               onClick={() => {
-                if (away === 0) {
+                if (swiped.current) {
+                  swiped.current = false;
+                } else if (position === index) {
                   setSheetOpen(canOpenSheet);
                 } else {
                   go(position);
                 }
               }}
-              className="absolute top-1/2 left-1/2 rounded-full transition-[transform,opacity] duration-300 ease-out"
+              className={`absolute top-1/2 left-1/2 rounded-full ${
+                moving === null ? 'transition-[transform,opacity] duration-300 ease-out' : ''
+              }`}
               style={{
-                transform: `translate(calc(-50% + ${String(-Math.sign(distance) * (offsets[away] ?? 0))}px), -50%) scale(${String(scale)})`,
-                opacity: away === 0 ? 1 : away === 1 ? 0.85 : 0.35,
-                zIndex: 10 - away,
+                transform: `translate(calc(-50% + ${String(-Math.sign(distance) * place.offset)}px), -50%) scale(${String(place.scale)})`,
+                opacity,
+                zIndex: 10 - Math.round(away),
               }}
             >
               <span
-                className={`block rounded-full bg-surface p-1 ${away === 0 ? 'shadow-raised' : 'shadow-card'}`}
+                className={`block rounded-full bg-surface p-1 ${middle ? 'shadow-raised' : 'shadow-card'}`}
               >
                 {entity === undefined ? (
                   <span className="flex size-24 items-center justify-center rounded-full bg-primary text-white">
@@ -142,7 +284,7 @@ export function ScopeBar({
                   />
                 )}
               </span>
-              {away === 0 && canOpenSheet && (
+              {position === index && moving === null && canOpenSheet && (
                 <span className="absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card">
                   <Icon name="user" className="size-4" />
                 </span>
@@ -194,12 +336,12 @@ export function ScopeBar({
       <div key={scopeId ?? 'all'} className="flex animate-fade-in flex-col items-center gap-2">
         <div className="flex flex-col items-center">
           <span className="font-display text-xl font-bold">
-            {scope?.name ?? labels.entityPage.everything}
+            {shown?.name ?? labels.entityPage.everything}
           </span>
           <span className="text-[13px] text-muted">
-            {scope === undefined
+            {shown === undefined
               ? labels.scope.everythingHint
-              : `${labels.entityKind[scope.kind]}${
+              : `${labels.entityKind[shown.kind]}${
                   count > 0
                     ? `${labels.item.separator}${String(count)} ${labels.entityPage.openItems}`
                     : ''

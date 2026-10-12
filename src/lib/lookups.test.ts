@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { domainTopics, groupByTopic, swipeSteps, topicDomainIds } from './lookups';
+import { carouselPlace, domainTopics, glideTarget, groupByTopic, topicDomainIds } from './lookups';
 import type { EntityWithDomains } from '../types/domain';
 
 type DomainSpec = readonly [id: string, name: string, role?: 'regular' | 'shopping' | 'debts'];
@@ -85,14 +85,32 @@ describe('groupByTopic', () => {
   });
 });
 
-describe('swipeSteps', () => {
-  it('ignores a touch that hardly moved', () => {
-    expect(swipeSteps(20, 100)).toBe(0);
+describe('carouselPlace', () => {
+  it('keeps the places the carousel rests on', () => {
+    expect(carouselPlace(0)).toEqual({ offset: 0, scale: 1, opacity: 1 });
+    expect(carouselPlace(1)).toEqual({ offset: 92, scale: 0.62, opacity: 0.85 });
   });
 
-  it('turns one place for a slow swipe and more for a fast one', () => {
-    expect(swipeSteps(90, 400)).toBe(1);
-    expect(swipeSteps(-90, 400)).toBe(1);
-    expect(swipeSteps(220, 120)).toBeGreaterThanOrEqual(4);
+  it('is part way between two places while moving, and out of sight far away', () => {
+    expect(carouselPlace(0.5).offset).toBe(46);
+    expect(carouselPlace(9).opacity).toBe(0);
+  });
+});
+
+describe('glideTarget', () => {
+  it('goes back when hardly moved and slowly let go', () => {
+    expect(glideTarget(3.1, 0, 3, 8)).toBe(3);
+  });
+
+  it('turns one place for a short swipe', () => {
+    expect(glideTarget(3.3, 0, 3, 8)).toBe(4);
+    expect(glideTarget(2.7, 0, 3, 8)).toBe(2);
+  });
+
+  it('goes further the faster the flick, and stops at the ends', () => {
+    expect(glideTarget(3.4, 0.01, 3, 20)).toBe(6);
+    expect(glideTarget(3.4, 0.03, 3, 20)).toBe(12);
+    expect(glideTarget(3.4, 0.03, 3, 8)).toBe(7);
+    expect(glideTarget(2.6, -0.03, 3, 8)).toBe(0);
   });
 });
