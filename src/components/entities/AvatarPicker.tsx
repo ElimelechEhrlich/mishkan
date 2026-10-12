@@ -55,7 +55,7 @@ export function AvatarPicker({
         onClick={(event) => {
           event.stopPropagation();
         }}
-        className="mx-auto flex max-h-[88dvh] w-full max-w-xl animate-sheet-up flex-col gap-4 overflow-y-auto rounded-t-[28px] bg-surface px-4 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-sheet"
+        className="mx-auto flex max-h-[88dvh] w-full max-w-xl animate-sheet-up flex-col gap-4 overflow-y-auto overscroll-contain rounded-t-[28px] bg-surface *:shrink-0 px-4 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-sheet"
       >
         <div className="mx-auto h-1.5 w-10 rounded-full bg-line" />
         <div className="flex items-center justify-between">

@@ -48,7 +48,7 @@ export function EntitySheet({
         onClick={(event) => {
           event.stopPropagation();
         }}
-        className="mx-auto flex max-h-[90dvh] w-full max-w-xl animate-sheet-up flex-col gap-4 overflow-y-auto rounded-t-[28px] bg-paper px-4 pt-2.5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-sheet"
+        className="mx-auto flex max-h-[90dvh] w-full max-w-xl animate-sheet-up flex-col gap-4 overflow-y-auto overscroll-contain rounded-t-[28px] bg-paper *:shrink-0 px-4 pt-2.5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-sheet"
       >
         <span className="mx-auto h-1 w-9 shrink-0 rounded-full bg-line" />
         <div className="flex justify-start">
