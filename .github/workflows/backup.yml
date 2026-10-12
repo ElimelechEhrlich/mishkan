@@ -101,7 +101,7 @@ jobs:
           ls -l "$name.tar.gz.gpg"
           echo "NAME=$name" >> "$GITHUB_ENV"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: ${{ env.NAME }}
           path: ${{ env.NAME }}.tar.gz.gpg
