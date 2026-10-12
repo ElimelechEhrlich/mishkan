@@ -75,10 +75,12 @@ export function PageShell({
                 aria-label={labels.scope.toEverything}
                 onClick={toEverything}
                 data-flight={everythingFlight}
-                className="me-1 block rounded-full bg-surface p-0.5 shadow-raised transition active:scale-95"
+                className="me-1 block rounded-full active:opacity-80"
               >
-                <span className="flex size-10 items-center justify-center rounded-full bg-primary text-white">
-                  <Icon name="home" className="size-5" />
+                <span className="block rounded-full bg-surface p-0.5 shadow-raised">
+                  <span className="flex size-10 items-center justify-center rounded-full bg-primary text-white">
+                    <Icon name="home" className="size-5" />
+                  </span>
                 </span>
               </button>
             )}

@@ -3,73 +3,67 @@ import { flushSync } from 'react-dom';
 /** Marks the "everything" circle, in the carousel or in the header; only one is shown. */
 export const everythingFlight = 'everything';
 
-/** The same pace as the carousel: Tailwind's duration-300 with ease-out. */
-const timing = { duration: 300, easing: 'cubic-bezier(0, 0, 0.2, 1)' } as const;
+/** The carousel's own pace: Tailwind's duration-300 with ease-out. */
+const duration = 300;
+const easeOut = 'cubic-bezier(0, 0, 0.2, 1)';
+/** Sideways it starts slowly, so the circle first rises and then slides over: an arc. */
+const easeIn = 'cubic-bezier(0.4, 0, 1, 1)';
 
 function find(name: string): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[data-flight="${name}"]`);
 }
 
+function reducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 /**
  * Runs a state change that moves an element from one place to another (such as the
- * "everything" circle between the carousel and the header), and flies a copy of it
- * from where it was to where it lands, in step with the carousel. The real one is hidden
- * until the copy arrives. Without animation support, or when the device asks for less
- * motion, the change simply happens.
+ * "everything" circle between the carousel and the header), and lets the element itself
+ * travel from where it was, with CSS transitions like the carousel's, so both move on the
+ * same clock. The marked element moves up and down; its first child moves sideways and
+ * grows or shrinks. Without a place to start from, or when the device asks for less motion,
+ * the change simply happens.
  */
 export function flyWhile(name: string, update: () => void): void {
   const source = find(name);
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const copy = source?.cloneNode(true);
-  if (source === null || reduced || !(copy instanceof HTMLElement)) {
+  if (source === null || reducedMotion()) {
     update();
     return;
   }
   const from = source.getBoundingClientRect();
-  const width = source.offsetWidth;
-  const height = source.offsetHeight;
-  const fromOpacity = getComputedStyle(source).opacity;
 
   flushSync(update);
 
   const target = find(name);
-  if (target === null || width === 0) {
+  const inner = target?.firstElementChild;
+  if (target === null || !(inner instanceof HTMLElement) || target.offsetWidth === 0) {
     return;
   }
   const to = target.getBoundingClientRect();
-  const toOpacity = getComputedStyle(target).opacity;
+  // The element may be scaled itself (a side place in the carousel); the child moves in its units.
+  const ownScale = to.width / target.offsetWidth;
+  const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+  const dy = from.top + from.height / 2 - (to.top + to.height / 2);
 
-  copy.removeAttribute('data-flight');
-  copy.setAttribute('aria-hidden', 'true');
-  Object.assign(copy.style, {
-    position: 'fixed',
-    left: `${String(from.left)}px`,
-    top: `${String(from.top)}px`,
-    width: `${String(width)}px`,
-    height: `${String(height)}px`,
-    margin: '0',
-    transition: 'none',
-    transformOrigin: '0 0',
-    zIndex: '50',
-    pointerEvents: 'none',
-  });
-  document.body.append(copy);
-  target.style.visibility = 'hidden';
+  const zIndex = target.style.zIndex;
+  target.style.zIndex = '30';
+  target.style.transition = 'none';
+  inner.style.transition = 'none';
+  target.style.translate = `0 ${String(dy)}px`;
+  inner.style.translate = `${String(dx / ownScale)}px 0`;
+  inner.style.scale = String(from.width / to.width);
+  // Starts from there in this frame, then moves on the next one, like the carousel.
+  void target.getBoundingClientRect();
+  target.style.transition = `translate ${String(duration)}ms ${easeOut}`;
+  inner.style.transition = `translate ${String(duration)}ms ${easeIn}, scale ${String(duration)}ms ${easeOut}`;
+  target.style.translate = '';
+  inner.style.translate = '';
+  inner.style.scale = '';
 
-  const flight = copy.animate(
-    [
-      { transform: `scale(${String(from.width / width)})`, opacity: fromOpacity },
-      {
-        transform: `translate(${String(to.left - from.left)}px, ${String(to.top - from.top)}px) scale(${String(to.width / width)})`,
-        opacity: toOpacity,
-      },
-    ],
-    timing,
-  );
-  const land = (): void => {
-    target.style.visibility = '';
-    copy.remove();
-  };
-  flight.onfinish = land;
-  flight.oncancel = land;
+  window.setTimeout(() => {
+    target.style.transition = '';
+    inner.style.transition = '';
+    target.style.zIndex = zIndex;
+  }, duration + 50);
 }

@@ -71,7 +71,7 @@ export function ScopeBar({
   return (
     <div className="flex flex-col items-center gap-1">
       <div
-        className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-hidden"
+        className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y"
         onTouchStart={(event) => {
           touchStart.current = event.touches[0]?.clientX ?? null;
         }}
