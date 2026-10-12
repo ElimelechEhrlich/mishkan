@@ -3,9 +3,9 @@ import { labels } from '../../constants/labels';
 import type { DomainSection } from '../../hooks/useEntitySections';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
-import { ItemList } from '../items/ItemList';
 import { Icon } from '../ui/Icon';
 import { SkeletonList } from '../ui/SkeletonList';
+import { TopicSection } from './TopicSection';
 
 type DomainSectionListProps = {
   readonly sections: readonly DomainSection[];
@@ -17,7 +17,7 @@ type DomainSectionListProps = {
 };
 
 /**
- * The domains of one entity, each with its open items and a button to add to it.
+ * The domains of one entity, each a card that folds, with its open items and a "+" to add to it.
  * Empty domains are gathered at the end as chips that add to them.
  */
 export function DomainSectionList({
@@ -35,39 +35,24 @@ export function DomainSectionList({
   const empty = sections.filter((section) => section.entries.length === 0);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-2.5">
       {filled.map((section) => (
-        <section key={section.domain.id} className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="flex items-baseline gap-1.5">
-              <span className="font-display text-base font-semibold">{section.domain.name}</span>
-              <span className="text-xs font-medium text-faint">
-                {String(section.entries.length)}
-              </span>
-            </h2>
-            <button
-              type="button"
-              aria-label={`${labels.entityPage.addTo} ${section.domain.name}`}
-              onClick={() => {
-                onAdd(section.domain.id);
-              }}
-              className="flex size-7 items-center justify-center rounded-lg bg-surface text-muted shadow-card transition active:scale-90"
-            >
-              <Icon name="plus" className="size-4" />
-            </button>
-          </div>
-          <ItemList
-            entries={section.entries}
-            lookups={lookups}
-            grouped={false}
-            loading={false}
-            onComplete={onComplete}
-            hideDomain
-          />
-        </section>
+        <TopicSection
+          key={section.domain.id}
+          topic={section.domain.name}
+          entries={section.entries}
+          lookups={lookups}
+          onComplete={onComplete}
+          defaultOpen={filled.length === 1}
+          hideDomain
+          addLabel={`${labels.entityPage.addTo} ${section.domain.name}`}
+          onAdd={() => {
+            onAdd(section.domain.id);
+          }}
+        />
       ))}
       {empty.length > 0 && (
-        <div className="flex flex-col gap-2 px-1">
+        <div className="mt-2.5 flex flex-col gap-2 px-1">
           {filled.length > 0 && (
             <span className="text-xs font-bold tracking-wide text-muted">
               {labels.entityPage.emptyDomains}
