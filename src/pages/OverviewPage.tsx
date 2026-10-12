@@ -15,6 +15,7 @@ import { labels } from '../constants/labels';
 import { useAddRequest } from '../hooks/useAddRequest';
 import { useEntities } from '../hooks/useEntities';
 import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
+import { useTopicHomeView } from '../hooks/useTopicHomeView';
 import { useEntityCounts } from '../hooks/useEntityCounts';
 import { useEntitySections } from '../hooks/useEntitySections';
 import { useItems } from '../hooks/useItems';
@@ -34,7 +35,8 @@ const homeViews = [
 ] as const;
 
 export function OverviewPage(): ReactElement {
-  const { members, scopeId, setScope, setTopic, homeView, setHomeView } = useHouseholdContext();
+  const { members, scopeId, setScope, homeView, setHomeView } = useHouseholdContext();
+  const chooseTopic = useTopicHomeView();
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
@@ -67,7 +69,7 @@ export function OverviewPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
-      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={chooseTopic} />
       <Segmented options={homeViews} value={homeView} onChange={setHomeView} />
       <div
         key={scopeId ?? 'all'}
