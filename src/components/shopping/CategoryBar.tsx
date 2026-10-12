@@ -12,11 +12,11 @@ type CategoryBarProps = {
 
 /**
  * A quiet row of categories that narrows the shopping list, such as urgent or food.
- * Tapping the chosen one again, with its ×, or "all" lets it go. Hidden when there is
- * nothing to choose between.
+ * Tapping the chosen one again, with its ×, or "all" lets it go. Every category is shown,
+ * the empty ones faded; the row is hidden only while nothing is missing.
  */
 export function CategoryBar({ options, value, onChange }: CategoryBarProps): ReactElement | null {
-  if (options.length < 2) {
+  if (options.every((option) => option.count === 0)) {
     return null;
   }
   return (
@@ -37,7 +37,8 @@ export function CategoryBar({ options, value, onChange }: CategoryBarProps): Rea
           <Chip
             key={option.category}
             label={labels.shoppingCategory[option.category]}
-            note={String(option.count)}
+            note={option.count > 0 ? String(option.count) : undefined}
+            disabled={option.count === 0}
             selected={option.category === value}
             clearable
             onClick={() => {

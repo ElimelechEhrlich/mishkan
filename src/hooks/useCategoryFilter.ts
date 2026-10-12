@@ -4,7 +4,7 @@ import type { ShoppingCategory } from '../types/domain';
 import type { CategoryGroup } from './useShopping';
 
 export type UseCategoryFilter = {
-  /** The categories that have something missing, with how many, in the list's order. */
+  /** Every category with how many are missing in it, in the list's order. */
   readonly options: readonly { readonly category: ShoppingCategory; readonly count: number }[];
   /** The chosen category, or null for all of them. */
   readonly category: ShoppingCategory | null;
@@ -26,11 +26,11 @@ export function useCategoryFilter(
       [...shared, ...personal]
         .filter((group) => group.category === category)
         .reduce((sum, group) => sum + group.items.length, 0);
-    const options = shoppingCategories
-      .map((category) => ({ category, count: count(category) }))
-      .filter((option) => option.count > 0);
+    const options = shoppingCategories.map((category) => ({ category, count: count(category) }));
     // A category that has emptied out lets the whole list show again.
-    const category = options.some((option) => option.category === chosen) ? chosen : null;
+    const category = options.some((option) => option.category === chosen && option.count > 0)
+      ? chosen
+      : null;
     const narrow = (groups: readonly CategoryGroup[]): readonly CategoryGroup[] =>
       category === null ? groups : groups.filter((group) => group.category === category);
     return {
