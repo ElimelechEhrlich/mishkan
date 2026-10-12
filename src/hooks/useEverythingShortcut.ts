@@ -1,5 +1,5 @@
 import { everythingReach, scopeOptions } from '../lib/lookups';
-import { withViewTransition } from '../lib/viewTransition';
+import { everythingFlight, flyWhile } from '../lib/flight';
 import type { EntityWithDomains } from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
 
@@ -16,7 +16,7 @@ export function useEverythingShortcut(
     return undefined;
   }
   return (): void => {
-    withViewTransition(() => {
+    flyWhile(everythingFlight, () => {
       setScope(null);
     });
   };

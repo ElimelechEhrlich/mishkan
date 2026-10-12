@@ -8,7 +8,7 @@ import {
   groupEntities,
   scopeOptions,
 } from '../../lib/lookups';
-import { everythingTransitionName, withViewTransition } from '../../lib/viewTransition';
+import { everythingFlight, flyWhile } from '../../lib/flight';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { AvatarPicker } from './AvatarPicker';
@@ -58,7 +58,7 @@ export function ScopeBar({
     }
     // When "everything" moves between the carousel and the header, it is seen flying there.
     if (index > everythingReach !== next > everythingReach) {
-      withViewTransition(() => {
+      flyWhile(everythingFlight, () => {
         onChange(target);
       });
     } else {
@@ -102,6 +102,7 @@ export function ScopeBar({
             <button
               key={option ?? 'all'}
               type="button"
+              data-flight={option === null ? everythingFlight : undefined}
               aria-pressed={away === 0}
               aria-label={
                 away === 0 && canChangeAvatar
@@ -121,7 +122,6 @@ export function ScopeBar({
                 transform: `translate(calc(-50% + ${String(-Math.sign(distance) * (offsets[away] ?? 0))}px), -50%) scale(${String(scale)})`,
                 opacity: away === 0 ? 1 : away === 1 ? 0.85 : 0.35,
                 zIndex: 10 - away,
-                viewTransitionName: option === null ? everythingTransitionName : undefined,
               }}
             >
               <span

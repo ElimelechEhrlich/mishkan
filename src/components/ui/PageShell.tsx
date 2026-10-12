@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { labels } from '../../constants/labels';
-import { everythingTransitionName } from '../../lib/viewTransition';
+import { everythingFlight } from '../../lib/flight';
 import { BottomNav } from './BottomNav';
 import { Icon } from './Icon';
 import { IconButton } from './IconButton';
@@ -74,7 +74,7 @@ export function PageShell({
                 type="button"
                 aria-label={labels.scope.toEverything}
                 onClick={toEverything}
-                style={{ viewTransitionName: everythingTransitionName }}
+                data-flight={everythingFlight}
                 className="me-1 block rounded-full bg-surface p-0.5 shadow-raised transition active:scale-95"
               >
                 <span className="flex size-10 items-center justify-center rounded-full bg-primary text-white">
