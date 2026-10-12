@@ -77,7 +77,7 @@ function reminderText(item: Item, people: readonly ReminderPerson[]): string {
   return `${when}${labels.item.separator}${labels.push.toPrefix}${names}`;
 }
 
-type Row = 'kind' | 'domain' | 'category' | 'time' | 'reminder' | 'parent';
+type Row = 'kind' | 'domain' | 'inMain' | 'category' | 'time' | 'reminder' | 'parent';
 
 const convertibleKinds = [
   'task',
@@ -150,6 +150,11 @@ export function ItemEditor({
     !isShopping &&
     !isQuestion &&
     !isAppointment;
+  // An item of a separate entity (a circle) shows with everything only when marked so.
+  const inCircle = entities.some(
+    (entity) =>
+      entity.kind === 'circle' && entity.domains.some((domain) => domain.id === item.domain_id),
+  );
   const healthDomain = entities.some((entity) =>
     entity.domains.some(
       (domain) =>
@@ -261,6 +266,37 @@ export function ItemEditor({
                 }
               }}
             />
+          </PropertyRow>
+        )}
+
+        {inCircle && !isStep && (
+          <PropertyRow
+            label={labels.inMain.label}
+            value={item.in_main ? labels.inMain.shown : labels.inMain.hidden}
+            open={openRow === 'inMain'}
+            onToggle={() => {
+              toggle('inMain');
+            }}
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Chip
+                  label={labels.inMain.hide}
+                  selected={!item.in_main}
+                  onClick={() => {
+                    update({ in_main: false });
+                  }}
+                />
+                <Chip
+                  label={labels.inMain.show}
+                  selected={item.in_main}
+                  onClick={() => {
+                    update({ in_main: true });
+                  }}
+                />
+              </div>
+              <p className="text-[13px] text-muted">{labels.inMain.hint}</p>
+            </div>
           </PropertyRow>
         )}
 

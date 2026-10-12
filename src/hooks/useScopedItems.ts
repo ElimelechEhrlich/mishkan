@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { domainTopics, topicDomainIds } from '../lib/lookups';
+import { circleDomainIds, domainTopics, topicDomainIds } from '../lib/lookups';
 import type { EntityWithDomains, Item } from '../types/domain';
 import type { UseItems } from './useItems';
 import { useHouseholdContext } from './useRouteContext';
@@ -41,15 +41,26 @@ export function useScopedItems(
   const scope = entities.find((entity) => entity.id === scopeId);
 
   return useMemo(() => {
-    const topics = byTopic ? domainTopics(scope === undefined ? entities : [scope]) : [];
+    // With everything chosen, separate entities (circles) stay out: their topics too.
+    const shared = entities.filter((entity) => entity.kind !== 'circle');
+    const topics = byTopic ? domainTopics(scope === undefined ? shared : [scope]) : [];
     const topic = chosenTopic !== null && topics.includes(chosenTopic) ? chosenTopic : null;
     const topicIds = topic === null ? null : topicDomainIds(entities, topic);
     const inTopic = (item: Item): boolean =>
       topicIds === null || (item.domain_id !== null && topicIds.has(item.domain_id));
     const domainIds =
       scope === undefined ? null : new Set(scope.domains.map((domain) => domain.id));
+    // Everything leaves out the items of a circle, unless one is marked to show with all.
+    // A step goes with its goal or issue.
+    const circleIds = circleDomainIds(entities);
+    const shownWithAll = new Set(items.items.filter((item) => item.in_main).map((item) => item.id));
     const inEntity = (item: Item): boolean =>
-      domainIds === null || (item.domain_id !== null && domainIds.has(item.domain_id));
+      domainIds === null
+        ? item.domain_id === null ||
+          !circleIds.has(item.domain_id) ||
+          item.in_main ||
+          (item.parent_id !== null && shownWithAll.has(item.parent_id))
+        : item.domain_id !== null && domainIds.has(item.domain_id);
     const inScope = (item: Item): boolean => inTopic(item) && inEntity(item);
     const scopedItems = items.items.filter(inScope);
     return {

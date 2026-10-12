@@ -33,7 +33,9 @@ export function EntitySettingsCard({
   const [open, setOpen] = useState(false);
   const isPrivate = entity.kind === 'personal';
   const canDelete =
-    entity.kind === 'child' || (entity.kind === 'parent' && entity.member_id === null);
+    entity.kind === 'child' ||
+    entity.kind === 'circle' ||
+    (entity.kind === 'parent' && entity.member_id === null);
   const canAddDebts =
     (entity.kind === 'parent' || entity.kind === 'personal') &&
     !entity.domains.some((domain) => domain.role === 'debts');

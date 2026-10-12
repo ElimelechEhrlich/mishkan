@@ -17,8 +17,8 @@ type EntitySettingsProps = {
 const maxParents = 2;
 
 /**
- * The entities in three groups that fold: the home (with the couple), the parents (with
- * the private personal entity) and the children. Each entity opens in place to edit its
+ * The entities in four groups that fold: the home (with the couple), the parents (with
+ * the private personal entity), the children, and the separate ones (family and friends). Each entity opens in place to edit its
  * domains; the parents and children groups end with a row for adding one more.
  */
 export function EntitySettings({ entities, settings }: EntitySettingsProps): ReactElement {
@@ -38,6 +38,7 @@ export function EntitySettings({ entities, settings }: EntitySettingsProps): Rea
   const parents = ofKinds('parent', 'personal');
   const parentCount = ofKinds('parent').length;
   const children = ofKinds('child');
+  const circles = ofKinds('circle');
 
   return (
     <>
@@ -70,6 +71,19 @@ export function EntitySettings({ entities, settings }: EntitySettingsProps): Rea
           fieldLabel={labels.fields.childName}
           onAdd={(name) => {
             settings.addEntity('child', name);
+          }}
+        />
+      </EntityGroup>
+      <EntityGroup title={labels.settings.circles} count={circles.length}>
+        {circles.map((entity) => card(entity))}
+        <AddEntityRow
+          icon="users"
+          title={labels.settings.addCircle}
+          subtitle={labels.settings.addCircleShort}
+          fieldLabel={labels.settings.circleName}
+          hint={labels.settings.addCircleHint}
+          onAdd={(name) => {
+            settings.addEntity('circle', name);
           }}
         />
       </EntityGroup>

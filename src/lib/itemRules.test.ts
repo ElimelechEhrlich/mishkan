@@ -38,6 +38,7 @@ function item(overrides: Partial<Item>): Item {
     meeting_url: null,
     with_whom: null,
     series_id: null,
+    in_main: false,
     ...overrides,
   };
 }

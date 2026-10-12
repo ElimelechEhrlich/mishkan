@@ -103,6 +103,7 @@ const entityKind = {
   child: 'ילד/ה',
   home: 'הבית',
   couple: 'זוגי',
+  circle: 'נפרד מהבית',
 } as const satisfies Record<EntityKind, string>;
 
 const debtDirection = {
@@ -383,6 +384,7 @@ export const labels = {
           'הבית, הזוגיות, כל הורה וכל ילד, ו"אישי" שרק אתם רואים',
           '"הכול" מציג את כל הישויות יחד. כשמתרחקים ממנו הוא עולה לכותרת, ולחיצה עליו מחזירה אליו',
           'כל פתיחה של האפליקציה מתחילה ב"הכול"',
+          '"משפחה וחברים" נפרדת מהבית: מה שבה לא מעורבב ב"הכול", אלא אם מסמנים פריט "להציג עם כולם". הכפתור הקטן בפינה מגיע אליה ישר',
         ],
       },
       domains: {
@@ -588,6 +590,14 @@ export const labels = {
     latest: 'אחרונים',
     domain: 'לפי תחום',
   },
+  inMain: {
+    label: 'בראשי עם כולם',
+    shown: 'מוצג',
+    hidden: 'רק בישות',
+    show: 'להציג עם כולם',
+    hide: 'רק בישות',
+    hint: 'פריט של ישות נפרדת לא מוצג ב"הכול". סמנו "להציג עם כולם" כשהוא דחוף כמו משימות הבית.',
+  },
   homeView: {
     label: 'סידור',
     kind: 'לפי סוג',
@@ -606,7 +616,7 @@ export const labels = {
     title: 'תמונה',
     photo: 'בחירת תמונה מהטלפון',
     emoji: 'או סמל',
-    letter: 'בלי תמונה (האות הראשונה)',
+    letter: 'בלי תמונה',
     categories: [
       {
         name: 'אנשים',
@@ -657,6 +667,7 @@ export const labels = {
     custom: 'או להקליד אימוג׳י משלך',
   },
   scope: {
+    openCircle: 'משפחה וחברים',
     openEntity: 'פרטי הישות',
     toEverything: 'מעבר להכול',
     showingOnly: 'מסונן לפי',
@@ -756,6 +767,12 @@ export const labels = {
     homeGroup: 'הבית',
     parentsFull: 'יש כבר שני הורים בבית.',
     children: 'ילדים',
+    circles: 'משפחה, חברים ועוד',
+    addCircle: 'ישות נפרדת',
+    addCircleShort: 'מה שבה לא מעורבב עם הבית',
+    addCircleHint:
+      'הפריטים שלה לא מוצגים ב"הכול", אלא רק כשבוחרים בה, או כשמסמנים פריט "בראשי עם כולם".',
+    circleName: 'שם, למשל: קהילה',
     inviteShort: 'שליחת קישור הצטרפות',
     copyCode: 'העתקת קוד ההזמנה',
     copied: 'הקוד הועתק',

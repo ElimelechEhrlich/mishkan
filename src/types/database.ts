@@ -1,9 +1,9 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0012_events_domains.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0015_circle.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
 type MemberRole = 'parent' | 'child' | 'household';
-type EntityKind = 'parent' | 'personal' | 'child' | 'home' | 'couple';
+type EntityKind = 'parent' | 'personal' | 'child' | 'home' | 'couple' | 'circle';
 type DomainRole = 'regular' | 'shopping' | 'debts';
 type ItemKind =
   | 'task'
@@ -184,6 +184,7 @@ export type Database = {
           meeting_url: string | null;
           with_whom: string | null;
           series_id: string | null;
+          in_main: boolean;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -215,6 +216,7 @@ export type Database = {
           meeting_url?: string | null;
           with_whom?: string | null;
           series_id?: string | null;
+          in_main?: boolean;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -239,6 +241,7 @@ export type Database = {
           place?: string | null;
           meeting_url?: string | null;
           with_whom?: string | null;
+          in_main?: boolean;
         };
         Relationships: [];
       };

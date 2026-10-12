@@ -35,7 +35,7 @@ export type EntityWithDomains = Entity & {
 };
 
 /** Entities that are added and removed by hand; the rest are created by the system. */
-export type AddableEntityKind = Extract<EntityKind, 'parent' | 'child'>;
+export type AddableEntityKind = Extract<EntityKind, 'parent' | 'child' | 'circle'>;
 
 /** A parent entity that no parent has joined as yet, offered when joining a household. */
 export type UnclaimedParent = {

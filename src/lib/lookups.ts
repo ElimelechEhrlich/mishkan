@@ -96,11 +96,14 @@ export function countByEntity(
 }
 
 /** The groups entities are shown in: the home and the couple, the parents, the children. */
-export type EntityGroupKey = 'home' | 'parents' | 'children';
+export type EntityGroupKey = 'home' | 'parents' | 'children' | 'circles';
 
 export function entityGroupOf(kind: EntityKind): EntityGroupKey {
   if (kind === 'home' || kind === 'couple') {
     return 'home';
+  }
+  if (kind === 'circle') {
+    return 'circles';
   }
   return kind === 'child' ? 'children' : 'parents';
 }
@@ -109,7 +112,7 @@ export function entityGroupOf(kind: EntityKind): EntityGroupKey {
 export function groupEntities<T extends { readonly kind: EntityKind }>(
   entities: readonly T[],
 ): { readonly key: EntityGroupKey; readonly entities: readonly T[] }[] {
-  const order: readonly EntityGroupKey[] = ['home', 'parents', 'children'];
+  const order: readonly EntityGroupKey[] = ['home', 'parents', 'children', 'circles'];
   return order
     .map((key) => ({
       key,
@@ -215,4 +218,45 @@ export function groupByTopic<
       ),
     }))
     .filter((group) => group.rows.length > 0);
+}
+
+/**
+ * Whether an item belongs to a separate entity (a circle, such as family and friends) and
+ * stays out of the views of everything: unless it is marked to show there.
+ */
+export function circleDomainIds(entities: readonly EntityWithDomains[]): ReadonlySet<string> {
+  return new Set(
+    entities
+      .filter((entity) => entity.kind === 'circle')
+      .flatMap((entity) => entity.domains.map((domain) => domain.id)),
+  );
+}
+
+/** The household's first circle, the one the carousel's corner button opens. */
+export function mainCircle<T extends { readonly kind: EntityKind; readonly created_at: string }>(
+  entities: readonly T[],
+): T | undefined {
+  return entities
+    .filter((entity) => entity.kind === 'circle')
+    .reduce<
+      T | undefined
+    >((first, entity) => (first === undefined || entity.created_at < first.created_at ? entity : first), undefined);
+}
+
+/** The shortest move of a finger that turns the carousel. */
+const swipeMin = 40;
+
+/**
+ * How many places a swipe turns the carousel: one for a slow or short one, more the faster
+ * and longer the finger moved. `distance` is in pixels, `ms` how long the finger was down.
+ */
+export function swipeSteps(distance: number, ms: number): number {
+  const length = Math.abs(distance);
+  if (length < swipeMin) {
+    return 0;
+  }
+  const speed = length / Math.max(ms, 1);
+  const bySpeed = speed > 0.5 ? Math.floor((speed - 0.5) / 0.35) : 0;
+  const byLength = Math.floor(length / 160);
+  return 1 + Math.max(bySpeed, byLength);
 }

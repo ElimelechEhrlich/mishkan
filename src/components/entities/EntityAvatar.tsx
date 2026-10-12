@@ -2,6 +2,15 @@ import type { ReactElement } from 'react';
 import type { EntityTone } from '../../lib/lookups';
 import type { Entity } from '../../types/domain';
 import { Icon } from '../ui/Icon';
+import type { IconName } from '../ui/Icon';
+
+/** Kinds drawn as a sign of what they are, rather than their first letter. */
+const kindIcons: Partial<Record<Entity['kind'], IconName>> = {
+  personal: 'lock',
+  couple: 'heart',
+  parent: 'user',
+  circle: 'users',
+};
 
 type EntityAvatarProps = {
   readonly entity: Entity & { readonly avatarUrl?: string | null };
@@ -18,20 +27,16 @@ const sizes = {
 } as const;
 
 /**
- * The entity's picture: its photo, else its emoji, else its first letter on its color
- * (a lock for the private personal entity).
+ * The entity's picture: its photo, else its emoji, else a sign of its kind on its color
+ * (a lock for the personal entity, a heart for the couple, a figure for a parent, people for
+ * family and friends), else its first letter.
  */
 export function EntityAvatar({ entity, tone, size }: EntityAvatarProps): ReactElement {
   const look = sizes[size];
   const photo = entity.avatarUrl ?? null;
   if (photo !== null) {
     return (
-      <img
-        src={photo}
-        alt=""
-        aria-hidden="true"
-        className={`shrink-0 object-cover ${look.box}`}
-      />
+      <img src={photo} alt="" aria-hidden="true" className={`shrink-0 object-cover ${look.box}`} />
     );
   }
   if (entity.avatar_emoji !== null) {
@@ -44,15 +49,16 @@ export function EntityAvatar({ entity, tone, size }: EntityAvatarProps): ReactEl
       </span>
     );
   }
+  const kindIcon = kindIcons[entity.kind];
   return (
     <span
       aria-hidden="true"
       className={`flex shrink-0 items-center justify-center font-display font-bold text-white ${look.box} ${tone.bg}`}
     >
-      {entity.kind === 'personal' ? (
-        <Icon name="lock" className={look.icon} />
-      ) : (
+      {kindIcon === undefined ? (
         entity.name.trim().charAt(0)
+      ) : (
+        <Icon name={kindIcon} className={look.icon} />
       )}
     </span>
   );

@@ -6,7 +6,9 @@ import {
   entityTone,
   everythingReach,
   groupEntities,
+  mainCircle,
   scopeOptions,
+  swipeSteps,
 } from '../../lib/lookups';
 import { everythingFlight, flyWhile } from '../../lib/flight';
 import type { EntityWithDomains } from '../../types/domain';
@@ -27,8 +29,6 @@ type ScopeBarProps = {
 
 /** How far from the middle the pictures sit, one and two places away, in pixels. */
 const offsets = [0, 92, 154] as const;
-/** How far a finger has to move to turn to the next one. */
-const swipeDistance = 40;
 
 /**
  * Who the tabs are showing, as a row of pictures: the chosen one large in the middle,
@@ -47,7 +47,8 @@ export function ScopeBar({
   const found = options.indexOf(scopeId);
   const index = found === -1 ? 0 : found;
   const scope = ordered.find((entity) => entity.id === scopeId);
-  const touchStart = useRef<number | null>(null);
+  const touchStart = useRef<{ readonly x: number; readonly at: number } | null>(null);
+  const circle = mainCircle(entities);
   const [sheetOpen, setSheetOpen] = useState(false);
   const canOpenSheet = scope !== undefined;
 
@@ -73,7 +74,8 @@ export function ScopeBar({
       <div
         className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y"
         onTouchStart={(event) => {
-          touchStart.current = event.touches[0]?.clientX ?? null;
+          const x = event.touches[0]?.clientX;
+          touchStart.current = x === undefined ? null : { x, at: event.timeStamp };
         }}
         onTouchEnd={(event) => {
           const start = touchStart.current;
@@ -82,11 +84,12 @@ export function ScopeBar({
           if (start === null || end === undefined) {
             return;
           }
-          // Right to left: the next one waits on the left, so a swipe to the right brings it.
-          if (end - start > swipeDistance) {
-            go(index + 1);
-          } else if (start - end > swipeDistance) {
-            go(index - 1);
+          // A faster or longer swipe turns more places. Right to left: the next one waits on
+          // the left, so a swipe to the right brings it.
+          const moved = end - start.x;
+          const steps = swipeSteps(moved, event.timeStamp - start.at);
+          if (steps > 0) {
+            go(index + (moved > 0 ? steps : -steps));
           }
         }}
       >
@@ -147,6 +150,21 @@ export function ScopeBar({
             </button>
           );
         })}
+        {circle !== undefined && (
+          <button
+            type="button"
+            aria-label={labels.scope.openCircle}
+            aria-pressed={circle.id === scopeId}
+            onClick={() => {
+              go(circle.id === scopeId ? 0 : options.indexOf(circle.id));
+            }}
+            className={`absolute top-0 left-3 z-20 flex size-9 items-center justify-center rounded-full shadow-card transition active:scale-90 ${
+              circle.id === scopeId ? 'bg-primary text-white' : 'bg-surface text-muted'
+            }`}
+          >
+            <Icon name="users" className="size-5" />
+          </button>
+        )}
         {index < options.length - 1 && (
           <button
             type="button"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { domainTopics, groupByTopic, topicDomainIds } from './lookups';
+import { domainTopics, groupByTopic, swipeSteps, topicDomainIds } from './lookups';
 import type { EntityWithDomains } from '../types/domain';
 
 type DomainSpec = readonly [id: string, name: string, role?: 'regular' | 'shopping' | 'debts'];
@@ -82,5 +82,17 @@ describe('groupByTopic', () => {
       { item: { domain_id: 'a1', kind: 'task' } },
     ];
     expect(groupByTopic(entities, rows).map((group) => group.topic)).toEqual(['חינוך', 'קניות']);
+  });
+});
+
+describe('swipeSteps', () => {
+  it('ignores a touch that hardly moved', () => {
+    expect(swipeSteps(20, 100)).toBe(0);
+  });
+
+  it('turns one place for a slow swipe and more for a fast one', () => {
+    expect(swipeSteps(90, 400)).toBe(1);
+    expect(swipeSteps(-90, 400)).toBe(1);
+    expect(swipeSteps(220, 120)).toBeGreaterThanOrEqual(4);
   });
 });
