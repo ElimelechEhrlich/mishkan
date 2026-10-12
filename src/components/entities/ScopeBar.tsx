@@ -13,7 +13,7 @@ import {
   mainCircle,
   scopeOptions,
 } from '../../lib/lookups';
-import { everythingFlight, flightDuration, flyWhile } from '../../lib/flight';
+import { everythingFlight, flyWhile } from '../../lib/flight';
 import { useHouseholdContext } from '../../hooks/useRouteContext';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
@@ -36,6 +36,9 @@ type ScopeBarProps = {
  * way past its last place. It always takes off from and lands on this very spot.
  */
 const gate = everythingReach + 0.5;
+
+/** How quickly "everything", once landed, catches up with its place, in milliseconds. */
+const catchUpTime = 90;
 
 /** How far the finger moves the carousel by one place, in pixels. */
 const stepWidth = 80;
@@ -87,11 +90,19 @@ export function ScopeBar({
   const upRef = useRef(up);
   upRef.current = up;
   /**
-   * After coming back down while the carousel still turns: first it lands where it left
-   * ("hold"), then it catches up along the carousel to its own place ("chase").
+   * After coming back down while the carousel still turns: how many places from the middle
+   * "everything" is drawn, apart from the carousel. It first lands where it left (the gate),
+   * then catches up along the carousel to its own place; null when it moves with it.
    */
-  const [landing, setLanding] = useState<'hold' | 'chase' | null>(null);
-  const landingTimer = useRef(0);
+  const [held, setHeld] = useState<number | null>(null);
+  const heldRef = useRef<number | null>(null);
+  /** When it landed and last caught up, in milliseconds; null while still flying down. */
+  const caughtAt = useRef<number | null>(null);
+
+  function hold(away: number | null): void {
+    heldRef.current = away;
+    setHeld(away);
+  }
   const canOpenSheet = scope !== undefined;
 
   function go(next: number): void {
@@ -112,7 +123,6 @@ export function ScopeBar({
   useEffect(() => {
     return (): void => {
       cancelAnimationFrame(frame.current);
-      window.clearTimeout(landingTimer.current);
       setEverythingUp(null);
     };
   }, [setEverythingUp]);
@@ -123,15 +133,15 @@ export function ScopeBar({
     // the gate, on the carousel's own pace and always on the same arc.
     const nowUp = position > gate;
     if (nowUp === upRef.current) {
+      catchUp(position);
       setMoving(position);
       return;
     }
     upRef.current = nowUp;
-    window.clearTimeout(landingTimer.current);
     if (nowUp) {
       // Drawn at the gate first, so it takes off from there however fast the carousel turns.
       flushSync(() => {
-        setLanding(null);
+        hold(null);
         setMoving(position);
       });
       flyWhile(everythingFlight, () => {
@@ -139,15 +149,36 @@ export function ScopeBar({
       });
       return;
     }
-    flyWhile(everythingFlight, () => {
-      setMoving(position);
-      setEverythingUp(false);
-      setLanding('hold');
-    });
-    landingTimer.current = window.setTimeout(() => {
-      setLanding('chase');
-      // Once the flight has let go of the circle (it keeps it a little past its time).
-    }, flightDuration + 50);
+    caughtAt.current = null;
+    flyWhile(
+      everythingFlight,
+      () => {
+        setMoving(position);
+        setEverythingUp(false);
+        hold(gate);
+      },
+      () => {
+        // The moment it lands it carries on along the carousel, without a pause; a carousel
+        // already at rest takes it there with its own transition.
+        caughtAt.current = performance.now();
+        if (movingRef.current === null) {
+          hold(null);
+        }
+      },
+    );
+  }
+
+  /** Once landed, brings "everything" closer to its own place on every frame of the turn. */
+  function catchUp(position: number): void {
+    const away = heldRef.current;
+    const since = caughtAt.current;
+    if (away === null || since === null) {
+      return;
+    }
+    const now = performance.now();
+    caughtAt.current = now;
+    const next = position + (away - position) * Math.exp(-(now - since) / catchUpTime);
+    hold(Math.abs(next - position) < 0.01 ? null : next);
   }
 
   /** Comes to rest on a place and makes it the choice. */
@@ -157,7 +188,10 @@ export function ScopeBar({
     const target = options[next];
     setMoving(null);
     setEverythingUp(null);
-    setLanding((current) => (current === 'chase' ? null : current));
+    // Still flying down, it lands where it left first.
+    if (caughtAt.current !== null) {
+      hold(null);
+    }
     if (target !== undefined && next !== index) {
       onChange(target);
     }
@@ -265,10 +299,9 @@ export function ScopeBar({
         {options.map((option, position) => {
           const isAll = option === null;
           let distance = position - (moving ?? index);
-          if (isAll && landing === 'hold') {
-            // Landing back where it left, while the carousel goes on turning.
-            distance = -gate;
-          } else if (isAll && moving !== null && landing === null) {
+          if (isAll && held !== null) {
+            distance = -held;
+          } else if (isAll && moving !== null) {
             // While the carousel turns away from it, it goes no further than the gate.
             distance = Math.max(distance, -gate);
           }
@@ -280,8 +313,6 @@ export function ScopeBar({
           }
           const entity = ordered.find((candidate) => candidate.id === option);
           const place = carouselPlace(away);
-          // Catching up after landing, it follows its place with the carousel's resting pace.
-          const smooth = moving === null || (isAll && landing === 'chase');
           const middle = away < 0.5;
           return (
             <button
@@ -305,7 +336,9 @@ export function ScopeBar({
                 }
               }}
               className={`absolute top-1/2 left-1/2 rounded-full ${
-                smooth ? 'transition-[transform,opacity] duration-300 ease-out' : ''
+                moving === null && !(isAll && held !== null)
+                  ? 'transition-[transform,opacity] duration-300 ease-out'
+                  : ''
               }`}
               style={{
                 transform: `translate(calc(-50% + ${String(-Math.sign(distance) * place.offset)}px), -50%) scale(${String(place.scale)})`,

@@ -36,12 +36,14 @@ function reducedMotion(): boolean {
  * travel from where it was, with CSS transitions like the carousel's, so both move on the
  * same clock. The marked element moves up and down; its first child moves sideways and
  * grows or shrinks. Without a place to start from, or when the device asks for less motion,
- * the change simply happens.
+ * the change simply happens. `onLanded` runs the moment it arrives (or at once, without a
+ * flight).
  */
-export function flyWhile(name: string, update: () => void): void {
+export function flyWhile(name: string, update: () => void, onLanded?: () => void): void {
   const source = find(name);
   if (source === null || reducedMotion()) {
     update();
+    onLanded?.();
     return;
   }
   const from = source.getBoundingClientRect();
@@ -51,6 +53,7 @@ export function flyWhile(name: string, update: () => void): void {
   const target = find(name);
   const inner = target?.firstElementChild;
   if (target === null || !(inner instanceof HTMLElement) || target.offsetWidth === 0) {
+    onLanded?.();
     return;
   }
   const to = target.getBoundingClientRect();
@@ -76,9 +79,25 @@ export function flyWhile(name: string, update: () => void): void {
   inner.style.translate = '';
   inner.style.scale = '';
 
-  window.setTimeout(() => {
+  let landed = false;
+  const land = (): void => {
+    if (landed) {
+      return;
+    }
+    landed = true;
+    target.removeEventListener('transitionend', onEnd);
+    window.clearTimeout(fallback);
     target.style.transition = '';
     inner.style.transition = '';
     target.style.zIndex = zIndex;
-  }, flightDuration + 50);
+    onLanded?.();
+  };
+  function onEnd(event: TransitionEvent): void {
+    if (event.target === target && event.propertyName === 'translate') {
+      land();
+    }
+  }
+  target.addEventListener('transitionend', onEnd);
+  // In case the transition never reports its end (such as the element leaving the page).
+  const fallback = window.setTimeout(land, flightDuration + 50);
 }
