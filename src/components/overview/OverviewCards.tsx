@@ -135,7 +135,6 @@ export function OverviewCards({
           }
           to="/appointments"
           linkLabel={labels.overview.allAppointments}
-          defaultOpen={overview.appointments.length > 0}
         >
           {sectionGroups(overview.appointments, true)}
         </OverviewCard>
