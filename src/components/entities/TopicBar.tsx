@@ -13,7 +13,8 @@ type TopicBarProps = {
 /**
  * One quiet row under the entity pictures that narrows the tabs to a topic: with
  * "everything" chosen above it gathers that topic from every entity. Tapping the chosen
- * topic again lets it go. Hidden when there is nothing to choose between.
+ * topic again, with its ×, or "all" lets it go. Hidden when there is nothing to choose
+ * between.
  */
 export function TopicBar({ topics, value, onChange }: TopicBarProps): ReactElement | null {
   if (topics.length < 2) {
@@ -38,6 +39,7 @@ export function TopicBar({ topics, value, onChange }: TopicBarProps): ReactEleme
             key={topic}
             label={topic}
             selected={topic === value}
+            clearable
             onClick={() => {
               onChange(topic === value ? null : topic);
             }}

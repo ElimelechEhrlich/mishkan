@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { Icon } from './Icon';
 
 type ChipProps = {
   readonly label: string;
@@ -9,6 +10,8 @@ type ChipProps = {
   /** Background class of a small color dot shown before the label. */
   readonly dotClass?: string | undefined;
   readonly disabled?: boolean;
+  /** Shows a small × while selected, saying a tap lets the choice go. */
+  readonly clearable?: boolean;
 };
 
 export function Chip({
@@ -18,6 +21,7 @@ export function Chip({
   note,
   dotClass,
   disabled = false,
+  clearable = false,
 }: ChipProps): ReactElement {
   const tone = selected ? 'bg-primary text-white' : 'bg-surface text-ink shadow-card';
   return (
@@ -31,6 +35,7 @@ export function Chip({
       {dotClass !== undefined && <span className={`size-1.5 rounded-full ${dotClass}`} />}
       {label}
       {note !== undefined && <span className="text-[11px] opacity-60">{note}</span>}
+      {clearable && selected && <Icon name="close" className="-me-1 size-3.5 opacity-80" />}
     </button>
   );
 }
