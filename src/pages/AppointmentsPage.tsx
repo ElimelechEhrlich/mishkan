@@ -11,6 +11,7 @@ import { labels } from '../constants/labels';
 import { useAppointments } from '../hooks/useAppointments';
 import { useDomainGroups } from '../hooks/useDomainGroups';
 import { useEntities } from '../hooks/useEntities';
+import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useHouseholdContext } from '../hooks/useRouteContext';
@@ -24,9 +25,14 @@ export function AppointmentsPage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
   const appointments = useAppointments(scoped.appointments);
   const domainGroups = useDomainGroups(appointments, entities.entities, scoped.scope);
+  const toEverything = useEverythingShortcut(entities.entities);
 
   return (
-    <PageShell title={labels.pages.appointments} incompleteCount={scoped.incomplete.length}>
+    <PageShell
+      toEverything={toEverything}
+      title={labels.pages.appointments}
+      incompleteCount={scoped.incomplete.length}
+    >
       <ErrorBanner message={items.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />

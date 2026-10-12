@@ -9,6 +9,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useDebts } from '../hooks/useDebts';
 import { useEntities } from '../hooks/useEntities';
+import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useItems } from '../hooks/useItems';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
@@ -20,9 +21,14 @@ export function DebtsPage(): ReactElement {
   const scoped = useScopedItems(items, entities.entities);
   const debts = useDebts(scoped.items);
   const isEmpty = debts.owedToUs.length === 0 && debts.weOwe.length === 0;
+  const toEverything = useEverythingShortcut(entities.entities);
 
   return (
-    <PageShell title={labels.pages.debts} incompleteCount={scoped.incomplete.length}>
+    <PageShell
+      toEverything={toEverything}
+      title={labels.pages.debts}
+      incompleteCount={scoped.incomplete.length}
+    >
       <ErrorBanner message={debts.error ?? items.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <DebtSummary owedToUs={debts.owedToUs} weOwe={debts.weOwe} />

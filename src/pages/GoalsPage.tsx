@@ -13,6 +13,7 @@ import { labels } from '../constants/labels';
 import { useDoneItems } from '../hooks/useDoneItems';
 import { useDomainGroups } from '../hooks/useDomainGroups';
 import { useEntities } from '../hooks/useEntities';
+import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useOpenSegments } from '../hooks/useOpenSegments';
@@ -28,9 +29,14 @@ export function GoalsPage(): ReactElement {
   const resolved = useDoneItems('issue');
   const view = useOpenSegments(scoped.goals, scoped.steps);
   const domainGroups = useDomainGroups(view.visible, entities.entities, scoped.scope);
+  const toEverything = useEverythingShortcut(entities.entities);
 
   return (
-    <PageShell title={labels.pages.goals} incompleteCount={scoped.incomplete.length}>
+    <PageShell
+      toEverything={toEverything}
+      title={labels.pages.goals}
+      incompleteCount={scoped.incomplete.length}
+    >
       <ErrorBanner message={items.error ?? resolved.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />

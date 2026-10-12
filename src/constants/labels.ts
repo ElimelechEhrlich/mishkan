@@ -526,6 +526,7 @@ export const labels = {
     custom: 'או להקליד אימוג׳י משלך',
   },
   scope: {
+    toEverything: 'מעבר להכול',
     showingOnly: 'מסונן לפי',
     byDomain: 'לפי תחומים',
     everythingHint: 'כל הישויות יחד',

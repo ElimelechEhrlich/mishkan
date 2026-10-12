@@ -15,6 +15,7 @@ import { Segmented } from '../components/ui/Segmented';
 import { labels } from '../constants/labels';
 import { useAddRequest } from '../hooks/useAddRequest';
 import { useEntities } from '../hooks/useEntities';
+import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useEntityCounts } from '../hooks/useEntityCounts';
 import { useEntitySections } from '../hooks/useEntitySections';
 import { useItems } from '../hooks/useItems';
@@ -52,9 +53,11 @@ export function OverviewPage(): ReactElement {
   const direction = useSlideDirection(
     entities.entities.findIndex((entity) => entity.id === scopeId),
   );
+  const toEverything = useEverythingShortcut(entities.entities);
 
   return (
     <PageShell
+      toEverything={toEverything}
       title={scoped.scope?.name ?? labels.overview.title}
       subtitle={formatToday()}
       incompleteCount={scoped.incomplete.length}

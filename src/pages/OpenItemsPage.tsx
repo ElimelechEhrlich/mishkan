@@ -12,6 +12,7 @@ import { Tabs } from '../components/ui/Tabs';
 import { labels } from '../constants/labels';
 import { useDomainGroups } from '../hooks/useDomainGroups';
 import { useEntities } from '../hooks/useEntities';
+import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useEntityCounts } from '../hooks/useEntityCounts';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
@@ -28,9 +29,11 @@ export function OpenItemsPage(): ReactElement {
   const view = useOpenSegments(scoped.assigned, scoped.steps, 'task');
   const entityCounts = useEntityCounts(items.items.filter(scoped.inTopic), lookups.domainEntities);
   const domainGroups = useDomainGroups(view.visible, entities.entities, scoped.scope);
+  const toEverything = useEverythingShortcut(entities.entities);
 
   return (
     <PageShell
+      toEverything={toEverything}
       title={view.allKinds ? labels.pages.allItems : labels.pages.open}
       incompleteCount={scoped.incomplete.length}
     >

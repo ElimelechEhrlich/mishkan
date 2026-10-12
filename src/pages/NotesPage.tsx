@@ -10,6 +10,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useDomainGroups } from '../hooks/useDomainGroups';
 import { useEntities } from '../hooks/useEntities';
+import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useNotes } from '../hooks/useNotes';
@@ -24,9 +25,14 @@ export function NotesPage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
   const notes = useNotes(scoped.notes);
   const domainGroups = useDomainGroups(notes, entities.entities, scoped.scope);
+  const toEverything = useEverythingShortcut(entities.entities);
 
   return (
-    <PageShell title={labels.pages.notes} incompleteCount={scoped.incomplete.length}>
+    <PageShell
+      toEverything={toEverything}
+      title={labels.pages.notes}
+      incompleteCount={scoped.incomplete.length}
+    >
       <ErrorBanner message={items.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />

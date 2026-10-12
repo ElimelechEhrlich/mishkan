@@ -9,6 +9,7 @@ import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
+import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useItems } from '../hooks/useItems';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
@@ -25,9 +26,14 @@ export function ShoppingPage(): ReactElement {
     shopping.personal.length === 0 &&
     shopping.runs.length === 0 &&
     shopping.misplaced.length === 0;
+  const toEverything = useEverythingShortcut(entities.entities);
 
   return (
-    <PageShell title={labels.pages.shopping} incompleteCount={scoped.incomplete.length}>
+    <PageShell
+      toEverything={toEverything}
+      title={labels.pages.shopping}
+      incompleteCount={scoped.incomplete.length}
+    >
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <MissingItemForm

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { entityTone, groupEntities } from '../../lib/lookups';
+import { carouselReach, entityTone, groupEntities, scopeOptions } from '../../lib/lookups';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { AvatarPicker } from './AvatarPicker';
@@ -36,7 +36,7 @@ export function ScopeBar({
   onAvatarChanged,
 }: ScopeBarProps): ReactElement {
   const ordered = groupEntities(entities).flatMap((group) => group.entities);
-  const options: readonly (string | null)[] = [null, ...ordered.map((entity) => entity.id)];
+  const options = scopeOptions(entities);
   const found = options.indexOf(scopeId);
   const index = found === -1 ? 0 : found;
   const scope = ordered.find((entity) => entity.id === scopeId);
@@ -78,7 +78,7 @@ export function ScopeBar({
         {options.map((option, position) => {
           const distance = position - index;
           const away = Math.abs(distance);
-          if (away > 2) {
+          if (away > carouselReach) {
             return null;
           }
           const entity = ordered.find((candidate) => candidate.id === option);

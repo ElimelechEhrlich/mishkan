@@ -17,6 +17,8 @@ type PageShellProps = {
   readonly heading?: ReactNode;
   /** Leaves out the bottom bar, so a page typed into keeps the space above the keyboard. */
   readonly hideNav?: boolean;
+  /** When given, a button in the header goes straight back to everything. */
+  readonly toEverything?: (() => void) | undefined;
 };
 
 const headerLinkClass =
@@ -30,6 +32,7 @@ export function PageShell({
   inner = false,
   heading,
   hideNav = false,
+  toEverything,
 }: PageShellProps): ReactElement {
   const navigate = useNavigate();
   return (
@@ -59,12 +62,22 @@ export function PageShell({
           <div className="flex items-end gap-1">
             <div className="flex min-w-0 flex-1 flex-col">
               {subtitle !== undefined && (
-                <p className="text-[13px] font-medium text-muted">{subtitle}</p>
+                <p className="truncate text-[13px] font-medium text-muted">{subtitle}</p>
               )}
               <h1 className="truncate font-display text-[30px] leading-9 font-bold tracking-tight">
                 {title}
               </h1>
             </div>
+            {toEverything !== undefined && (
+              <button
+                type="button"
+                aria-label={labels.scope.toEverything}
+                onClick={toEverything}
+                className="flex size-10 animate-fade-in items-center justify-center rounded-xl bg-primary-soft text-primary transition active:scale-95"
+              >
+                <Icon name="home" className="size-5.5" />
+              </button>
+            )}
             <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>
               <Icon name="search" className="size-5.5" />
             </Link>

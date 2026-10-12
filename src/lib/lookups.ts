@@ -118,6 +118,16 @@ export function groupEntities<T extends { readonly kind: EntityKind }>(
     .filter((group) => group.entities.length > 0);
 }
 
+/** How many places on each side of the chosen one the entity carousel shows. */
+export const carouselReach = 2;
+
+/** The choices of the entity carousel in order: everything (null) first, then each entity. */
+export function scopeOptions(
+  entities: readonly { readonly id: string; readonly kind: EntityKind }[],
+): (string | null)[] {
+  return [null, ...groupEntities(entities).flatMap((group) => group.entities.map((e) => e.id))];
+}
+
 /** The name of a domain as a topic shared across entities, such as בריאות. */
 function topicName(name: string): string {
   return name.trim();
