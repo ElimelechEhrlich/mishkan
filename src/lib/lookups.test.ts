@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { carouselPlace, domainTopics, glideTarget, groupByTopic, topicDomainIds } from './lookups';
+import {
+  awayAtOffset,
+  carouselPlace,
+  domainTopics,
+  glideTarget,
+  groupByTopic,
+  topicDomainIds,
+} from './lookups';
 import type { EntityWithDomains } from '../types/domain';
 
 type DomainSpec = readonly [id: string, name: string, role?: 'regular' | 'shopping' | 'debts'];
@@ -94,6 +101,15 @@ describe('carouselPlace', () => {
   it('is part way between two places while moving, and out of sight far away', () => {
     expect(carouselPlace(0.5).offset).toBe(46);
     expect(carouselPlace(9).opacity).toBe(0);
+  });
+});
+
+describe('awayAtOffset', () => {
+  it('turns a carousel place back into places from the middle', () => {
+    expect(awayAtOffset(0)).toBe(0);
+    expect(awayAtOffset(92)).toBe(1);
+    expect(awayAtOffset(carouselPlace(1.5).offset)).toBeCloseTo(1.5, 5);
+    expect(awayAtOffset(-5)).toBe(0);
   });
 });
 

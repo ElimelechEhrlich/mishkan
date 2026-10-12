@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import {
+  awayAtOffset,
   carouselPlace,
   carouselReach,
   entityTone,
@@ -13,7 +14,7 @@ import {
   mainCircle,
   scopeOptions,
 } from '../../lib/lookups';
-import { everythingFlight, flyWhile } from '../../lib/flight';
+import { everythingFlight, flyDownAndOn, flyWhile } from '../../lib/flight';
 import { useHouseholdContext } from '../../hooks/useRouteContext';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
@@ -36,12 +37,6 @@ type ScopeBarProps = {
  * way past its last place. It always takes off from and lands on this very spot.
  */
 const gate = everythingReach + 0.5;
-
-/**
- * How briskly "everything", once landed, catches up with its place: a spring that sets off
- * from standing and settles without overshooting, in radians per second.
- */
-const catchUpSpring = 16;
 
 /** How far the finger moves the carousel by one place, in pixels. */
 const stepWidth = 80;
@@ -93,14 +88,15 @@ export function ScopeBar({
   const upRef = useRef(up);
   upRef.current = up;
   /**
-   * After coming back down while the carousel still turns: how many places from the middle
-   * "everything" is drawn, apart from the carousel. It first lands where it left (the gate),
-   * then catches up along the carousel to its own place; null when it moves with it.
+   * While coming back down as the carousel turns: how many places from the middle
+   * "everything" is drawn, apart from the carousel. It lands where it left (the gate) and
+   * goes on along the carousel to its own place; null when it moves with the carousel.
    */
   const [held, setHeld] = useState<number | null>(null);
   const heldRef = useRef<number | null>(null);
-  const chase = useRef(0);
-  /** Where the carousel rests, for the catching up that runs between renders. */
+  /** Stops the way down while it is still going. */
+  const stopLanding = useRef<() => void>(() => undefined);
+  /** Where the carousel rests, for the way down that runs between renders. */
   const indexRef = useRef(index);
   indexRef.current = index;
 
@@ -128,7 +124,7 @@ export function ScopeBar({
   useEffect(() => {
     return (): void => {
       cancelAnimationFrame(frame.current);
-      cancelAnimationFrame(chase.current);
+      stopLanding.current();
       setEverythingUp(null);
     };
   }, [setEverythingUp]);
@@ -143,7 +139,7 @@ export function ScopeBar({
       return;
     }
     upRef.current = nowUp;
-    cancelAnimationFrame(chase.current);
+    stopLanding.current();
     if (nowUp) {
       // Drawn at the gate first, so it takes off from there however fast the carousel turns.
       flushSync(() => {
@@ -155,43 +151,28 @@ export function ScopeBar({
       });
       return;
     }
-    flyWhile(
+    // Down the arc it went up, and on along the carousel to its own place, in one move.
+    const gateOffset = carouselPlace(gate).offset;
+    stopLanding.current = flyDownAndOn(
       everythingFlight,
       () => {
         setMoving(position);
         setEverythingUp(false);
         hold(gate);
       },
-      catchUp,
+      {
+        length: () => {
+          const place = Math.max(0, Math.min(gate, movingRef.current ?? indexRef.current));
+          return gateOffset - carouselPlace(place).offset;
+        },
+        moveTo: (pixels) => {
+          hold(awayAtOffset(gateOffset - pixels));
+        },
+        done: () => {
+          hold(null);
+        },
+      },
     );
-  }
-
-  /**
-   * Once landed, "everything" sets off from standing and catches up along the carousel with
-   * its own place, wherever the carousel has got to, and settles there gently.
-   */
-  function catchUp(): void {
-    let speed = 0;
-    let last = performance.now();
-    const step = (now: number): void => {
-      const away = heldRef.current;
-      if (away === null) {
-        return;
-      }
-      const seconds = Math.min(0.05, Math.max(0, now - last) / 1000);
-      last = now;
-      // Its own place: as many places from the middle as the carousel is from the start.
-      const place = movingRef.current ?? indexRef.current;
-      speed += (catchUpSpring ** 2 * (place - away) - 2 * catchUpSpring * speed) * seconds;
-      const next = away + speed * seconds;
-      if (Math.abs(next - place) < 0.005 && Math.abs(speed) < 0.05) {
-        hold(null);
-        return;
-      }
-      hold(next);
-      chase.current = requestAnimationFrame(step);
-    };
-    chase.current = requestAnimationFrame(step);
   }
 
   /** Comes to rest on a place and makes it the choice. */

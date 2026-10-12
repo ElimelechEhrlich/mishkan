@@ -274,6 +274,22 @@ export function carouselPlace(away: number): {
   };
 }
 
+/**
+ * The other way round from `carouselPlace`: how many places from the middle a picture is
+ * when it sits this many pixels to the side.
+ */
+export function awayAtOffset(offset: number): number {
+  const last = placeOffsets.length - 1;
+  for (let place = 0; place < last; place += 1) {
+    const low = placeOffsets[place] ?? 0;
+    const high = placeOffsets[place + 1] ?? low;
+    if (offset <= high || place === last - 1) {
+      return place + Math.max(0, Math.min(1, (offset - low) / (high - low)));
+    }
+  }
+  return last;
+}
+
 /** How long a flicked carousel keeps going, in milliseconds: it slows down by this much. */
 export const glideTime = 280;
 
