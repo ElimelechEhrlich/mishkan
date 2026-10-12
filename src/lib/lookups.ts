@@ -181,26 +181,36 @@ export type TopicGroup<T> = {
   readonly rows: readonly T[];
 };
 
+/** Kinds that belong in a shopping or debts domain, and are shown in tabs of their own. */
+const systemKinds: readonly string[] = ['missing_item', 'shopping_run', 'debt'];
+
 /**
- * Rows grouped by the topic of their domain, in the order of `domainTopics`.
- * Topics with nothing in them are left out; so are rows outside a regular domain.
+ * Rows grouped by the topic of their domain, in the order of `domainTopics`. Missing items,
+ * runs and debts are left out, as their domains have tabs of their own; anything else in a
+ * shopping or debts domain (such as a task converted from a missing item) is grouped under
+ * that domain's name at the end, so nothing goes missing. Topics with nothing in them are
+ * left out.
  */
-export function groupByTopic<T extends { readonly item: { readonly domain_id: string | null } }>(
-  entities: readonly EntityWithDomains[],
-  rows: readonly T[],
-): TopicGroup<T>[] {
+export function groupByTopic<
+  T extends { readonly item: { readonly domain_id: string | null; readonly kind: string } },
+>(entities: readonly EntityWithDomains[], rows: readonly T[]): TopicGroup<T>[] {
   const topicOf = new Map<string, string>();
+  const systemTopics: string[] = [];
   for (const entity of entities) {
     for (const domain of entity.domains) {
-      if (domain.role === 'regular') {
-        topicOf.set(domain.id, topicName(domain.name));
+      const name = topicName(domain.name);
+      topicOf.set(domain.id, name);
+      if (domain.role !== 'regular' && !systemTopics.includes(name)) {
+        systemTopics.push(name);
       }
     }
   }
-  return domainTopics(entities)
+  const regular = domainTopics(entities);
+  const shown = rows.filter((row) => !systemKinds.includes(row.item.kind));
+  return [...regular, ...systemTopics.filter((topic) => !regular.includes(topic))]
     .map((topic) => ({
       topic,
-      rows: rows.filter(
+      rows: shown.filter(
         (row) => row.item.domain_id !== null && topicOf.get(row.item.domain_id) === topic,
       ),
     }))

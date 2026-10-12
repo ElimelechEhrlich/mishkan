@@ -67,12 +67,20 @@ describe('topicDomainIds', () => {
 describe('groupByTopic', () => {
   it('gathers rows of every entity under their topic and leaves out empty ones', () => {
     const rows = [
-      { item: { domain_id: 'b2' } },
-      { item: { domain_id: 'a2' } },
-      { item: { domain_id: 'h2' } },
+      { item: { domain_id: 'b2', kind: 'task' } },
+      { item: { domain_id: 'a2', kind: 'note' } },
+      { item: { domain_id: 'h2', kind: 'missing_item' } },
     ];
     const groups = groupByTopic(entities, rows);
     expect(groups.map((group) => group.topic)).toEqual(['בריאות']);
     expect(groups[0]?.rows).toHaveLength(2);
+  });
+
+  it('keeps a task left in a shopping domain, under that domain at the end', () => {
+    const rows = [
+      { item: { domain_id: 'b3', kind: 'task' } },
+      { item: { domain_id: 'a1', kind: 'task' } },
+    ];
+    expect(groupByTopic(entities, rows).map((group) => group.topic)).toEqual(['חינוך', 'קניות']);
   });
 });
