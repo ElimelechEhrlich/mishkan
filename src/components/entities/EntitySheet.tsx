@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { labels } from '../../constants/labels';
@@ -24,7 +24,7 @@ function hasProfile(entity: EntityWithDomains): boolean {
 }
 
 /**
- * Everything about one entity, opened from its picture: the picture itself (tap to change it),
+ * Everything about one entity, in a window of its own opened from its picture: the picture itself (tap to change it),
  * and for a child, a parent or the couple the whole profile, unfolded.
  */
 export function EntitySheet({
@@ -35,11 +35,27 @@ export function EntitySheet({
 }: EntitySheetProps): ReactElement {
   const [picking, setPicking] = useState(false);
 
-  // Drawn at the end of the page, above the header and the bottom bar.
+  // While it is open the page behind it stays still: only the window scrolls.
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = 'hidden';
+    return (): void => {
+      root.style.overflow = previous;
+    };
+  }, []);
+
+  // A window of its own in the middle of the screen, drawn at the end of the page.
   return createPortal(
     <div
-      className="fixed inset-0 z-30 flex animate-fade-in flex-col justify-end bg-ink/30 backdrop-blur-[2px]"
+      className="fixed inset-0 z-30 flex animate-fade-in items-center justify-center overscroll-contain bg-ink/40 p-4 backdrop-blur-[2px]"
       onClick={onClose}
+      onTouchStart={(event) => {
+        event.stopPropagation();
+      }}
+      onTouchEnd={(event) => {
+        event.stopPropagation();
+      }}
     >
       <div
         role="dialog"
@@ -48,13 +64,12 @@ export function EntitySheet({
         onClick={(event) => {
           event.stopPropagation();
         }}
-        className="mx-auto flex max-h-[90dvh] w-full max-w-xl animate-sheet-up flex-col gap-4 overflow-y-auto overscroll-contain rounded-t-[28px] bg-paper *:shrink-0 px-4 pt-2.5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-sheet"
+        className="flex max-h-[85dvh] w-full max-w-md animate-fade-in flex-col gap-4 overflow-y-auto overscroll-contain rounded-[28px] bg-paper px-4 pt-3 pb-5 shadow-sheet *:shrink-0"
       >
-        <span className="mx-auto h-1 w-9 shrink-0 rounded-full bg-line" />
         <div className="flex justify-start">
           <IconButton icon="close" label={labels.actions.close} onClick={onClose} />
         </div>
-        <div className="-mt-6 flex flex-col items-center gap-2">
+        <div className="-mt-10 flex flex-col items-center gap-2">
           <button
             type="button"
             aria-label={labels.avatar.change}
