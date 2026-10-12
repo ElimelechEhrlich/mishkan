@@ -37,8 +37,11 @@ type ScopeBarProps = {
  */
 const gate = everythingReach + 0.5;
 
-/** How quickly "everything", once landed, catches up with its place, in milliseconds. */
-const catchUpTime = 90;
+/**
+ * How briskly "everything", once landed, catches up with its place: a spring that sets off
+ * from standing and settles without overshooting, in radians per second.
+ */
+const catchUpSpring = 16;
 
 /** How far the finger moves the carousel by one place, in pixels. */
 const stepWidth = 80;
@@ -96,8 +99,10 @@ export function ScopeBar({
    */
   const [held, setHeld] = useState<number | null>(null);
   const heldRef = useRef<number | null>(null);
-  /** When it landed and last caught up, in milliseconds; null while still flying down. */
-  const caughtAt = useRef<number | null>(null);
+  const chase = useRef(0);
+  /** Where the carousel rests, for the catching up that runs between renders. */
+  const indexRef = useRef(index);
+  indexRef.current = index;
 
   function hold(away: number | null): void {
     heldRef.current = away;
@@ -123,6 +128,7 @@ export function ScopeBar({
   useEffect(() => {
     return (): void => {
       cancelAnimationFrame(frame.current);
+      cancelAnimationFrame(chase.current);
       setEverythingUp(null);
     };
   }, [setEverythingUp]);
@@ -133,11 +139,11 @@ export function ScopeBar({
     // the gate, on the carousel's own pace and always on the same arc.
     const nowUp = position > gate;
     if (nowUp === upRef.current) {
-      catchUp(position);
       setMoving(position);
       return;
     }
     upRef.current = nowUp;
+    cancelAnimationFrame(chase.current);
     if (nowUp) {
       // Drawn at the gate first, so it takes off from there however fast the carousel turns.
       flushSync(() => {
@@ -149,7 +155,6 @@ export function ScopeBar({
       });
       return;
     }
-    caughtAt.current = null;
     flyWhile(
       everythingFlight,
       () => {
@@ -157,28 +162,36 @@ export function ScopeBar({
         setEverythingUp(false);
         hold(gate);
       },
-      () => {
-        // The moment it lands it carries on along the carousel, without a pause; a carousel
-        // already at rest takes it there with its own transition.
-        caughtAt.current = performance.now();
-        if (movingRef.current === null) {
-          hold(null);
-        }
-      },
+      catchUp,
     );
   }
 
-  /** Once landed, brings "everything" closer to its own place on every frame of the turn. */
-  function catchUp(position: number): void {
-    const away = heldRef.current;
-    const since = caughtAt.current;
-    if (away === null || since === null) {
-      return;
-    }
-    const now = performance.now();
-    caughtAt.current = now;
-    const next = position + (away - position) * Math.exp(-(now - since) / catchUpTime);
-    hold(Math.abs(next - position) < 0.01 ? null : next);
+  /**
+   * Once landed, "everything" sets off from standing and catches up along the carousel with
+   * its own place, wherever the carousel has got to, and settles there gently.
+   */
+  function catchUp(): void {
+    let speed = 0;
+    let last = performance.now();
+    const step = (now: number): void => {
+      const away = heldRef.current;
+      if (away === null) {
+        return;
+      }
+      const seconds = Math.min(0.05, Math.max(0, now - last) / 1000);
+      last = now;
+      // Its own place: as many places from the middle as the carousel is from the start.
+      const place = movingRef.current ?? indexRef.current;
+      speed += (catchUpSpring ** 2 * (place - away) - 2 * catchUpSpring * speed) * seconds;
+      const next = away + speed * seconds;
+      if (Math.abs(next - place) < 0.005 && Math.abs(speed) < 0.05) {
+        hold(null);
+        return;
+      }
+      hold(next);
+      chase.current = requestAnimationFrame(step);
+    };
+    chase.current = requestAnimationFrame(step);
   }
 
   /** Comes to rest on a place and makes it the choice. */
@@ -188,10 +201,6 @@ export function ScopeBar({
     const target = options[next];
     setMoving(null);
     setEverythingUp(null);
-    // Still flying down, it lands where it left first.
-    if (caughtAt.current !== null) {
-      hold(null);
-    }
     if (target !== undefined && next !== index) {
       onChange(target);
     }
