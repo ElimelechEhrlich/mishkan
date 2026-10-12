@@ -31,7 +31,8 @@ export function TopicSectionList({
     <div className="flex flex-col gap-2.5">
       {sections.map((section) => (
         <TopicSection
-          key={section.topic}
+          // A lone section (one domain chosen) opens, even if it was folded among the others.
+          key={`${section.topic}-${sections.length === 1 ? 'alone' : 'among'}`}
           topic={section.topic}
           entries={section.rows}
           lookups={lookups}
