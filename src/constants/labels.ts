@@ -453,6 +453,10 @@ export const labels = {
     missingCount: 'פריטים חסרים',
     noDebts: 'אין חובות פתוחים',
   },
+  listView: {
+    time: 'לפי זמן',
+    domain: 'לפי תחום',
+  },
   homeView: {
     label: 'סידור',
     kind: 'לפי סוג',

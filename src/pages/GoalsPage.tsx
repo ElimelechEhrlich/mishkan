@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { ScopeBar } from '../components/entities/ScopeBar';
+import { TopicSectionList } from '../components/entities/TopicSectionList';
+import { ListViewSwitch } from '../components/items/ListViewSwitch';
 import { TopicBar } from '../components/entities/TopicBar';
 import { GoalList } from '../components/goals/GoalList';
 import { ResolvedIssues } from '../components/goals/ResolvedIssues';
@@ -9,6 +11,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { Tabs } from '../components/ui/Tabs';
 import { labels } from '../constants/labels';
 import { useDoneItems } from '../hooks/useDoneItems';
+import { useDomainGroups } from '../hooks/useDomainGroups';
 import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
@@ -17,26 +20,38 @@ import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 
 export function GoalsPage(): ReactElement {
-  const { members, scopeId, setScope, setTopic } = useHouseholdContext();
+  const { members, scopeId, setScope, setTopic, listView, setListView } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const scoped = useScopedItems(items, entities.entities, true);
   const lookups = useLookups(entities.entities, members);
   const resolved = useDoneItems('issue');
   const view = useOpenSegments(scoped.goals, scoped.steps);
+  const domainGroups = useDomainGroups(view.visible, entities.entities, scoped.scope);
 
   return (
     <PageShell title={labels.pages.goals} incompleteCount={scoped.incomplete.length}>
       <ErrorBanner message={items.error ?? resolved.error ?? entities.error} />
       <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
+      <ListViewSwitch value={listView} onChange={setListView} />
       <Tabs options={view.options} value={view.segment} onChange={view.setSegment} />
-      <GoalList
-        entries={view.visible}
-        lookups={lookups}
-        loading={items.loading}
-        onComplete={items.completeItem}
-      />
+      {listView === 'domain' ? (
+        <TopicSectionList
+          sections={domainGroups}
+          lookups={lookups}
+          loading={items.loading}
+          onComplete={items.completeItem}
+          emptyText={labels.status.noGoals}
+        />
+      ) : (
+        <GoalList
+          entries={view.visible}
+          lookups={lookups}
+          loading={items.loading}
+          onComplete={items.completeItem}
+        />
+      )}
       <ResolvedIssues
         issues={resolved.items.filter(scoped.inScope)}
         lookups={lookups}

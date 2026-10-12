@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { useShowByDomain } from '../../hooks/useShowByDomain';
 import { entityTone, groupEntities } from '../../lib/lookups';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
@@ -43,7 +42,6 @@ export function ScopeBar({
   const scope = ordered.find((entity) => entity.id === scopeId);
   const touchStart = useRef<number | null>(null);
   const [picking, setPicking] = useState(false);
-  const byDomain = useShowByDomain();
   const canChangeAvatar = scope !== undefined && onAvatarChanged !== undefined;
 
   function go(next: number): void {
@@ -174,16 +172,6 @@ export function ScopeBar({
                 }`}
           </span>
         </div>
-        {byDomain.available && (
-          <button
-            type="button"
-            onClick={byDomain.show}
-            className="flex h-9 items-center gap-1 rounded-full bg-primary-soft px-4 text-[13px] font-semibold text-primary transition active:scale-95"
-          >
-            {labels.scope.byDomain}
-            <Icon name="forward" className="size-4" />
-          </button>
-        )}
       </div>
       {picking && scope !== undefined && onAvatarChanged !== undefined && (
         <AvatarPicker

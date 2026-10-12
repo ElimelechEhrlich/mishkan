@@ -176,7 +176,13 @@ export type HouseholdContext = SessionContext & {
   /** How the main page arranges what is open: by kind, or by domain. */
   readonly homeView: HomeView;
   readonly setHomeView: (view: HomeView) => void;
+  /** How the tabs of a kind arrange their list: by time, or by domain. */
+  readonly listView: ListView;
+  readonly setListView: (view: ListView) => void;
 };
 
 /** The two arrangements of the main page. */
 export type HomeView = 'kind' | 'domain';
+
+/** The two arrangements of the tabs of a kind. */
+export type ListView = 'time' | 'domain';

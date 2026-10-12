@@ -12,17 +12,20 @@ type TopicSectionListProps = {
   readonly lookups: Lookups;
   readonly loading: boolean;
   readonly onComplete: (item: Item) => void;
+  /** Shown when there is nothing to list. */
+  readonly emptyText?: string;
 };
 
-/** Every topic that has open items, across all entities, each a card that folds. */
+/** Every topic that has open items, each a card that folds; empty topics are left out. */
 export function TopicSectionList({
   sections,
   lookups,
   loading,
   onComplete,
+  emptyText = labels.status.emptySegment,
 }: TopicSectionListProps): ReactElement {
   if (sections.length === 0) {
-    return loading ? <SkeletonList /> : <EmptyState text={labels.status.emptySegment} />;
+    return loading ? <SkeletonList /> : <EmptyState text={emptyText} />;
   }
   return (
     <div className="flex flex-col gap-2.5">
