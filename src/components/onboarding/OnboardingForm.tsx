@@ -17,6 +17,8 @@ type OnboardingFormProps = {
   readonly unclaimedParents: readonly UnclaimedParent[];
   readonly onCreate: (householdName: string, parentName: string) => void;
   readonly onJoin: (parentName: string, parentEntityId: string | null) => void;
+  /** The account signed in, so one signed in with the wrong address sees it. */
+  readonly email: string | null;
   readonly onSignOut: () => void;
 };
 
@@ -39,6 +41,7 @@ export function OnboardingForm({
   unclaimedParents,
   onCreate,
   onJoin,
+  email,
   onSignOut,
 }: OnboardingFormProps): ReactElement {
   const [mode, setMode] = useState<Mode>(inviteCode === '' ? 'create' : 'join');
@@ -111,6 +114,13 @@ export function OnboardingForm({
           {mode === 'create' ? labels.actions.createHousehold : labels.actions.joinHousehold}
         </Button>
       </form>
+      {email !== null && (
+        <p className="text-center text-[13px] text-muted">
+          {labels.onboarding.signedInAs} <span dir="ltr">{email}</span>
+          <br />
+          {labels.onboarding.wrongAccount}
+        </p>
+      )}
       <Button variant="ghost" onClick={onSignOut}>
         {labels.actions.signOut}
       </Button>

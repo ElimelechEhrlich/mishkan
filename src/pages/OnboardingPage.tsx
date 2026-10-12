@@ -5,7 +5,7 @@ import { useOnboarding } from '../hooks/useOnboarding';
 import { useSessionContext } from '../hooks/useRouteContext';
 
 export function OnboardingPage(): ReactElement {
-  const { signOut } = useSessionContext();
+  const { signOut, email } = useSessionContext();
   const [searchParams] = useSearchParams();
   const onboarding = useOnboarding(searchParams.get('code'));
 
@@ -18,6 +18,7 @@ export function OnboardingPage(): ReactElement {
       unclaimedParents={onboarding.unclaimedParents}
       onCreate={onboarding.create}
       onJoin={onboarding.join}
+      email={email}
       onSignOut={signOut}
     />
   );

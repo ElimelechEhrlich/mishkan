@@ -158,6 +158,8 @@ export type AttachmentWithUrl = Attachment & { readonly url: string | null };
 /** Provided by RequireAuth to every signed-in route. */
 export type SessionContext = {
   readonly userId: string;
+  /** The address the user signed in with, shown where it helps to know which account it is. */
+  readonly email: string | null;
   readonly signOut: () => void;
 };
 

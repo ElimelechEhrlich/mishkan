@@ -21,6 +21,10 @@ export function RequireAuth(): ReactElement {
     return <Navigate to={`/login${location.search}`} replace />;
   }
 
-  const context: SessionContext = { userId: session.user.id, signOut };
+  const context: SessionContext = {
+    userId: session.user.id,
+    email: session.user.email ?? null,
+    signOut,
+  };
   return <Outlet context={context} />;
 }
