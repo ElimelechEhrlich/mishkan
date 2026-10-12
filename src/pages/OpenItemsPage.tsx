@@ -39,6 +39,7 @@ export function OpenItemsPage(): ReactElement {
     >
       <ErrorBanner message={items.error ?? entities.error} />
       <ScopeBar
+        onEntityChanged={entities.reload}
         entities={entities.entities}
         scopeId={scopeId}
         onChange={setScope}

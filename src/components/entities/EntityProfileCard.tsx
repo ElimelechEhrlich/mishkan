@@ -18,6 +18,8 @@ type EntityProfileCardProps = {
   readonly entity: EntityWithDomains;
   /** Reloads the entity, and its items, after its fields are saved. */
   readonly onEntityChanged: () => Promise<void>;
+  /** Opens unfolded, such as in the entity's own sheet. */
+  readonly defaultExpanded?: boolean;
 };
 
 type OpenRow = 'date' | 'idNumber' | null;
@@ -32,9 +34,10 @@ const noop = (): void => undefined;
 export function EntityProfileCard({
   entity,
   onEntityChanged,
+  defaultExpanded = false,
 }: EntityProfileCardProps): ReactElement {
   const profile = useEntityProfile(entity, onEntityChanged);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [openRow, setOpenRow] = useState<OpenRow>(null);
   const { occasion, facts } = profile;
   const isCouple = entity.kind === 'couple';

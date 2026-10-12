@@ -16,6 +16,8 @@ export type TimeGroups = Readonly<Record<OpenSegment, readonly ListEntry[]>>;
 export type Overview = {
   readonly tasks: TimeGroups;
   readonly goals: TimeGroups;
+  /** Open issues, dated by their open steps. */
+  readonly issues: readonly ListEntry[];
   /** Open appointments; they always have a day. */
   readonly appointments: readonly ListEntry[];
   /** Notes, newest first. */
@@ -65,7 +67,11 @@ export function useOverview(
       steps,
     );
     const goals = byTime(
-      rows.filter((item) => item.kind === 'goal' || item.kind === 'issue'),
+      rows.filter((item) => item.kind === 'goal'),
+      steps,
+    );
+    const issues = toListEntries(
+      rows.filter((item) => item.kind === 'issue'),
       steps,
     );
     const appointments = toListEntries(
@@ -73,10 +79,11 @@ export function useOverview(
       [],
     );
     const today = todayIso();
-    const active = [...tasks.active, ...goals.active, ...appointments];
+    const active = [...tasks.active, ...goals.active, ...issues, ...appointments];
     return {
       tasks,
       goals,
+      issues,
       appointments,
       overdue: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'overdue').length,
       today: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'today').length,

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { labels } from '../constants/labels';
 import { toListEntries } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
@@ -25,7 +26,11 @@ export type UseGoalTabs = {
 
 /** The goals page: goals and issues apart, each in a tab of its own. */
 export function useGoalTabs(open: readonly Item[], steps: readonly Item[]): UseGoalTabs {
-  const [tab, setTab] = useState<GoalTab>('goals');
+  // The overview's issues card opens straight on the issues tab.
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<GoalTab>(
+    searchParams.get('tab') === 'issues' ? 'issues' : 'goals',
+  );
   const goalItems = useMemo(() => open.filter((item) => item.kind === 'goal'), [open]);
   const issueItems = useMemo(() => open.filter((item) => item.kind === 'issue'), [open]);
   const goals = useOpenSegments(goalItems, steps);

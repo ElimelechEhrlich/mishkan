@@ -90,6 +90,7 @@ export function OverviewCards({
     narrowed &&
     total(overview.tasks) +
       total(overview.goals) +
+      overview.issues.length +
       overview.appointments.length +
       overview.notes.length ===
       0;
@@ -150,6 +151,22 @@ export function OverviewCards({
           linkLabel={labels.overview.allGoals}
         >
           {timeCard(overview.goals, true)}
+        </OverviewCard>
+      )}
+
+      {shown(overview.issues.length) && (
+        <OverviewCard
+          icon="alert"
+          title={labels.overview.issues}
+          summary={
+            overview.issues.length === 0
+              ? labels.goals.noIssues
+              : `${String(overview.issues.length)} ${labels.overview.issuesCount}`
+          }
+          to="/goals?tab=issues"
+          linkLabel={labels.overview.allIssues}
+        >
+          {sectionGroups(overview.issues, true)}
         </OverviewCard>
       )}
 

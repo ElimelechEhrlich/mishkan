@@ -11,7 +11,7 @@ import {
 import { everythingFlight, flyWhile } from '../../lib/flight';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
-import { AvatarPicker } from './AvatarPicker';
+import { EntitySheet } from './EntitySheet';
 import { EntityAvatar } from './EntityAvatar';
 
 type ScopeBarProps = {
@@ -21,8 +21,8 @@ type ScopeBarProps = {
   readonly onChange: (entityId: string | null) => void;
   /** Open rows per entity id; left out where counts would not match the page. */
   readonly counts?: ReadonlyMap<string, number> | undefined;
-  /** When given, tapping the chosen entity's picture changes it; then this reloads. */
-  readonly onAvatarChanged?: (() => Promise<void>) | undefined;
+  /** Reloads the entities after a change made from the chosen entity's sheet. */
+  readonly onEntityChanged: () => Promise<void>;
 };
 
 /** How far from the middle the pictures sit, one and two places away, in pixels. */
@@ -40,7 +40,7 @@ export function ScopeBar({
   scopeId,
   onChange,
   counts,
-  onAvatarChanged,
+  onEntityChanged,
 }: ScopeBarProps): ReactElement {
   const ordered = groupEntities(entities).flatMap((group) => group.entities);
   const options = scopeOptions(entities);
@@ -48,8 +48,8 @@ export function ScopeBar({
   const index = found === -1 ? 0 : found;
   const scope = ordered.find((entity) => entity.id === scopeId);
   const touchStart = useRef<number | null>(null);
-  const [picking, setPicking] = useState(false);
-  const canChangeAvatar = scope !== undefined && onAvatarChanged !== undefined;
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const canOpenSheet = scope !== undefined;
 
   function go(next: number): void {
     const target = options[Math.max(0, Math.min(options.length - 1, next))];
@@ -105,14 +105,14 @@ export function ScopeBar({
               data-flight={option === null ? everythingFlight : undefined}
               aria-pressed={away === 0}
               aria-label={
-                away === 0 && canChangeAvatar
-                  ? labels.avatar.change
+                away === 0 && canOpenSheet
+                  ? labels.scope.openEntity
                   : (entity?.name ?? labels.entityPage.everything)
               }
-              tabIndex={away === 0 && !canChangeAvatar ? -1 : 0}
+              tabIndex={away === 0 && !canOpenSheet ? -1 : 0}
               onClick={() => {
                 if (away === 0) {
-                  setPicking(canChangeAvatar);
+                  setSheetOpen(canOpenSheet);
                 } else {
                   go(position);
                 }
@@ -139,9 +139,9 @@ export function ScopeBar({
                   />
                 )}
               </span>
-              {away === 0 && canChangeAvatar && (
+              {away === 0 && canOpenSheet && (
                 <span className="absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card">
-                  <Icon name="edit" className="size-4" />
+                  <Icon name="user" className="size-4" />
                 </span>
               )}
             </button>
@@ -189,13 +189,13 @@ export function ScopeBar({
           </span>
         </div>
       </div>
-      {picking && scope !== undefined && onAvatarChanged !== undefined && (
-        <AvatarPicker
+      {sheetOpen && scope !== undefined && (
+        <EntitySheet
           entity={scope}
           tone={entityTone(entities.indexOf(scope))}
-          onChanged={onAvatarChanged}
+          onEntityChanged={onEntityChanged}
           onClose={() => {
-            setPicking(false);
+            setSheetOpen(false);
           }}
         />
       )}

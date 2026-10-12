@@ -38,7 +38,12 @@ export function ShoppingPage(): ReactElement {
       incompleteCount={scoped.incomplete.length}
     >
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />
-      <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
+      <ScopeBar
+        onEntityChanged={entities.reload}
+        entities={entities.entities}
+        scopeId={scopeId}
+        onChange={setScope}
+      />
       <CategoryBar options={filter.options} value={filter.category} onChange={filter.setCategory} />
       <MissingItemForm
         key={scoped.scope?.id ?? 'all'}

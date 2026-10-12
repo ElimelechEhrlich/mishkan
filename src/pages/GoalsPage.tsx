@@ -42,7 +42,12 @@ export function GoalsPage(): ReactElement {
       incompleteCount={scoped.incomplete.length}
     >
       <ErrorBanner message={items.error ?? resolved.error ?? entities.error} />
-      <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
+      <ScopeBar
+        onEntityChanged={entities.reload}
+        entities={entities.entities}
+        scopeId={scopeId}
+        onChange={setScope}
+      />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
       <ListViewSwitch value={listView} onChange={setListView} />
       <Tabs options={tabs.options} value={tabs.tab} onChange={tabs.setTab} />

@@ -30,7 +30,12 @@ export function DebtsPage(): ReactElement {
       incompleteCount={scoped.incomplete.length}
     >
       <ErrorBanner message={debts.error ?? items.error ?? entities.error} />
-      <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
+      <ScopeBar
+        onEntityChanged={entities.reload}
+        entities={entities.entities}
+        scopeId={scopeId}
+        onChange={setScope}
+      />
       <DebtSummary owedToUs={debts.owedToUs} weOwe={debts.weOwe} />
       <DebtSection
         title={labels.debtDirection.owed_to_us}

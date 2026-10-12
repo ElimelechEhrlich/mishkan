@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { DomainSectionList } from '../components/entities/DomainSectionList';
-import { EntityProfileCard } from '../components/entities/EntityProfileCard';
 import { ScopeBar } from '../components/entities/ScopeBar';
 import { TopicBar } from '../components/entities/TopicBar';
 import { TopicSectionList } from '../components/entities/TopicSectionList';
@@ -22,7 +21,6 @@ import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
 import { useOccasionReminders } from '../hooks/useOccasionReminders';
 import { useOverview } from '../hooks/useOverview';
-import { useProfileHost } from '../hooks/useProfileHost';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 import { useSlideDirection } from '../hooks/useSlideDirection';
@@ -45,7 +43,6 @@ export function OverviewPage(): ReactElement {
   const entityCounts = useEntityCounts(items.items.filter(scoped.inTopic), lookups.domainEntities);
   const [searchParams] = useSearchParams();
   const week = useWeekSummary(scoped.inScope, members, items.items);
-  const profile = useProfileHost(scoped.scope, entities, items);
   const remindersError = useOccasionReminders(entities.entities, items.reload);
   const topicSections = useTopicSections(entities.entities, scoped.items, scoped.steps);
   const entitySections = useEntitySections(scoped.scope, items.items, items.steps, scoped.topic);
@@ -64,11 +61,11 @@ export function OverviewPage(): ReactElement {
     >
       <ErrorBanner message={items.error ?? entities.error ?? remindersError ?? week.error} />
       <ScopeBar
+        onEntityChanged={entities.reload}
         entities={entities.entities}
         scopeId={scopeId}
         onChange={setScope}
         counts={entityCounts.counts}
-        onAvatarChanged={entities.reload}
       />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
       <Segmented options={homeViews} value={homeView} onChange={setHomeView} />
@@ -78,13 +75,6 @@ export function OverviewPage(): ReactElement {
           direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
         }`}
       >
-        {profile.profileEntity !== undefined && (
-          <EntityProfileCard
-            key={`profile-${profile.profileEntity.id}`}
-            entity={profile.profileEntity}
-            onEntityChanged={profile.onProfileSaved}
-          />
-        )}
         {homeView === 'kind' && (
           <>
             <SummaryTiles

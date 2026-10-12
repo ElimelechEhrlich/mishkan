@@ -25,7 +25,12 @@ export function IncompletePage(): ReactElement {
       incompleteCount={scoped.incomplete.length}
     >
       <ErrorBanner message={items.error ?? entities.error} />
-      <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
+      <ScopeBar
+        onEntityChanged={entities.reload}
+        entities={entities.entities}
+        scopeId={scopeId}
+        onChange={setScope}
+      />
       <IncompleteList
         items={scoped.incomplete}
         entities={entities.entities}

@@ -34,7 +34,12 @@ export function NotesPage(): ReactElement {
       incompleteCount={scoped.incomplete.length}
     >
       <ErrorBanner message={items.error ?? entities.error} />
-      <ScopeBar entities={entities.entities} scopeId={scopeId} onChange={setScope} />
+      <ScopeBar
+        onEntityChanged={entities.reload}
+        entities={entities.entities}
+        scopeId={scopeId}
+        onChange={setScope}
+      />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
       <ListViewSwitch value={listView} onChange={setListView} timeLabel={labels.listView.latest} />
       {listView === 'domain' ? (
