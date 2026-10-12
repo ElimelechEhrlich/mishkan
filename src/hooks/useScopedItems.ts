@@ -13,7 +13,7 @@ export type ScopedItems = {
   readonly topic: string | null;
   readonly items: readonly Item[];
   readonly assigned: readonly Item[];
-  /** Items waiting for completion, narrowed by entity only. */
+  /** Every item waiting for completion, whatever is chosen. */
   readonly incomplete: readonly Item[];
   readonly steps: readonly Item[];
   /** Open goals and issues. */
@@ -69,8 +69,8 @@ export function useScopedItems(
       topic,
       items: scopedItems,
       assigned: items.assigned.filter(inScope),
-      // Waiting items mostly lack a domain, so the topic leaves them be; the badge stays true.
-      incomplete: items.incomplete.filter(inEntity),
+      // "Needs completion" is one list for the whole home: no entity, topic or circle narrows it.
+      incomplete: items.incomplete,
       steps: items.steps.filter(inScope),
       goals: scopedItems.filter((item) => item.kind === 'goal' || item.kind === 'issue'),
       notes: scopedItems.filter((item) => item.kind === 'note'),
