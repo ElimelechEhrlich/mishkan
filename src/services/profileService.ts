@@ -79,7 +79,7 @@ type AutoReminder = {
   /** The prefix and the date: a new date replaces the open reminder of an older one. */
   readonly key: string;
   readonly title: string;
-  readonly domainId: string;
+  readonly domainId: string | null;
   readonly due: string;
 };
 

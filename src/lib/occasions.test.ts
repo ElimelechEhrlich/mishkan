@@ -72,6 +72,15 @@ describe('occasionReminders', () => {
     expect(reminder?.key.startsWith('anniversary:e1:')).toBe(true);
   });
 
+  it('leaves the domain empty when the entity has no events domain, instead of guessing', () => {
+    const plain = entity({ birth_date: '2016-10-28' });
+    const [reminder] = occasionReminders(
+      [{ ...plain, domains: plain.domains.filter((domain) => domain.id !== 'd-events') }],
+      '2027-10-01',
+    );
+    expect(reminder?.domainId).toBeNull();
+  });
+
   it('has nothing for an entity without a date, or a kind without one', () => {
     expect(occasionReminders([entity({})], '2026-10-11')).toEqual([]);
     expect(

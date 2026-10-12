@@ -63,20 +63,27 @@ export type OccasionReminder = {
   readonly prefix: string;
   readonly key: string;
   readonly title: string;
-  readonly domainId: string;
+  /** The entity's events domain; null without one, so it waits for completion. */
+  readonly domainId: string | null;
   readonly due: string;
 };
 
-/** An events domain if there is one, otherwise the first regular domain. */
-function reminderDomain(entity: EntityWithDomains): string | undefined {
-  const regular = entity.domains.filter((domain) => domain.role === 'regular');
-  const events = regular.find((domain) => domain.name.includes(labels.occasions.eventsDomain));
-  return (events ?? regular[0])?.id;
+/**
+ * The entity's events domain (a name with אירוע in it). Nothing else is chosen in its place: without one the reminder
+ * has no domain and waits in "needs completion" for a parent to place it.
+ */
+function reminderDomain(entity: EntityWithDomains): string | null {
+  return (
+    entity.domains.find(
+      (domain) => domain.role === 'regular' && domain.name.includes(labels.occasions.eventsDomain),
+    )?.id ?? null
+  );
 }
 
 /**
  * The reminder for the next Hebrew birthday or anniversary of each entity that has one:
- * a task a week before (or today, if that is already past), one per year.
+ * a task a week before (or today, if that is already past), one per year, in the entity's
+ * events domain.
  */
 export function occasionReminders(
   entities: readonly EntityWithDomains[],
@@ -85,7 +92,7 @@ export function occasionReminders(
   return entities.flatMap((entity) => {
     const occasion = occasionOf(entity);
     const domainId = reminderDomain(entity);
-    if (occasion === null || domainId === undefined) {
+    if (occasion === null) {
       return [];
     }
     const next = nextHebrewBirthday(occasion.date, occasion.afterSunset, today);

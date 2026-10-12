@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0011_appointments.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0012_events_domains.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -448,7 +448,7 @@ export type Database = {
           p_prefix: string;
           p_key: string;
           p_title: string;
-          p_domain_id: string;
+          p_domain_id: string | null;
           p_due: string;
         };
         Returns: undefined;
