@@ -1,5 +1,12 @@
 import { labels } from '../constants/labels';
-import type { EntityKind, EntityWithDomains, Item, Member, ShoppingTarget } from '../types/domain';
+import type {
+  EntityKind,
+  EntityWithDomains,
+  Item,
+  ItemData,
+  Member,
+  ShoppingTarget,
+} from '../types/domain';
 
 /** The classes of one entity color: a fill, a frame and text. */
 export type EntityTone = {
@@ -30,11 +37,14 @@ export type Lookups = {
   /** Domain id to the id of its entity. */
   readonly domainEntities: ReadonlyMap<string, string>;
   readonly memberNames: ReadonlyMap<string, string>;
+  /** The named values kept on items ("נתונים"), by item id. */
+  readonly itemData: ReadonlyMap<string, readonly ItemData[]>;
 };
 
 export function buildLookups(
   entities: readonly EntityWithDomains[],
   members: readonly Member[],
+  itemData: ReadonlyMap<string, readonly ItemData[]> = new Map(),
 ): Lookups {
   const domainLabels = new Map<string, string>();
   const domainTones = new Map<string, EntityTone>();
@@ -47,7 +57,7 @@ export function buildLookups(
     }
   });
   const memberNames = new Map(members.map((member) => [member.id, member.name]));
-  return { domainLabels, domainTones, domainEntities, memberNames };
+  return { domainLabels, domainTones, domainEntities, memberNames, itemData };
 }
 
 /** Every entity with its shopping domain, the home first: most missing items are for it. */

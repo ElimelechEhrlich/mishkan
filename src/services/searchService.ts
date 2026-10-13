@@ -16,25 +16,47 @@ function cleanTerm(term: string): string {
   return term.replace(/[,()%*\\]/g, ' ').trim();
 }
 
-/** Items of any status whose title, notes or answer contain the term; open ones first. */
+/**
+ * Items of any status whose title, notes or answer contain the term, or that keep a named
+ * value ("נתונים") whose name or value does; open ones first.
+ */
 export async function searchItems(term: string): Promise<Item[]> {
   const clean = cleanTerm(term);
   if (clean === '') {
     return [];
   }
   const pattern = `%${clean}%`;
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('hidden', false)
-    .or(`title.ilike.${pattern},notes.ilike.${pattern},answer.ilike.${pattern}`)
-    .order('status')
-    .order('created_at', { ascending: false })
-    .limit(itemLimit);
-  if (error !== null) {
-    throw new Error(error.message);
+  const [byText, byData] = await Promise.all([
+    supabase
+      .from('items')
+      .select('*')
+      .eq('hidden', false)
+      .or(`title.ilike.${pattern},notes.ilike.${pattern},answer.ilike.${pattern}`)
+      .order('status')
+      .order('created_at', { ascending: false })
+      .limit(itemLimit),
+    supabase
+      .from('item_data')
+      .select('item_id')
+      .or(`label.ilike.${pattern},value.ilike.${pattern}`)
+      .limit(itemLimit),
+  ]);
+  if (byText.error !== null) {
+    throw new Error(byText.error.message);
   }
-  return data;
+  if (byData.error !== null) {
+    throw new Error(byData.error.message);
+  }
+  const found = new Set(byText.data.map((item) => item.id));
+  const more = [...new Set(byData.data.map((row) => row.item_id))].filter((id) => !found.has(id));
+  if (more.length === 0) {
+    return byText.data;
+  }
+  const extra = await supabase.from('items').select('*').eq('hidden', false).in('id', more);
+  if (extra.error !== null) {
+    throw new Error(extra.error.message);
+  }
+  return [...byText.data, ...extra.data];
 }
 
 /** Values on profile lists, such as a hobby, that contain the term. */

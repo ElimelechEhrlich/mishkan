@@ -11,6 +11,7 @@ import type {
   DebtDirection,
   EntityWithDomains,
   Item,
+  ItemData,
   ItemKind,
   ItemUpdate,
 } from '../../types/domain';
@@ -30,6 +31,7 @@ import { ItemTextForm } from './ItemTextForm';
 import type { ReminderPerson } from '../../hooks/useReminderPeople';
 import { ReminderPicker } from './ReminderPicker';
 import { PrerequisiteList } from './PrerequisiteList';
+import { DataSection } from './DataSection';
 import { QuestionList } from './QuestionList';
 import { QuestionRow } from './QuestionRow';
 import { StepList } from './StepList';
@@ -43,6 +45,11 @@ type ItemEditorProps = {
   readonly steps: readonly Item[];
   /** The questions of this item, when it is an issue. */
   readonly questions: readonly Item[];
+  /** The named values kept on this item ("נתונים"). */
+  readonly data: readonly ItemData[];
+  readonly onAddData: (itemId: string, label: string, value: string) => void;
+  readonly onUpdateData: (dataId: string, changes: { label?: string; value?: string }) => void;
+  readonly onRemoveData: (dataId: string) => void;
   readonly debt: DebtDetails | null;
   /** Whether the item kept debt details from a time it was a debt. */
   readonly hasDebtDetails: boolean;
@@ -116,6 +123,10 @@ export function ItemEditor({
   items,
   steps,
   questions,
+  data,
+  onAddData,
+  onUpdateData,
+  onRemoveData,
   debt,
   hasDebtDetails,
   entities,
@@ -421,6 +432,20 @@ export function ItemEditor({
           <ul>
             <QuestionRow question={item} onUpdate={onUpdate} standalone />
           </ul>
+        </Card>
+      )}
+
+      {/* Notes and issues hold named values; any other item shows those it kept. */}
+      {(item.kind === 'note' || item.kind === 'issue' || data.length > 0) && (
+        <Card title={labels.data.title}>
+          <DataSection
+            rows={data}
+            onAdd={(label, value) => {
+              onAddData(item.id, label, value);
+            }}
+            onUpdate={onUpdateData}
+            onRemove={onRemoveData}
+          />
         </Card>
       )}
 

@@ -5,6 +5,7 @@ import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
+import { CopyButton } from '../ui/CopyButton';
 import { DueText } from './DueText';
 import { ItemMeta } from './ItemMeta';
 
@@ -33,6 +34,9 @@ export function ItemRow({
 }: ItemRowProps): ReactElement {
   const [completing, setCompleting] = useState(false);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
+  // A note kept for one value, such as the gate's code, shows it right in the list.
+  const kept = lookups.itemData.get(item.id);
+  const single = item.kind === 'note' && kept?.length === 1 ? kept[0] : undefined;
 
   // If the save fails the row would stay ticked forever, so it is released after a while.
   useEffect(() => {
@@ -76,11 +80,20 @@ export function ItemRow({
           >
             {item.title}
           </span>
+          {single !== undefined && single.value !== '' && (
+            <span className="text-[15px] font-semibold break-words" dir="auto">
+              {single.value}
+            </span>
+          )}
           <ItemMeta item={item} lookups={lookups} today={today} hideDomain={hideDomain} />
         </span>
-        <span className="pt-0.5">
-          <DueText item={item} today={today} />
-        </span>
+        {single !== undefined && single.value !== '' ? (
+          <CopyButton text={single.value} />
+        ) : (
+          <span className="pt-0.5">
+            <DueText item={item} today={today} />
+          </span>
+        )}
       </Link>
     </li>
   );

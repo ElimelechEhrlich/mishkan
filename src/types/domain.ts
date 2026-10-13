@@ -19,6 +19,8 @@ export type ItemUpdate = Tables['items']['Update'];
 export type DebtDetails = Tables['debt_details']['Row'];
 export type Prerequisite = Tables['prerequisites']['Row'];
 export type Attachment = Tables['attachments']['Row'];
+/** A named value kept on an item, such as the gate's code. */
+export type ItemData = Tables['item_data']['Row'];
 
 export type TimeMode = Enums['item_time_mode'];
 export type ItemKind = Enums['item_kind'];

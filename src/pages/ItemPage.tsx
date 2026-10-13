@@ -6,6 +6,7 @@ import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
+import { useItemData } from '../hooks/useItemData';
 import { useItemPage } from '../hooks/useItemPage';
 import { useLookups } from '../hooks/useLookups';
 import { useReminderPeople } from '../hooks/useReminderPeople';
@@ -20,6 +21,7 @@ export function ItemPage(): ReactElement {
   const reminderPeople = useReminderPeople(members);
   const { items, item } = page;
   const snooze = useSnoozeRequest();
+  const itemData = useItemData();
 
   return (
     <PageShell
@@ -30,7 +32,12 @@ export function ItemPage(): ReactElement {
     >
       <ErrorBanner
         message={
-          items.error ?? page.error ?? entities.error ?? reminderPeople.error ?? snooze.error
+          items.error ??
+          page.error ??
+          entities.error ??
+          reminderPeople.error ??
+          snooze.error ??
+          itemData.error
         }
       />
       {item === null ? (
@@ -41,6 +48,10 @@ export function ItemPage(): ReactElement {
           items={items.items}
           steps={page.steps}
           questions={page.questions}
+          data={itemData.byItem.get(item.id) ?? []}
+          onAddData={itemData.add}
+          onUpdateData={itemData.update}
+          onRemoveData={itemData.remove}
           debt={page.debt}
           hasDebtDetails={page.hasDebtDetails}
           entities={entities.entities}
