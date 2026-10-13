@@ -5,6 +5,7 @@ import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
+import { Icon } from '../ui/Icon';
 import { CopyButton } from '../ui/CopyButton';
 import { DueText } from './DueText';
 import { trackerLine } from '../../lib/trackers';
@@ -13,6 +14,8 @@ import { ItemMeta } from './ItemMeta';
 type ItemRowProps = {
   readonly item: Item;
   readonly lookups: Lookups;
+  /** The goal or issue of a step that stands on its own here, so the row says whose step it is. */
+  readonly parent?: Item | null;
   readonly today: string;
   readonly onComplete: (item: Item) => void;
   /** Leaves out the domain, on a page that already groups by it. */
@@ -29,6 +32,7 @@ const completingTimeoutMs = 4000;
 export function ItemRow({
   item,
   lookups,
+  parent = null,
   today,
   onComplete,
   hideDomain = false,
@@ -88,6 +92,18 @@ export function ItemRow({
           >
             {item.title}
           </span>
+          {parent !== null && (
+            <span className="inline-flex min-w-0 items-center gap-1 text-xs font-medium text-primary">
+              <Icon
+                name={parent.kind === 'goal' ? 'target' : 'alert'}
+                className="size-3.5 shrink-0"
+              />
+              <span className="truncate">
+                {parent.kind === 'goal' ? labels.goals.stepOfGoal : labels.goals.stepOfIssue}{' '}
+                {parent.title}
+              </span>
+            </span>
+          )}
           {value !== '' && (
             <span className="text-[15px] font-semibold break-words" dir="auto">
               {value}

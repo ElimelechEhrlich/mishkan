@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
+import { isAfterTarget } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
@@ -82,6 +83,11 @@ export function GoalRow({
                   className="flex min-w-0 flex-1 items-center gap-2 text-sm active:opacity-70"
                 >
                   <span className="min-w-0 flex-1 break-words">{step.title}</span>
+                  {isAfterTarget(step, goal) && (
+                    <span className="text-[11px] font-semibold text-alert">
+                      {labels.goals.afterTarget}
+                    </span>
+                  )}
                   <DueText item={step} today={today} />
                 </Link>
               </li>

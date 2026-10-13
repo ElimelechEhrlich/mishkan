@@ -192,7 +192,11 @@ export const activeSections = [
 
 /** Active entries split by how soon they are due. */
 export function splitBySection<
-  T extends { readonly dueDate: string | null; readonly urgent: boolean },
+  T extends {
+    readonly dueDate: string | null;
+    readonly urgent: boolean;
+    readonly target: string | null;
+  },
 >(entries: readonly T[], today: string): Record<ActiveSection, T[]> {
   const groups: Record<ActiveSection, T[]> = {
     overdue: [],
@@ -203,7 +207,7 @@ export function splitBySection<
     undated: [],
   };
   for (const entry of entries) {
-    groups[activeSectionOf(entry.dueDate, today, entry.urgent)].push(entry);
+    groups[sectionOfEntry(entry, today)].push(entry);
   }
   return groups;
 }
@@ -221,33 +225,120 @@ export function withoutNestedSteps(items: readonly Item[]): Item[] {
   return items.filter((item) => item.parent_id === null || !containerIds.has(item.parent_id));
 }
 
+/**
+ * Which time tab a step goes to inside a goal that waits or is on the shelf: with a date
+ * of its own, or urgent, it is to be done on its own and goes by its own time; without
+ * one it rests with its goal.
+ */
+export function segmentWithin(item: Item, byId: ReadonlyMap<string, Item>): OpenSegment | null {
+  const own = segmentOf(item);
+  if (
+    own !== 'active' ||
+    item.parent_id === null ||
+    item.due_date !== null ||
+    item.time_mode === 'urgent'
+  ) {
+    return own;
+  }
+  const parent = byId.get(item.parent_id);
+  const parentSegment = parent === undefined ? null : segmentOf(parent);
+  return parentSegment === 'waiting' || parentSegment === 'someday' ? parentSegment : own;
+}
+
+/**
+ * The rows of one time tab, out of `items` (every open item, so a step finds its goal),
+ * those that `include` keeps. A step goes inside its goal or issue when that is in the
+ * same rows, and stands as a row of its own when it is not, so nothing due is missed.
+ */
+export function rowsOfSegment(
+  items: readonly Item[],
+  segment: OpenSegment,
+  include: (item: Item) => boolean = () => true,
+): Item[] {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  return withoutNestedSteps(
+    items.filter((item) => include(item) && segmentWithin(item, byId) === segment),
+  );
+}
+
 /** One row of a list: an item, and for a goal or issue its steps (done ones included). */
 export type ListEntry = {
   readonly item: Item;
   readonly steps: readonly Item[];
-  /** The earliest due date of the item and its open steps, for sorting and sections. */
+  /**
+   * When it is next due, for sorting and sections: the earliest of the item and its open
+   * steps; for a goal, its earliest open step, or its target date when no step has a date.
+   */
   readonly dueDate: string | null;
-  /** Marked urgent ("דחוף"), itself or one of its open steps: it shows with today's. */
+  /** Marked urgent ("דחוף"), itself or one of its open steps. */
   readonly urgent: boolean;
+  /** A goal's target date ("עד"): when all its steps are to be done. Once past, it is late. */
+  readonly target: string | null;
+  /** The goal or issue of a step that stands as a row of its own, so the row can say so. */
+  readonly parent: Item | null;
 };
 
-export function toListEntries(items: readonly Item[], allSteps: readonly Item[]): ListEntry[] {
+function earliest(dates: readonly (string | null)[]): string | null {
+  return dates.reduce<string | null>(
+    (first, date) => (date !== null && (first === null || date < first) ? date : first),
+    null,
+  );
+}
+
+/**
+ * Rows for a list. `parentsFrom` holds the items a step's goal or issue is looked up in,
+ * where a step may stand on its own.
+ */
+export function toListEntries(
+  items: readonly Item[],
+  allSteps: readonly Item[],
+  parentsFrom: readonly Item[] = [],
+): ListEntry[] {
+  const parents = new Map(parentsFrom.filter(isContainer).map((item) => [item.id, item]));
   return items.map((item) => {
     // Questions of an issue are not steps; they are listed on the issue's page.
     const steps = isContainer(item)
       ? allSteps.filter((step) => step.parent_id === item.id && step.kind === 'task')
       : [];
-    // An issue's own date, if one is left from a conversion, is not used: only its steps count.
-    const dated = item.kind === 'issue' ? [] : [item];
-    const timed = [...dated, ...steps.filter((step) => step.status === 'open')];
-    const urgent = timed.some((entry) => entry.time_mode === 'urgent');
-    const dueDates = timed.map((entry) => entry.due_date).filter((date) => date !== null);
-    const dueDate = dueDates.reduce<string | null>(
-      (earliest, date) => (earliest === null || date < earliest ? date : earliest),
-      null,
-    );
-    return { item, steps, dueDate, urgent };
+    const openSteps = steps.filter((step) => step.status === 'open');
+    const stepsDue = earliest(openSteps.map((step) => step.due_date));
+    // A goal's own date is its target; an issue's, if one is left from a conversion, is not used.
+    const target = item.kind === 'goal' ? item.due_date : null;
+    const dueDate =
+      item.kind === 'goal'
+        ? (stepsDue ?? target)
+        : item.kind === 'issue'
+          ? stepsDue
+          : earliest([item.due_date, stepsDue]);
+    const urgent = [item, ...openSteps].some((entry) => entry.time_mode === 'urgent');
+    const parent = item.parent_id === null ? null : (parents.get(item.parent_id) ?? null);
+    return { item, steps, dueDate, urgent, target, parent };
   });
+}
+
+/** Where an entry stands among the active groups: a goal whose target date passed is late. */
+export function sectionOfEntry(
+  entry: {
+    readonly dueDate: string | null;
+    readonly urgent: boolean;
+    readonly target: string | null;
+  },
+  today: string,
+): ActiveSection {
+  if (entry.target !== null && entry.target < today) {
+    return 'overdue';
+  }
+  return activeSectionOf(entry.dueDate, today, entry.urgent);
+}
+
+/** A step dated after its goal's target date: the plan does not fit the goal. */
+export function isAfterTarget(step: Item, goal: Item): boolean {
+  return (
+    goal.kind === 'goal' &&
+    goal.due_date !== null &&
+    step.due_date !== null &&
+    step.due_date > goal.due_date
+  );
 }
 
 /** By due date (undated last), then by start time on the same day, then newest first. */
@@ -379,15 +470,16 @@ export type Agenda = {
 export function agendaOf(assigned: readonly Item[], steps: readonly Item[], today: string): Agenda {
   // A step goes inside its goal only when the goal itself is listed; the step of a goal
   // that waits or is on the shelf is listed on its own, so nothing due today is missed.
-  const rows = withoutNestedSteps(
-    assigned.filter(
-      (item) =>
-        item.kind === 'issue' ||
-        item.kind === 'appointment' ||
-        ((item.kind === 'task' || item.kind === 'goal') && segmentOf(item) === 'active'),
-    ),
+  const rows = rowsOfSegment(
+    assigned,
+    'active',
+    (item) =>
+      item.kind === 'issue' ||
+      item.kind === 'appointment' ||
+      item.kind === 'task' ||
+      item.kind === 'goal',
   );
-  const sections = splitBySection(toListEntries(rows, steps), today);
+  const sections = splitBySection(toListEntries(rows, steps, assigned), today);
   return {
     overdue: [...sections.overdue].sort(compareEntries),
     urgent: [...sections.urgent].sort(compareEntries),

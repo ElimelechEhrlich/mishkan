@@ -1,12 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { labels } from '../constants/labels';
-import {
-  activeSectionOf,
-  segmentOf,
-  todayIso,
-  toListEntries,
-  withoutNestedSteps,
-} from '../lib/itemRules';
+import { rowsOfSegment, sectionOfEntry, todayIso, toListEntries } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
 import type { Item, KindFilter, OpenSegment } from '../types/domain';
 
@@ -53,41 +47,32 @@ export function useOpenSegments(
   }, [narrowKind]);
   const [segment, setSegment] = useState<OpenSegment>('active');
 
-  const rows = useMemo(
-    () => withoutNestedSteps(items).filter((item) => matchesKind(item, kind)),
-    [items, kind],
-  );
+  // Each tab's rows; a step whose goal is not among them stands on its own.
+  const bySegment = useMemo(() => {
+    const of = (value: OpenSegment): Item[] =>
+      rowsOfSegment(items, value, (item) => matchesKind(item, kind));
+    return { active: of('active'), waiting: of('waiting'), someday: of('someday') };
+  }, [items, kind]);
 
   const options = segments.map((value) => ({
     value,
     label: labels.segment[value],
-    count: rows.filter((item) => segmentOf(item) === value).length,
+    count: bySegment[value].length,
   }));
 
   const visible = useMemo(
-    () =>
-      toListEntries(
-        rows.filter((item) => segmentOf(item) === segment),
-        steps,
-      ),
-    [rows, steps, segment],
+    () => toListEntries(bySegment[segment], steps, items),
+    [bySegment, steps, segment, items],
   );
 
   const sectionCounts = useMemo(() => {
     const today = todayIso();
-    const active = toListEntries(
-      rows.filter((item) => segmentOf(item) === 'active'),
-      steps,
-    );
+    const active = toListEntries(bySegment.active, steps, items);
     return {
-      overdue: active.filter(
-        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'overdue',
-      ).length,
-      today: active.filter(
-        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'today',
-      ).length,
+      overdue: active.filter((entry) => sectionOfEntry(entry, today) === 'overdue').length,
+      today: active.filter((entry) => sectionOfEntry(entry, today) === 'today').length,
     };
-  }, [rows, steps]);
+  }, [bySegment, steps, items]);
 
   return {
     allKinds: kind === 'all',

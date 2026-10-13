@@ -247,6 +247,15 @@ export function ItemEditor({
           </Button>
         )}
         {isAppointment && <AppointmentActions item={item} />}
+        {/* Every step done: the goal may be reached, but it is closed only when asked. */}
+        {item.kind === 'goal' &&
+          !done &&
+          steps.length > 0 &&
+          steps.every((step) => step.status === 'done') && (
+            <p className="text-center text-sm font-semibold text-primary">
+              {labels.goals.allStepsDone}
+            </p>
+          )}
       </Card>
 
       {debt !== null && (
@@ -545,6 +554,7 @@ export function ItemEditor({
       {isContainer && (
         <Card title={labels.sections.steps}>
           <StepList
+            parent={item}
             steps={steps}
             onComplete={onComplete}
             onReopen={onReopen}

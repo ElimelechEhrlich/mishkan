@@ -6,7 +6,11 @@ import {
   missingFields,
   seriesStarts,
   snoozeUntil,
+  isAfterTarget,
+  rowsOfSegment,
+  sectionOfEntry,
   splitBySection,
+  toListEntries,
 } from './itemRules';
 import type { Item } from '../types/domain';
 
@@ -74,9 +78,9 @@ describe('activeSectionOf', () => {
   it('groups entries in the same way', () => {
     const groups = splitBySection(
       [
-        { dueDate: '2026-10-01', urgent: false },
-        { dueDate: '2026-10-15', urgent: false },
-        { dueDate: null, urgent: false },
+        { dueDate: '2026-10-01', urgent: false, target: null },
+        { dueDate: '2026-10-15', urgent: false, target: null },
+        { dueDate: null, urgent: false, target: null },
       ],
       today,
     );
@@ -163,6 +167,46 @@ describe('steps of a goal that is not active', () => {
     const step = item({ id: 'step', parent_id: 'shelf', due_date: today });
     const agenda = agendaOf([goal, step], [step], today);
     expect(agenda.today.map((entry) => entry.item.id)).toEqual(['step']);
+  });
+});
+
+describe('goal target dates', () => {
+  it('goes by the earliest open step, and is late once the target passes', () => {
+    const goal = item({ id: 'g', kind: 'goal', due_date: '2026-10-11' });
+    const step = item({ id: 's', parent_id: 'g', due_date: '2026-10-15' });
+    const [entry] = toListEntries([goal], [step]);
+    expect(entry?.dueDate).toBe('2026-10-15');
+    expect(entry === undefined ? null : sectionOfEntry(entry, today)).toBe('thisWeek');
+    expect(entry === undefined ? null : sectionOfEntry(entry, '2026-10-12')).toBe('overdue');
+  });
+
+  it('goes by its target when no step has a date', () => {
+    const goal = item({ id: 'g', kind: 'goal', due_date: '2026-10-20' });
+    const [entry] = toListEntries([goal], []);
+    expect(entry?.dueDate).toBe('2026-10-20');
+  });
+
+  it('marks a step dated after the target', () => {
+    const goal = item({ id: 'g', kind: 'goal', due_date: '2026-10-12' });
+    expect(isAfterTarget(item({ due_date: '2026-10-13' }), goal)).toBe(true);
+    expect(isAfterTarget(item({ due_date: '2026-10-12' }), goal)).toBe(false);
+  });
+});
+
+describe('steps standing on their own', () => {
+  const shelf = item({ id: 'shelf', kind: 'goal', due_date: null, time_mode: 'someday' });
+  const dated = item({ id: 'dated', parent_id: 'shelf', due_date: '2026-10-12' });
+  const undated = item({ id: 'undated', parent_id: 'shelf', due_date: null, time_mode: 'anytime' });
+  const all = [shelf, dated, undated];
+
+  it('lists a dated step of a shelved goal among the active, with its goal named', () => {
+    const rows = rowsOfSegment(all, 'active');
+    expect(rows.map((row) => row.id)).toEqual(['dated']);
+    expect(toListEntries(rows, [], all)[0]?.parent?.id).toBe('shelf');
+  });
+
+  it('keeps an undated step inside its shelved goal', () => {
+    expect(rowsOfSegment(all, 'someday').map((row) => row.id)).toEqual(['shelf']);
   });
 });
 

@@ -37,6 +37,7 @@ export function EntryRow({
   return (
     <ItemRow
       item={entry.item}
+      parent={entry.parent}
       lookups={lookups}
       today={today}
       onComplete={onComplete}

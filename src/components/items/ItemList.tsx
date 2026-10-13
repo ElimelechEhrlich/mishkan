@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { activeSectionOf, activeSections, compareEntries, todayIso } from '../../lib/itemRules';
+import { activeSections, compareEntries, sectionOfEntry, todayIso } from '../../lib/itemRules';
 import type { ListEntry } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
@@ -67,9 +67,7 @@ export function ItemList({
   return (
     <div className="flex flex-col gap-5">
       {sections.map((section) => {
-        const inSection = sorted.filter(
-          (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === section,
-        );
+        const inSection = sorted.filter((entry) => sectionOfEntry(entry, today) === section);
         if (inSection.length === 0) {
           return null;
         }

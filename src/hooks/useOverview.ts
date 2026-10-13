@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 import {
-  activeSectionOf,
-  segmentOf,
+  rowsOfSegment,
+  sectionOfEntry,
   shoppingCategories,
   todayIso,
   toListEntries,
-  withoutNestedSteps,
 } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
 import type { Item, OpenSegment, ShoppingCategory } from '../types/domain';
@@ -37,11 +36,21 @@ export type Overview = {
   readonly thisWeek: number;
 };
 
-function byTime(items: readonly Item[], steps: readonly Item[]): TimeGroups {
+/**
+ * One kind's rows in each time group. A step goes inside its goal when the goal is in the
+ * same group (on any card), and stands on its own when it is not.
+ */
+function byTime(
+  bySegment: Readonly<Record<OpenSegment, readonly Item[]>>,
+  kind: Item['kind'],
+  steps: readonly Item[],
+  assigned: readonly Item[],
+): TimeGroups {
   const group = (segment: OpenSegment): readonly ListEntry[] =>
     toListEntries(
-      items.filter((item) => segmentOf(item) === segment),
+      bySegment[segment].filter((item) => item.kind === kind),
       steps,
+      assigned,
     );
   return { active: group('active'), waiting: group('waiting'), someday: group('someday') };
 }
@@ -63,21 +72,19 @@ export function useOverview(
   const debts = useDebts(items);
 
   const timed = useMemo(() => {
-    const rows = withoutNestedSteps(assigned);
-    const tasks = byTime(
-      rows.filter((item) => item.kind === 'task'),
-      steps,
-    );
-    const goals = byTime(
-      rows.filter((item) => item.kind === 'goal'),
-      steps,
-    );
+    const bySegment = {
+      active: rowsOfSegment(assigned, 'active'),
+      waiting: rowsOfSegment(assigned, 'waiting'),
+      someday: rowsOfSegment(assigned, 'someday'),
+    };
+    const tasks = byTime(bySegment, 'task', steps, assigned);
+    const goals = byTime(bySegment, 'goal', steps, assigned);
     const issues = toListEntries(
-      rows.filter((item) => item.kind === 'issue'),
+      bySegment.active.filter((item) => item.kind === 'issue'),
       steps,
     );
     const appointments = toListEntries(
-      rows.filter((item) => item.kind === 'appointment'),
+      bySegment.active.filter((item) => item.kind === 'appointment'),
       [],
     );
     const today = todayIso();
@@ -87,18 +94,10 @@ export function useOverview(
       goals,
       issues,
       appointments,
-      overdue: active.filter(
-        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'overdue',
-      ).length,
-      urgent: active.filter(
-        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'urgent',
-      ).length,
-      today: active.filter(
-        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'today',
-      ).length,
-      thisWeek: active.filter(
-        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'thisWeek',
-      ).length,
+      overdue: active.filter((entry) => sectionOfEntry(entry, today) === 'overdue').length,
+      urgent: active.filter((entry) => sectionOfEntry(entry, today) === 'urgent').length,
+      today: active.filter((entry) => sectionOfEntry(entry, today) === 'today').length,
+      thisWeek: active.filter((entry) => sectionOfEntry(entry, today) === 'thisWeek').length,
     };
   }, [assigned, steps]);
 

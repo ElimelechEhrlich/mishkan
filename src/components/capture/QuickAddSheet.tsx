@@ -128,6 +128,9 @@ export function QuickAddSheet({
   const amountValid = Number.isFinite(amount) && amount > 0;
 
   const asksTime = kind === 'task' || kind === 'goal';
+  // Today or tomorrow picked for a task does not carry over when the kind becomes a goal.
+  const pickedTime =
+    kind === 'goal' && (quickTime === 'today' || quickTime === 'tomorrow') ? null : quickTime;
   const healthDomain = entities.some((entity) =>
     entity.domains.some(
       (domain) => domain.id === domainId && domain.name.includes(labels.appointment.healthDomain),
@@ -199,7 +202,7 @@ export function QuickAddSheet({
       kind,
       domainId,
       parentId: null,
-      time: asksTime && quickTime !== null ? quickTimeChoice(quickTime, todayIso()) : null,
+      time: asksTime && pickedTime !== null ? quickTimeChoice(pickedTime, todayIso()) : null,
       ...(isValue ? { value: valueText.trim() } : {}),
       entityId: pickedEntityId,
     });
@@ -365,7 +368,9 @@ export function QuickAddSheet({
             />
           )}
 
-          {asksTime && <QuickTimePicker value={quickTime} onChange={setQuickTime} />}
+          {asksTime && (
+            <QuickTimePicker value={quickTime} onChange={setQuickTime} forGoal={kind === 'goal'} />
+          )}
         </div>
         <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex flex-col">

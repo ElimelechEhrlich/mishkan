@@ -2,10 +2,14 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import type { Item } from '../../types/domain';
+import { isAfterTarget, todayIso } from '../../lib/itemRules';
 import { AddRow } from '../ui/AddRow';
+import { DueText } from './DueText';
 import { CheckButton } from '../ui/CheckButton';
 
 type StepListProps = {
+  /** The goal or issue the steps belong to. */
+  readonly parent: Item;
   /** The steps of one goal or issue, done ones included. */
   readonly steps: readonly Item[];
   readonly onComplete: (step: Item) => void;
@@ -13,7 +17,14 @@ type StepListProps = {
   readonly onAdd: (title: string) => void;
 };
 
-export function StepList({ steps, onComplete, onReopen, onAdd }: StepListProps): ReactElement {
+export function StepList({
+  parent,
+  steps,
+  onComplete,
+  onReopen,
+  onAdd,
+}: StepListProps): ReactElement {
+  const today = todayIso();
   return (
     <div className="flex flex-col gap-3">
       {steps.length === 0 && <p className="text-sm text-muted">{labels.goals.noSteps}</p>}
@@ -39,6 +50,12 @@ export function StepList({ steps, onComplete, onReopen, onAdd }: StepListProps):
               >
                 {step.title}
               </Link>
+              {!done && isAfterTarget(step, parent) && (
+                <span className="text-[11px] font-semibold text-alert">
+                  {labels.goals.afterTarget}
+                </span>
+              )}
+              {!done && <DueText item={step} today={today} />}
             </li>
           );
         })}

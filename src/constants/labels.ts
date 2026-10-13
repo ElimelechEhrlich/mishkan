@@ -400,6 +400,12 @@ export const labels = {
   },
   goals: {
     progressOf: 'מתוך',
+    stepOfGoal: 'צעד ביעד:',
+    stepOfIssue: 'צעד בסוגיה:',
+    targetDate: 'תאריך יעד',
+    by: 'עד',
+    afterTarget: 'אחרי תאריך היעד',
+    allStepsDone: 'כל הצעדים בוצעו. הגעתם ליעד?',
     noSteps: 'אין צעדים עדיין',
     resolved: 'סוגיות שנפתרו',
     goalsTab: 'יעדים',

@@ -21,7 +21,10 @@ export function timeText(item: Item, today: string): string | null {
     return `${dateText(item.due_date, today)} ${formatClock(item.starts_at)}`;
   }
   if (item.due_date !== null) {
-    return dateText(item.due_date, today);
+    // A goal's date is its target: when all its steps are to be done.
+    return item.kind === 'goal'
+      ? `${labels.goals.by} ${dateText(item.due_date, today)}`
+      : dateText(item.due_date, today);
   }
   return labels.timeMode[item.time_mode];
 }
