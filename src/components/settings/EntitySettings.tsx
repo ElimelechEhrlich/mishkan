@@ -64,7 +64,40 @@ export function EntitySettings({ entities, settings }: EntitySettingsProps): Rea
         )}
       </EntityGroup>
       <EntityGroup title={labels.settings.children} count={children.length}>
-        {children.map((entity) => card(entity))}
+        {children.map((entity, index) => (
+          <EntitySettingsCard
+            key={entity.id}
+            entity={entity}
+            tone={entityTone(entities.indexOf(entity))}
+            settings={settings}
+            onMoveUp={
+              index === 0
+                ? undefined
+                : (): void => {
+                    settings.moveChild(entity, -1);
+                  }
+            }
+            onMoveDown={
+              index === children.length - 1
+                ? undefined
+                : (): void => {
+                    settings.moveChild(entity, 1);
+                  }
+            }
+          />
+        ))}
+        {settings.childrenPlaced && (
+          <li className="flex items-center justify-between gap-2 border-t border-line px-3.5 py-2 text-[13px] text-muted">
+            {labels.settings.childrenByHand}
+            <button
+              type="button"
+              onClick={settings.sortChildrenByAge}
+              className="font-semibold text-primary active:opacity-70"
+            >
+              {labels.settings.sortByAge}
+            </button>
+          </li>
+        )}
         <AddEntityRow
           icon="plus"
           title={labels.settings.addChild}

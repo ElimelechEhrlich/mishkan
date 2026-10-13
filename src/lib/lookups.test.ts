@@ -20,6 +20,7 @@ function entity(id: string, domains: readonly DomainSpec[]): EntityWithDomains {
     member_id: null,
     id_number: null,
     sort_order: 0,
+    position: null,
     birth_date: null,
     born_after_sunset: false,
     wedding_date: null,

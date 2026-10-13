@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0022_trackers.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0023_child_order.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -96,6 +96,8 @@ export type Database = {
           name: string;
           member_id: string | null;
           sort_order: number;
+          /** Where a child stands among the children once moved by hand; null orders by age. */
+          position: number | null;
           id_number: string | null;
           birth_date: string | null;
           born_after_sunset: boolean;
@@ -113,6 +115,7 @@ export type Database = {
           name: string;
           member_id?: string | null;
           sort_order?: number;
+          position?: number | null;
           id_number?: string | null;
           birth_date?: string | null;
           born_after_sunset?: boolean;
@@ -126,6 +129,7 @@ export type Database = {
         Update: {
           name?: string;
           sort_order?: number;
+          position?: number | null;
           id_number?: string | null;
           birth_date?: string | null;
           born_after_sunset?: boolean;

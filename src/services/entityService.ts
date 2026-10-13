@@ -1,3 +1,4 @@
+import { inDisplayOrder } from '../lib/childOrder';
 import { supabase } from '../lib/supabase';
 import type {
   AddableEntityKind,
@@ -22,11 +23,12 @@ export async function listEntitiesWithDomains(): Promise<EntityWithDomains[]> {
   const urls = await avatarUrls(
     entities.data.flatMap((entity) => (entity.avatar_path === null ? [] : [entity.avatar_path])),
   );
-  return entities.data.map((entity) => ({
+  const ordered = entities.data.map((entity) => ({
     ...entity,
     domains: allDomains.filter((domain) => domain.entity_id === entity.id),
     avatarUrl: entity.avatar_path === null ? null : (urls.get(entity.avatar_path) ?? null),
   }));
+  return inDisplayOrder(ordered);
 }
 
 const avatarBucket = 'entity-avatars';
@@ -131,6 +133,33 @@ export async function renameEntity(entityId: string, name: string): Promise<void
 }
 
 /** Its items are not deleted: they move to "needs completion" of the current parent. */
+/** Saves the order of the children that a parent set by hand. */
+export async function setChildPositions(
+  places: readonly { readonly id: string; readonly position: number }[],
+): Promise<void> {
+  const results = await Promise.all(
+    places.map((place) =>
+      supabase.from('entities').update({ position: place.position }).eq('id', place.id),
+    ),
+  );
+  for (const { error } of results) {
+    if (error !== null) {
+      throw new Error(error.message);
+    }
+  }
+}
+
+/** Goes back to showing the children by age. */
+export async function clearChildPositions(childIds: readonly string[]): Promise<void> {
+  const { error } = await supabase
+    .from('entities')
+    .update({ position: null })
+    .in('id', [...childIds]);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
+
 export async function deleteEntity(entityId: string): Promise<void> {
   const { error } = await supabase.rpc('delete_entity', { p_entity_id: entityId });
   if (error !== null) {

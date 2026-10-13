@@ -11,6 +11,7 @@ function entity(overrides: Partial<EntityWithDomains>): EntityWithDomains {
     member_id: null,
     sort_order: 1,
     id_number: null,
+    position: null,
     birth_date: null,
     born_after_sunset: false,
     notes: null,

@@ -9,6 +9,7 @@ import { EntityAvatar } from '../entities/EntityAvatar';
 import { AddRow } from '../ui/AddRow';
 import { ConfirmIconButton } from '../ui/ConfirmIconButton';
 import { Icon } from '../ui/Icon';
+import { IconButton } from '../ui/IconButton';
 import { InlineEdit } from '../ui/InlineEdit';
 
 type EntitySettingsCardProps = {
@@ -17,6 +18,9 @@ type EntitySettingsCardProps = {
   readonly settings: UseEntitySettings;
   /** The home: one per household, drawn larger with a house. */
   readonly featured?: boolean;
+  /** Moves a child one place up or down; undefined where it cannot go further. */
+  readonly onMoveUp?: (() => void) | undefined;
+  readonly onMoveDown?: (() => void) | undefined;
 };
 
 /**
@@ -29,6 +33,8 @@ export function EntitySettingsCard({
   tone,
   settings,
   featured = false,
+  onMoveUp,
+  onMoveDown,
 }: EntitySettingsCardProps): ReactElement {
   const [open, setOpen] = useState(false);
   const isPrivate = entity.kind === 'personal';
@@ -111,6 +117,12 @@ export function EntitySettingsCard({
                   settings.removeEntity(entity);
                 }}
               />
+            )}
+            {onMoveUp !== undefined && (
+              <IconButton icon="up" label={labels.settings.moveUp} onClick={onMoveUp} />
+            )}
+            {onMoveDown !== undefined && (
+              <IconButton icon="down" label={labels.settings.moveDown} onClick={onMoveDown} />
             )}
           </div>
           {isPrivate && (

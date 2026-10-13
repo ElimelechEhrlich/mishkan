@@ -1,26 +1,28 @@
 import { useCallback, useState } from 'react';
+import { childPlacesAfterMove } from '../lib/childOrder';
 import { toMessage } from '../lib/errors';
 import {
   createDomain,
+  clearChildPositions,
   createEntity,
   deleteDomain,
   deleteEntity,
   renameEntity,
+  setChildPositions,
   updateDomain,
 } from '../services/entityService';
-import type {
-  AddableEntityKind,
-  Domain,
-  Entity,
-  EntityWithDomains,
-  Member,
-} from '../types/domain';
+import type { AddableEntityKind, Domain, Entity, EntityWithDomains, Member } from '../types/domain';
 
 export type UseEntitySettings = {
   readonly error: string | null;
   readonly addEntity: (kind: AddableEntityKind, name: string) => void;
   readonly renameEntity: (entity: Entity, name: string) => void;
   readonly removeEntity: (entity: Entity) => void;
+  /** Moves a child one place up or down among the children. */
+  readonly moveChild: (entity: Entity, step: -1 | 1) => void;
+  /** Whether a parent ordered the children by hand, rather than by age. */
+  readonly childrenPlaced: boolean;
+  readonly sortChildrenByAge: () => void;
   readonly addDomain: (entity: EntityWithDomains, name: string) => void;
   readonly addDebtsDomain: (entity: EntityWithDomains, name: string) => void;
   readonly renameDomain: (domain: Domain, name: string) => void;
@@ -71,6 +73,20 @@ export function useEntitySettings(
     },
     removeEntity: (entity): void => {
       run(() => deleteEntity(entity.id));
+    },
+    moveChild: (entity, step): void => {
+      const places = childPlacesAfterMove(entities, entity.id, step);
+      if (places !== null) {
+        run(() => setChildPositions(places));
+      }
+    },
+    childrenPlaced: entities.some((entity) => entity.kind === 'child' && entity.position !== null),
+    sortChildrenByAge: (): void => {
+      run(() =>
+        clearChildPositions(
+          entities.filter((entity) => entity.kind === 'child').map((entity) => entity.id),
+        ),
+      );
     },
     addDomain: (entity, name): void => {
       run(() =>
