@@ -64,22 +64,6 @@ export function shoppingTargets(entities: readonly EntityWithDomains[]): Shoppin
   );
 }
 
-/** Entities that hold a debts domain, with that domain's id; the home first. */
-export function debtHolders(
-  entities: readonly EntityWithDomains[],
-): { readonly entity: EntityWithDomains; readonly domainId: string }[] {
-  const holders: { readonly entity: EntityWithDomains; readonly domainId: string }[] = [];
-  for (const entity of entities) {
-    const debts = entity.domains.find((domain) => domain.role === 'debts');
-    if (debts !== undefined) {
-      holders.push({ entity, domainId: debts.id });
-    }
-  }
-  return holders.sort(
-    (a, b) => Number(b.entity.kind === 'home') - Number(a.entity.kind === 'home'),
-  );
-}
-
 /** How many open rows each entity holds, by entity id. Questions and nested steps are not counted. */
 export function countByEntity(
   rows: readonly Item[],

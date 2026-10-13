@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
 import { quickTimeChoice, seriesStarts, todayIso } from '../../lib/itemRules';
-import { debtHolders, shoppingTargets } from '../../lib/lookups';
+import { shoppingTargets } from '../../lib/lookups';
 import type {
   AddableKind,
   DebtDirection,
@@ -93,7 +93,6 @@ export function QuickAddSheet({
   );
   const [direction, setDirection] = useState<DebtDirection>('owed_to_us');
   const [amountText, setAmountText] = useState('');
-  const [debtDomainId, setDebtDomainId] = useState<string | null>(null);
   const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointmentDraft);
   const [saving, setSaving] = useState(false);
   /** Bumped after each save so the picker starts again from the list of entities. */
@@ -108,12 +107,6 @@ export function QuickAddSheet({
     targets[0]?.domainId ??
     null;
 
-  const holders = debtHolders(entities);
-  const chosenDebtDomainId =
-    debtDomainId ??
-    holders.find((holder) => holder.entity.id === entityId)?.domainId ??
-    holders[0]?.domainId ??
-    null;
   const amount = Number(amountText);
   const amountValid = Number.isFinite(amount) && amount > 0;
 
@@ -177,7 +170,8 @@ export function QuickAddSheet({
         counterparty: trimmedTitle,
         amount,
         direction,
-        domainId: chosenDebtDomainId,
+        // Only the domain chosen: without one, the debt waits in needs-completion.
+        domainId,
       });
     }
     return onAdd({
@@ -302,13 +296,10 @@ export function QuickAddSheet({
               onDirectionChange={setDirection}
               amount={amountText}
               onAmountChange={setAmountText}
-              holders={holders}
-              domainId={chosenDebtDomainId}
-              onDomainChange={setDebtDomainId}
             />
           )}
 
-          {kind !== 'missing_item' && kind !== 'debt' && (
+          {kind !== 'missing_item' && (
             <div className="flex flex-col gap-3">
               <DomainPicker
                 key={pickerVersion}

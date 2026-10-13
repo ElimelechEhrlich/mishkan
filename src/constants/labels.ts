@@ -272,7 +272,6 @@ export const labels = {
     noDomainHint: 'בלי תחום, הפריט נשמר רק אצלך עד שתשייך אותו.',
     when: 'מתי',
     noTimeHint: 'בלי זמן, הפריט יחכה ב"להשלמה".',
-    debtOf: 'של מי החוב',
     newChild: 'ילד/ה',
     newChildName: 'שם הילד/ה',
     newDomain: 'תחום',
