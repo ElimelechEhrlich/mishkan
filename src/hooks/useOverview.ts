@@ -30,6 +30,8 @@ export type Overview = {
   readonly debtCount: number;
   /** Tasks, goals and appointments that are late, and due today, counting a goal by its earliest open step. */
   readonly overdue: number;
+  /** Marked urgent, with no date or a later one. */
+  readonly urgent: number;
   readonly today: number;
   /** Due from tomorrow to a week from today. */
   readonly thisWeek: number;
@@ -87,6 +89,9 @@ export function useOverview(
       appointments,
       overdue: active.filter(
         (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'overdue',
+      ).length,
+      urgent: active.filter(
+        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'urgent',
       ).length,
       today: active.filter(
         (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'today',

@@ -1,14 +1,18 @@
 -- =====================================================================
 -- 0026 - What is urgent counts in the morning look
--- An item marked urgent ("דחוף") has no date but belongs to today: the
--- morning notification counts it with what is due today, like the today
--- screen does. A goal or an issue counts when one of its open steps is urgent.
--- The function is the one from 0017 with that added; nothing else changes.
+-- An item marked urgent ("דחוף") has no date, and the today screen shows it in
+-- a group of its own. The morning notification counts it too, apart from what
+-- is due today, as the screen does. A goal or an issue counts when one of its
+-- open steps is urgent. Something already late stays late.
+-- The function is the one from 0017 with that added, so it is made again
+-- (its result gains a column); nothing else changes.
 -- Run once in the Supabase SQL editor, after 0025.
 -- =====================================================================
 
-create or replace function public.claim_today_nudges()
-returns table (member_id uuid, overdue integer, due_today integer,
+drop function public.claim_today_nudges();
+
+create function public.claim_today_nudges()
+returns table (member_id uuid, overdue integer, urgent integer, due_today integer,
                endpoint text, p256dh text, auth text)
 language sql security definer set search_path = '' as $$
   with now_here as (
@@ -62,9 +66,9 @@ language sql security definer set search_path = '' as $$
   counted as (
     select m.id as member_id,
            count(*) filter (where d.due < slot.today)::integer as overdue,
-           count(*) filter (where d.due is not distinct from slot.today
-                              or (d.urgent and (d.due is null or d.due > slot.today)))::integer
-             as due_today
+           count(*) filter (where d.urgent and (d.due is null or d.due >= slot.today))::integer
+             as urgent,
+           count(*) filter (where d.due = slot.today and not d.urgent)::integer as due_today
     from slot
     join dated d on d.due <= slot.today or d.urgent
     join public.members m on m.household_id = d.household_id and m.user_id is not null
@@ -81,9 +85,9 @@ language sql security definer set search_path = '' as $$
       and now() < slot.at + interval '3 hours'
       and (m.today_nudged_at is null or m.today_nudged_at < slot.at)
       and exists (select 1 from public.push_subscriptions s where s.member_id = m.id)
-    returning m.id, c.overdue, c.due_today
+    returning m.id, c.overdue, c.urgent, c.due_today
   )
-  select d.id, d.overdue, d.due_today, s.endpoint, s.p256dh, s.auth
+  select d.id, d.overdue, d.urgent, d.due_today, s.endpoint, s.p256dh, s.auth
   from due d
   join public.push_subscriptions s on s.member_id = d.id
 $$;

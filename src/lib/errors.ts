@@ -1,7 +1,12 @@
 import { labels } from '../constants/labels';
 
 /** Messages browsers give when a request never reached the server. */
-const networkMessages = ['Failed to fetch', 'NetworkError', 'Load failed', 'Network request failed'];
+const networkMessages = [
+  'Failed to fetch',
+  'NetworkError',
+  'Load failed',
+  'Network request failed',
+];
 
 /** An error as people should read it; a lost connection in plain words. */
 export function toMessage(error: unknown): string {

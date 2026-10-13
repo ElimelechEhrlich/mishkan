@@ -223,7 +223,7 @@ export function useItems(): UseItems {
     assigned,
     incomplete,
     agenda,
-    todayCount: agenda.overdue.length + agenda.today.length,
+    todayCount: agenda.overdue.length + agenda.urgent.length + agenda.today.length,
     loading: state.loading,
     error: state.error,
     reload,

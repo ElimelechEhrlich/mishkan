@@ -24,20 +24,25 @@ type DueNudge = Device & {
 
 type DueToday = Device & {
   overdue: number;
+  /** Missing until migration 0026 runs. */
+  urgent?: number;
   due_today: number;
 };
 
-/** The morning look's title and line, by how many items are due today and late. */
-function todayMessage(dueToday: number, overdue: number): { title: string; body: string } {
-  const total = dueToday + overdue;
+/** The morning look's title and line, by how many items are due today, urgent and late. */
+function todayMessage(
+  dueToday: number,
+  urgent: number,
+  overdue: number,
+): { title: string; body: string } {
+  const total = dueToday + urgent + overdue;
+  const parts = [
+    overdue === 0 ? null : overdue === 1 ? 'אחד באיחור' : `${String(overdue)} באיחור`,
+    urgent === 0 ? null : urgent === 1 ? 'אחד דחוף' : `${String(urgent)} דחופים`,
+  ].filter((part) => part !== null);
   return {
     title: total === 1 ? 'דבר אחד להיום' : `${String(total)} דברים להיום`,
-    body:
-      overdue === 0
-        ? 'לחיצה פותחת את מסך היום'
-        : overdue === 1
-          ? 'מתוכם אחד באיחור'
-          : `מתוכם ${String(overdue)} באיחור`,
+    body: parts.length === 0 ? 'לחיצה פותחת את מסך היום' : `מתוכם ${parts.join(' ו')}`,
   };
 }
 
@@ -113,7 +118,7 @@ Deno.serve(async () => {
       ...mornings.map((morning) => ({
         device: morning,
         payload: {
-          ...todayMessage(morning.due_today, morning.overdue),
+          ...todayMessage(morning.due_today, morning.urgent ?? 0, morning.overdue),
           url: '/today',
           tag: 'today',
         },

@@ -77,7 +77,7 @@ export function ItemList({
           <section key={section} className="flex flex-col gap-1.5">
             <h2
               className={`flex items-center gap-1.5 px-1 text-xs font-bold tracking-wide ${
-                section === 'overdue' ? 'text-alert' : 'text-muted'
+                section === 'overdue' || section === 'urgent' ? 'text-alert' : 'text-muted'
               }`}
             >
               {labels.section[section]}

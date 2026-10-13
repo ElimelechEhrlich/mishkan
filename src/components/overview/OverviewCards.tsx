@@ -54,9 +54,13 @@ export function OverviewCards({
             entries={sections[section]}
             lookups={lookups}
             onComplete={onComplete}
-            alert={section === 'overdue'}
+            alert={section === 'overdue' || section === 'urgent'}
             defaultOpen={
-              openNear && (section === 'overdue' || section === 'today' || section === 'thisWeek')
+              openNear &&
+              (section === 'overdue' ||
+                section === 'urgent' ||
+                section === 'today' ||
+                section === 'thisWeek')
             }
           />
         ))}

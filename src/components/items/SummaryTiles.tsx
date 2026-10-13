@@ -4,6 +4,8 @@ import { labels } from '../../constants/labels';
 
 type SummaryTilesProps = {
   readonly overdue: number;
+  /** Shown only when something is urgent. */
+  readonly urgent: number;
   readonly today: number;
   readonly incomplete: number;
 };
@@ -12,8 +14,16 @@ type SummaryTilesProps = {
 const tileClass =
   'flex flex-1 items-baseline justify-center gap-1.5 rounded-xl bg-surface px-2.5 py-1.5 shadow-card';
 
-/** Three numbers at the top of the main page: late, due today, and waiting to be completed. */
-export function SummaryTiles({ overdue, today, incomplete }: SummaryTilesProps): ReactElement {
+/**
+ * Numbers at the top of the main page: late, urgent (when there is any), due today, and
+ * waiting to be completed.
+ */
+export function SummaryTiles({
+  overdue,
+  urgent,
+  today,
+  incomplete,
+}: SummaryTilesProps): ReactElement {
   return (
     <div className="flex gap-2">
       <div className={tileClass}>
@@ -24,6 +34,14 @@ export function SummaryTiles({ overdue, today, incomplete }: SummaryTilesProps):
         </span>
         <span className="text-xs text-muted">{labels.summary.overdue}</span>
       </div>
+      {urgent > 0 && (
+        <div className={tileClass}>
+          <span className="font-display text-lg leading-6 font-bold text-alert">
+            {String(urgent)}
+          </span>
+          <span className="text-xs text-muted">{labels.summary.urgent}</span>
+        </div>
+      )}
       <div className={tileClass}>
         <span className="font-display text-lg leading-6 font-bold">{String(today)}</span>
         <span className="text-xs text-muted">{labels.summary.today}</span>

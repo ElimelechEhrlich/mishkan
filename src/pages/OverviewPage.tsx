@@ -97,6 +97,7 @@ export function OverviewPage(): ReactElement {
           <>
             <SummaryTiles
               overdue={overview.overdue}
+              urgent={overview.urgent}
               today={overview.today}
               incomplete={scoped.incomplete.length}
             />

@@ -65,7 +65,7 @@ export type KindFilter = 'task' | 'all';
 export type QuickTime = 'today' | 'tomorrow' | 'urgent' | 'anytime' | 'someday';
 
 /** The groups inside the "active" tab. */
-export type ActiveSection = 'overdue' | 'today' | 'thisWeek' | 'upcoming' | 'undated';
+export type ActiveSection = 'overdue' | 'urgent' | 'today' | 'thisWeek' | 'upcoming' | 'undated';
 
 export type TimeChoice = {
   readonly time_mode: TimeMode;

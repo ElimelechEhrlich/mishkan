@@ -49,9 +49,10 @@ function hebrewParts(isoDate: string): HebrewParts {
 /** A number in Hebrew letters, as days and years are written: ט״ו, תשפ״ז. */
 export function hebrewNumeral(value: number): string {
   const n = value % 1000;
-  const letters = `${hundreds[Math.floor(n / 100)] ?? ''}${tens[Math.floor((n % 100) / 10)] ?? ''}${ones[n % 10] ?? ''}`
-    .replace(/יה$/, 'טו')
-    .replace(/יו$/, 'טז');
+  const letters =
+    `${hundreds[Math.floor(n / 100)] ?? ''}${tens[Math.floor((n % 100) / 10)] ?? ''}${ones[n % 10] ?? ''}`
+      .replace(/יה$/, 'טו')
+      .replace(/יו$/, 'טז');
   if (letters.length <= 1) {
     return `${letters}׳`;
   }

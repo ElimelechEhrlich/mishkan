@@ -55,7 +55,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 /** Whether a value looks like rows as the database returns them: objects with a string id. */
 export function isRowList(value: unknown): boolean {
-  return Array.isArray(value) && value.every((row) => isObject(row) && typeof row['id'] === 'string');
+  return (
+    Array.isArray(value) && value.every((row) => isObject(row) && typeof row['id'] === 'string')
+  );
 }
 
 /** Whether a value is an object whose listed keys hold rows. */

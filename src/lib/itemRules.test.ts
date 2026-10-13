@@ -65,9 +65,9 @@ describe('activeSectionOf', () => {
     expect(activeSectionOf('2026-10-19', today)).toBe('upcoming');
   });
 
-  it('puts what is urgent with today, unless it is already late', () => {
-    expect(activeSectionOf(null, today, true)).toBe('today');
-    expect(activeSectionOf('2026-10-19', today, true)).toBe('today');
+  it('puts what is urgent in a group of its own, unless it is already late', () => {
+    expect(activeSectionOf(null, today, true)).toBe('urgent');
+    expect(activeSectionOf('2026-10-19', today, true)).toBe('urgent');
     expect(activeSectionOf('2026-10-10', today, true)).toBe('overdue');
   });
 
@@ -158,13 +158,14 @@ describe('agendaOf', () => {
 });
 
 describe('urgent items', () => {
-  it('shows an urgent task, and a goal with an urgent step, with today', () => {
+  it('lists an urgent task, and a goal with an urgent step, as urgent', () => {
     const urgent = item({ id: 'urgent', time_mode: 'urgent', due_date: null });
     const goal = item({ id: 'goal', kind: 'goal', due_date: null, time_mode: 'anytime' });
     const step = item({ id: 'step', parent_id: 'goal', due_date: null, time_mode: 'urgent' });
     const plain = item({ id: 'plain', time_mode: 'anytime', due_date: null });
     const agenda = agendaOf([urgent, goal, step, plain], [step], today);
-    expect(agenda.today.map((entry) => entry.item.id).sort()).toEqual(['goal', 'urgent']);
+    expect(agenda.urgent.map((entry) => entry.item.id).sort()).toEqual(['goal', 'urgent']);
+    expect(agenda.today).toHaveLength(0);
   });
 });
 

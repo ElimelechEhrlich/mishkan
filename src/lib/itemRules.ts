@@ -156,8 +156,9 @@ export function segmentOf(item: Item): OpenSegment | null {
 const comingWeekDays = 7;
 
 /**
- * Overdue, today, from tomorrow to a week from today, later, or with no date. Something
- * urgent ("דחוף") belongs to today unless it is already late.
+ * Overdue, urgent, today, from tomorrow to a week from today, later, or with no date.
+ * Something urgent ("דחוף") stands in a group of its own, beside today's, unless it is
+ * already late.
  */
 export function activeSectionOf(
   dueDate: string | null,
@@ -167,7 +168,10 @@ export function activeSectionOf(
   if (dueDate !== null && dueDate < today) {
     return 'overdue';
   }
-  if (urgent || dueDate === today) {
+  if (urgent) {
+    return 'urgent';
+  }
+  if (dueDate === today) {
     return 'today';
   }
   if (dueDate === null) {
@@ -179,6 +183,7 @@ export function activeSectionOf(
 /** The groups of the active tab, in the order they are shown. */
 export const activeSections = [
   'overdue',
+  'urgent',
   'today',
   'thisWeek',
   'upcoming',
@@ -191,6 +196,7 @@ export function splitBySection<
 >(entries: readonly T[], today: string): Record<ActiveSection, T[]> {
   const groups: Record<ActiveSection, T[]> = {
     overdue: [],
+    urgent: [],
     today: [],
     thisWeek: [],
     upcoming: [],
@@ -360,6 +366,8 @@ function seriesDate(firstDate: string, repeat: AppointmentRepeat, index: number)
 /** What is for today across the whole home: what is late, and what is due today. */
 export type Agenda = {
   readonly overdue: readonly ListEntry[];
+  /** Marked urgent, with no date or a later one. */
+  readonly urgent: readonly ListEntry[];
   readonly today: readonly ListEntry[];
 };
 
@@ -378,6 +386,7 @@ export function agendaOf(assigned: readonly Item[], steps: readonly Item[], toda
   const sections = splitBySection(toListEntries(rows, steps), today);
   return {
     overdue: [...sections.overdue].sort(compareEntries),
+    urgent: [...sections.urgent].sort(compareEntries),
     today: [...sections.today].sort(compareEntries),
   };
 }
