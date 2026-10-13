@@ -12,9 +12,14 @@ export type ScopeDock = {
   /** The entity in the picture, or undefined for everything. */
   readonly entity: EntityWithDomains | undefined;
   readonly tone: EntityTone | undefined;
+  /**
+   * Whether the header draws its own copy once docked: only where the browser cannot tie the
+   * motion to the scroll, and the carousel's picture is handed over instead of held there.
+   */
+  readonly copy: boolean;
 };
 
-const resting: ScopeDock = { progress: 0, entity: undefined, tone: undefined };
+const resting: ScopeDock = { progress: 0, entity: undefined, tone: undefined, copy: false };
 let dock: ScopeDock = resting;
 const listeners = new Set<() => void>();
 

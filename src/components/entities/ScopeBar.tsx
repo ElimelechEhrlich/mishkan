@@ -43,6 +43,12 @@ const gate = everythingReach + 0.5;
 const glideShortest = 260;
 const glideLongest = 900;
 
+/**
+ * Whether the browser can tie an animation to the scroll itself: then docking keeps pace at
+ * any scroll speed (see dock-* in index.css), and is only measured here.
+ */
+const scrollLinked = typeof CSS !== 'undefined' && CSS.supports('animation-timeline', 'scroll()');
+
 /** Docking into the header, the picture first rises with the page and then slides over. */
 const dockSideways = cubicBezier(0.4, 0, 1, 1);
 
@@ -115,6 +121,7 @@ export function ScopeBar({
     setHeld(away);
   }
   const canOpenSheet = scope !== undefined;
+  const root = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const center = useRef<HTMLButtonElement>(null);
   /** How far the chosen picture has gone into the header, 0 to 1, as the page scrolls. */
@@ -160,6 +167,17 @@ export function ScopeBar({
       const rise = fromY + window.scrollY - toY;
       const progress = rise <= 0 ? 0 : Math.max(0, Math.min(1, window.scrollY / rise));
       docked.current = progress;
+      const tone = scope === undefined ? undefined : entityTone(entities.indexOf(scope));
+      const holder = root.current;
+      if (scrollLinked && holder !== null) {
+        // The browser moves it with the scroll; here only the distances are given.
+        holder.style.setProperty('--dock-rise', `${String(rise)}px`);
+        holder.style.setProperty('--dock-x', `${String(toX - fromX)}px`);
+        holder.style.setProperty('--dock-scale', String(dockedScale));
+        holder.toggleAttribute('data-docking', rise > 0 && window.scrollY > 0);
+        setScopeDock({ progress, entity: scope, tone, copy: false });
+        return;
+      }
       const badge = button.querySelector<HTMLElement>('[data-dock-badge]');
       if (progress === 0) {
         release(button);
@@ -177,11 +195,7 @@ export function ScopeBar({
           badge.style.opacity = String(Math.max(0, 1 - progress * 3));
         }
       }
-      setScopeDock({
-        progress,
-        entity: scope,
-        tone: scope === undefined ? undefined : entityTone(entities.indexOf(scope)),
-      });
+      setScopeDock({ progress, entity: scope, tone, copy: true });
     };
     const follow = (): void => {
       if (frame === 0) {
@@ -335,7 +349,7 @@ export function ScopeBar({
   const count = shown === undefined ? 0 : (counts?.get(shown.id) ?? 0);
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div ref={root} className="flex flex-col items-center gap-1">
       <div
         ref={bar}
         className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
@@ -453,6 +467,8 @@ export function ScopeBar({
                 }
               }}
               className={`absolute top-1/2 left-1/2 rounded-full ${
+                position === index ? 'dock-holder' : ''
+              } ${
                 moving === null && !(isAll && held !== null)
                   ? 'transition-[transform,opacity] duration-300 ease-out'
                   : ''
@@ -467,11 +483,12 @@ export function ScopeBar({
                 entity={entity}
                 tone={entity === undefined ? entityTone(0) : entityTone(entities.indexOf(entity))}
                 raised={middle}
+                className={position === index ? 'dock-picture' : 'dock-fade'}
               />
               {position === index && moving === null && canOpenSheet && (
                 <span
                   data-dock-badge
-                  className="absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card"
+                  className="dock-fade absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card"
                 >
                   <Icon name="user" className="size-4" />
                 </span>
@@ -487,7 +504,7 @@ export function ScopeBar({
             onClick={() => {
               go(circle.id === scopeId ? 0 : options.indexOf(circle.id));
             }}
-            className={`absolute top-0 left-3 z-20 flex size-9 items-center justify-center rounded-full shadow-card transition active:scale-90 ${
+            className={`dock-fade absolute top-0 left-3 z-20 flex size-9 items-center justify-center rounded-full shadow-card transition active:scale-90 ${
               circle.id === scopeId ? 'bg-primary text-white' : 'bg-surface text-muted'
             }`}
           >
@@ -501,7 +518,7 @@ export function ScopeBar({
             onClick={() => {
               go(index + 1);
             }}
-            className="absolute top-1/2 left-3 z-20 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
+            className="dock-fade absolute top-1/2 left-3 z-20 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
           >
             <Icon name="forward" className="size-6" />
           </button>
@@ -513,27 +530,30 @@ export function ScopeBar({
             onClick={() => {
               go(index - 1);
             }}
-            className="absolute top-1/2 right-3 z-20 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
+            className="dock-fade absolute top-1/2 right-3 z-20 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
           >
             <Icon name="back" className="size-6" />
           </button>
         )}
       </div>
 
-      <div key={scopeId ?? 'all'} className="flex animate-fade-in flex-col items-center gap-2">
-        <div className="flex flex-col items-center">
-          <span className="font-display text-xl font-bold">
-            {shown?.name ?? labels.entityPage.everything}
-          </span>
-          <span className="text-[13px] text-muted">
-            {shown === undefined
-              ? labels.scope.everythingHint
-              : `${labels.entityKind[shown.kind]}${
-                  count > 0
-                    ? `${labels.item.separator}${String(count)} ${labels.entityPage.openItems}`
-                    : ''
-                }`}
-          </span>
+      {/* As the picture leaves for the header, the rest of the carousel fades with it. */}
+      <div className="dock-fade">
+        <div key={scopeId ?? 'all'} className="flex animate-fade-in flex-col items-center gap-2">
+          <div className="flex flex-col items-center">
+            <span className="font-display text-xl font-bold">
+              {shown?.name ?? labels.entityPage.everything}
+            </span>
+            <span className="text-[13px] text-muted">
+              {shown === undefined
+                ? labels.scope.everythingHint
+                : `${labels.entityKind[shown.kind]}${
+                    count > 0
+                      ? `${labels.item.separator}${String(count)} ${labels.entityPage.openItems}`
+                      : ''
+                  }`}
+            </span>
+          </div>
         </div>
       </div>
       {sheetOpen && scope !== undefined && (

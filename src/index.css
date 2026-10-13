@@ -172,3 +172,60 @@ body {
     opacity: 0.45;
   }
 }
+
+/*
+ * The chosen entity's picture docks into the header as the page scrolls, driven by the scroll
+ * itself so it keeps pace at any speed: it rises with the page while sliding over and
+ * shrinking, then is held in the header. Everything else of the carousel fades out on the
+ * way. ScopeBar sets the distances and turns it on (data-docking) once the page scrolls.
+ */
+@keyframes dock-rise {
+  from {
+    translate: 0 0;
+    scale: 1;
+  }
+  to {
+    translate: var(--dock-x) 0;
+    scale: var(--dock-scale);
+  }
+}
+
+@keyframes dock-hold {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 100000px;
+  }
+}
+
+@keyframes dock-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  [data-docking] .dock-picture {
+    animation: dock-rise cubic-bezier(0.4, 0, 1, 1) both;
+    animation-timeline: scroll(root);
+    animation-range: 0px var(--dock-rise);
+  }
+
+  [data-docking] .dock-holder {
+    z-index: 30 !important;
+    animation: dock-hold linear both;
+    animation-timeline: scroll(root);
+    animation-range: var(--dock-rise) calc(var(--dock-rise) + 100000px);
+  }
+
+  [data-docking] .dock-fade {
+    animation: dock-fade linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0px calc(var(--dock-rise) * 0.7);
+  }
+}

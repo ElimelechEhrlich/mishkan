@@ -9,13 +9,20 @@ type ScopeAvatarProps = {
   readonly entity: EntityWithDomains | undefined;
   readonly tone: EntityTone;
   readonly raised: boolean;
+  /** Extra classes, such as the ones that dock or fade it as the page scrolls. */
+  readonly className?: string;
 };
 
 /** The large picture of a carousel place, in its white ring: an entity, or everything. */
-export function ScopeAvatar({ entity, tone, raised }: ScopeAvatarProps): ReactElement {
+export function ScopeAvatar({
+  entity,
+  tone,
+  raised,
+  className = '',
+}: ScopeAvatarProps): ReactElement {
   return (
     <span
-      className={`block rounded-full bg-surface p-1 ${raised ? 'shadow-raised' : 'shadow-card'}`}
+      className={`block rounded-full bg-surface p-1 ${raised ? 'shadow-raised' : 'shadow-card'} ${className}`}
     >
       {entity === undefined ? (
         <span className="flex size-24 items-center justify-center rounded-full bg-primary text-white">

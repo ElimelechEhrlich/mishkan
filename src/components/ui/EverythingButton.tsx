@@ -28,6 +28,11 @@ export function EverythingButton({ shortcut }: EverythingButtonProps): ReactElem
     return null;
   }
 
+  // Docked and held by the carousel itself: the place is kept free for it.
+  if (dock.progress >= 1 && !dock.copy) {
+    return <span aria-hidden className="me-1 block size-11 shrink-0" />;
+  }
+
   if (dock.progress >= 1) {
     return (
       <button
