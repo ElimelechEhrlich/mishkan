@@ -89,6 +89,8 @@ export async function createItem(newItem: NewItem): Promise<void> {
     domain_id: newItem.domainId,
     parent_id: newItem.parentId,
     ...(newItem.time ?? {}),
+    // A note that is one value keeps it as its answer.
+    ...(newItem.value === undefined ? {} : { is_value: true, answer: newItem.value }),
   });
   if (error !== null) {
     throw new Error(error.message);

@@ -193,6 +193,8 @@ export type Database = {
           with_whom: string | null;
           series_id: string | null;
           in_main: boolean;
+          /** A note that is one value: its title is the name and its answer the value. */
+          is_value: boolean;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -225,6 +227,7 @@ export type Database = {
           with_whom?: string | null;
           series_id?: string | null;
           in_main?: boolean;
+          is_value?: boolean;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -250,6 +253,7 @@ export type Database = {
           meeting_url?: string | null;
           with_whom?: string | null;
           in_main?: boolean;
+          is_value?: boolean;
         };
         Relationships: [];
       };
@@ -280,20 +284,25 @@ export type Database = {
         Row: {
           id: string;
           item_id: string;
-          label: string;
+          /** The name of a value; null for a line of text. */
+          label: string | null;
           value: string;
+          /** Where the row stands among the item's rows. */
+          position: number;
           created_at: string;
         };
         Insert: {
           id?: string;
           item_id: string;
-          label: string;
+          label?: string | null;
           value?: string;
+          position?: number;
           created_at?: string;
         };
         Update: {
-          label?: string;
+          label?: string | null;
           value?: string;
+          position?: number;
         };
         Relationships: [];
       };

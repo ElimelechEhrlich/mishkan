@@ -19,6 +19,8 @@ import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
+import { Segmented } from '../ui/Segmented';
+import { TextField } from '../ui/TextField';
 import { AppointmentFields, emptyAppointmentDraft } from './AppointmentFields';
 import type { AppointmentDraft } from './AppointmentFields';
 import { DebtFields } from './DebtFields';
@@ -42,6 +44,11 @@ type QuickAddSheetProps = {
   /** Opens on this domain; a shopping domain opens as a missing item for its entity. */
   readonly initialDomainId?: string | undefined;
 };
+
+const noteKinds = [
+  { value: 'note', label: labels.data.noteKinds.note },
+  { value: 'value', label: labels.data.noteKinds.value },
+] as const;
 
 const kinds = [
   'task',
@@ -87,6 +94,10 @@ export function QuickAddSheet({
     initialIsShopping ? null : (initialDomainId ?? null),
   );
   const [quickTime, setQuickTime] = useState<QuickTime | null>(null);
+  /** A note can be one value ("נתון"): a name, which is its title, and a value. */
+  const [noteKind, setNoteKind] = useState<'note' | 'value'>('note');
+  const [valueText, setValueText] = useState('');
+  const isValue = kind === 'note' && noteKind === 'value';
   const [category, setCategory] = useState<ShoppingCategory>('food');
   const [shoppingDomainId, setShoppingDomainId] = useState<string | null>(
     initialIsShopping ? (initialDomainId ?? null) : null,
@@ -121,7 +132,8 @@ export function QuickAddSheet({
     !saving &&
     (kind !== 'appointment' || appointment.startsAt !== '') &&
     (kind !== 'missing_item' || missingItemDomainId !== null) &&
-    (kind !== 'debt' || amountValid);
+    (kind !== 'debt' || amountValid) &&
+    (!isValue || valueText.trim() !== '');
 
   /**
    * Choosing an entity's shopping domain means something to buy: the item becomes
@@ -180,6 +192,7 @@ export function QuickAddSheet({
       domainId,
       parentId: null,
       time: asksTime && quickTime !== null ? quickTimeChoice(quickTime, todayIso()) : null,
+      ...(isValue ? { value: valueText.trim() } : {}),
     });
   }
 
@@ -196,6 +209,8 @@ export function QuickAddSheet({
         setDomainId(null);
         setQuickTime(null);
         setAmountText('');
+        setValueText('');
+        setNoteKind('note');
         setAppointment(emptyAppointmentDraft);
         setPickerVersion((version) => version + 1);
         setOpen(false);
@@ -253,7 +268,7 @@ export function QuickAddSheet({
             value={title}
             autoFocus
             autoComplete="off"
-            placeholder={labels.titlePrompt[kind]}
+            placeholder={isValue ? labels.data.valueName : labels.titlePrompt[kind]}
             onChange={(event) => {
               setTitle(event.target.value);
             }}
@@ -288,6 +303,19 @@ export function QuickAddSheet({
               domainId={missingItemDomainId}
               onDomainChange={setShoppingDomainId}
             />
+          )}
+
+          {kind === 'note' && (
+            <div className="flex flex-col gap-3">
+              <Segmented options={noteKinds} value={noteKind} onChange={setNoteKind} />
+              {noteKind === 'value' && (
+                <TextField
+                  label={labels.data.valueField}
+                  value={valueText}
+                  onChange={setValueText}
+                />
+              )}
+            </div>
           )}
 
           {kind === 'debt' && (

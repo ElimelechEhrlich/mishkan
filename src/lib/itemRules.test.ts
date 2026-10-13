@@ -47,6 +47,7 @@ function item(overrides: Partial<Item>): Item {
     with_whom: null,
     series_id: null,
     in_main: false,
+    is_value: false,
     ...overrides,
   };
 }

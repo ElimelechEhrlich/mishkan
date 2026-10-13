@@ -52,6 +52,7 @@ export function ItemPage(): ReactElement {
           onAddData={itemData.add}
           onUpdateData={itemData.update}
           onRemoveData={itemData.remove}
+          onMoveData={itemData.move}
           debt={page.debt}
           hasDebtDetails={page.hasDebtDetails}
           entities={entities.entities}

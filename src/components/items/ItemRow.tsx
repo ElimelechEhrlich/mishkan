@@ -34,9 +34,8 @@ export function ItemRow({
 }: ItemRowProps): ReactElement {
   const [completing, setCompleting] = useState(false);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
-  // A note kept for one value, such as the gate's code, shows it right in the list.
-  const kept = lookups.itemData.get(item.id);
-  const single = item.kind === 'note' && kept?.length === 1 ? kept[0] : undefined;
+  // A note that is one value, such as the gate's code, shows it right in the list.
+  const value = item.kind === 'note' && item.is_value && item.answer !== null ? item.answer : '';
 
   // If the save fails the row would stay ticked forever, so it is released after a while.
   useEffect(() => {
@@ -80,15 +79,15 @@ export function ItemRow({
           >
             {item.title}
           </span>
-          {single !== undefined && single.value !== '' && (
+          {value !== '' && (
             <span className="text-[15px] font-semibold break-words" dir="auto">
-              {single.value}
+              {value}
             </span>
           )}
           <ItemMeta item={item} lookups={lookups} today={today} hideDomain={hideDomain} />
         </span>
-        {single !== undefined && single.value !== '' ? (
-          <CopyButton text={single.value} />
+        {value !== '' ? (
+          <CopyButton text={value} />
         ) : (
           <span className="pt-0.5">
             <DueText item={item} today={today} />

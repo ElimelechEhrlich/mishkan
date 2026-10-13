@@ -43,7 +43,7 @@ export function ItemMeta({
     <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-5 text-muted">
       {item.kind !== 'task' && (
         <span className="rounded-[5px] bg-line/70 px-1.5 text-[11px] font-semibold">
-          {labels.kind[item.kind]}
+          {item.kind === 'note' && item.is_value ? labels.data.pair : labels.kind[item.kind]}
         </span>
       )}
       {!hideDomain && domainLabel !== undefined && (

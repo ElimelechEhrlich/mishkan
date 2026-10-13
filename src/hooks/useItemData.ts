@@ -6,6 +6,7 @@ import {
   addItemData,
   deleteItemData,
   listItemData,
+  swapItemData,
   updateItemData,
 } from '../services/itemDataService';
 import type { ItemData } from '../types/domain';
@@ -14,9 +15,11 @@ import { useHouseholdContext } from './useRouteContext';
 export type UseItemData = {
   /** The named values of every item the parent can see, by item id, in the order added. */
   readonly byItem: ReadonlyMap<string, readonly ItemData[]>;
-  readonly add: (itemId: string, label: string, value: string) => void;
-  readonly update: (dataId: string, changes: { label?: string; value?: string }) => void;
+  readonly add: (itemId: string, label: string | null, value: string) => void;
+  readonly update: (dataId: string, changes: { label?: string | null; value?: string }) => void;
   readonly remove: (dataId: string) => void;
+  /** Moves a row one place up (-1) or down (1) among its item's rows. */
+  readonly move: (row: ItemData, step: -1 | 1) => void;
   readonly error: string | null;
 };
 
@@ -85,6 +88,13 @@ export function useItemData(): UseItemData {
     },
     remove: (dataId): void => {
       run(() => deleteItemData(dataId));
+    },
+    move: (row, step): void => {
+      const siblings = byItem.get(row.item_id) ?? [];
+      const other = siblings[siblings.findIndex((candidate) => candidate.id === row.id) + step];
+      if (other !== undefined) {
+        run(() => swapItemData(row, other));
+      }
     },
     error,
   };

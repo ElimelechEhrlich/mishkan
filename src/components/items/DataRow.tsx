@@ -9,24 +9,39 @@ import { TextField } from '../ui/TextField';
 
 type DataRowProps = {
   readonly row: ItemData;
-  readonly onUpdate: (changes: { label?: string; value?: string }) => void;
+  readonly onUpdate: (changes: { label?: string | null; value?: string }) => void;
   readonly onRemove: () => void;
+  /** Moves the row one place up or down; undefined where it cannot go further. */
+  readonly onMoveUp: (() => void) | undefined;
+  readonly onMoveDown: (() => void) | undefined;
 };
 
-/** One named value: its name and value, a button to copy the value, and ways to change it. */
-export function DataRow({ row, onUpdate, onRemove }: DataRowProps): ReactElement {
+/**
+ * One row of a note or an issue: a line of text, or a named value with a button to copy
+ * the value. Either can be changed or removed.
+ */
+export function DataRow({
+  row,
+  onUpdate,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+}: DataRowProps): ReactElement {
   const [editing, setEditing] = useState(false);
-  const [label, setLabel] = useState(row.label);
+  const [label, setLabel] = useState(row.label ?? '');
   const [value, setValue] = useState(row.value);
+  const isLine = row.label === null;
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
     const name = label.trim();
-    if (name === '') {
+    const text = value.trim();
+    // A line needs its text, a value its name.
+    if (isLine ? text === '' : name === '') {
       return;
     }
-    if (name !== row.label || value !== row.value) {
-      onUpdate({ label: name, value });
+    if (isLine ? text !== row.value : name !== row.label || text !== row.value) {
+      onUpdate(isLine ? { value: text } : { label: name, value: text });
     }
     setEditing(false);
   }
@@ -35,14 +50,30 @@ export function DataRow({ row, onUpdate, onRemove }: DataRowProps): ReactElement
     return (
       <li className="py-2.5">
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <TextField label={labels.data.name} value={label} onChange={setLabel} compact />
-          <TextField label={labels.data.value} value={value} onChange={setValue} compact />
+          {!isLine && (
+            <TextField label={labels.data.name} value={label} onChange={setLabel} compact />
+          )}
+          <TextField
+            label={isLine ? labels.data.lineText : labels.data.value}
+            value={value}
+            onChange={setValue}
+            compact
+          />
           <div className="flex items-center justify-between">
-            <ConfirmIconButton
-              label={labels.data.remove}
-              confirmLabel={labels.actions.confirmDelete}
-              onConfirm={onRemove}
-            />
+            <div className="flex items-center gap-1">
+              <ConfirmIconButton
+                label={labels.data.remove}
+                confirmLabel={labels.actions.confirmDelete}
+                onConfirm={onRemove}
+              />
+              {/* Where order matters, such as in a recipe, a row can be moved. */}
+              {onMoveUp !== undefined && (
+                <IconButton icon="up" label={labels.data.moveUp} onClick={onMoveUp} />
+              )}
+              {onMoveDown !== undefined && (
+                <IconButton icon="down" label={labels.data.moveDown} onClick={onMoveDown} />
+              )}
+            </div>
             <button
               type="submit"
               className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white active:opacity-80"
@@ -57,16 +88,20 @@ export function DataRow({ row, onUpdate, onRemove }: DataRowProps): ReactElement
 
   return (
     <li className="flex items-center gap-2 py-2.5">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-xs text-muted">{row.label}</span>
-        <span className="text-[15px] font-semibold break-words">{row.value}</span>
-      </div>
-      {row.value !== '' && <CopyButton text={row.value} />}
+      {isLine ? (
+        <span className="min-w-0 flex-1 text-[15px] break-words">{row.value}</span>
+      ) : (
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-xs text-muted">{row.label}</span>
+          <span className="text-[15px] font-semibold break-words">{row.value}</span>
+        </div>
+      )}
+      {!isLine && row.value !== '' && <CopyButton text={row.value} />}
       <IconButton
         icon="edit"
         label={labels.data.edit}
         onClick={() => {
-          setLabel(row.label);
+          setLabel(row.label ?? '');
           setValue(row.value);
           setEditing(true);
         }}

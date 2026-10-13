@@ -79,6 +79,8 @@ export type NewItem = {
   readonly parentId: string | null;
   /** When it is due; null leaves it for "needs completion". */
   readonly time: TimeChoice | null;
+  /** For a note that is one value ("נתון"): the value, its title being the name. */
+  readonly value?: string;
 };
 
 /** Kinds an item can be converted to and from; runs and questions are left out. */

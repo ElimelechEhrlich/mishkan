@@ -5,6 +5,7 @@ import { TopicSectionList } from '../components/entities/TopicSectionList';
 import { ListViewSwitch } from '../components/items/ListViewSwitch';
 import { TopicBar } from '../components/entities/TopicBar';
 import { ItemList } from '../components/items/ItemList';
+import { NoteFilterChips } from '../components/items/NoteFilterChips';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
@@ -13,6 +14,7 @@ import { useEntities } from '../hooks/useEntities';
 import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
 import { useItems } from '../hooks/useItems';
 import { useLookups } from '../hooks/useLookups';
+import { useNoteFilter } from '../hooks/useNoteFilter';
 import { useNotes } from '../hooks/useNotes';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
@@ -23,7 +25,8 @@ export function NotesPage(): ReactElement {
   const items = useItems();
   const scoped = useScopedItems(items, entities.entities, true);
   const lookups = useLookups(entities.entities, members);
-  const notes = useNotes(scoped.notes);
+  const noteFilter = useNoteFilter(scoped.notes);
+  const notes = useNotes(noteFilter.filtered);
   const domainGroups = useDomainGroups(notes, entities.entities, scoped.scope);
   const toEverything = useEverythingShortcut(entities.entities);
 
@@ -43,6 +46,13 @@ export function NotesPage(): ReactElement {
       />
       <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
       <ListViewSwitch value={listView} onChange={setListView} timeLabel={labels.listView.latest} />
+      {noteFilter.options.length > 0 && (
+        <NoteFilterChips
+          options={noteFilter.options}
+          value={noteFilter.filter}
+          onChange={noteFilter.setFilter}
+        />
+      )}
       {listView === 'domain' ? (
         <TopicSectionList
           sections={domainGroups}

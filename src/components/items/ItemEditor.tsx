@@ -18,6 +18,8 @@ import type {
 import { DomainPicker } from '../capture/DomainPicker';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { CopyButton } from '../ui/CopyButton';
+import { InlineEdit } from '../ui/InlineEdit';
 import { DebtCard } from '../debts/DebtCard';
 import { Chip } from '../ui/Chip';
 import { ConfirmButton } from '../ui/ConfirmButton';
@@ -47,9 +49,13 @@ type ItemEditorProps = {
   readonly questions: readonly Item[];
   /** The named values kept on this item ("נתונים"). */
   readonly data: readonly ItemData[];
-  readonly onAddData: (itemId: string, label: string, value: string) => void;
-  readonly onUpdateData: (dataId: string, changes: { label?: string; value?: string }) => void;
+  readonly onAddData: (itemId: string, label: string | null, value: string) => void;
+  readonly onUpdateData: (
+    dataId: string,
+    changes: { label?: string | null; value?: string },
+  ) => void;
   readonly onRemoveData: (dataId: string) => void;
+  readonly onMoveData: (row: ItemData, step: -1 | 1) => void;
   readonly debt: DebtDetails | null;
   /** Whether the item kept debt details from a time it was a debt. */
   readonly hasDebtDetails: boolean;
@@ -127,6 +133,7 @@ export function ItemEditor({
   onAddData,
   onUpdateData,
   onRemoveData,
+  onMoveData,
   debt,
   hasDebtDetails,
   entities,
@@ -435,9 +442,25 @@ export function ItemEditor({
         </Card>
       )}
 
-      {/* Notes and issues hold named values; any other item shows those it kept. */}
-      {(item.kind === 'note' || item.kind === 'issue' || data.length > 0) && (
-        <Card title={labels.data.title}>
+      {/* A note that is one value: its title is the name, and here is the value. */}
+      {item.kind === 'note' && item.is_value && (
+        <Card title={labels.data.valueTitle}>
+          <div className="flex items-center gap-2">
+            <InlineEdit
+              value={item.answer ?? ''}
+              textClass="font-display text-2xl font-bold"
+              onSave={(answer) => {
+                onUpdate(item.id, { answer });
+              }}
+            />
+            {item.answer !== null && item.answer !== '' && <CopyButton text={item.answer} />}
+          </div>
+        </Card>
+      )}
+
+      {/* Notes and issues hold rows; any other item shows those it kept. */}
+      {((item.kind === 'note' && !item.is_value) || item.kind === 'issue' || data.length > 0) && (
+        <Card title={item.kind === 'issue' ? labels.data.title : labels.data.noteTitle}>
           <DataSection
             rows={data}
             onAdd={(label, value) => {
@@ -445,6 +468,7 @@ export function ItemEditor({
             }}
             onUpdate={onUpdateData}
             onRemove={onRemoveData}
+            onMove={onMoveData}
           />
         </Card>
       )}
