@@ -66,7 +66,8 @@ export function EntitySheet({
         }}
         className="flex max-h-[85dvh] w-full max-w-md animate-fade-in flex-col gap-4 overflow-y-auto overscroll-contain rounded-[28px] bg-paper px-4 pt-3 pb-5 shadow-sheet *:shrink-0"
       >
-        <div className="flex justify-start">
+        {/* Above the picture, which rises beside it, so the whole button can be tapped. */}
+        <div className="relative z-10 flex justify-start">
           <IconButton icon="close" label={labels.actions.close} onClick={onClose} />
         </div>
         <div className="-mt-10 flex flex-col items-center gap-2">
