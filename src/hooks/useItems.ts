@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
+import { announceItemsChanged, onItemsChanged } from '../lib/itemChanges';
 import { agendaOf, todayIso } from '../lib/itemRules';
 import type { Agenda } from '../lib/itemRules';
 import {
@@ -95,19 +96,32 @@ export function useItems(): UseItems {
     void load();
   }, [load]);
 
+  /** How this list hears of a change made elsewhere in the app. */
+  const reloadOnChange = useRef(reload);
+  reloadOnChange.current = reload;
+
   useEffect(() => {
     void load();
-    return subscribeToItems(() => {
+    const stopServer = subscribeToItems(() => {
       void load();
     });
+    const stopApp = onItemsChanged(reloadOnChange.current);
+    return (): void => {
+      stopServer();
+      stopApp();
+    };
   }, [load]);
 
-  /** Runs a change, then reloads. A failure is reported in `error`, never swallowed. */
+  /**
+   * Runs a change, then reloads this list and tells the app's other lists to.
+   * A failure is reported in `error`, never swallowed.
+   */
   const run = useCallback(
     async (change: () => Promise<void>): Promise<boolean> => {
       try {
         await change();
         await load();
+        announceItemsChanged(reloadOnChange.current);
         return true;
       } catch (error: unknown) {
         setState((previous) => ({ ...previous, error: toMessage(error) }));

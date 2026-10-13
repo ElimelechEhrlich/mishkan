@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toMessage } from '../lib/errors';
+import { onItemsChanged } from '../lib/itemChanges';
 import { listDebtDetails } from '../services/debtService';
 import type { Debt, DebtDetails, Item } from '../types/domain';
 
@@ -26,19 +27,25 @@ export function useDebts(items: readonly Item[]): UseDebts {
 
   useEffect(() => {
     let active = true;
-    listDebtDetails()
-      .then((details) => {
-        if (active) {
-          setState({ details, error: null });
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setState((previous) => ({ ...previous, error: toMessage(error) }));
-        }
-      });
+    const fetchDetails = (): void => {
+      listDebtDetails()
+        .then((details) => {
+          if (active) {
+            setState({ details, error: null });
+          }
+        })
+        .catch((error: unknown) => {
+          if (active) {
+            setState((previous) => ({ ...previous, error: toMessage(error) }));
+          }
+        });
+    };
+    fetchDetails();
+    // A debt changed in this app (such as from its page) is fetched again.
+    const stop = onItemsChanged(fetchDetails);
     return (): void => {
       active = false;
+      stop();
     };
   }, [debtKey]);
 

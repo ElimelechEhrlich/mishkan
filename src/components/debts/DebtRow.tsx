@@ -26,8 +26,9 @@ export function DebtRow({ debt, onClose }: DebtRowProps): ReactElement {
         to={`/item/${debt.item.id}`}
         className="flex min-w-0 flex-1 items-baseline gap-2 border-t border-line py-3 pe-3.5 group-first:border-t-0 active:opacity-70"
       >
-        <span className="min-w-0 flex-1 text-[15px] font-medium break-words">
-          {debt.details.counterparty}
+        {/* The item's title, which is the one edited on its page. */}
+        <span className="min-w-0 flex-1 text-[14px] font-medium break-words">
+          {debt.item.title}
         </span>
         <span className="font-display text-base font-semibold tabular-nums">
           {formatMoney(debt.details.amount)}

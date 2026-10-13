@@ -205,7 +205,7 @@ export function ItemEditor({
             <span>
               {labels.debtDirection[debt.direction]}
               {labels.item.separator}
-              {debt.counterparty}
+              {item.title}
             </span>
             <span className="font-display text-2xl font-bold">{formatMoney(debt.amount)}</span>
           </p>
