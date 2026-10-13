@@ -316,7 +316,10 @@ export function toListEntries(
   });
 }
 
-/** Where an entry stands among the active groups: a goal whose target date passed is late. */
+/**
+ * Where an entry stands among the active groups. A goal is for today on its target day,
+ * and late once that day has passed.
+ */
 export function sectionOfEntry(
   entry: {
     readonly dueDate: string | null;
@@ -328,7 +331,15 @@ export function sectionOfEntry(
   if (entry.target !== null && entry.target < today) {
     return 'overdue';
   }
-  return activeSectionOf(entry.dueDate, today, entry.urgent);
+  const section = activeSectionOf(entry.dueDate, today, entry.urgent);
+  // On its target day a goal is for today, even when its steps are dated later.
+  if (
+    entry.target === today &&
+    (section === 'thisWeek' || section === 'upcoming' || section === 'undated')
+  ) {
+    return 'today';
+  }
+  return section;
 }
 
 /** A step dated after its goal's target date: the plan does not fit the goal. */

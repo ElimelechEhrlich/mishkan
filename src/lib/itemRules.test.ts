@@ -171,12 +171,13 @@ describe('steps of a goal that is not active', () => {
 });
 
 describe('goal target dates', () => {
-  it('goes by the earliest open step, and is late once the target passes', () => {
+  it('goes by its earliest open step, is for today on its target day, and late after', () => {
     const goal = item({ id: 'g', kind: 'goal', due_date: '2026-10-11' });
     const step = item({ id: 's', parent_id: 'g', due_date: '2026-10-15' });
     const [entry] = toListEntries([goal], [step]);
     expect(entry?.dueDate).toBe('2026-10-15');
-    expect(entry === undefined ? null : sectionOfEntry(entry, today)).toBe('thisWeek');
+    expect(entry === undefined ? null : sectionOfEntry(entry, '2026-10-09')).toBe('thisWeek');
+    expect(entry === undefined ? null : sectionOfEntry(entry, today)).toBe('today');
     expect(entry === undefined ? null : sectionOfEntry(entry, '2026-10-12')).toBe('overdue');
   });
 
