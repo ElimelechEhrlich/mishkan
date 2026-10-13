@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0016_completion_nudges.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0017_today_nudges.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -56,6 +56,8 @@ export type Database = {
           user_id: string | null;
           /** When the parent was last nudged to complete what waits for them. */
           completion_nudged_at: string | null;
+          /** When the parent was last sent the morning look at today. */
+          today_nudged_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -66,6 +68,7 @@ export type Database = {
           role: MemberRole;
           user_id?: string | null;
           completion_nudged_at?: string | null;
+          today_nudged_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -76,6 +79,7 @@ export type Database = {
           role?: MemberRole;
           user_id?: string | null;
           completion_nudged_at?: string | null;
+          today_nudged_at?: string | null;
           created_at?: string;
         };
         Relationships: [];

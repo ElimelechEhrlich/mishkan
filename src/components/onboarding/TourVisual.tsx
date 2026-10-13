@@ -91,10 +91,10 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
             {labels.tour.homeTiles.map((tile, index) => (
               <span
                 key={tile}
-                className="flex flex-col items-start rounded-xl bg-surface px-2.5 py-2 shadow-card"
+                className="flex items-baseline justify-center gap-1.5 rounded-xl bg-surface px-2 py-1.5 shadow-card"
               >
                 <span
-                  className={`font-display text-xl font-bold ${index === 0 ? 'text-alert' : ''}`}
+                  className={`font-display text-lg leading-6 font-bold ${index === 0 ? 'text-alert' : ''}`}
                 >
                   {String(index + 1)}
                 </span>
@@ -102,6 +102,28 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
               </span>
             ))}
           </div>
+        </div>
+      );
+    case 'today':
+      return (
+        <div className="flex w-72 flex-col gap-2.5">
+          <span className="relative flex size-12 items-center justify-center self-center rounded-2xl bg-surface text-muted shadow-card">
+            <Icon name="calendar" className="size-6" />
+            <span className="absolute -top-1 -end-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-paper bg-alert px-1 text-[11px] font-bold text-white">
+              {String(labels.tour.todaySample.length)}
+            </span>
+          </span>
+          <span className="flex flex-col rounded-2xl bg-surface text-start shadow-card">
+            {labels.tour.todaySample.map((row) => (
+              <span
+                key={row.title}
+                className="flex items-center justify-between gap-2 border-t border-line px-3.5 py-2.5 first:border-t-0"
+              >
+                <span className="text-[15px] font-medium">{row.title}</span>
+                <span className="text-xs font-semibold text-primary">{row.when}</span>
+              </span>
+            ))}
+          </span>
         </div>
       );
     case 'appointments':

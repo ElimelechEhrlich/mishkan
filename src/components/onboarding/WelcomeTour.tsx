@@ -21,6 +21,7 @@ const steps: readonly TourStep[] = [
   'time',
   'add',
   'incomplete',
+  'today',
   'home',
   'tabs',
   'appointments',

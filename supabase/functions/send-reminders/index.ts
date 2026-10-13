@@ -1,5 +1,6 @@
 // Supabase Edge Function: sends the reminders that are due as web push notifications, and
-// twice a day a nudge to parents whose "needs completion" list is not empty.
+// twice a day a nudge to parents whose "needs completion" list is not empty, and every
+// morning a look at what is late or due today.
 // A cron job calls it every few minutes. It needs three secrets: VAPID_PUBLIC_KEY,
 // VAPID_PRIVATE_KEY and VAPID_SUBJECT (a mailto: address). SUPABASE_URL and
 // SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
@@ -20,6 +21,25 @@ type DueReminder = Device & {
 type DueNudge = Device & {
   waiting: number;
 };
+
+type DueToday = Device & {
+  overdue: number;
+  due_today: number;
+};
+
+/** The morning look's title and line, by how many items are due today and late. */
+function todayMessage(dueToday: number, overdue: number): { title: string; body: string } {
+  const total = dueToday + overdue;
+  return {
+    title: total === 1 ? 'דבר אחד להיום' : `${String(total)} דברים להיום`,
+    body:
+      overdue === 0
+        ? 'לחיצה פותחת את מסך היום'
+        : overdue === 1
+          ? 'מתוכם אחד באיחור'
+          : `מתוכם ${String(overdue)} באיחור`,
+  };
+}
 
 /** The nudge's title, by how many items wait to be completed. */
 function nudgeTitle(waiting: number): string {
@@ -59,6 +79,12 @@ Deno.serve(async () => {
     }
     const nudges: DueNudge[] = nudged.data ?? [];
 
+    const looked = await supabase.rpc('claim_today_nudges');
+    if (looked.error !== null) {
+      throw new Error(looked.error.message);
+    }
+    const mornings: DueToday[] = looked.data ?? [];
+
     const messages = [
       ...reminders.map((reminder) => ({
         device: reminder,
@@ -71,6 +97,14 @@ Deno.serve(async () => {
           body: 'כדאי להיכנס למשכן ולהשלים את מה שחסר',
           url: '/incomplete',
           tag: 'completion',
+        },
+      })),
+      ...mornings.map((morning) => ({
+        device: morning,
+        payload: {
+          ...todayMessage(morning.due_today, morning.overdue),
+          url: '/today',
+          tag: 'today',
         },
       })),
     ];
@@ -102,7 +136,13 @@ Deno.serve(async () => {
       await supabase.from('push_subscriptions').delete().in('endpoint', gone);
     }
 
-    const result = { due: reminders.length, nudges: nudges.length, sent, removed: gone.length };
+    const result = {
+      due: reminders.length,
+      nudges: nudges.length,
+      mornings: mornings.length,
+      sent,
+      removed: gone.length,
+    };
     console.log('send-reminders', JSON.stringify(result));
     return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' },
