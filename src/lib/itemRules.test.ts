@@ -5,6 +5,7 @@ import {
   agendaOf,
   missingFields,
   seriesStarts,
+  snoozeUntil,
   splitBySection,
 } from './itemRules';
 import type { Item } from '../types/domain';
@@ -139,5 +140,19 @@ describe('agendaOf', () => {
     expect(agendaOf([goal, step], [step], today).today.map((entry) => entry.item.id)).toEqual([
       'goal',
     ]);
+  });
+});
+
+describe('snoozeUntil', () => {
+  const now = new Date(2026, 9, 11, 22, 50);
+
+  it('puts a reminder off by a while', () => {
+    expect(new Date(snoozeUntil('minutes10', now)).getTime() - now.getTime()).toBe(600_000);
+    expect(new Date(snoozeUntil('hours3', now)).getTime() - now.getTime()).toBe(10_800_000);
+  });
+
+  it('puts it off to nine tomorrow morning', () => {
+    const next = new Date(snoozeUntil('tomorrow', now));
+    expect([next.getDate(), next.getHours(), next.getMinutes()]).toEqual([12, 9, 0]);
   });
 });

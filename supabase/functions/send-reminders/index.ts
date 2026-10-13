@@ -88,7 +88,13 @@ Deno.serve(async () => {
     const messages = [
       ...reminders.map((reminder) => ({
         device: reminder,
-        payload: { title: reminder.title, body: 'תזכורת ממשכן', url: `/item/${reminder.item_id}` },
+        payload: {
+          title: reminder.title,
+          body: 'תזכורת ממשכן',
+          url: `/item/${reminder.item_id}`,
+          // Gives the notification its open and remind-again buttons.
+          itemId: reminder.item_id,
+        },
       })),
       ...nudges.map((nudge) => ({
         device: nudge,

@@ -372,3 +372,25 @@ export function agendaOf(assigned: readonly Item[], steps: readonly Item[], toda
     today: [...sections.today].sort(compareEntries),
   };
 }
+
+/** How long a reminder can be put off from its notification. */
+export const snoozeChoices = ['minutes10', 'minutes30', 'hour1', 'hours3', 'tomorrow'] as const;
+export type SnoozeChoice = (typeof snoozeChoices)[number];
+
+const snoozeMinutes: Record<Exclude<SnoozeChoice, 'tomorrow'>, number> = {
+  minutes10: 10,
+  minutes30: 30,
+  hour1: 60,
+  hours3: 180,
+};
+
+/** When a reminder put off by `choice` rings again: in a while, or tomorrow at nine. */
+export function snoozeUntil(choice: SnoozeChoice, now: Date): string {
+  if (choice === 'tomorrow') {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    return tomorrow.toISOString();
+  }
+  return new Date(now.getTime() + snoozeMinutes[choice] * 60_000).toISOString();
+}

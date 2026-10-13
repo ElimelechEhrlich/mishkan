@@ -175,6 +175,14 @@ export const labels = {
     debts: 'חובות',
     incomplete: 'להשלמה',
   },
+  snooze: {
+    title: 'להזכיר שוב',
+    minutes10: 'בעוד 10 דקות',
+    minutes30: 'בעוד חצי שעה',
+    hour1: 'בעוד שעה',
+    hours3: 'בעוד 3 שעות',
+    tomorrow: 'מחר ב־09:00',
+  },
   today: {
     empty: 'אין היום דברים פתוחים, וגם לא באיחור',
   },

@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { ItemEditor } from '../components/items/ItemEditor';
+import { SnoozeSheet } from '../components/items/SnoozeSheet';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
@@ -8,6 +9,8 @@ import { useEntities } from '../hooks/useEntities';
 import { useItemPage } from '../hooks/useItemPage';
 import { useLookups } from '../hooks/useLookups';
 import { useReminderPeople } from '../hooks/useReminderPeople';
+import { useSnoozeRequest } from '../hooks/useSnoozeRequest';
+import { snoozeUntil } from '../lib/itemRules';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function ItemPage(): ReactElement {
@@ -17,6 +20,7 @@ export function ItemPage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
   const reminderPeople = useReminderPeople(members);
   const { items, item } = page;
+  const snooze = useSnoozeRequest();
 
   return (
     <PageShell
@@ -50,6 +54,16 @@ export function ItemPage(): ReactElement {
             void items.convertItem(itemId, conversion);
           }}
           onPrerequisitesChange={items.reload}
+        />
+      )}
+      {snooze.open && item !== null && (
+        <SnoozeSheet
+          title={item.title}
+          onChoose={(choice) => {
+            items.updateItem(item.id, { remind_at: snoozeUntil(choice, new Date()) });
+            snooze.close();
+          }}
+          onClose={snooze.close}
         />
       )}
     </PageShell>
