@@ -10,27 +10,39 @@ type WelcomeTourProps = {
   readonly onClose: () => void;
 };
 
-/** The pages in order: why, the building blocks, then each part of the app, then how to start. */
-const steps: readonly TourStep[] = [
-  'welcome',
-  'purpose',
-  'arenas',
-  'domains',
-  'circle',
-  'kinds',
-  'time',
-  'add',
-  'incomplete',
-  'today',
-  'home',
-  'tabs',
-  'appointments',
-  'shopping',
-  'profile',
-  'notify',
-  'more',
-  'begin',
+type TourSection = keyof typeof labels.tour.sections;
+
+/**
+ * The pages in order, in three parts after the opening: the kinds of items first, as most
+ * of the app is about them; then whose and what about (entities and domains); then the
+ * ways to look at it all, the tools around them, and how to start.
+ */
+const pages: readonly { readonly step: TourStep; readonly section: TourSection }[] = [
+  { step: 'welcome', section: 'intro' },
+  { step: 'purpose', section: 'intro' },
+  { step: 'kinds', section: 'items' },
+  { step: 'time', section: 'items' },
+  { step: 'goals', section: 'items' },
+  { step: 'issues', section: 'items' },
+  { step: 'appointments', section: 'items' },
+  { step: 'notes', section: 'items' },
+  { step: 'trackers', section: 'items' },
+  { step: 'shopping', section: 'items' },
+  { step: 'add', section: 'items' },
+  { step: 'incomplete', section: 'items' },
+  { step: 'arenas', section: 'places' },
+  { step: 'domains', section: 'places' },
+  { step: 'circle', section: 'places' },
+  { step: 'profile', section: 'places' },
+  { step: 'today', section: 'views' },
+  { step: 'home', section: 'views' },
+  { step: 'tabs', section: 'views' },
+  { step: 'notify', section: 'tools' },
+  { step: 'more', section: 'tools' },
+  { step: 'begin', section: 'intro' },
 ];
+
+const steps = pages.map((entry) => entry.step);
 
 /** How far a finger has to move to turn a page. */
 const swipeDistance = 50;
@@ -49,6 +61,7 @@ export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null 
     return null;
   }
   const page = labels.tour.pages[step];
+  const section = pages[index]?.section ?? 'intro';
   const last = index === steps.length - 1;
 
   function go(next: number): void {
@@ -113,7 +126,12 @@ export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null 
             <div className="flex min-h-28 items-center justify-center">
               <TourVisual step={step} />
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col items-center gap-3">
+              {section !== 'intro' && (
+                <span className="rounded-full bg-primary-soft px-3 py-0.5 text-xs font-bold tracking-wide text-primary">
+                  {labels.tour.sections[section]}
+                </span>
+              )}
               <h2 className="font-display text-[26px] leading-8 font-bold">{page.title}</h2>
               <p className="text-[16px] leading-7 text-ink/75">{page.text}</p>
             </div>

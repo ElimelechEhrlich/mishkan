@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 /** A new name for each new version of the tour, so everyone sees what changed once. */
-const storageKey = 'mishkan.tourSeen.v4';
+const storageKey = 'mishkan.tourSeen.v5';
 
 function seenBefore(): boolean {
   try {

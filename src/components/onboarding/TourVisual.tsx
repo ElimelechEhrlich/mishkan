@@ -21,13 +21,17 @@ const entityColors = [
 
 const kindIcons: readonly IconName[] = [
   'list',
-  'calendar',
   'target',
   'alert',
+  'calendar',
   'note',
+  'chart',
   'cart',
   'wallet',
 ];
+
+/** A card the size of the tour's pictures, drawn like a card of the app. */
+const cardClass = 'flex w-72 flex-col rounded-2xl bg-surface text-start shadow-card';
 
 const purposeIcons: readonly IconName[] = ['plus', 'grid', 'calendar'];
 
@@ -87,14 +91,14 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
             </span>
             <span className="flex-1 py-1.5 text-muted">{labels.homeView.domain}</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
             {labels.tour.homeTiles.map((tile, index) => (
               <span
                 key={tile}
-                className="flex items-baseline justify-center gap-1.5 rounded-xl bg-surface px-2 py-1.5 shadow-card"
+                className="flex items-baseline justify-center gap-1 rounded-xl bg-surface px-1.5 py-1.5 shadow-card"
               >
                 <span
-                  className={`font-display text-lg leading-6 font-bold ${index === 0 ? 'text-alert' : ''}`}
+                  className={`font-display text-lg leading-6 font-bold ${index < 2 ? 'text-alert' : ''}`}
                 >
                   {String(index + 1)}
                 </span>
@@ -110,20 +114,119 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
           <span className="relative flex size-12 items-center justify-center self-center rounded-2xl bg-surface text-muted shadow-card">
             <Icon name="calendar" className="size-6" />
             <span className="absolute -top-1 -end-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-paper bg-alert px-1 text-[11px] font-bold text-white">
-              {String(labels.tour.todaySample.length)}
+              {String(labels.tour.todayGroups.reduce((sum, group) => sum + group.rows.length, 0))}
             </span>
           </span>
-          <span className="flex flex-col rounded-2xl bg-surface text-start shadow-card">
-            {labels.tour.todaySample.map((row) => (
+          <span className={cardClass}>
+            {labels.tour.todayGroups.map((group, index) => (
               <span
-                key={row.title}
-                className="flex items-center justify-between gap-2 border-t border-line px-3.5 py-2.5 first:border-t-0"
+                key={group.label}
+                className="flex flex-col border-t border-line first:border-t-0"
               >
-                <span className="text-[15px] font-medium">{row.title}</span>
-                <span className="text-xs font-semibold text-primary">{row.when}</span>
+                <span
+                  className={`px-3.5 pt-2 text-[11px] font-bold ${index < 2 ? 'text-alert' : 'text-muted'}`}
+                >
+                  {group.label}
+                </span>
+                {group.rows.map((row) => (
+                  <span
+                    key={row.title}
+                    className="flex items-center justify-between gap-2 px-3.5 py-1.5"
+                  >
+                    <span className="text-[14px] font-medium">{row.title}</span>
+                    <span
+                      className={`text-xs font-semibold ${index < 2 ? 'text-alert' : 'text-primary'}`}
+                    >
+                      {row.when}
+                    </span>
+                  </span>
+                ))}
               </span>
             ))}
           </span>
+        </div>
+      );
+    case 'goals':
+      return (
+        <div className={`${cardClass} gap-2 p-3.5`}>
+          <span className="flex items-center gap-2">
+            <Icon name="target" className="size-5 text-primary" />
+            <span className="flex-1 text-[15px] font-semibold">{labels.tour.goalSample}</span>
+            <span className="text-xs font-semibold text-muted">{labels.tour.goalBy}</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="h-1 flex-1 overflow-hidden rounded-full bg-line">
+              <span className="block h-full w-1/3 rounded-full bg-primary" />
+            </span>
+            <span className="text-[11px] font-semibold text-muted">{labels.tour.goalProgress}</span>
+          </span>
+          {labels.tour.goalSteps.map((row) => (
+            <span key={row.title} className="flex items-center gap-2 text-sm">
+              <span className="size-4 rounded-full border-2 border-primary/60" />
+              <span className="flex-1">{row.title}</span>
+              <span className="text-xs font-semibold text-muted">{row.when}</span>
+            </span>
+          ))}
+        </div>
+      );
+    case 'issues':
+      return (
+        <div className={`${cardClass} gap-2.5 p-3.5`}>
+          <span className="flex items-center gap-2">
+            <Icon name="alert" className="size-5 text-primary" />
+            <span className="text-[15px] font-semibold">{labels.tour.issueSample}</span>
+          </span>
+          <div className="grid grid-cols-2 gap-1.5">
+            {labels.tour.issueParts.map((part) => (
+              <span
+                key={part}
+                className="rounded-xl bg-primary-soft px-3 py-1.5 text-center text-[13px] font-semibold text-primary"
+              >
+                {part}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    case 'notes':
+      return (
+        <div className="flex w-72 flex-col gap-2.5">
+          <span className={`${cardClass} flex-row items-center gap-3 px-3.5 py-2.5`}>
+            <span className="flex flex-1 flex-col">
+              <span className="text-[13px] text-muted">{labels.tour.valueSample.name}</span>
+              <span className="text-lg font-bold">{labels.tour.valueSample.value}</span>
+            </span>
+            <span className="flex size-9 items-center justify-center rounded-xl bg-paper text-muted">
+              <Icon name="copy" className="size-4.5" />
+            </span>
+          </span>
+          <span className={`${cardClass} gap-1 px-3.5 py-2.5`}>
+            <span className="text-[15px] font-semibold">{labels.tour.recipeSample}</span>
+            {labels.tour.recipeLines.map((line) => (
+              <span key={line} className="text-[13px] text-muted">
+                {line}
+              </span>
+            ))}
+          </span>
+        </div>
+      );
+    case 'trackers':
+      return (
+        <div className={`${cardClass} gap-1.5 p-3.5`}>
+          <span className="flex items-center gap-2">
+            <Icon name="chart" className="size-5 text-primary" />
+            <span className="flex-1 text-[15px] font-semibold">{labels.tour.trackerSample}</span>
+          </span>
+          <span className="font-display text-2xl font-bold">{labels.tour.trackerTotal}</span>
+          {labels.tour.trackerEntries.map((entry) => (
+            <span
+              key={entry.when}
+              className="flex justify-between border-t border-line pt-1.5 text-[13px]"
+            >
+              <span className="text-muted">{entry.when}</span>
+              <span className="font-semibold">{entry.value}</span>
+            </span>
+          ))}
         </div>
       );
     case 'appointments':
