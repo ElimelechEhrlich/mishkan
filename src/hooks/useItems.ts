@@ -17,10 +17,11 @@ import {
   subscribeToItems,
   updateItem,
 } from '../services/itemService';
-import { createDebt } from '../services/debtService';
+import { createDebt, updateDebtDetails } from '../services/debtService';
 import { createMissingItem } from '../services/shoppingService';
 import type {
   Conversion,
+  DebtDirection,
   Item,
   ItemUpdate,
   NewAppointment,
@@ -59,6 +60,11 @@ export type UseItems = {
   readonly addAppointments: (appointment: NewAppointment) => Promise<boolean>;
   readonly addQuestion: (issueId: string, title: string) => void;
   readonly updateItem: (itemId: string, changes: ItemUpdate) => void;
+  /** Changes a debt's amount or direction. */
+  readonly updateDebt: (
+    itemId: string,
+    changes: { amount?: number; direction?: DebtDirection },
+  ) => void;
   readonly convertItem: (itemId: string, conversion: Conversion) => Promise<boolean>;
   readonly completeItem: (item: Item) => void;
   readonly reopenItem: (itemId: string) => void;
@@ -174,6 +180,13 @@ export function useItems(): UseItems {
     [run],
   );
 
+  const handleUpdateDebt = useCallback(
+    (itemId: string, changes: { amount?: number; direction?: DebtDirection }): void => {
+      void run(() => updateDebtDetails(itemId, changes));
+    },
+    [run],
+  );
+
   const handleComplete = useCallback(
     (item: Item): void => {
       void run(() => completeItem(item));
@@ -220,6 +233,7 @@ export function useItems(): UseItems {
     addAppointments: handleAddAppointments,
     addQuestion: handleAddQuestion,
     updateItem: handleUpdate,
+    updateDebt: handleUpdateDebt,
     convertItem: handleConvert,
     completeItem: handleComplete,
     reopenItem: handleReopen,

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { DebtDetails, NewDebt } from '../types/domain';
+import type { DebtDetails, DebtDirection, NewDebt } from '../types/domain';
 import { deleteItem } from './itemService';
 
 export async function listDebtDetails(): Promise<DebtDetails[]> {
@@ -32,6 +32,17 @@ export async function createDebt(newDebt: NewDebt): Promise<void> {
   });
   if (error !== null) {
     await deleteItem(itemId);
+    throw new Error(error.message);
+  }
+}
+
+/** Changes how much a debt is, or which way it goes. */
+export async function updateDebtDetails(
+  itemId: string,
+  changes: { readonly amount?: number; readonly direction?: DebtDirection },
+): Promise<void> {
+  const { error } = await supabase.from('debt_details').update(changes).eq('item_id', itemId);
+  if (error !== null) {
     throw new Error(error.message);
   }
 }

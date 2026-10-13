@@ -46,6 +46,7 @@ export function ItemPage(): ReactElement {
           entities={entities.entities}
           lookups={lookups}
           onUpdate={items.updateItem}
+          onUpdateDebt={items.updateDebt}
           reminderPeople={reminderPeople.people}
           onStructureChanged={entities.reload}
           onComplete={items.completeItem}

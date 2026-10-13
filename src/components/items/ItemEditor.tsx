@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { formatMoney } from '../../lib/format';
 import { formatReminder, needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
 import { fullTimeText } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
@@ -9,6 +8,7 @@ import type {
   Conversion,
   ConvertibleKind,
   DebtDetails,
+  DebtDirection,
   EntityWithDomains,
   Item,
   ItemKind,
@@ -17,6 +17,7 @@ import type {
 import { DomainPicker } from '../capture/DomainPicker';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { DebtCard } from '../debts/DebtCard';
 import { Chip } from '../ui/Chip';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { PropertyRow } from '../ui/PropertyRow';
@@ -48,6 +49,10 @@ type ItemEditorProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly lookups: Lookups;
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
+  readonly onUpdateDebt: (
+    itemId: string,
+    changes: { amount?: number; direction?: DebtDirection },
+  ) => void;
   /** The parents a reminder can go to. */
   readonly reminderPeople: readonly ReminderPerson[];
   /** Reloads the entities after a child or domain is added while choosing a domain. */
@@ -116,6 +121,7 @@ export function ItemEditor({
   entities,
   lookups,
   onUpdate,
+  onUpdateDebt,
   reminderPeople,
   onStructureChanged,
   onComplete,
@@ -200,16 +206,12 @@ export function ItemEditor({
       </Card>
 
       {debt !== null && (
-        <Card title={labels.sections.debt}>
-          <p className="flex items-baseline justify-between gap-2">
-            <span>
-              {labels.debtDirection[debt.direction]}
-              {labels.item.separator}
-              {item.title}
-            </span>
-            <span className="font-display text-2xl font-bold">{formatMoney(debt.amount)}</span>
-          </p>
-        </Card>
+        <DebtCard
+          debt={debt}
+          onChange={(changes) => {
+            onUpdateDebt(item.id, changes);
+          }}
+        />
       )}
 
       <section className="flex flex-col divide-y divide-line rounded-2xl bg-surface px-4 shadow-card">
