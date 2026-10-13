@@ -91,6 +91,11 @@ export function QuickAddSheet({
   const [open, setOpen] = useState(initiallyOpen);
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<AddableKind>(initialIsShopping ? 'missing_item' : defaultKind);
+  /**
+   * The entity chosen, at first the one whose page this is. It is kept with the item even
+   * when no domain is chosen, so completing it later asks only for the domain.
+   */
+  const [pickedEntityId, setPickedEntityId] = useState<string | null>(entityId ?? null);
   const [domainId, setDomainId] = useState<string | null>(
     initialIsShopping ? null : (initialDomainId ?? null),
   );
@@ -176,6 +181,7 @@ export function QuickAddSheet({
           placeKind === 'in_person' || placeKind === 'phone' ? textOrNull(appointment.place) : null,
         meetingUrl: placeKind === 'video' ? textOrNull(appointment.meetingUrl) : null,
         withWhom: textOrNull(appointment.withWhom),
+        entityId: pickedEntityId,
       });
     }
     if (kind === 'debt') {
@@ -185,6 +191,7 @@ export function QuickAddSheet({
         direction,
         // Only the domain chosen: without one, the debt waits in needs-completion.
         domainId,
+        entityId: pickedEntityId,
       });
     }
     return onAdd({
@@ -194,6 +201,7 @@ export function QuickAddSheet({
       parentId: null,
       time: asksTime && quickTime !== null ? quickTimeChoice(quickTime, todayIso()) : null,
       ...(isValue ? { value: valueText.trim() } : {}),
+      entityId: pickedEntityId,
     });
   }
 
@@ -213,6 +221,7 @@ export function QuickAddSheet({
         setValueText('');
         setNoteKind('note');
         setAppointment(emptyAppointmentDraft);
+        setPickedEntityId(entityId ?? null);
         setPickerVersion((version) => version + 1);
         setOpen(false);
       }
@@ -225,6 +234,7 @@ export function QuickAddSheet({
         type="button"
         aria-label={labels.actions.newItem}
         onClick={() => {
+          setPickedEntityId(entityId ?? null);
           setOpen(true);
         }}
         className="fixed end-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 flex size-14 items-center justify-center rounded-2xl bg-primary text-white shadow-float transition active:scale-95"
@@ -336,6 +346,7 @@ export function QuickAddSheet({
                 value={domainId}
                 onChange={pickDomain}
                 initialEntityId={entityId}
+                onEntityChange={setPickedEntityId}
                 onStructureChanged={onStructureChanged}
               />
               {domainId === null && (

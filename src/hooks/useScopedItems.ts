@@ -11,6 +11,7 @@ export type ScopedItems = {
   readonly topics: readonly string[];
   /** The chosen topic when it is one of `topics` and the page narrows by topic, else null. */
   readonly topic: string | null;
+  /** The open items that are fully assigned; the same as `assigned`. */
   readonly items: readonly Item[];
   readonly assigned: readonly Item[];
   /** Every item waiting for completion, whatever is chosen. */
@@ -62,7 +63,8 @@ export function useScopedItems(
           (item.parent_id !== null && shownWithAll.has(item.parent_id))
         : item.domain_id !== null && domainIds.has(item.domain_id);
     const inScope = (item: Item): boolean => inTopic(item) && inEntity(item);
-    const scopedItems = items.items.filter(inScope);
+    // An item still waiting for completion shows only in "needs completion", whatever its kind.
+    const scopedItems = items.assigned.filter(inScope);
     return {
       scope,
       topics,

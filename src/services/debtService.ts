@@ -17,7 +17,12 @@ export async function listDebtDetails(): Promise<DebtDetails[]> {
 export async function createDebt(newDebt: NewDebt): Promise<void> {
   const created = await supabase
     .from('items')
-    .insert({ title: newDebt.counterparty, kind: 'debt', domain_id: newDebt.domainId })
+    .insert({
+      title: newDebt.counterparty,
+      kind: 'debt',
+      domain_id: newDebt.domainId,
+      entity_id: newDebt.entityId ?? null,
+    })
     .select('id')
     .single();
   if (created.error !== null) {

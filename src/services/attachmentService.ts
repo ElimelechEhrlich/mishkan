@@ -7,7 +7,13 @@ const urlLifetimeSeconds = 3600;
 /** The storage policy reads the item id from the second folder of the path. */
 function storagePathFor(item: Item, file: File): string {
   const dot = file.name.lastIndexOf('.');
-  const extension = dot === -1 ? '' : file.name.slice(dot).toLowerCase().replace(/[^.a-z0-9]/g, '');
+  const extension =
+    dot === -1
+      ? ''
+      : file.name
+          .slice(dot)
+          .toLowerCase()
+          .replace(/[^.a-z0-9]/g, '');
   return `${item.household_id}/${item.id}/${crypto.randomUUID()}${extension}`;
 }
 

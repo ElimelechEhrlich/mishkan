@@ -42,7 +42,11 @@ export async function joinHousehold(
     'join_household',
     parentEntityId === null
       ? { p_invite_code: inviteCode, p_parent_name: parentName }
-      : { p_invite_code: inviteCode, p_parent_name: parentName, p_parent_entity_id: parentEntityId },
+      : {
+          p_invite_code: inviteCode,
+          p_parent_name: parentName,
+          p_parent_entity_id: parentEntityId,
+        },
   );
   if (error !== null) {
     throw new Error(error.message);

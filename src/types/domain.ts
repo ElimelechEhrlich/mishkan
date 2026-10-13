@@ -85,6 +85,8 @@ export type NewItem = {
   readonly time: TimeChoice | null;
   /** For a note that is one value ("נתון"): the value, its title being the name. */
   readonly value?: string;
+  /** The entity chosen while no domain is, so completing it asks only for the domain. */
+  readonly entityId?: string | null;
 };
 
 /** Kinds an item can be converted to and from; runs and questions are left out. */
@@ -128,6 +130,8 @@ export type NewAppointment = {
   readonly place: string | null;
   readonly meetingUrl: string | null;
   readonly withWhom: string | null;
+  /** The entity chosen while no domain is, so completing it asks only for the domain. */
+  readonly entityId?: string | null;
 };
 
 export type NewDebt = {
@@ -135,6 +139,8 @@ export type NewDebt = {
   readonly amount: number;
   readonly direction: DebtDirection;
   readonly domainId: string | null;
+  /** The entity chosen while no domain is, so completing it asks only for the domain. */
+  readonly entityId?: string | null;
 };
 
 export type NewMissingItem = {

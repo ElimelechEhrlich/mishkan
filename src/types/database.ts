@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0023_child_order.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0024_item_entity.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -203,6 +203,8 @@ export type Database = {
           in_main: boolean;
           /** A note that is one value: its title is the name and its answer the value. */
           is_value: boolean;
+          /** The item's entity: its domain's, or the one chosen while it has no domain yet. */
+          entity_id: string | null;
           /** A tracker's unit, such as ₪ or kg, shown beside its values. */
           tracker_unit: string | null;
           /** How a tracker sums up its entries. */
@@ -240,6 +242,7 @@ export type Database = {
           series_id?: string | null;
           in_main?: boolean;
           is_value?: boolean;
+          entity_id?: string | null;
           tracker_unit?: string | null;
           tracker_summary?: TrackerSummary;
           completed_by?: string | null;
@@ -268,6 +271,7 @@ export type Database = {
           with_whom?: string | null;
           in_main?: boolean;
           is_value?: boolean;
+          entity_id?: string | null;
           tracker_unit?: string | null;
           tracker_summary?: TrackerSummary;
         };
@@ -527,6 +531,7 @@ export type Database = {
           p_place: string | null;
           p_meeting_url: string | null;
           p_with_whom: string | null;
+          p_entity_id?: string | null;
         };
         Returns: number;
       };

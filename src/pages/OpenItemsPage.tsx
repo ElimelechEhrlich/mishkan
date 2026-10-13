@@ -27,7 +27,10 @@ export function OpenItemsPage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
   const scoped = useScopedItems(items, entities.entities, true);
   const view = useOpenSegments(scoped.assigned, scoped.steps, 'task');
-  const entityCounts = useEntityCounts(items.items.filter(scoped.inTopic), lookups.domainEntities);
+  const entityCounts = useEntityCounts(
+    items.assigned.filter(scoped.inTopic),
+    lookups.domainEntities,
+  );
   const domainGroups = useDomainGroups(view.visible, entities.entities, scoped.scope);
   const toEverything = useEverythingShortcut(entities.entities);
 

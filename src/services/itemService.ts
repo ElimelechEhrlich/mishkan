@@ -87,6 +87,7 @@ export async function createItem(newItem: NewItem): Promise<void> {
     title: newItem.title,
     kind: newItem.kind,
     domain_id: newItem.domainId,
+    entity_id: newItem.entityId ?? null,
     parent_id: newItem.parentId,
     ...(newItem.time ?? {}),
     // A note that is one value keeps it as its answer.
@@ -111,6 +112,7 @@ export async function createAppointments(appointment: NewAppointment): Promise<n
     p_place: appointment.place,
     p_meeting_url: appointment.meetingUrl,
     p_with_whom: appointment.withWhom,
+    p_entity_id: appointment.entityId ?? null,
   });
   if (error !== null) {
     throw new Error(error.message);

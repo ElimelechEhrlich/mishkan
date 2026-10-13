@@ -50,12 +50,15 @@ export function OverviewPage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
   const scoped = useScopedItems(items, entities.entities, true);
   const overview = useOverview(scoped.items, scoped.assigned, scoped.steps);
-  const entityCounts = useEntityCounts(items.items.filter(scoped.inTopic), lookups.domainEntities);
+  const entityCounts = useEntityCounts(
+    items.assigned.filter(scoped.inTopic),
+    lookups.domainEntities,
+  );
   const [searchParams] = useSearchParams();
   const week = useWeekSummary(scoped.inScope, members, items.items);
   const remindersError = useOccasionReminders(entities.entities, items.reload);
   const topicSections = useTopicSections(entities.entities, scoped.items, scoped.steps);
-  const entitySections = useEntitySections(scoped.scope, items.items, items.steps, scoped.topic);
+  const entitySections = useEntitySections(scoped.scope, items.assigned, items.steps, scoped.topic);
   const add = useAddRequest();
   const direction = useSlideDirection(
     entities.entities.findIndex((entity) => entity.id === scopeId),

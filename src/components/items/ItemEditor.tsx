@@ -208,6 +208,11 @@ export function ItemEditor({
   const convertible = isStep ? null : asConvertible(item.kind);
   // A missing item can only move to the shopping domain of another entity, and anything
   // else stays out of shopping domains (it becomes a missing item by converting it).
+  // An entity chosen before any domain, shown until a domain is chosen.
+  const pendingEntityName =
+    item.domain_id === null
+      ? entities.find((entity) => entity.id === item.entity_id)?.name
+      : undefined;
   const domainChoices = entities.map((entity) => ({
     ...entity,
     domains: entity.domains.filter((domain) => (domain.role === 'shopping') === isShopping),
@@ -294,7 +299,12 @@ export function ItemEditor({
         ) : (
           <PropertyRow
             label={labels.sections.domain}
-            value={domainLabel ?? labels.status.notSet}
+            value={
+              domainLabel ??
+              (pendingEntityName === undefined
+                ? labels.status.notSet
+                : `${pendingEntityName}${labels.item.separator}${labels.status.notSet}`)
+            }
             missing={domainLabel === undefined}
             open={openRow === 'domain'}
             onToggle={() => {
@@ -304,6 +314,13 @@ export function ItemEditor({
             <DomainPicker
               entities={domainChoices}
               value={item.domain_id}
+              initialEntityId={item.entity_id}
+              onEntityChange={(entityId) => {
+                // Kept only while there is no domain; a domain decides the entity.
+                if (item.domain_id === null) {
+                  update({ entity_id: entityId });
+                }
+              }}
               onStructureChanged={onStructureChanged}
               onChange={(domainId) => {
                 if (domainId !== null) {

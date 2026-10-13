@@ -13,7 +13,9 @@ type DomainPickerProps = {
   readonly value: string | null;
   readonly onChange: (domainId: string | null) => void;
   /** The entity opened at first when no domain is chosen yet. */
-  readonly initialEntityId?: string | undefined;
+  readonly initialEntityId?: string | null | undefined;
+  /** Told when an entity is chosen or cleared, so it is kept even before a domain is. */
+  readonly onEntityChange?: ((entityId: string | null) => void) | undefined;
   /**
    * Reloads the entities after a child or domain is added here. Without it the picker
    * only chooses, and offers no adding.
@@ -32,6 +34,7 @@ export function DomainPicker({
   value,
   onChange,
   initialEntityId,
+  onEntityChange,
   onStructureChanged,
 }: DomainPickerProps): ReactElement {
   const structure = useQuickStructure(entities, onStructureChanged ?? noReload);
@@ -56,7 +59,9 @@ export function DomainPicker({
               dotClass={entity.id === entityId ? undefined : entityTone(index).bg}
               selected={entity.id === entityId}
               onClick={() => {
-                setEntityId(entity.id === entityId ? null : entity.id);
+                const next = entity.id === entityId ? null : entity.id;
+                setEntityId(next);
+                onEntityChange?.(next);
               }}
             />
           ))}
@@ -68,6 +73,7 @@ export function DomainPicker({
                 const id = await structure.addChild(name);
                 if (id !== null) {
                   setEntityId(id);
+                  onEntityChange?.(id);
                 }
               }}
             />

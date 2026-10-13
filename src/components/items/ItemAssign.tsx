@@ -33,7 +33,7 @@ export function ItemAssign({
         <span className="min-w-0 flex-1 text-[17px] font-semibold break-words">{item.title}</span>
         {item.kind !== 'task' && (
           <span className="rounded-md bg-primary-soft px-1.5 text-xs font-medium text-primary">
-            {labels.kind[item.kind]}
+            {item.kind === 'note' && item.is_value ? labels.data.pair : labels.kind[item.kind]}
           </span>
         )}
       </Link>
@@ -58,6 +58,10 @@ export function ItemAssign({
         <DomainPicker
           entities={entities}
           value={null}
+          initialEntityId={item.entity_id}
+          onEntityChange={(entityId) => {
+            onUpdate(item.id, { entity_id: entityId });
+          }}
           onStructureChanged={onStructureChanged}
           onChange={(domainId) => {
             if (domainId !== null) {
