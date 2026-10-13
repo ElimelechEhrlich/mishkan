@@ -8,7 +8,13 @@ type QuickTimePickerProps = {
   readonly onChange: (value: QuickTime | null) => void;
 };
 
-const options = ['today', 'tomorrow', 'anytime', 'someday'] as const satisfies readonly QuickTime[];
+const options = [
+  'today',
+  'tomorrow',
+  'urgent',
+  'anytime',
+  'someday',
+] as const satisfies readonly QuickTime[];
 
 /** When a new task or goal is for, in one tap. Tapping the chosen one again clears it. */
 export function QuickTimePicker({ value, onChange }: QuickTimePickerProps): ReactElement {

@@ -62,7 +62,7 @@ export type OpenSegment = 'active' | 'waiting' | 'someday';
 export type KindFilter = 'task' | 'all';
 
 /** The quick choices of when, offered when adding a task or a goal. */
-export type QuickTime = 'today' | 'tomorrow' | 'anytime' | 'someday';
+export type QuickTime = 'today' | 'tomorrow' | 'urgent' | 'anytime' | 'someday';
 
 /** The groups inside the "active" tab. */
 export type ActiveSection = 'overdue' | 'today' | 'thisWeek' | 'upcoming' | 'undated';

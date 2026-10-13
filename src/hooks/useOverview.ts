@@ -85,10 +85,15 @@ export function useOverview(
       goals,
       issues,
       appointments,
-      overdue: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'overdue').length,
-      today: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'today').length,
-      thisWeek: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'thisWeek')
-        .length,
+      overdue: active.filter(
+        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'overdue',
+      ).length,
+      today: active.filter(
+        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'today',
+      ).length,
+      thisWeek: active.filter(
+        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'thisWeek',
+      ).length,
     };
   }, [assigned, steps]);
 

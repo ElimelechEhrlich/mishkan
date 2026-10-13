@@ -68,7 +68,7 @@ export function ItemList({
     <div className="flex flex-col gap-5">
       {sections.map((section) => {
         const inSection = sorted.filter(
-          (entry) => activeSectionOf(entry.dueDate, today) === section,
+          (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === section,
         );
         if (inSection.length === 0) {
           return null;

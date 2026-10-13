@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
-import {
-  listAttachments,
-  removeAttachment,
-  uploadAttachment,
-} from '../services/attachmentService';
+import { listAttachments, removeAttachment, uploadAttachment } from '../services/attachmentService';
 import type { Attachment, AttachmentWithUrl, Item } from '../types/domain';
 
 type AttachmentsState = {

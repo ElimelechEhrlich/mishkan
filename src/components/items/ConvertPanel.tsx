@@ -56,9 +56,7 @@ export function ConvertPanel({
   onConvert,
 }: ConvertPanelProps): ReactElement {
   const [target, setTarget] = useState<ConvertibleKind | null>(null);
-  const [category, setCategory] = useState<ShoppingCategory>(
-    item.shopping_category ?? 'planned',
-  );
+  const [category, setCategory] = useState<ShoppingCategory>(item.shopping_category ?? 'planned');
   const [counterparty, setCounterparty] = useState(item.title);
   const [amountText, setAmountText] = useState('');
   const [direction, setDirection] = useState<DebtDirection>('owed_to_us');

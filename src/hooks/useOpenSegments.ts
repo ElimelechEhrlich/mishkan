@@ -19,7 +19,7 @@ type SegmentOption = {
 };
 
 export type UseOpenSegments = {
-  /** Whether every kind that runs on time is shown, rather than only the first kind. */
+  /** Whether every kind that runs on time is shown, rather than only `narrowKind`. */
   readonly allKinds: boolean;
   readonly toggleAllKinds: () => void;
   readonly segment: OpenSegment;
@@ -44,12 +44,13 @@ function matchesKind(item: Item, kind: KindFilter): boolean {
 export function useOpenSegments(
   items: readonly Item[],
   steps: readonly Item[],
-  initialKind: KindFilter = 'all',
+  narrowKind: KindFilter = 'all',
 ): UseOpenSegments {
-  const [kind, setKind] = useState<KindFilter>(initialKind);
+  // Every kind shows at first; the toggle narrows to one kind and back.
+  const [kind, setKind] = useState<KindFilter>('all');
   const toggleAllKinds = useCallback((): void => {
-    setKind((current) => (current === 'all' ? initialKind : 'all'));
-  }, [initialKind]);
+    setKind((current) => (current === 'all' ? narrowKind : 'all'));
+  }, [narrowKind]);
   const [segment, setSegment] = useState<OpenSegment>('active');
 
   const rows = useMemo(
@@ -79,8 +80,12 @@ export function useOpenSegments(
       steps,
     );
     return {
-      overdue: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'overdue').length,
-      today: active.filter((entry) => activeSectionOf(entry.dueDate, today) === 'today').length,
+      overdue: active.filter(
+        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'overdue',
+      ).length,
+      today: active.filter(
+        (entry) => activeSectionOf(entry.dueDate, today, entry.urgent) === 'today',
+      ).length,
     };
   }, [rows, steps]);
 

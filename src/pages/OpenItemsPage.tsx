@@ -37,7 +37,7 @@ export function OpenItemsPage(): ReactElement {
   return (
     <PageShell
       toEverything={toEverything}
-      title={view.allKinds ? labels.pages.allItems : labels.pages.open}
+      title={labels.pages.open}
       incompleteCount={scoped.incomplete.length}
       todayCount={items.todayCount}
     >

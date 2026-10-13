@@ -65,9 +65,19 @@ describe('activeSectionOf', () => {
     expect(activeSectionOf('2026-10-19', today)).toBe('upcoming');
   });
 
+  it('puts what is urgent with today, unless it is already late', () => {
+    expect(activeSectionOf(null, today, true)).toBe('today');
+    expect(activeSectionOf('2026-10-19', today, true)).toBe('today');
+    expect(activeSectionOf('2026-10-10', today, true)).toBe('overdue');
+  });
+
   it('groups entries in the same way', () => {
     const groups = splitBySection(
-      [{ dueDate: '2026-10-01' }, { dueDate: '2026-10-15' }, { dueDate: null }],
+      [
+        { dueDate: '2026-10-01', urgent: false },
+        { dueDate: '2026-10-15', urgent: false },
+        { dueDate: null, urgent: false },
+      ],
       today,
     );
     expect(groups.overdue).toHaveLength(1);
@@ -144,6 +154,17 @@ describe('agendaOf', () => {
     expect(agendaOf([goal, step], [step], today).today.map((entry) => entry.item.id)).toEqual([
       'goal',
     ]);
+  });
+});
+
+describe('urgent items', () => {
+  it('shows an urgent task, and a goal with an urgent step, with today', () => {
+    const urgent = item({ id: 'urgent', time_mode: 'urgent', due_date: null });
+    const goal = item({ id: 'goal', kind: 'goal', due_date: null, time_mode: 'anytime' });
+    const step = item({ id: 'step', parent_id: 'goal', due_date: null, time_mode: 'urgent' });
+    const plain = item({ id: 'plain', time_mode: 'anytime', due_date: null });
+    const agenda = agendaOf([urgent, goal, step, plain], [step], today);
+    expect(agenda.today.map((entry) => entry.item.id).sort()).toEqual(['goal', 'urgent']);
   });
 });
 

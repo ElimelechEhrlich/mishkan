@@ -21,11 +21,7 @@ export function SplashScreen(): ReactElement {
       aria-label={labels.status.loading}
       className="fixed inset-0 flex items-center justify-center bg-paper"
     >
-      <svg
-        viewBox="0 0 512 512"
-        aria-hidden="true"
-        className="size-28 rounded-[30px] shadow-float"
-      >
+      <svg viewBox="0 0 512 512" aria-hidden="true" className="size-28 rounded-[30px] shadow-float">
         <rect width="512" height="512" fill="var(--color-cream)" />
         <path
           className="splash-roof"

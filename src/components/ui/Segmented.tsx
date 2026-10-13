@@ -32,7 +32,9 @@ export function Segmented<Value extends string>({
               onChange(option.value);
             }}
             className={`flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 text-[13px] transition ${
-              selected ? 'bg-surface font-semibold text-ink shadow-raised' : 'font-medium text-muted'
+              selected
+                ? 'bg-surface font-semibold text-ink shadow-raised'
+                : 'font-medium text-muted'
             }`}
           >
             {option.label}

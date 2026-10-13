@@ -155,16 +155,23 @@ export function segmentOf(item: Item): OpenSegment | null {
 /** How many days after today count as the coming week. */
 const comingWeekDays = 7;
 
-/** Overdue, today, from tomorrow to a week from today, later, or with no date. */
-export function activeSectionOf(dueDate: string | null, today: string): ActiveSection {
-  if (dueDate === null) {
-    return 'undated';
-  }
-  if (dueDate < today) {
+/**
+ * Overdue, today, from tomorrow to a week from today, later, or with no date. Something
+ * urgent ("דחוף") belongs to today unless it is already late.
+ */
+export function activeSectionOf(
+  dueDate: string | null,
+  today: string,
+  urgent = false,
+): ActiveSection {
+  if (dueDate !== null && dueDate < today) {
     return 'overdue';
   }
-  if (dueDate === today) {
+  if (urgent || dueDate === today) {
     return 'today';
+  }
+  if (dueDate === null) {
+    return 'undated';
   }
   return dueDate <= addDays(today, comingWeekDays) ? 'thisWeek' : 'upcoming';
 }
@@ -179,10 +186,9 @@ export const activeSections = [
 ] as const satisfies readonly ActiveSection[];
 
 /** Active entries split by how soon they are due. */
-export function splitBySection<T extends { readonly dueDate: string | null }>(
-  entries: readonly T[],
-  today: string,
-): Record<ActiveSection, T[]> {
+export function splitBySection<
+  T extends { readonly dueDate: string | null; readonly urgent: boolean },
+>(entries: readonly T[], today: string): Record<ActiveSection, T[]> {
   const groups: Record<ActiveSection, T[]> = {
     overdue: [],
     today: [],
@@ -191,7 +197,7 @@ export function splitBySection<T extends { readonly dueDate: string | null }>(
     undated: [],
   };
   for (const entry of entries) {
-    groups[activeSectionOf(entry.dueDate, today)].push(entry);
+    groups[activeSectionOf(entry.dueDate, today, entry.urgent)].push(entry);
   }
   return groups;
 }
@@ -215,6 +221,8 @@ export type ListEntry = {
   readonly steps: readonly Item[];
   /** The earliest due date of the item and its open steps, for sorting and sections. */
   readonly dueDate: string | null;
+  /** Marked urgent ("דחוף"), itself or one of its open steps: it shows with today's. */
+  readonly urgent: boolean;
 };
 
 export function toListEntries(items: readonly Item[], allSteps: readonly Item[]): ListEntry[] {
@@ -225,14 +233,14 @@ export function toListEntries(items: readonly Item[], allSteps: readonly Item[])
       : [];
     // An issue's own date, if one is left from a conversion, is not used: only its steps count.
     const dated = item.kind === 'issue' ? [] : [item];
-    const dueDates = [...dated, ...steps.filter((step) => step.status === 'open')]
-      .map((entry) => entry.due_date)
-      .filter((date) => date !== null);
+    const timed = [...dated, ...steps.filter((step) => step.status === 'open')];
+    const urgent = timed.some((entry) => entry.time_mode === 'urgent');
+    const dueDates = timed.map((entry) => entry.due_date).filter((date) => date !== null);
     const dueDate = dueDates.reduce<string | null>(
       (earliest, date) => (earliest === null || date < earliest ? date : earliest),
       null,
     );
-    return { item, steps, dueDate };
+    return { item, steps, dueDate, urgent };
   });
 }
 

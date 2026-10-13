@@ -14,8 +14,10 @@ type DoneRowProps = {
 
 /** A closed item: when it was done and by whom. Unticking brings it back. */
 export function DoneRow({ item, lookups, onReopen }: DoneRowProps): ReactElement {
-  const domainLabel = item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
-  const doneBy = item.completed_by === null ? undefined : lookups.memberNames.get(item.completed_by);
+  const domainLabel =
+    item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
+  const doneBy =
+    item.completed_by === null ? undefined : lookups.memberNames.get(item.completed_by);
   const doneOn = item.completed_at === null ? undefined : formatTimestampDate(item.completed_at);
   const details = [domainLabel, doneBy, doneOn].filter((part) => part !== undefined);
 

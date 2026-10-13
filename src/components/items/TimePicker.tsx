@@ -15,7 +15,8 @@ type TimePickerProps = {
 
 type Panel = 'scheduled' | 'recurring' | null;
 
-const undatedModes = ['anytime', 'waiting', 'someday'] as const;
+/** Urgent has no date but shows with today's, everywhere today's are shown. */
+const undatedModes = ['urgent', 'anytime', 'waiting', 'someday'] as const;
 
 /** One tap for the undated modes; a date or a repeating rhythm asks for details first. */
 export function TimePicker({ item, onPick }: TimePickerProps): ReactElement {

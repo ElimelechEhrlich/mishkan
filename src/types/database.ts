@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0024_item_entity.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0026_urgent_today.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -21,7 +21,7 @@ type ItemKind =
   | 'appointment';
 type MeetingPlace = 'in_person' | 'phone' | 'video';
 type ShoppingCategory = 'food' | 'clothing' | 'urgent' | 'planned';
-type ItemTimeMode = 'scheduled' | 'recurring' | 'anytime' | 'waiting' | 'someday';
+type ItemTimeMode = 'scheduled' | 'recurring' | 'urgent' | 'anytime' | 'waiting' | 'someday';
 type ItemStatus = 'open' | 'done';
 type DebtDirection = 'we_owe' | 'owed_to_us';
 

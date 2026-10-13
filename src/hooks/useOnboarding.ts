@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toMessage } from '../lib/errors';
-import {
-  createHousehold,
-  joinHousehold,
-  listUnclaimedParents,
-} from '../services/householdService';
+import { createHousehold, joinHousehold, listUnclaimedParents } from '../services/householdService';
 import type { UnclaimedParent } from '../types/domain';
 
 type OnboardingState = {

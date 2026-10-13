@@ -17,6 +17,7 @@ import type {
 const timeMode = {
   scheduled: 'בתאריך',
   recurring: 'חוזרת',
+  urgent: 'דחוף',
   anytime: 'ללא מועד',
   waiting: 'ממתינה',
   someday: 'על המדף',
@@ -87,6 +88,7 @@ const appointmentRepeat = {
 const quickTime = {
   today: 'היום',
   tomorrow: 'מחר',
+  urgent: 'דחוף',
   anytime: 'ללא מועד',
   someday: 'על המדף',
 } as const satisfies Record<QuickTime, string>;
@@ -152,7 +154,6 @@ export const labels = {
     search: 'חיפוש',
     home: 'ראשי',
     open: 'משימות',
-    allItems: 'כל הפריטים',
     byDomain: 'לפי תחומים',
     appointments: 'תורים ופגישות',
     goals: 'יעדים וסוגיות',
@@ -193,8 +194,6 @@ export const labels = {
     remove: 'מחיקה',
     save: 'שמירה',
     valueTitle: 'ערך',
-    moveUp: 'להזיז למעלה',
-    moveDown: 'להזיז למטה',
     noteKinds: { note: 'פתק', value: 'נתון' },
     valueName: 'שם הנתון, למשל: קוד לשער',
     valueField: 'הערך, למשל: 1234',
@@ -254,6 +253,9 @@ export const labels = {
     entityNotFound: 'הישות לא נמצאה. ייתכן שהיא נמחקה.',
   },
   actions: {
+    order: 'סדר',
+    moveUp: 'להזיז למעלה',
+    moveDown: 'להזיז למטה',
     save: 'שמירה',
     close: 'סגירה',
     confirm: 'אישור',
@@ -481,6 +483,7 @@ export const labels = {
         text: 'למשימה וליעד בוחרים מתי. מה שעוד אין לו זמן מחכה ב"להשלמה" עד שתקבעו.',
         points: [
           'בתאריך, או חוזר: כל יום, כל שבוע או כל חודש',
+          'דחוף: בלי תאריך, אבל מופיע עם של היום',
           'ללא מועד: פעיל, אבל בלי דדליין',
           'ממתין: תלוי בפריט אחר או בתנאי, וחוזר כשהתנאי מתקיים',
           'על המדף: לעתיד, לא עכשיו',
@@ -604,7 +607,7 @@ export const labels = {
     circleSample: ['משפחה', 'חברים'],
     domainsEntity: 'ילד',
     domainsSample: ['חינוך', 'בריאות', 'התפתחות', 'אירועים', 'קניות'],
-    timeSample: ['היום', 'כל שבוע', 'ללא מועד', 'ממתין', 'על המדף'],
+    timeSample: ['היום', 'כל שבוע', 'דחוף', 'ללא מועד', 'ממתין', 'על המדף'],
     addSample: 'לקנות חלב',
     homeTiles: ['באיחור', 'היום', 'להשלמה'],
     todaySample: [
@@ -856,8 +859,6 @@ export const labels = {
     entityPage: 'לדף',
     openEntityPage: 'לדף של',
     addChild: 'הוספת ילד/ה',
-    moveUp: 'להזיז למעלה',
-    moveDown: 'להזיז למטה',
     childrenByHand: 'הילדים מסודרים ידנית',
     sortByAge: 'סידור לפי גיל',
     addParent: 'הוספת הורה',

@@ -10,7 +10,11 @@ type ConfirmButtonProps = {
 };
 
 /** A destructive action that needs a second tap. */
-export function ConfirmButton({ label, confirmLabel, onConfirm }: ConfirmButtonProps): ReactElement {
+export function ConfirmButton({
+  label,
+  confirmLabel,
+  onConfirm,
+}: ConfirmButtonProps): ReactElement {
   const [armed, setArmed] = useState(false);
   return (
     <Button

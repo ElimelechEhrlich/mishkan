@@ -5,6 +5,7 @@ import type { ItemData } from '../../types/domain';
 import { ConfirmIconButton } from '../ui/ConfirmIconButton';
 import { CopyButton } from '../ui/CopyButton';
 import { IconButton } from '../ui/IconButton';
+import { MoveButtons } from '../ui/MoveButtons';
 import { TextField } from '../ui/TextField';
 
 type DataRowProps = {
@@ -67,11 +68,8 @@ export function DataRow({
                 onConfirm={onRemove}
               />
               {/* Where order matters, such as in a recipe, a row can be moved. */}
-              {onMoveUp !== undefined && (
-                <IconButton icon="up" label={labels.data.moveUp} onClick={onMoveUp} />
-              )}
-              {onMoveDown !== undefined && (
-                <IconButton icon="down" label={labels.data.moveDown} onClick={onMoveDown} />
+              {(onMoveUp !== undefined || onMoveDown !== undefined) && (
+                <MoveButtons onMoveUp={onMoveUp} onMoveDown={onMoveDown} />
               )}
             </div>
             <button

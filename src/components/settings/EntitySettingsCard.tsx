@@ -9,7 +9,7 @@ import { EntityAvatar } from '../entities/EntityAvatar';
 import { AddRow } from '../ui/AddRow';
 import { ConfirmIconButton } from '../ui/ConfirmIconButton';
 import { Icon } from '../ui/Icon';
-import { IconButton } from '../ui/IconButton';
+import { MoveButtons } from '../ui/MoveButtons';
 import { InlineEdit } from '../ui/InlineEdit';
 
 type EntitySettingsCardProps = {
@@ -118,11 +118,8 @@ export function EntitySettingsCard({
                 }}
               />
             )}
-            {onMoveUp !== undefined && (
-              <IconButton icon="up" label={labels.settings.moveUp} onClick={onMoveUp} />
-            )}
-            {onMoveDown !== undefined && (
-              <IconButton icon="down" label={labels.settings.moveDown} onClick={onMoveDown} />
+            {(onMoveUp !== undefined || onMoveDown !== undefined) && (
+              <MoveButtons onMoveUp={onMoveUp} onMoveDown={onMoveDown} />
             )}
           </div>
           {isPrivate && (
