@@ -14,6 +14,7 @@ import type {
   ItemData,
   ItemKind,
   ItemUpdate,
+  TrackerEntry,
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
 import { Button } from '../ui/Button';
@@ -34,6 +35,9 @@ import type { ReminderPerson } from '../../hooks/useReminderPeople';
 import { ReminderPicker } from './ReminderPicker';
 import { PrerequisiteList } from './PrerequisiteList';
 import { DataSection } from './DataSection';
+import { IssueTrackers } from './IssueTrackers';
+import { TrackerCard } from './TrackerCard';
+import type { EntryChanges } from '../../hooks/useTrackerEntries';
 import { QuestionList } from './QuestionList';
 import { QuestionRow } from './QuestionRow';
 import { StepList } from './StepList';
@@ -56,6 +60,14 @@ type ItemEditorProps = {
   ) => void;
   readonly onRemoveData: (dataId: string) => void;
   readonly onMoveData: (row: ItemData, step: -1 | 1) => void;
+  /** The trackers inside this item, when it is an issue. */
+  readonly trackers: readonly Item[];
+  /** Every tracker's entries, by tracker id: this one's, and those of the issue's trackers. */
+  readonly trackerEntries: ReadonlyMap<string, readonly TrackerEntry[]>;
+  readonly onAddTracker: (parent: Item, title: string) => void;
+  readonly onAddEntry: (itemId: string, onDate: string, value: string, note: string | null) => void;
+  readonly onUpdateEntry: (entryId: string, changes: EntryChanges) => void;
+  readonly onRemoveEntry: (entryId: string) => void;
   readonly debt: DebtDetails | null;
   /** Whether the item kept debt details from a time it was a debt. */
   readonly hasDebtDetails: boolean;
@@ -102,6 +114,7 @@ const convertibleKinds = [
   'goal',
   'issue',
   'note',
+  'tracker',
   'debt',
   'missing_item',
 ] as const satisfies readonly ConvertibleKind[];
@@ -134,6 +147,12 @@ export function ItemEditor({
   onUpdateData,
   onRemoveData,
   onMoveData,
+  trackers,
+  trackerEntries,
+  onAddTracker,
+  onAddEntry,
+  onUpdateEntry,
+  onRemoveEntry,
   debt,
   hasDebtDetails,
   entities,
@@ -169,6 +188,7 @@ export function ItemEditor({
   // An issue has no time of its own: the dates are on its steps.
   const hasSchedule =
     item.kind !== 'note' &&
+    item.kind !== 'tracker' &&
     item.kind !== 'debt' &&
     item.kind !== 'issue' &&
     !isShopping &&
@@ -200,13 +220,14 @@ export function ItemEditor({
   const goals = items.filter(
     (candidate) => candidate.kind === 'goal' || candidate.kind === 'issue',
   );
-  const parentTitle = goals.find((goal) => goal.id === item.parent_id)?.title;
+  const parent = goals.find((goal) => goal.id === item.parent_id);
+  const parentTitle = parent?.title;
 
   return (
     <div className="flex flex-col gap-4">
       <Card>
         <ItemTextForm key={item.id} item={item} onUpdate={onUpdate} />
-        {item.kind !== 'note' && !isQuestion && (
+        {item.kind !== 'note' && item.kind !== 'tracker' && !isQuestion && (
           <Button
             variant={done ? 'ghost' : 'soft'}
             onClick={() => {
@@ -260,7 +281,11 @@ export function ItemEditor({
           <PropertyRow
             label={labels.sections.domain}
             value={domainLabel ?? labels.item.noDomain}
-            hint={labels.item.inheritedDomain}
+            hint={
+              parent?.kind === 'issue'
+                ? labels.item.inheritedDomainIssue
+                : labels.item.inheritedDomain
+            }
             open={false}
             onToggle={() => {
               setOpenRow(null);
@@ -442,6 +467,21 @@ export function ItemEditor({
         </Card>
       )}
 
+      {item.kind === 'tracker' && (
+        <TrackerCard
+          item={item}
+          entries={trackerEntries.get(item.id) ?? []}
+          onUpdateItem={(changes) => {
+            onUpdate(item.id, changes);
+          }}
+          onAdd={(onDate, value, note) => {
+            onAddEntry(item.id, onDate, value, note);
+          }}
+          onUpdateEntry={onUpdateEntry}
+          onRemoveEntry={onRemoveEntry}
+        />
+      )}
+
       {/* A note that is one value: its title is the name, and here is the value. */}
       {item.kind === 'note' && item.is_value && (
         <Card title={labels.data.valueTitle}>
@@ -493,6 +533,18 @@ export function ItemEditor({
             onReopen={onReopen}
             onAdd={(title) => {
               onAddStep(item, title);
+            }}
+          />
+        </Card>
+      )}
+
+      {item.kind === 'issue' && (
+        <Card title={labels.tracker.title}>
+          <IssueTrackers
+            trackers={trackers}
+            entries={trackerEntries}
+            onAdd={(title) => {
+              onAddTracker(item, title);
             }}
           />
         </Card>

@@ -7,6 +7,7 @@ import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
 import { CopyButton } from '../ui/CopyButton';
 import { DueText } from './DueText';
+import { trackerLine } from '../../lib/trackers';
 import { ItemMeta } from './ItemMeta';
 
 type ItemRowProps = {
@@ -36,6 +37,14 @@ export function ItemRow({
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
   // A note that is one value, such as the gate's code, shows it right in the list.
   const value = item.kind === 'note' && item.is_value && item.answer !== null ? item.answer : '';
+  // A tracker shows where it stands: its total or latest value, or how many entries it has.
+  const trackerEntries =
+    item.kind === 'tracker' ? (lookups.trackerEntries.get(item.id) ?? []) : null;
+  const trackerSummary =
+    trackerEntries === null
+      ? null
+      : (trackerLine(item.tracker_summary, item.tracker_unit, trackerEntries)?.value ??
+        `${String(trackerEntries.length)} ${labels.tracker.entryCount}`);
 
   // If the save fails the row would stay ticked forever, so it is released after a while.
   useEffect(() => {
@@ -55,7 +64,7 @@ export function ItemRow({
       className={`group flex gap-3 ps-3.5 transition duration-300 ${completing ? 'opacity-40' : ''}`}
     >
       <span className="w-5.5 shrink-0 pt-2">
-        {item.kind !== 'note' && (
+        {item.kind !== 'note' && item.kind !== 'tracker' && (
           <CheckButton
             checked={completing}
             label={labels.actions.markDone}
@@ -88,6 +97,8 @@ export function ItemRow({
         </span>
         {value !== '' ? (
           <CopyButton text={value} />
+        ) : trackerSummary !== null ? (
+          <span className="pt-0.5 text-sm font-semibold whitespace-nowrap">{trackerSummary}</span>
         ) : (
           <span className="pt-0.5">
             <DueText item={item} today={today} />

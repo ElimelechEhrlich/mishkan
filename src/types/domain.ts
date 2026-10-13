@@ -3,6 +3,8 @@ import type { Database } from './database';
 type Tables = Database['public']['Tables'];
 type Enums = Database['public']['Enums'];
 
+export type { TrackerSummary } from './database';
+
 export type Household = Tables['households']['Row'];
 export type Member = Tables['members']['Row'];
 export type Entity = Tables['entities']['Row'];
@@ -21,6 +23,8 @@ export type Prerequisite = Tables['prerequisites']['Row'];
 export type Attachment = Tables['attachments']['Row'];
 /** A named value kept on an item, such as the gate's code. */
 export type ItemData = Tables['item_data']['Row'];
+/** One entry of a tracker: a date, a value and maybe a note. */
+export type TrackerEntry = Tables['tracker_entries']['Row'];
 
 export type TimeMode = Enums['item_time_mode'];
 export type ItemKind = Enums['item_kind'];
@@ -70,7 +74,7 @@ export type TimeChoice = {
 };
 
 /** Kinds that quick add can create. Debts and missing items have their own forms. */
-export type CapturableKind = Extract<ItemKind, 'task' | 'goal' | 'issue' | 'note'>;
+export type CapturableKind = Extract<ItemKind, 'task' | 'goal' | 'issue' | 'note' | 'tracker'>;
 
 export type NewItem = {
   readonly title: string;
@@ -86,7 +90,7 @@ export type NewItem = {
 /** Kinds an item can be converted to and from; runs and questions are left out. */
 export type ConvertibleKind = Extract<
   ItemKind,
-  'task' | 'goal' | 'issue' | 'note' | 'debt' | 'missing_item'
+  'task' | 'goal' | 'issue' | 'note' | 'tracker' | 'debt' | 'missing_item'
 >;
 
 /** Kinds the add sheet makes: the convertible ones and appointments, which keep their kind. */

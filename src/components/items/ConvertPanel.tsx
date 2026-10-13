@@ -29,6 +29,7 @@ const targets = [
   'goal',
   'issue',
   'note',
+  'tracker',
   'debt',
   'missing_item',
 ] as const satisfies readonly ConvertibleKind[];

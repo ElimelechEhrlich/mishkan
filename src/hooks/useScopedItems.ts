@@ -73,7 +73,10 @@ export function useScopedItems(
       incomplete: items.incomplete,
       steps: items.steps.filter(inScope),
       goals: scopedItems.filter((item) => item.kind === 'goal' || item.kind === 'issue'),
-      notes: scopedItems.filter((item) => item.kind === 'note'),
+      // Trackers stand with the notes; one inside an issue is shown in its issue.
+      notes: scopedItems.filter(
+        (item) => item.kind === 'note' || (item.kind === 'tracker' && item.parent_id === null),
+      ),
       appointments: items.assigned.filter((item) => inScope(item) && item.kind === 'appointment'),
       inScope,
       inTopic,

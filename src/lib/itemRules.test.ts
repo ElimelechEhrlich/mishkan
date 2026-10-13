@@ -48,6 +48,8 @@ function item(overrides: Partial<Item>): Item {
     series_id: null,
     in_main: false,
     is_value: false,
+    tracker_unit: null,
+    tracker_summary: 'sum',
     ...overrides,
   };
 }

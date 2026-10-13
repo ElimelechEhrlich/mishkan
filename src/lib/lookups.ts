@@ -6,6 +6,7 @@ import type {
   ItemData,
   Member,
   ShoppingTarget,
+  TrackerEntry,
 } from '../types/domain';
 
 /** The classes of one entity color: a fill, a frame and text. */
@@ -39,12 +40,15 @@ export type Lookups = {
   readonly memberNames: ReadonlyMap<string, string>;
   /** The named values kept on items ("נתונים"), by item id. */
   readonly itemData: ReadonlyMap<string, readonly ItemData[]>;
+  /** The entries of trackers ("מעקב"), by tracker id. */
+  readonly trackerEntries: ReadonlyMap<string, readonly TrackerEntry[]>;
 };
 
 export function buildLookups(
   entities: readonly EntityWithDomains[],
   members: readonly Member[],
   itemData: ReadonlyMap<string, readonly ItemData[]> = new Map(),
+  trackerEntries: ReadonlyMap<string, readonly TrackerEntry[]> = new Map(),
 ): Lookups {
   const domainLabels = new Map<string, string>();
   const domainTones = new Map<string, EntityTone>();
@@ -57,7 +61,7 @@ export function buildLookups(
     }
   });
   const memberNames = new Map(members.map((member) => [member.id, member.name]));
-  return { domainLabels, domainTones, domainEntities, memberNames, itemData };
+  return { domainLabels, domainTones, domainEntities, memberNames, itemData, trackerEntries };
 }
 
 /** Every entity with its shopping domain, the home first: most missing items are for it. */
@@ -82,7 +86,12 @@ export function countByEntity(
   const counts = new Map<string, number>();
   for (const item of rows) {
     const entityId = item.domain_id === null ? undefined : domainEntities.get(item.domain_id);
-    if (entityId !== undefined && item.kind !== 'question') {
+    // Questions, and trackers inside an issue, are parts of their issue, not items to count.
+    if (
+      entityId !== undefined &&
+      item.kind !== 'question' &&
+      !(item.kind === 'tracker' && item.parent_id !== null)
+    ) {
       counts.set(entityId, (counts.get(entityId) ?? 0) + 1);
     }
   }

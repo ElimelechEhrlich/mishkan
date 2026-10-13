@@ -56,6 +56,7 @@ const kinds = [
   'goal',
   'issue',
   'note',
+  'tracker',
   'debt',
   'missing_item',
 ] as const satisfies readonly AddableKind[];

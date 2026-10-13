@@ -96,7 +96,9 @@ export function useOverview(
     const missing = items.filter((item) => item.kind === 'missing_item' && item.run_id === null);
     return {
       notes: toListEntries(
-        items.filter((item) => item.kind === 'note'),
+        items.filter(
+          (item) => item.kind === 'note' || (item.kind === 'tracker' && item.parent_id === null),
+        ),
         [],
       ),
       shopping: shoppingCategories

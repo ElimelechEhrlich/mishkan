@@ -1,10 +1,13 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0020_item_data.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0022_trackers.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
 type MemberRole = 'parent' | 'child' | 'household';
 type EntityKind = 'parent' | 'personal' | 'child' | 'home' | 'couple' | 'circle';
 type DomainRole = 'regular' | 'shopping' | 'debts';
+/** How a tracker sums up its entries: the total, the latest, or not at all. */
+export type TrackerSummary = 'sum' | 'latest' | 'none';
+
 type ItemKind =
   | 'task'
   | 'goal'
@@ -14,6 +17,7 @@ type ItemKind =
   | 'missing_item'
   | 'shopping_run'
   | 'question'
+  | 'tracker'
   | 'appointment';
 type MeetingPlace = 'in_person' | 'phone' | 'video';
 type ShoppingCategory = 'food' | 'clothing' | 'urgent' | 'planned';
@@ -195,6 +199,10 @@ export type Database = {
           in_main: boolean;
           /** A note that is one value: its title is the name and its answer the value. */
           is_value: boolean;
+          /** A tracker's unit, such as ₪ or kg, shown beside its values. */
+          tracker_unit: string | null;
+          /** How a tracker sums up its entries. */
+          tracker_summary: TrackerSummary;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -228,6 +236,8 @@ export type Database = {
           series_id?: string | null;
           in_main?: boolean;
           is_value?: boolean;
+          tracker_unit?: string | null;
+          tracker_summary?: TrackerSummary;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -254,6 +264,8 @@ export type Database = {
           with_whom?: string | null;
           in_main?: boolean;
           is_value?: boolean;
+          tracker_unit?: string | null;
+          tracker_summary?: TrackerSummary;
         };
         Relationships: [];
       };
@@ -277,6 +289,30 @@ export type Database = {
         Update: {
           title?: string;
           sort_order?: number;
+        };
+        Relationships: [];
+      };
+      tracker_entries: {
+        Row: {
+          id: string;
+          item_id: string;
+          on_date: string;
+          value: string;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          on_date?: string;
+          value: string;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          on_date?: string;
+          value?: string;
+          note?: string | null;
         };
         Relationships: [];
       };

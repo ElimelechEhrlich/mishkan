@@ -12,7 +12,7 @@ type NoteFilterChipsProps = {
   readonly onChange: (filter: NoteFilter) => void;
 };
 
-/** All, plain notes or values, as a light row of chips over the notes. */
+/** All, plain notes, values or trackers, as a light row of chips over the notes. */
 export function NoteFilterChips({ options, value, onChange }: NoteFilterChipsProps): ReactElement {
   return (
     <div className="flex flex-wrap gap-1.5">

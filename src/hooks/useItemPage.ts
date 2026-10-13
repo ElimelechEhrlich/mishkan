@@ -15,6 +15,8 @@ export type UseItemPage = {
   readonly steps: readonly Item[];
   /** The questions of the item, when it is an issue. */
   readonly questions: readonly Item[];
+  /** The trackers inside the item, when it is an issue. */
+  readonly trackers: readonly Item[];
   /** The details of the item while it is a debt. */
   readonly debt: DebtDetails | null;
   /** Whether the item has debt details, kept from a time it was a debt. */
@@ -22,6 +24,7 @@ export type UseItemPage = {
   /** Set when a closed item could not be loaded. */
   readonly error: string | null;
   readonly addStep: (parent: Item, title: string) => void;
+  readonly addTracker: (parent: Item, title: string) => void;
   readonly deleteAndLeave: (itemId: string) => void;
 };
 
@@ -71,6 +74,7 @@ export function useItemPage(): UseItemPage {
   const children = item === null ? [] : items.steps.filter((step) => step.parent_id === item.id);
   const steps = children.filter((child) => child.kind === 'task');
   const questions = children.filter((child) => child.kind === 'question');
+  const trackers = children.filter((child) => child.kind === 'tracker');
   const debt =
     [...debts.owedToUs, ...debts.weOwe].find((candidate) => candidate.item.id === itemId)
       ?.details ?? null;
@@ -83,6 +87,19 @@ export function useItemPage(): UseItemPage {
       void addItem({
         title,
         kind: 'task',
+        domainId: parent.domain_id,
+        parentId: parent.id,
+        time: null,
+      });
+    },
+    [addItem],
+  );
+
+  const addTracker = useCallback(
+    (parent: Item, title: string): void => {
+      void addItem({
+        title,
+        kind: 'tracker',
         domainId: parent.domain_id,
         parentId: parent.id,
         time: null,
@@ -107,10 +124,12 @@ export function useItemPage(): UseItemPage {
     item,
     steps,
     questions,
+    trackers,
     debt,
     hasDebtDetails,
     error,
     addStep,
+    addTracker,
     deleteAndLeave,
   };
 }

@@ -132,6 +132,7 @@ export function segmentOf(item: Item): OpenSegment | null {
   if (
     item.kind === 'debt' ||
     item.kind === 'note' ||
+    item.kind === 'tracker' ||
     item.kind === 'missing_item' ||
     item.kind === 'shopping_run' ||
     item.kind === 'question'

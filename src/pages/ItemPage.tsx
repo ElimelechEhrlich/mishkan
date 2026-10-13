@@ -7,6 +7,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
 import { useItemData } from '../hooks/useItemData';
+import { useTrackerEntries } from '../hooks/useTrackerEntries';
 import { useItemPage } from '../hooks/useItemPage';
 import { useLookups } from '../hooks/useLookups';
 import { useReminderPeople } from '../hooks/useReminderPeople';
@@ -22,6 +23,7 @@ export function ItemPage(): ReactElement {
   const { items, item } = page;
   const snooze = useSnoozeRequest();
   const itemData = useItemData();
+  const trackerEntries = useTrackerEntries();
 
   return (
     <PageShell
@@ -37,7 +39,8 @@ export function ItemPage(): ReactElement {
           entities.error ??
           reminderPeople.error ??
           snooze.error ??
-          itemData.error
+          itemData.error ??
+          trackerEntries.error
         }
       />
       {item === null ? (
@@ -53,6 +56,12 @@ export function ItemPage(): ReactElement {
           onUpdateData={itemData.update}
           onRemoveData={itemData.remove}
           onMoveData={itemData.move}
+          trackers={page.trackers}
+          trackerEntries={trackerEntries.byItem}
+          onAddTracker={page.addTracker}
+          onAddEntry={trackerEntries.add}
+          onUpdateEntry={trackerEntries.update}
+          onRemoveEntry={trackerEntries.remove}
           debt={page.debt}
           hasDebtDetails={page.hasDebtDetails}
           entities={entities.entities}
