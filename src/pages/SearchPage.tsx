@@ -21,6 +21,7 @@ export function SearchPage(): ReactElement {
     <PageShell
       title={labels.pages.search}
       incompleteCount={items.incomplete.length}
+      todayCount={items.todayCount}
       inner
       hideNav
       heading={

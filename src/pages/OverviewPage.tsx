@@ -68,6 +68,7 @@ export function OverviewPage(): ReactElement {
       title={scoped.scope?.name ?? labels.overview.title}
       subtitle={formatToday()}
       incompleteCount={scoped.incomplete.length}
+      todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error ?? remindersError ?? week.error} />
       <ScopeBar

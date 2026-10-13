@@ -36,6 +36,7 @@ export function ShoppingPage(): ReactElement {
       toEverything={toEverything}
       title={labels.pages.shopping}
       incompleteCount={scoped.incomplete.length}
+      todayCount={items.todayCount}
     >
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />
       <ScopeBar

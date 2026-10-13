@@ -12,6 +12,8 @@ type PageShellProps = {
   /** A quiet line: above the title on main pages (such as today's date), below it on inner ones. */
   readonly subtitle?: string | undefined;
   readonly incompleteCount: number;
+  /** What is late or due today, across the whole home; marked on the header's today link. */
+  readonly todayCount: number;
   readonly children: ReactNode;
   /** Inner pages show a back button instead of the header links. */
   readonly inner?: boolean;
@@ -23,6 +25,10 @@ type PageShellProps = {
   readonly toEverything?: EverythingShortcut | undefined;
 };
 
+/** The red count on a header link, such as what waits for today. */
+const countBadgeClass =
+  'absolute top-0.5 end-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-paper bg-alert px-1 text-[10px] font-bold text-white';
+
 const headerLinkClass =
   'flex size-10 items-center justify-center rounded-xl text-muted transition active:bg-line';
 
@@ -30,6 +36,7 @@ export function PageShell({
   title,
   subtitle,
   incompleteCount,
+  todayCount,
   children,
   inner = false,
   heading,
@@ -72,11 +79,15 @@ export function PageShell({
             </div>
             {toEverything !== undefined && <EverythingButton shortcut={toEverything} />}
             <Link
-              to="/search"
-              aria-label={labels.pages.search}
-              className={headerLinkClass}
+              to="/today"
+              aria-label={labels.pages.today}
+              className={`relative ${headerLinkClass}`}
               data-dock-anchor
             >
+              <Icon name="calendar" className="size-5.5" />
+              {todayCount > 0 && <span className={countBadgeClass}>{String(todayCount)}</span>}
+            </Link>
+            <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>
               <Icon name="search" className="size-5.5" />
             </Link>
             <Link
@@ -86,9 +97,7 @@ export function PageShell({
             >
               <Icon name="alert" className="size-5.5" />
               {incompleteCount > 0 && (
-                <span className="absolute top-0.5 end-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-paper bg-alert px-1 text-[10px] font-bold text-white">
-                  {String(incompleteCount)}
-                </span>
+                <span className={countBadgeClass}>{String(incompleteCount)}</span>
               )}
             </Link>
             <Link to="/done" aria-label={labels.actions.showDone} className={headerLinkClass}>

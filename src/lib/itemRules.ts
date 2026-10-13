@@ -347,3 +347,28 @@ function seriesDate(firstDate: string, repeat: AppointmentRepeat, index: number)
   }
   return firstDate;
 }
+
+/** What is for today across the whole home: what is late, and what is due today. */
+export type Agenda = {
+  readonly overdue: readonly ListEntry[];
+  readonly today: readonly ListEntry[];
+};
+
+/**
+ * Today's list, the same reckoning as the main page's "late" and "today": active tasks and
+ * goals (a goal by its earliest open step), issues by their steps, and appointments. Each
+ * group is in time order, the ones with an hour first.
+ */
+export function agendaOf(assigned: readonly Item[], steps: readonly Item[], today: string): Agenda {
+  const rows = withoutNestedSteps(assigned).filter(
+    (item) =>
+      item.kind === 'issue' ||
+      item.kind === 'appointment' ||
+      ((item.kind === 'task' || item.kind === 'goal') && segmentOf(item) === 'active'),
+  );
+  const sections = splitBySection(toListEntries(rows, steps), today);
+  return {
+    overdue: [...sections.overdue].sort(compareEntries),
+    today: [...sections.today].sort(compareEntries),
+  };
+}

@@ -23,7 +23,12 @@ export function SettingsPage(): ReactElement {
   const settings = useEntitySettings(member, entities.entities, entities.reload);
 
   return (
-    <PageShell title={labels.pages.settings} incompleteCount={items.incomplete.length} inner>
+    <PageShell
+      title={labels.pages.settings}
+      incompleteCount={items.incomplete.length}
+      todayCount={items.todayCount}
+      inner
+    >
       <ErrorBanner message={entities.error} />
       <ProfileCard member={member} household={household} entities={entities.entities} />
       <EntitySettings entities={entities.entities} settings={settings} />

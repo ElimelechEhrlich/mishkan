@@ -12,7 +12,11 @@ export function IncompletePage(): ReactElement {
   const items = useItems();
 
   return (
-    <PageShell title={labels.pages.incomplete} incompleteCount={items.incomplete.length}>
+    <PageShell
+      title={labels.pages.incomplete}
+      incompleteCount={items.incomplete.length}
+      todayCount={items.todayCount}
+    >
       <ErrorBanner message={items.error ?? entities.error} />
       <IncompleteList
         items={items.incomplete}

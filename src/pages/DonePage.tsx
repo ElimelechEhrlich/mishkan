@@ -17,7 +17,12 @@ export function DonePage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
 
   return (
-    <PageShell title={labels.pages.done} incompleteCount={items.incomplete.length} inner>
+    <PageShell
+      title={labels.pages.done}
+      incompleteCount={items.incomplete.length}
+      todayCount={items.todayCount}
+      inner
+    >
       <ErrorBanner message={done.error ?? entities.error} />
       <DoneList
         items={done.items}

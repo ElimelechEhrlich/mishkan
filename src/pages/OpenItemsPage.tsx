@@ -36,6 +36,7 @@ export function OpenItemsPage(): ReactElement {
       toEverything={toEverything}
       title={view.allKinds ? labels.pages.allItems : labels.pages.open}
       incompleteCount={scoped.incomplete.length}
+      todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error} />
       <ScopeBar

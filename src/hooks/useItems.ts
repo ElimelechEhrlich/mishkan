@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
+import { agendaOf, todayIso } from '../lib/itemRules';
+import type { Agenda } from '../lib/itemRules';
 import {
   completeItem,
   convertItem,
@@ -43,6 +45,10 @@ export type UseItems = {
   readonly assigned: readonly Item[];
   /** Open items still missing a domain or a time, that the current parent has to complete. */
   readonly incomplete: readonly Item[];
+  /** What is late and what is due today, across the whole home. */
+  readonly agenda: Agenda;
+  /** How many items the agenda holds, late and today together. */
+  readonly todayCount: number;
   readonly loading: boolean;
   readonly error: string | null;
   readonly reload: () => void;
@@ -179,11 +185,18 @@ export function useItems(): UseItems {
     [state.items, member.id],
   );
 
+  const agenda = useMemo(
+    () => agendaOf(assigned, state.steps, todayIso()),
+    [assigned, state.steps],
+  );
+
   return {
     items: state.items,
     steps: state.steps,
     assigned,
     incomplete,
+    agenda,
+    todayCount: agenda.overdue.length + agenda.today.length,
     loading: state.loading,
     error: state.error,
     reload,

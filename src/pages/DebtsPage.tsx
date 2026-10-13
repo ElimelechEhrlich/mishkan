@@ -28,6 +28,7 @@ export function DebtsPage(): ReactElement {
       toEverything={toEverything}
       title={labels.pages.debts}
       incompleteCount={scoped.incomplete.length}
+      todayCount={items.todayCount}
     >
       <ErrorBanner message={debts.error ?? items.error ?? entities.error} />
       <ScopeBar

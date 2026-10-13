@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { activeSectionOf, addDays, missingFields, seriesStarts, splitBySection } from './itemRules';
+import {
+  activeSectionOf,
+  addDays,
+  agendaOf,
+  missingFields,
+  seriesStarts,
+  splitBySection,
+} from './itemRules';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-11';
@@ -108,5 +115,29 @@ describe('seriesStarts', () => {
   it('keeps the count within bounds', () => {
     expect(seriesStarts('2026-10-12T09:30', 'weekly', 0)).toHaveLength(1);
     expect(seriesStarts('2026-10-12T09:30', 'weekly', 500)).toHaveLength(104);
+  });
+});
+
+describe('agendaOf', () => {
+  it('holds what is late and what is due today, with an hour first', () => {
+    const rows = [
+      item({ id: 'late', due_date: '2026-10-09' }),
+      item({ id: 'today', created_at: '2026-10-01' }),
+      item({ id: 'meeting', kind: 'appointment', starts_at: '2026-10-11T09:00:00Z' }),
+      item({ id: 'tomorrow', due_date: '2026-10-12' }),
+      item({ id: 'note', kind: 'note' }),
+      item({ id: 'waiting', time_mode: 'waiting' }),
+    ];
+    const agenda = agendaOf(rows, [], today);
+    expect(agenda.overdue.map((entry) => entry.item.id)).toEqual(['late']);
+    expect(agenda.today.map((entry) => entry.item.id)).toEqual(['meeting', 'today']);
+  });
+
+  it('dates a goal by its earliest open step', () => {
+    const goal = item({ id: 'goal', kind: 'goal', due_date: null, time_mode: 'scheduled' });
+    const step = item({ id: 'step', parent_id: 'goal', due_date: today });
+    expect(agendaOf([goal, step], [step], today).today.map((entry) => entry.item.id)).toEqual([
+      'goal',
+    ]);
   });
 });

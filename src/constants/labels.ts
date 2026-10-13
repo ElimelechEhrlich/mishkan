@@ -158,6 +158,7 @@ export const labels = {
     shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
+    today: 'היום',
     settings: 'הגדרות',
     done: 'בוצעו',
     item: 'פריט',
@@ -173,6 +174,9 @@ export const labels = {
     shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
+  },
+  today: {
+    empty: 'אין היום דברים פתוחים, וגם לא באיחור',
   },
   status: {
     offline: 'אין חיבור לשרת כרגע. כדאי לבדוק את האינטרנט ולנסות שוב.',

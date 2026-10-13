@@ -20,6 +20,7 @@ export function ShoppingRunPage(): ReactElement {
     <PageShell
       title={run?.run.title ?? labels.kind.shopping_run}
       incompleteCount={items.incomplete.length}
+      todayCount={items.todayCount}
       inner
     >
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />

@@ -22,6 +22,7 @@ export function ItemPage(): ReactElement {
     <PageShell
       title={item === null ? labels.pages.item : labels.kind[item.kind]}
       incompleteCount={items.incomplete.length}
+      todayCount={items.todayCount}
       inner
     >
       <ErrorBanner message={items.error ?? page.error ?? entities.error ?? reminderPeople.error} />
