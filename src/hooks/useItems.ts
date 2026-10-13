@@ -208,7 +208,11 @@ export function useItems(): UseItems {
 
   const assigned = useMemo(() => state.items.filter((item) => item.is_complete), [state.items]);
   const incomplete = useMemo(
-    () => state.items.filter((item) => !item.is_complete && item.review_by === member.id),
+    // One whose parent to complete it is gone (review_by cleared) goes to both, so it is not lost.
+    () =>
+      state.items.filter(
+        (item) => !item.is_complete && (item.review_by === member.id || item.review_by === null),
+      ),
     [state.items, member.id],
   );
 

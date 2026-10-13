@@ -377,11 +377,15 @@ export type Agenda = {
  * group is in time order, the ones with an hour first.
  */
 export function agendaOf(assigned: readonly Item[], steps: readonly Item[], today: string): Agenda {
-  const rows = withoutNestedSteps(assigned).filter(
-    (item) =>
-      item.kind === 'issue' ||
-      item.kind === 'appointment' ||
-      ((item.kind === 'task' || item.kind === 'goal') && segmentOf(item) === 'active'),
+  // A step goes inside its goal only when the goal itself is listed; the step of a goal
+  // that waits or is on the shelf is listed on its own, so nothing due today is missed.
+  const rows = withoutNestedSteps(
+    assigned.filter(
+      (item) =>
+        item.kind === 'issue' ||
+        item.kind === 'appointment' ||
+        ((item.kind === 'task' || item.kind === 'goal') && segmentOf(item) === 'active'),
+    ),
   );
   const sections = splitBySection(toListEntries(rows, steps), today);
   return {

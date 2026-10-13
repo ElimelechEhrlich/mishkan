@@ -3,7 +3,8 @@
 -- An item marked urgent ("דחוף") has no date, and the today screen shows it in
 -- a group of its own. The morning notification counts it too, apart from what
 -- is due today, as the screen does. A goal or an issue counts when one of its
--- open steps is urgent. Something already late stays late.
+-- open steps is urgent. Something already late stays late. And a step of a
+-- goal that waits or is on the shelf now counts on its own, as on the screen.
 -- The function is the one from 0017 with that added, so it is made again
 -- (its result gains a column); nothing else changes.
 -- Run once in the Supabase SQL editor, after 0025.
@@ -43,6 +44,8 @@ language sql security definer set search_path = '' as $$
           and p.status = 'open'
           and p.hidden = false
           and p.is_complete
+          -- A goal that waits or is on the shelf is not counted, so its steps count alone.
+          and (p.kind = 'issue' or p.time_mode not in ('waiting', 'someday'))
       )
   ),
   dated as (

@@ -157,6 +157,15 @@ describe('agendaOf', () => {
   });
 });
 
+describe('steps of a goal that is not active', () => {
+  it('lists a step due today on its own when its goal is on the shelf', () => {
+    const goal = item({ id: 'shelf', kind: 'goal', due_date: null, time_mode: 'someday' });
+    const step = item({ id: 'step', parent_id: 'shelf', due_date: today });
+    const agenda = agendaOf([goal, step], [step], today);
+    expect(agenda.today.map((entry) => entry.item.id)).toEqual(['step']);
+  });
+});
+
 describe('urgent items', () => {
   it('lists an urgent task, and a goal with an urgent step, as urgent', () => {
     const urgent = item({ id: 'urgent', time_mode: 'urgent', due_date: null });
