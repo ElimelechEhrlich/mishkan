@@ -40,3 +40,20 @@ export async function setAutoReminderRecipients(
     throw new Error(error.message);
   }
 }
+
+/**
+ * Puts a reminder off for this parent alone: it rings again on their devices at `remindAt`.
+ * A later choice for the same item replaces it.
+ */
+export async function snoozeReminder(
+  itemId: string,
+  memberId: string,
+  remindAt: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('reminder_snoozes')
+    .upsert({ item_id: itemId, member_id: memberId, remind_at: remindAt });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}

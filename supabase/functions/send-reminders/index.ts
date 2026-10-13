@@ -71,7 +71,12 @@ Deno.serve(async () => {
     if (error !== null) {
       throw new Error(error.message);
     }
-    const reminders: DueReminder[] = data ?? [];
+    // Reminders a parent put off for themselves go to that parent alone, like any reminder.
+    const snoozed = await supabase.rpc('claim_due_snoozes');
+    if (snoozed.error !== null) {
+      throw new Error(snoozed.error.message);
+    }
+    const reminders: DueReminder[] = [...(data ?? []), ...(snoozed.data ?? [])];
 
     const nudged = await supabase.rpc('claim_completion_nudges');
     if (nudged.error !== null) {

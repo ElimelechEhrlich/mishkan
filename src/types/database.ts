@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0017_today_nudges.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0018_reminder_snoozes.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -273,6 +273,24 @@ export type Database = {
         Update: {
           title?: string;
           sort_order?: number;
+        };
+        Relationships: [];
+      };
+      reminder_snoozes: {
+        Row: {
+          item_id: string;
+          member_id: string;
+          remind_at: string;
+          created_at: string;
+        };
+        Insert: {
+          item_id: string;
+          member_id: string;
+          remind_at: string;
+          created_at?: string;
+        };
+        Update: {
+          remind_at?: string;
         };
         Relationships: [];
       };

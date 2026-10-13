@@ -10,7 +10,6 @@ import { useItemPage } from '../hooks/useItemPage';
 import { useLookups } from '../hooks/useLookups';
 import { useReminderPeople } from '../hooks/useReminderPeople';
 import { useSnoozeRequest } from '../hooks/useSnoozeRequest';
-import { snoozeUntil } from '../lib/itemRules';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 
 export function ItemPage(): ReactElement {
@@ -29,7 +28,11 @@ export function ItemPage(): ReactElement {
       todayCount={items.todayCount}
       inner
     >
-      <ErrorBanner message={items.error ?? page.error ?? entities.error ?? reminderPeople.error} />
+      <ErrorBanner
+        message={
+          items.error ?? page.error ?? entities.error ?? reminderPeople.error ?? snooze.error
+        }
+      />
       {item === null ? (
         <EmptyState text={items.loading ? labels.status.loading : labels.status.itemNotFound} />
       ) : (
@@ -60,8 +63,7 @@ export function ItemPage(): ReactElement {
         <SnoozeSheet
           title={item.title}
           onChoose={(choice) => {
-            items.updateItem(item.id, { remind_at: snoozeUntil(choice, new Date()) });
-            snooze.close();
+            snooze.choose(item.id, choice);
           }}
           onClose={snooze.close}
         />
