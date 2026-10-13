@@ -13,12 +13,14 @@ import {
   mainCircle,
   scopeOptions,
 } from '../../lib/lookups';
-import { everythingFlight, flyDownAndOn, flyWhile } from '../../lib/flight';
+import { cubicBezier, everythingFlight, flyDownAndOn, flyWhile } from '../../lib/flight';
 import { setEverythingUp, useEverythingUp } from '../../hooks/useEverythingUp';
+import { resetScopeDock, setScopeDock } from '../../hooks/useScopeDock';
+import { dockedScale } from '../ui/EverythingButton';
 import type { EntityWithDomains } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { EntitySheet } from './EntitySheet';
-import { EntityAvatar } from './EntityAvatar';
+import { ScopeAvatar } from './ScopeAvatar';
 
 type ScopeBarProps = {
   readonly entities: readonly EntityWithDomains[];
@@ -40,6 +42,9 @@ const gate = everythingReach + 0.5;
 /** The shortest and longest a glide to rest takes, in milliseconds. */
 const glideShortest = 260;
 const glideLongest = 900;
+
+/** Docking into the header, the picture first rises with the page and then slides over. */
+const dockSideways = cubicBezier(0.4, 0, 1, 1);
 
 /** How far the finger moves the carousel by one place, in pixels. */
 const stepWidth = 80;
@@ -110,6 +115,90 @@ export function ScopeBar({
     setHeld(away);
   }
   const canOpenSheet = scope !== undefined;
+  const bar = useRef<HTMLDivElement>(null);
+  const center = useRef<HTMLButtonElement>(null);
+  /** How far the chosen picture has gone into the header, 0 to 1, as the page scrolls. */
+  const docked = useRef(0);
+  const resting = moving === null;
+
+  // As the page scrolls down, the chosen picture does not leave with it: it shrinks and
+  // comes up into the header, next to the title, and goes back as the page comes back up.
+  useEffect(() => {
+    let frame = 0;
+    /** Puts a picture back as the carousel draws it. */
+    const release = (button: HTMLElement | null): void => {
+      const inner = button?.firstElementChild;
+      if (button === null || !(inner instanceof HTMLElement)) {
+        return;
+      }
+      button.style.translate = '';
+      button.style.visibility = '';
+      button.style.zIndex = '';
+      inner.style.scale = '';
+      const badge = button.querySelector<HTMLElement>('[data-dock-badge]');
+      if (badge !== null) {
+        badge.style.opacity = '';
+      }
+    };
+    const styled = center.current;
+    const place = (): void => {
+      frame = 0;
+      const row = bar.current;
+      const button = center.current;
+      const inner = button?.firstElementChild;
+      const anchor = document.querySelector('[data-dock-anchor]');
+      if (row === null || button === null || !(inner instanceof HTMLElement) || anchor === null) {
+        return;
+      }
+      const own = row.getBoundingClientRect();
+      const fromX = own.left + own.width / 2;
+      const fromY = own.top + own.height / 2;
+      // The place in the header: just past the search button, level with its foot.
+      const next = anchor.getBoundingClientRect();
+      const toX = next.right + 4 + 22;
+      const toY = next.bottom - 22;
+      const rise = fromY + window.scrollY - toY;
+      const progress = rise <= 0 ? 0 : Math.max(0, Math.min(1, window.scrollY / rise));
+      docked.current = progress;
+      const badge = button.querySelector<HTMLElement>('[data-dock-badge]');
+      if (progress === 0) {
+        release(button);
+      } else {
+        // Up and down it goes with the page itself; at the top it is held in the header.
+        const x = (toX - fromX) * dockSideways(progress);
+        const y = progress >= 1 ? toY - fromY : 0;
+        button.style.translate = `${String(x)}px ${String(y)}px`;
+        button.style.zIndex = '30';
+        // Once there, the header's own copy takes over, which stays put however fast the
+        // page scrolls.
+        button.style.visibility = progress >= 1 ? 'hidden' : '';
+        inner.style.scale = String(1 + (dockedScale - 1) * progress);
+        if (badge !== null) {
+          badge.style.opacity = String(Math.max(0, 1 - progress * 3));
+        }
+      }
+      setScopeDock({
+        progress,
+        entity: scope,
+        tone: scope === undefined ? undefined : entityTone(entities.indexOf(scope)),
+      });
+    };
+    const follow = (): void => {
+      if (frame === 0) {
+        frame = requestAnimationFrame(place);
+      }
+    };
+    place();
+    window.addEventListener('scroll', follow, { passive: true });
+    window.addEventListener('resize', follow);
+    return (): void => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', follow);
+      window.removeEventListener('resize', follow);
+      release(styled);
+      resetScopeDock();
+    };
+  }, [scope, entities, index, resting]);
 
   function go(next: number): void {
     const target = options[Math.max(0, Math.min(options.length - 1, next))];
@@ -248,6 +337,7 @@ export function ScopeBar({
   return (
     <div className="flex flex-col items-center gap-1">
       <div
+        ref={bar}
         className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
         onTouchStart={(event) => {
           const finger = event.touches[0];
@@ -341,6 +431,7 @@ export function ScopeBar({
           return (
             <button
               key={option ?? 'all'}
+              ref={position === index ? center : undefined}
               type="button"
               data-flight={option === null ? everythingFlight : undefined}
               aria-pressed={position === index}
@@ -353,6 +444,8 @@ export function ScopeBar({
               onClick={() => {
                 if (swiped.current) {
                   swiped.current = false;
+                } else if (position === index && docked.current >= 0.5) {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else if (position === index) {
                   setSheetOpen(canOpenSheet);
                 } else {
@@ -370,23 +463,16 @@ export function ScopeBar({
                 zIndex: 10 - Math.round(away),
               }}
             >
-              <span
-                className={`block rounded-full bg-surface p-1 ${middle ? 'shadow-raised' : 'shadow-card'}`}
-              >
-                {entity === undefined ? (
-                  <span className="flex size-24 items-center justify-center rounded-full bg-primary text-white">
-                    <Icon name="home" className="size-10" />
-                  </span>
-                ) : (
-                  <EntityAvatar
-                    entity={entity}
-                    tone={entityTone(entities.indexOf(entity))}
-                    size="hero"
-                  />
-                )}
-              </span>
+              <ScopeAvatar
+                entity={entity}
+                tone={entity === undefined ? entityTone(0) : entityTone(entities.indexOf(entity))}
+                raised={middle}
+              />
               {position === index && moving === null && canOpenSheet && (
-                <span className="absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card">
+                <span
+                  data-dock-badge
+                  className="absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card"
+                >
                   <Icon name="user" className="size-4" />
                 </span>
               )}

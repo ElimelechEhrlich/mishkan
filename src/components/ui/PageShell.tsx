@@ -71,7 +71,12 @@ export function PageShell({
               </h1>
             </div>
             {toEverything !== undefined && <EverythingButton shortcut={toEverything} />}
-            <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>
+            <Link
+              to="/search"
+              aria-label={labels.pages.search}
+              className={headerLinkClass}
+              data-dock-anchor
+            >
               <Icon name="search" className="size-5.5" />
             </Link>
             <Link

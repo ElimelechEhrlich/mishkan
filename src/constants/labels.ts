@@ -690,6 +690,7 @@ export const labels = {
     showingOnly: 'מסונן לפי',
     byDomain: 'לפי תחומים',
     everythingHint: 'כל הישויות יחד',
+    backToTop: 'חזרה למעלה',
   },
   entityPage: {
     main: 'ראשי',
