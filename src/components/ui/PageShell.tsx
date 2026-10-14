@@ -6,6 +6,7 @@ import { BottomNav } from './BottomNav';
 import { EverythingButton } from './EverythingButton';
 import { Icon } from './Icon';
 import { useDocked } from '../../hooks/useScopeDock';
+import { hasAppHistory } from '../../lib/appHistory';
 import { IconButton } from './IconButton';
 import { UndoToast } from './UndoToast';
 
@@ -62,7 +63,9 @@ export function PageShell({
                 icon="back"
                 label={labels.actions.back}
                 onClick={() => {
-                  void navigate(-1);
+                  // Opened straight from a notification or a link, there is nothing in the app
+                  // to go back to: the main screen is shown instead of leaving the app.
+                  void (hasAppHistory() ? navigate(-1) : navigate('/', { replace: true }));
                 }}
               />
             </div>

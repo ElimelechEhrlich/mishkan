@@ -1,3 +1,4 @@
+import { hasAppHistory } from '../lib/appHistory';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toMessage } from '../lib/errors';
@@ -113,7 +114,8 @@ export function useItemPage(): UseItemPage {
     (targetId: string): void => {
       void deleteItem(targetId).then((deleted) => {
         if (deleted) {
-          void navigate(-1);
+          // Opened from a notification, there is no page to go back to: the main screen.
+          void (hasAppHistory() ? navigate(-1) : navigate('/', { replace: true }));
         }
       });
     },
