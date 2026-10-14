@@ -107,22 +107,24 @@ type NewEntity = {
   readonly sortOrder: number;
 };
 
-/** The database opens the basic domains of the kind on its own. Returns the new id. */
+/**
+ * The database opens the basic domains of the kind on its own. Returns the new id.
+ * The id is made here: the database cannot hand back a row it has just added to entities,
+ * since its read rule only sees rows that were there when the statement began.
+ */
 export async function createEntity(newEntity: NewEntity): Promise<string> {
-  const { data, error } = await supabase
-    .from('entities')
-    .insert({
-      household_id: newEntity.householdId,
-      kind: newEntity.kind,
-      name: newEntity.name,
-      sort_order: newEntity.sortOrder,
-    })
-    .select('id')
-    .single();
+  const id = crypto.randomUUID();
+  const { error } = await supabase.from('entities').insert({
+    id,
+    household_id: newEntity.householdId,
+    kind: newEntity.kind,
+    name: newEntity.name,
+    sort_order: newEntity.sortOrder,
+  });
   if (error !== null) {
     throw new Error(error.message);
   }
-  return data.id;
+  return id;
 }
 
 export async function renameEntity(entityId: string, name: string): Promise<void> {
@@ -132,7 +134,6 @@ export async function renameEntity(entityId: string, name: string): Promise<void
   }
 }
 
-/** Its items are not deleted: they move to "needs completion" of the current parent. */
 /** Saves the order of the children that a parent set by hand. */
 export async function setChildPositions(
   places: readonly { readonly id: string; readonly position: number }[],
@@ -160,6 +161,7 @@ export async function clearChildPositions(childIds: readonly string[]): Promise<
   }
 }
 
+/** Its items are not deleted: they move to "needs completion" of the current parent. */
 export async function deleteEntity(entityId: string): Promise<void> {
   const { error } = await supabase.rpc('delete_entity', { p_entity_id: entityId });
   if (error !== null) {
