@@ -7,7 +7,7 @@ import {
   hebrewBirthDate,
   nextHebrewBirthday,
 } from './hebrewDate';
-import { addDays, formatDueDate } from './itemRules';
+import { addDays } from './itemRules';
 
 /** How long before a Hebrew birthday or anniversary its reminder is due. */
 const daysBefore = 7;
@@ -59,15 +59,6 @@ export function occasionFacts(occasion: Occasion, today: string): OccasionFacts 
   };
 }
 
-export type OccasionReminder = {
-  readonly prefix: string;
-  readonly key: string;
-  readonly title: string;
-  /** The entity's events domain; null without one, so it waits for completion. */
-  readonly domainId: string | null;
-  readonly due: string;
-};
-
 /**
  * The entity's events domain (a name with אירוע in it). Nothing else is chosen in its place: without one the reminder
  * has no domain and waits in "needs completion" for a parent to place it.
@@ -80,43 +71,56 @@ function reminderDomain(entity: EntityWithDomains): string | null {
   );
 }
 
+/** How many years ahead an occasion's days are sent; they are sent again on every sync. */
+const yearsAhead = 10;
+
+/** One Hebrew birthday or anniversary as a series repeating every Hebrew year. */
+export type OccasionSeries = {
+  readonly prefix: string;
+  readonly title: string;
+  /** The entity's events domain; null without one, so it waits for completion. */
+  readonly domainId: string | null;
+  /** The day of each year's occurrence: a week before the Hebrew date, from this year on. */
+  readonly dates: readonly string[];
+};
+
 /**
- * The reminder for the next Hebrew birthday or anniversary of each entity that has one:
- * a task a week before (or today, if that is already past), one per year, in the entity's
- * events domain.
+ * The series of each entity's Hebrew birthday or anniversary: one item repeating every Hebrew
+ * year, a week before its date (today, when that is already past this year).
  */
-export function occasionReminders(
+export function occasionSeries(
   entities: readonly EntityWithDomains[],
   today: string,
-): OccasionReminder[] {
+): OccasionSeries[] {
   return entities.flatMap((entity) => {
     const occasion = occasionOf(entity);
-    const domainId = reminderDomain(entity);
     if (occasion === null) {
       return [];
     }
-    const next = nextHebrewBirthday(occasion.date, occasion.afterSunset, today);
-    if (next === null) {
+    const dates: string[] = [];
+    let from = today;
+    for (let year = 0; year < yearsAhead; year += 1) {
+      const next = nextHebrewBirthday(occasion.date, occasion.afterSunset, from);
+      if (next === null) {
+        break;
+      }
+      const before = addDays(next, -daysBefore);
+      dates.push(before < today ? today : before);
+      from = addDays(next, 1);
+    }
+    if (dates.length === 0) {
       return [];
     }
-    const before = addDays(next, -daysBefore);
-    const due = before < today ? today : before;
-    const prefix = `${occasion.kind}:${entity.id}:`;
     const name =
       occasion.kind === 'birthday'
         ? `${labels.occasions.birthdayOf} ${entity.name}`
         : labels.occasions.anniversaryTitle;
-    // Read on the day it is due: "in a week", or how near it is when added later.
-    const gap = daysBetween(due, next);
-    const when = gap === daysBefore ? labels.occasions.inAWeek : countdownText(gap);
-    const date = `${occasionHebrewDate(occasion, false)} (${formatDueDate(next)})`;
     return [
       {
-        prefix,
-        key: `${prefix}${next}`,
-        title: `${when}: ${name}${labels.item.separator}${date}`,
-        domainId,
-        due,
+        prefix: `${occasion.kind}:${entity.id}:`,
+        title: `${name}${labels.item.separator}${occasionHebrewDate(occasion, false)}`,
+        domainId: reminderDomain(entity),
+        dates,
       },
     ];
   });

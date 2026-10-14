@@ -32,6 +32,8 @@ function repeat(overrides: Partial<ItemRepeat>): ItemRepeat {
     planned_date: null,
     planned_time: null,
     tracker_closes: false,
+    dates: [],
+    hebrew: false,
     ...overrides,
   };
 }
@@ -139,6 +141,25 @@ describe('the occurrences ahead', () => {
       '2026-10-16',
       '2026-10-15',
       '2026-10-16',
+    ]);
+  });
+});
+
+describe('a Hebrew date every year', () => {
+  const yearly = repeat({
+    unit: 'year',
+    hebrew: true,
+    starts_on: '2026-10-20',
+    dates: ['2027-10-09', '2026-10-20', '2028-10-27'],
+  });
+
+  it('falls only on the days it was given, in order', () => {
+    expect(isRhythmDay(yearly, '2027-10-20')).toBe(false);
+    expect(isRhythmDay(yearly, '2027-10-09')).toBe(true);
+    expect(upcomingSlots(yearly, { day: '2026-10-20', time: null }, 0, 10)).toEqual([
+      { day: '2026-10-20', time: null },
+      { day: '2027-10-09', time: null },
+      { day: '2028-10-27', time: null },
     ]);
   });
 });

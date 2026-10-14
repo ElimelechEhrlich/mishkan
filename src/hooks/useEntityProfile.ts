@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import { todayIso } from '../lib/itemRules';
-import { occasionFacts, occasionOf, occasionReminders } from '../lib/occasions';
+import { occasionFacts, occasionOf, occasionSeries } from '../lib/occasions';
 import type { Occasion, OccasionFacts } from '../lib/occasions';
 import {
   addListValue,
@@ -9,7 +9,7 @@ import {
   deleteListValue,
   deleteProfileList,
   listProfileLists,
-  syncAutoReminder,
+  syncOccasion,
   updateEntityProfile,
 } from '../services/profileService';
 import type { EntityUpdate, EntityWithDomains, ProfileList } from '../types/domain';
@@ -72,8 +72,8 @@ export function useEntityProfile(
     (changes: EntityUpdate): void => {
       run(async () => {
         await updateEntityProfile(entityId, changes);
-        const reminders = occasionReminders([{ ...entity, ...changes }], todayIso());
-        await Promise.all(reminders.map((reminder) => syncAutoReminder(reminder)));
+        const series = occasionSeries([{ ...entity, ...changes }], todayIso());
+        await Promise.all(series.map((one) => syncOccasion(one)));
       }, onEntityChanged);
     },
     [run, entity, entityId, onEntityChanged],

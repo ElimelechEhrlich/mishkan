@@ -78,6 +78,9 @@ export function isRhythmDay(repeat: ItemRepeat, day: string): boolean {
   if (day < repeat.starts_on) {
     return false;
   }
+  if (repeat.dates.length > 0) {
+    return repeat.dates.includes(day);
+  }
   if (repeat.unit === 'week' && repeat.weekdays.length > 0) {
     const weekStart = stepFrom(repeat.starts_on, -weekdayOf(repeat.starts_on), 'day', 1);
     return (
@@ -90,6 +93,9 @@ export function isRhythmDay(repeat: ItemRepeat, day: string): boolean {
 
 /** The first day of the series after a day. */
 export function nextRhythmDay(repeat: ItemRepeat, day: string): string | null {
+  if (repeat.dates.length > 0) {
+    return [...repeat.dates].sort().find((date) => date > day && date >= repeat.starts_on) ?? null;
+  }
   if (repeat.unit === 'week' && repeat.weekdays.length > 0) {
     for (let step = 1; step <= 7 * repeat.every * 2 + 7; step += 1) {
       const candidate = stepFrom(day, step, 'day', 1);

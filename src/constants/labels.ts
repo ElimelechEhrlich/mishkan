@@ -852,6 +852,9 @@ export const labels = {
     ended: 'הסדרה הסתיימה',
     resumeNeedsMore: 'כל הפעמים שהוגדרו כבר עברו. הגדילו את מספר הפעמים כדי להמשיך.',
     needsDate: 'בחרו תאריך',
+    hebrewYear: 'כל שנה עברית · שבוע לפני התאריך',
+    hebrewHint:
+      'התאריך העברי נקבע בפרופיל, והמופעים זזים איתו. כאן אפשר רק להפסיק או להמשיך לחזור.',
   },
   occurrence: {
     done: 'בוצע',
@@ -1048,7 +1051,6 @@ export const labels = {
     eventsDomain: 'אירוע',
     birthdayOf: 'יום הולדת עברי של',
     anniversaryTitle: 'יום נישואין עברי',
-    inAWeek: 'בעוד שבוע',
   },
   convert: {
     convertTo: 'המרה ל',

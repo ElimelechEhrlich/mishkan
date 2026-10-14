@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { occasionReminders } from './occasions';
+import { occasionSeries } from './occasions';
 import type { EntityWithDomains } from '../types/domain';
 
 function entity(overrides: Partial<EntityWithDomains>): EntityWithDomains {
@@ -47,45 +47,44 @@ function entity(overrides: Partial<EntityWithDomains>): EntityWithDomains {
   };
 }
 
-describe('occasionReminders', () => {
-  it('reminds a week before the Hebrew birthday, in the events domain', () => {
-    const [reminder] = occasionReminders([entity({ birth_date: '2016-10-28' })], '2027-10-01');
-    expect(reminder).toEqual({
-      prefix: 'birthday:e1:',
-      key: 'birthday:e1:2027-10-27',
-      title: 'בעוד שבוע: יום הולדת עברי של אלי · כ״ו בתשרי (27 באוק׳)',
-      domainId: 'd-events',
-      due: '2027-10-20',
-    });
+describe('occasionSeries', () => {
+  it('repeats a week before the Hebrew birthday every year, in the events domain', () => {
+    const [series] = occasionSeries([entity({ birth_date: '2016-10-28' })], '2027-10-01');
+    expect(series?.prefix).toBe('birthday:e1:');
+    expect(series?.title).toBe('יום הולדת עברי של אלי · כ״ו בתשרי');
+    expect(series?.domainId).toBe('d-events');
+    expect(series?.dates[0]).toBe('2027-10-20');
+    expect(series?.dates).toHaveLength(10);
+    expect(series?.dates[1]?.startsWith('2028-10')).toBe(true);
   });
 
-  it('is due today, saying how near, when less than a week is left', () => {
-    const [reminder] = occasionReminders([entity({ birth_date: '2016-10-28' })], '2027-10-24');
-    expect(reminder?.due).toBe('2027-10-24');
-    expect(reminder?.title.startsWith('בעוד 3 ימים:')).toBe(true);
+  it('falls today when less than a week is left this year', () => {
+    const [series] = occasionSeries([entity({ birth_date: '2016-10-28' })], '2027-10-24');
+    expect(series?.dates[0]).toBe('2027-10-24');
+    expect(series?.dates[1]?.startsWith('2028-')).toBe(true);
   });
 
-  it('reminds of the wedding anniversary of the couple', () => {
-    const [reminder] = occasionReminders(
+  it('keeps the wedding anniversary of the couple', () => {
+    const [series] = occasionSeries(
       [entity({ kind: 'couple', name: 'זוגי', wedding_date: '2010-06-15' })],
       '2026-10-11',
     );
-    expect(reminder?.key.startsWith('anniversary:e1:')).toBe(true);
+    expect(series?.prefix).toBe('anniversary:e1:');
   });
 
   it('leaves the domain empty when the entity has no events domain, instead of guessing', () => {
     const plain = entity({ birth_date: '2016-10-28' });
-    const [reminder] = occasionReminders(
+    const [series] = occasionSeries(
       [{ ...plain, domains: plain.domains.filter((domain) => domain.id !== 'd-events') }],
       '2027-10-01',
     );
-    expect(reminder?.domainId).toBeNull();
+    expect(series?.domainId).toBeNull();
   });
 
   it('has nothing for an entity without a date, or a kind without one', () => {
-    expect(occasionReminders([entity({})], '2026-10-11')).toEqual([]);
+    expect(occasionSeries([entity({})], '2026-10-11')).toEqual([]);
     expect(
-      occasionReminders([entity({ kind: 'home', birth_date: '2016-10-28' })], '2026-10-11'),
+      occasionSeries([entity({ kind: 'home', birth_date: '2016-10-28' })], '2026-10-11'),
     ).toEqual([]);
   });
 });

@@ -527,6 +527,10 @@ export type Database = {
           planned_time: string | null;
           /** A tracker: entering a value marks its current occurrence done. */
           tracker_closes: boolean;
+          /** Days given in full (a Hebrew date's years ahead); when set, they are the days. */
+          dates: string[];
+          /** The days are those of a Hebrew date, every year. */
+          hebrew: boolean;
         };
         // Written only through set_repeat(), stop_repeat() and resume_repeat().
         Insert: never;
@@ -620,6 +624,10 @@ export type Database = {
           p_end_until: string | null;
           p_tracker_closes: boolean;
         };
+        Returns: undefined;
+      };
+      sync_occasion: {
+        Args: { p_prefix: string; p_title: string; p_domain_id: string | null; p_dates: string[] };
         Returns: undefined;
       };
       move_occurrence: {

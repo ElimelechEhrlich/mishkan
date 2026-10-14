@@ -590,6 +590,8 @@ const Rp = (o) => ({
   planned_date: null,
   planned_time: null,
   tracker_closes: false,
+  dates: [],
+  hebrew: false,
   ...o,
 });
 const pill = item({

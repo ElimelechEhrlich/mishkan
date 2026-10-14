@@ -86,6 +86,59 @@ export function RepeatEditor({
   const end = { endKind: draft.endKind, endCount: draft.endCount, endUntil: draft.endUntil };
   const canResume = draft.endKind !== 'count' || (draft.endCount !== null && draft.endCount > gone);
 
+  const stopControls = (
+    <>
+      {series && !stopped && !ended && (
+        <div className="flex flex-col gap-1.5 px-1">
+          <Button variant="quiet" onClick={onStop}>
+            {labels.repeat.stop}
+          </Button>
+          <p className="text-[13px] text-muted">{labels.repeat.stopHint}</p>
+        </div>
+      )}
+      {(stopped || ended) && (
+        <div className="flex flex-col gap-1.5 px-1">
+          <p className="text-[13px] font-semibold text-ink">
+            {stopped && repeat.stopped_on !== null
+              ? labels.repeat.stopped(formatDueDate(repeat.stopped_on))
+              : labels.repeat.ended}
+          </p>
+          <Button
+            variant="soft"
+            disabled={!canResume}
+            onClick={() => {
+              onResume(end);
+            }}
+          >
+            {labels.repeat.resume}
+          </Button>
+          <p className="text-[13px] text-muted">
+            {canResume ? labels.repeat.resumeHint : labels.repeat.resumeNeedsMore}
+          </p>
+        </div>
+      )}
+    </>
+  );
+
+  // A Hebrew birthday or anniversary: its days come from the profile, so only stop and resume.
+  if (repeat?.hebrew === true) {
+    return (
+      <div className="flex flex-col gap-3">
+        <SettingsCard
+          summary={labels.repeat.hebrewYear}
+          actions={
+            <Button variant="ghost" onClick={onCancel}>
+              {labels.actions.close}
+            </Button>
+          }
+        >
+          <p className="text-[13px] text-muted">{labels.repeat.hebrewHint}</p>
+        </SettingsCard>
+        {stopControls}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <SettingsCard
@@ -320,35 +373,7 @@ export function RepeatEditor({
         </SettingRow>
       </SettingsCard>
 
-      {series && !stopped && !ended && (
-        <div className="flex flex-col gap-1.5 px-1">
-          <Button variant="quiet" onClick={onStop}>
-            {labels.repeat.stop}
-          </Button>
-          <p className="text-[13px] text-muted">{labels.repeat.stopHint}</p>
-        </div>
-      )}
-      {(stopped || ended) && (
-        <div className="flex flex-col gap-1.5 px-1">
-          <p className="text-[13px] font-semibold text-ink">
-            {stopped && repeat.stopped_on !== null
-              ? labels.repeat.stopped(formatDueDate(repeat.stopped_on))
-              : labels.repeat.ended}
-          </p>
-          <Button
-            variant="soft"
-            disabled={!canResume}
-            onClick={() => {
-              onResume(end);
-            }}
-          >
-            {labels.repeat.resume}
-          </Button>
-          <p className="text-[13px] text-muted">
-            {canResume ? labels.repeat.resumeHint : labels.repeat.resumeNeedsMore}
-          </p>
-        </div>
-      )}
+      {stopControls}
     </div>
   );
 }

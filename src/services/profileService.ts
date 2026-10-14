@@ -1,3 +1,4 @@
+import type { OccasionSeries } from '../lib/occasions';
 import { supabase } from '../lib/supabase';
 import type { EntityUpdate, ProfileList } from '../types/domain';
 
@@ -73,24 +74,13 @@ export async function deleteListValue(valueId: string): Promise<void> {
   }
 }
 
-type AutoReminder = {
-  /** Every reminder of the same occasion starts with it, such as `birthday:<entity>:`. */
-  readonly prefix: string;
-  /** The prefix and the date: a new date replaces the open reminder of an older one. */
-  readonly key: string;
-  readonly title: string;
-  readonly domainId: string | null;
-  readonly due: string;
-};
-
-/** Keeps one open reminder per occasion; one marked done is not added again. */
-export async function syncAutoReminder(reminder: AutoReminder): Promise<void> {
-  const { error } = await supabase.rpc('sync_auto_reminder', {
-    p_prefix: reminder.prefix,
-    p_key: reminder.key,
-    p_title: reminder.title,
-    p_domain_id: reminder.domainId,
-    p_due: reminder.due,
+/** Keeps the series of one Hebrew birthday or anniversary (made the first time). */
+export async function syncOccasion(series: OccasionSeries): Promise<void> {
+  const { error } = await supabase.rpc('sync_occasion', {
+    p_prefix: series.prefix,
+    p_title: series.title,
+    p_domain_id: series.domainId,
+    p_dates: [...series.dates],
   });
   if (error !== null) {
     throw new Error(error.message);
