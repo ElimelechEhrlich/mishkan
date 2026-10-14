@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   // supabase/functions runs on Deno, outside the app's TypeScript project.
-  { ignores: ['dist', 'dev-dist', 'eslint.config.js', 'supabase/functions'] },
+  { ignores: ['dist', 'dev-dist', 'eslint.config.js', 'supabase/functions', 'scripts/dev'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked],

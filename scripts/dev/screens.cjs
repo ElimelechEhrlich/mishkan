@@ -1,0 +1,44 @@
+const { chromium } = (() => { try { return require('playwright'); } catch { return require('/opt/node22/lib/node_modules/playwright'); } })();
+const { tables } = require('./fixtures.cjs');
+const [,, base, outDir, ...routes] = process.argv;
+const session = { access_token: 'x', refresh_token: 'y', token_type: 'bearer', expires_in: 3600 * 24 * 365, expires_at: Math.floor(Date.now() / 1000) + 3600 * 24 * 365, user: { id: 'u1', aud: 'authenticated', role: 'authenticated', email: 'a@b.c', app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } };
+function filter(rows, params) {
+  for (const [k, v] of params) {
+    if (['select', 'order', 'limit', 'offset'].includes(k)) continue;
+    const m = /^(not\.)?(eq|is|neq|in)\.(.*)$/.exec(v); if (!m) continue;
+    const [, not, op, raw] = m; const val = raw === 'null' ? null : raw === 'true' ? true : raw === 'false' ? false : raw;
+    rows = rows.filter((r) => { let ok; const x = r[k];
+      if (op === 'eq' || op === 'is') ok = val === null ? x === null : String(x) === String(val);
+      else if (op === 'neq') ok = String(x) !== String(val);
+      else ok = raw.replace(/[()]/g, '').split(',').includes(String(x));
+      return not ? !ok : ok; });
+  }
+  return rows;
+}
+(async () => {
+  const b = await chromium.launch({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: '<-loopback>,127.0.0.1,localhost' } : undefined });
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, ignoreHTTPSErrors: true, locale: 'he-IL' });
+  await ctx.addInitScript((s) => { localStorage.setItem('sb-mock-auth-token', JSON.stringify(s.session)); if (s.scope) localStorage.setItem('mishkan.scope', s.scope); if (s.tourSeen) localStorage.setItem('mishkan.tourSeen.v5', 'yes'); }, { session, scope: process.env.SCOPE, tourSeen: process.env.TOUR !== '1' });
+  await ctx.route('https://mock.supabase.co/**', async (route) => {
+    const req = route.request(); const url = new URL(req.url());
+    const m = /\/rest\/v1\/([^/?]+)/.exec(url.pathname);
+    if (!m) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    let rows = filter(tables[m[1]] ?? [], url.searchParams);
+    if ((req.headers()['accept'] || '').includes('vnd.pgrst.object')) return route.fulfill({ status: rows.length ? 200 : 406, contentType: 'application/json', body: JSON.stringify(rows[0] ?? {}) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
+  });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => console.log('PAGEERROR', e.message)); page.on('console', (m) => { if (m.type() === 'error') console.log('CONSOLE', m.text().slice(0, 300)); });
+  for (const r of routes) {
+    const cut = r.indexOf('==') !== -1 ? r.indexOf('==') + 1 : r.indexOf('='); const path = r.slice(0, r.indexOf('==') !== -1 ? cut - 1 : cut); const rest = r.slice(cut + 1);
+    const at = rest.indexOf('@'); const name = at === -1 ? rest : rest.slice(0, at); const click = at === -1 ? '' : rest.slice(at + 1);
+    const t0 = Date.now(); await page.goto(base + path, { waitUntil: 'networkidle' }); if (process.env.TIMING) { await page.waitForSelector('main li', { timeout: 20000 }); console.log('TIMING', path, Date.now() - t0, 'ms'); }
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(500);
+    if (click) { for (const sel of click.split('|')) { if (sel.startsWith('probe:')) { const [what, clickSel] = sel.slice(6).split('~'); const out = await page.evaluate(async ([w, c]) => { const samples = []; const btn = document.querySelector(c); const t0 = performance.now(); btn.click(); await new Promise((done) => { const tick = () => { const fly = [...document.body.children].find((e) => e.getAttribute('aria-hidden') === 'true' && e.style.position === 'fixed'); const car = document.querySelector('[aria-label="הבית"]'); if (fly) { const r = fly.getBoundingClientRect(); samples.push(`${Math.round(performance.now() - t0)}ms fly ${Math.round(r.left)},${Math.round(r.top)} w${Math.round(r.width)}` + (car ? ` | home ${Math.round(car.getBoundingClientRect().left)}` : '')); } else samples.push(`${Math.round(performance.now() - t0)}ms -`); if (performance.now() - t0 < 420) requestAnimationFrame(tick); else done(); }; requestAnimationFrame(tick); }); return samples.join('\n'); }, [what, clickSel]); console.log('PROBE ' + what + '\n' + out); continue; } if (sel === 'sheetbottom') { console.log('SHEET', await page.evaluate(() => { const d = document.querySelector('[role="dialog"]'); const before = [d.scrollHeight, d.clientHeight]; d.scrollTop = d.scrollHeight; return JSON.stringify({ before, top: d.scrollTop }); })); await page.waitForTimeout(300); continue; } if (sel.startsWith('snap:')) { await page.screenshot({ path: `${outDir}/${sel.slice(5)}.png` }); continue; } if (sel.startsWith('wait:')) { await page.waitForTimeout(Number(sel.slice(5))); continue; } if (sel.startsWith('quick:')) { await page.locator(sel.slice(6)).first().click({ noWaitAfter: true }); continue; } if (sel.startsWith("center:")) { await page.locator(sel.slice(7)).first().evaluate((e) => e.scrollIntoView({ block: "center" })); await page.waitForTimeout(300); continue; } if (sel === "xprobe") { const box = await page.locator("[role=dialog] button[aria-label=\"סגירה\"]").boundingBox(); console.log("under X:", await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e.closest("button")?.getAttribute("aria-label") ?? e.tagName + " " + e.className.slice(0, 50); }, [box.x + box.width / 2, box.y + box.height / 2])); await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await page.waitForTimeout(400); console.log("dialogs after click:", await page.locator("[role=dialog]").count()); continue; } if (sel === "bottom") { await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(400); continue; } if (sel.startsWith('fill:')) { const [fs, fv] = sel.slice(5).split('=>'); await page.locator(fs).first().fill(fv); await page.waitForTimeout(900); continue; } await page.locator(sel).first().click(); await page.waitForTimeout(400); } }
+    await page.waitForTimeout(400);
+    if (process.env.LABELS) console.log("LABELS", (await page.evaluate(() => [...document.querySelectorAll("[aria-label]")].map((e) => e.getAttribute("aria-label")).join(" | "))).slice(0, 900)); await page.screenshot({ path: `${outDir}/${name}.png`, fullPage: false }); if (process.env.TEXT) console.log('TEXT', (await page.evaluate(() => document.body.innerText)).slice(0, 300));
+    console.log("shot", name, "URL", page.url());
+  }
+  await b.close();
+})();
