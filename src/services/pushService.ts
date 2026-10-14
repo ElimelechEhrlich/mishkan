@@ -41,6 +41,18 @@ export async function setAutoReminderRecipients(
   }
 }
 
+/** Takes back putting a reminder off: it will not ring again for this parent. */
+export async function cancelSnooze(itemId: string, memberId: string): Promise<void> {
+  const { error } = await supabase
+    .from('reminder_snoozes')
+    .delete()
+    .eq('item_id', itemId)
+    .eq('member_id', memberId);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
+
 /**
  * Puts a reminder off for this parent alone: it rings again on their devices at `remindAt`.
  * A later choice for the same item replaces it.

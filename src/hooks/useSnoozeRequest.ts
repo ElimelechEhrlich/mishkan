@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { toMessage } from '../lib/errors';
-import { snoozeUntil } from '../lib/itemRules';
+import { labels } from '../constants/labels';
+import { formatClock, snoozeUntil } from '../lib/itemRules';
 import type { SnoozeChoice } from '../lib/itemRules';
-import { snoozeReminder } from '../services/pushService';
+import { cancelSnooze, snoozeReminder } from '../services/pushService';
 import { useHouseholdContext } from './useRouteContext';
+import { offerUndo } from './useUndoOffer';
 
 export type SnoozeRequest = {
   /** Whether the page was opened from "remind me again" on a notification (?snooze=1). */
@@ -28,11 +30,23 @@ export function useSnoozeRequest(): SnoozeRequest {
     choose: (itemId, choice): void => {
       setError(null);
       close();
-      snoozeReminder(itemId, member.id, snoozeUntil(choice, new Date())).catch(
-        (caught: unknown) => {
+      const remindAt = snoozeUntil(choice, new Date());
+      snoozeReminder(itemId, member.id, remindAt)
+        .then(() => {
+          // Says when it will ring, with a way to take it back.
+          const when =
+            choice === 'tomorrow'
+              ? labels.snooze.tomorrow
+              : `${labels.snooze.at}${formatClock(remindAt)}`;
+          offerUndo(`${labels.snooze.confirm} ${when}`, () => {
+            cancelSnooze(itemId, member.id).catch((caught: unknown) => {
+              setError(toMessage(caught));
+            });
+          });
+        })
+        .catch((caught: unknown) => {
           setError(toMessage(caught));
-        },
-      );
+        });
     },
     error,
   };
