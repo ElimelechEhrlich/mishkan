@@ -93,7 +93,12 @@ export function useItems(): UseItems {
 
   const load = useCallback(async (): Promise<void> => {
     try {
-      const [items, steps] = await Promise.all([listOpenItems(), listSteps()]);
+      const items = await listOpenItems();
+      const steps = await listSteps(
+        items
+          .filter((item) => item.kind === 'goal' || item.kind === 'issue')
+          .map((item) => item.id),
+      );
       setState({ items, steps, loading: false, error: null });
       writeCache(cacheKey, { items, steps });
     } catch (error: unknown) {

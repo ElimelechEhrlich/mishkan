@@ -252,6 +252,7 @@ export const labels = {
     done: 'בוצע',
     notSet: 'לא נבחר',
     noDoneItems: 'עוד לא סומנו פריטים כבוצעו',
+    moreDone: 'להציג עוד',
     noMissingItems: 'לא חסר כלום',
     noNotes: 'אין פתקים',
     runNotFound: 'הסבב הסתיים או נמחק.',

@@ -1,13 +1,12 @@
 import { supabase } from '../lib/supabase';
+import { allPages } from './pages';
 import type { TrackerEntry } from '../types/domain';
 
 /** Every entry of the trackers the parent can see. */
 export async function listTrackerEntries(): Promise<TrackerEntry[]> {
-  const { data, error } = await supabase.from('tracker_entries').select('*');
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
+  return allPages((from, to) =>
+    supabase.from('tracker_entries').select('*').order('id').range(from, to),
+  );
 }
 
 export async function addTrackerEntry(entry: {

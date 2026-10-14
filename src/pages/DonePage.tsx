@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { Button } from '../components/ui/Button';
 import { DoneList } from '../components/items/DoneList';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
@@ -30,6 +31,11 @@ export function DonePage(): ReactElement {
         loading={done.loading}
         onReopen={done.reopen}
       />
+      {done.hasMore && (
+        <Button variant="soft" onClick={done.loadMore}>
+          {labels.status.moreDone}
+        </Button>
+      )}
     </PageShell>
   );
 }

@@ -1,41 +1,83 @@
 import { useCallback, useEffect, useState } from 'react';
+import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
 import { byDoneTime } from '../lib/itemRules';
 import { listDoneItems, listRecurringDone, reopenItem } from '../services/itemService';
 import type { Item, ItemKind } from '../types/domain';
+import { useHouseholdContext } from './useRouteContext';
 
-const doneLimit = 100;
+/** How many are shown at first, and how many more each "load more" brings. */
+const doneStep = 100;
 
-type DoneState = {
-  readonly items: readonly Item[];
+type DoneLists = {
+  /** Items closed for good. */
+  readonly closed: readonly Item[];
+  /** Each time a recurring task (which stays open) was done. */
+  readonly repeated: readonly Item[];
+};
+
+type DoneState = DoneLists & {
   readonly loading: boolean;
   readonly error: string | null;
 };
 
-export type UseDoneItems = DoneState & {
+export type UseDoneItems = {
+  readonly items: readonly Item[];
+  readonly loading: boolean;
+  readonly error: string | null;
+  /** Whether older ones may be left to show. */
+  readonly hasMore: boolean;
+  readonly loadMore: () => void;
   readonly reopen: (itemId: string) => void;
 };
 
-/** The most recently closed items, only of one kind when `kind` is given, and a way to bring one back. */
-export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
-  const [state, setState] = useState<DoneState>({ items: [], loading: true, error: null });
+function isDoneLists(value: unknown): value is DoneLists {
+  return hasRowLists(value, ['closed', 'repeated']);
+}
 
-  const load = useCallback(async (): Promise<void> => {
-    try {
-      // A recurring task stays open; each time it was done is listed as well.
-      const [closed, repeated] = await Promise.all([
-        listDoneItems(doneLimit, kind),
-        kind === null || kind === 'task' ? listRecurringDone({ limit: doneLimit }) : [],
-      ]);
-      const items = byDoneTime([...closed, ...repeated]).slice(0, doneLimit);
-      setState({ items, loading: false, error: null });
-    } catch (error: unknown) {
+/**
+ * The most recently closed items, only of one kind when `kind` is given, and a way to bring
+ * one back. What was shown last time appears at once; the closed items and the times a
+ * recurring task was done are fetched side by side, each shown as soon as it arrives.
+ */
+export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
+  const { member } = useHouseholdContext();
+  const cacheKey = `done.${member.id}.${kind ?? 'all'}`;
+  const withRepeats = kind === null || kind === 'task';
+  const [limit, setLimit] = useState(doneStep);
+  const [state, setState] = useState<DoneState>(() => {
+    const cached = readCache(cacheKey, isDoneLists);
+    return cached === null
+      ? { closed: [], repeated: [], loading: true, error: null }
+      : { ...cached, loading: false, error: null };
+  });
+
+  const load = useCallback((): void => {
+    const fail = (error: unknown): void => {
       setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
+    };
+    const save = (next: DoneState): DoneState => {
+      if (limit === doneStep) {
+        writeCache(cacheKey, { closed: next.closed, repeated: next.repeated });
+      }
+      return next;
+    };
+    listDoneItems(limit, kind)
+      .then((closed) => {
+        setState((previous) => save({ ...previous, closed, loading: false, error: null }));
+      })
+      .catch(fail);
+    if (withRepeats) {
+      listRecurringDone({ limit })
+        .then((repeated) => {
+          setState((previous) => save({ ...previous, repeated }));
+        })
+        .catch(fail);
     }
-  }, [kind]);
+  }, [cacheKey, kind, limit, withRepeats]);
 
   useEffect(() => {
-    void load();
+    load();
   }, [load]);
 
   const reopen = useCallback(
@@ -49,5 +91,16 @@ export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
     [load],
   );
 
-  return { ...state, reopen };
+  const loadMore = useCallback((): void => {
+    setLimit((current) => current + doneStep);
+  }, []);
+
+  return {
+    items: byDoneTime([...state.closed, ...state.repeated]).slice(0, limit),
+    loading: state.loading,
+    error: state.error,
+    hasMore: state.closed.length >= limit || state.repeated.length >= limit,
+    loadMore,
+    reopen,
+  };
 }

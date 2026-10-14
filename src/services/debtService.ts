@@ -1,13 +1,12 @@
 import { supabase } from '../lib/supabase';
+import { allPages } from './pages';
 import type { DebtDetails, DebtDirection, NewDebt } from '../types/domain';
 import { deleteItem } from './itemService';
 
 export async function listDebtDetails(): Promise<DebtDetails[]> {
-  const { data, error } = await supabase.from('debt_details').select('*');
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
+  return allPages((from, to) =>
+    supabase.from('debt_details').select('*').order('item_id').range(from, to),
+  );
 }
 
 /**

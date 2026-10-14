@@ -8,6 +8,7 @@ import {
   todayIso,
 } from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
+import { allPages, inGroups } from './pages';
 import type {
   Conversion,
   Item,
@@ -18,33 +19,40 @@ import type {
 } from '../types/domain';
 
 export async function listOpenItems(): Promise<Item[]> {
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('status', 'open')
-    .eq('hidden', false)
-    .order('created_at', { ascending: false });
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
+  return allPages((from, to) =>
+    supabase
+      .from('items')
+      .select('*')
+      .eq('status', 'open')
+      .eq('hidden', false)
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(from, to),
+  );
 }
 
 /**
- * Every step and question of a goal or an issue, done ones included, so progress can be shown.
- * Steps hidden by a conversion of their parent are left out.
+ * The steps, questions and trackers of the given goals and issues, done ones included, so
+ * progress can be shown. Only those asked for: the lists need the open goals' and issues',
+ * and a closed one's are fetched when its page is opened. Steps hidden by a conversion of
+ * their parent are left out.
  */
-export async function listSteps(): Promise<Item[]> {
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .not('parent_id', 'is', null)
-    .eq('hidden', false)
-    .order('created_at');
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
+export async function listSteps(parentIds: readonly string[]): Promise<Item[]> {
+  const groups = await Promise.all(
+    inGroups(parentIds).map((ids) =>
+      allPages((from, to) =>
+        supabase
+          .from('items')
+          .select('*')
+          .in('parent_id', ids)
+          .eq('hidden', false)
+          .order('created_at')
+          .order('id')
+          .range(from, to),
+      ),
+    ),
+  );
+  return groups.flat().sort((a, b) => a.created_at.localeCompare(b.created_at));
 }
 
 /** The most recently closed items, newest first; only of one kind when `kind` is given. */

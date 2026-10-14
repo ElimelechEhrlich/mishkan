@@ -68,10 +68,15 @@ export function useShopping(
     .filter((item) => item.kind === 'missing_item' || item.kind === 'shopping_run')
     .map((item) => `${item.id}:${item.run_id ?? ''}`)
     .join(',');
+  /** The runs still open, whose bought items show their progress. */
+  const runKey = openItems
+    .filter((item) => item.kind === 'shopping_run')
+    .map((item) => item.id)
+    .join(',');
 
   useEffect(() => {
     let active = true;
-    listBoughtRunItems()
+    listBoughtRunItems(runKey === '' ? [] : runKey.split(','))
       .then((fetched) => {
         if (active) {
           setBought(fetched);
@@ -85,7 +90,7 @@ export function useShopping(
     return (): void => {
       active = false;
     };
-  }, [shoppingKey]);
+  }, [shoppingKey, runKey]);
 
   const view = useMemo(() => {
     const personalDomains = new Set(

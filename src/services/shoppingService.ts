@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { allPages, inGroups } from './pages';
 import type { Item, NewMissingItem, ShoppingCategory } from '../types/domain';
 
 /** `household_id` and `created_by` are filled in by the database. */
@@ -18,18 +19,24 @@ export async function createMissingItem(newItem: NewMissingItem): Promise<void> 
  * Bought items that are still inside a run. Open items are already in the open list;
  * these are needed to show a run's progress and to let an item be unticked.
  */
-export async function listBoughtRunItems(): Promise<Item[]> {
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('kind', 'missing_item')
-    .eq('status', 'done')
-    .not('run_id', 'is', null)
-    .order('completed_at');
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
+export async function listBoughtRunItems(runIds: readonly string[]): Promise<Item[]> {
+  // Only of the runs still open: a finished run's items are history, kept in "done".
+  const groups = await Promise.all(
+    inGroups(runIds).map((ids) =>
+      allPages((from, to) =>
+        supabase
+          .from('items')
+          .select('*')
+          .eq('kind', 'missing_item')
+          .eq('status', 'done')
+          .in('run_id', ids)
+          .order('completed_at')
+          .order('id')
+          .range(from, to),
+      ),
+    ),
+  );
+  return groups.flat();
 }
 
 /**

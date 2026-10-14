@@ -2,7 +2,7 @@ import { hasAppHistory } from '../lib/appHistory';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toMessage } from '../lib/errors';
-import { getItem } from '../services/itemService';
+import { getItem, listSteps } from '../services/itemService';
 import type { DebtDetails, Item } from '../types/domain';
 import { useDebts } from './useDebts';
 import { useItems } from './useItems';
@@ -72,7 +72,35 @@ export function useItemPage(): UseItemPage {
 
   const item = listed ?? (closed?.id === itemId ? closed : null);
 
-  const children = item === null ? [] : items.steps.filter((step) => step.parent_id === item.id);
+  // The lists hold the steps of open goals and issues only; a closed one's are fetched here.
+  const [closedSteps, setClosedSteps] = useState<readonly Item[]>([]);
+  const closedParentId =
+    closed !== null && closed.id === itemId && (closed.kind === 'goal' || closed.kind === 'issue')
+      ? closed.id
+      : null;
+  useEffect(() => {
+    if (closedParentId === null) {
+      return;
+    }
+    let active = true;
+    listSteps([closedParentId])
+      .then((fetched) => {
+        if (active) {
+          setClosedSteps(fetched);
+        }
+      })
+      .catch((caught: unknown) => {
+        if (active) {
+          setError(toMessage(caught));
+        }
+      });
+    return (): void => {
+      active = false;
+    };
+  }, [closedParentId, openItems]);
+
+  const allSteps = closedParentId === null ? items.steps : closedSteps;
+  const children = item === null ? [] : allSteps.filter((step) => step.parent_id === item.id);
   const steps = children.filter((child) => child.kind === 'task');
   const questions = children.filter((child) => child.kind === 'question');
   const trackers = children.filter((child) => child.kind === 'tracker');

@@ -1,16 +1,17 @@
 import { supabase } from '../lib/supabase';
+import { allPages } from './pages';
 import type { ItemData } from '../types/domain';
 
 /** Every row on the items the parent can see, in their order. */
 export async function listItemData(): Promise<ItemData[]> {
-  const { data, error } = await supabase
-    .from('item_data')
-    .select('*')
-    .order('position', { ascending: true });
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  return data;
+  return allPages((from, to) =>
+    supabase
+      .from('item_data')
+      .select('*')
+      .order('position', { ascending: true })
+      .order('id')
+      .range(from, to),
+  );
 }
 
 export async function addItemData(
