@@ -55,11 +55,12 @@ function fromIsoDate(isoDate: string): Date {
 }
 
 /** The time a quick choice in the add sheet stands for. */
-export function quickTimeChoice(quick: QuickTime, today: string): TimeChoice {
+export function quickTimeChoice(quick: QuickTime, today: string, hour = ''): TimeChoice {
   if (quick === 'today' || quick === 'tomorrow') {
     return {
       time_mode: 'scheduled',
       due_date: quick === 'today' ? today : addDays(today, 1),
+      due_time: hour === '' ? null : hour,
       recurrence_rule: null,
     };
   }

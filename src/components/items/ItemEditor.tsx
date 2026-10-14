@@ -518,6 +518,13 @@ export function ItemEditor({
               }}
               onUpdate={onUpdateReminder}
               onRemove={onRemoveReminder}
+              onSetTime={
+                hasSchedule
+                  ? (): void => {
+                      setOpenRow('time');
+                    }
+                  : undefined
+              }
             />
           </PropertyRow>
         )}

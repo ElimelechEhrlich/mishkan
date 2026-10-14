@@ -39,6 +39,7 @@ export function RecipientChips({
         <Chip
           label={labels.push.everyone}
           selected={everyone}
+          outline
           disabled={disabled}
           onClick={() => {
             onChange(null);
@@ -50,6 +51,7 @@ export function RecipientChips({
             label={person.name}
             note={person.hasPush ? undefined : labels.push.noDevice}
             selected={!everyone && value.includes(person.id)}
+            outline
             disabled={disabled}
             onClick={() => {
               toggle(person.id);

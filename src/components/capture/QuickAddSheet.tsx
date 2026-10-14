@@ -100,6 +100,7 @@ export function QuickAddSheet({
     initialIsShopping ? null : (initialDomainId ?? null),
   );
   const [quickTime, setQuickTime] = useState<QuickTime | null>(null);
+  const [quickHour, setQuickHour] = useState('');
   /** A note can be one value ("נתון"): a name, which is its title, and a value. */
   const [noteKind, setNoteKind] = useState<'note' | 'value'>('note');
   const [valueText, setValueText] = useState('');
@@ -202,7 +203,7 @@ export function QuickAddSheet({
       kind,
       domainId,
       parentId: null,
-      time: asksTime && pickedTime !== null ? quickTimeChoice(pickedTime, todayIso()) : null,
+      time: asksTime && pickedTime !== null ? quickTimeChoice(pickedTime, todayIso(), kind === 'task' ? quickHour : '') : null,
       ...(isValue ? { value: valueText.trim() } : {}),
       entityId: pickedEntityId,
     });
@@ -220,6 +221,7 @@ export function QuickAddSheet({
         setTitle('');
         setDomainId(null);
         setQuickTime(null);
+        setQuickHour('');
         setAmountText('');
         setValueText('');
         setNoteKind('note');
@@ -369,7 +371,13 @@ export function QuickAddSheet({
           )}
 
           {asksTime && (
-            <QuickTimePicker value={pickedTime} onChange={setQuickTime} forGoal={kind === 'goal'} />
+            <QuickTimePicker
+              value={pickedTime}
+              onChange={setQuickTime}
+              forGoal={kind === 'goal'}
+              hour={quickHour}
+              onHourChange={setQuickHour}
+            />
           )}
         </div>
         <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">

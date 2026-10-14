@@ -12,6 +12,8 @@ type ChipProps = {
   readonly disabled?: boolean;
   /** Shows a small × while selected, saying a tap lets the choice go. */
   readonly clearable?: boolean;
+  /** For a value inside a setting: chosen is marked by an outline, not filled. */
+  readonly outline?: boolean;
 };
 
 export function Chip({
@@ -22,8 +24,15 @@ export function Chip({
   dotClass,
   disabled = false,
   clearable = false,
+  outline = false,
 }: ChipProps): ReactElement {
-  const tone = selected ? 'bg-primary text-white' : 'bg-surface text-ink shadow-card';
+  const tone = outline
+    ? selected
+      ? 'bg-surface text-primary font-semibold ring-1 ring-primary'
+      : 'bg-surface text-muted shadow-card'
+    : selected
+      ? 'bg-primary text-white'
+      : 'bg-surface text-ink shadow-card';
   return (
     <button
       type="button"

@@ -22,6 +22,8 @@ type ReminderListProps = {
   readonly onAdd: (draft: ReminderDraft) => void;
   readonly onUpdate: (reminderId: string, draft: ReminderDraft) => void;
   readonly onRemove: (reminderId: string) => void;
+  /** Opens the item's time, for a reminder that needs an hour or a date it does not have. */
+  readonly onSetTime?: (() => void) | undefined;
 };
 
 /** An item's reminders: each one in words, a tap to change it, and a way to add another. */
@@ -32,6 +34,7 @@ export function ReminderList({
   onAdd,
   onUpdate,
   onRemove,
+  onSetTime,
 }: ReminderListProps): ReactElement {
   // The reminder open for changes, 'new' for one being added, or none.
   const [editing, setEditing] = useState<string | null>(null);
@@ -74,6 +77,7 @@ export function ReminderList({
                     onRemove(reminder.id);
                     setEditing(null);
                   }}
+                  onSetTime={onSetTime}
                 />
               </li>
             ) : (
@@ -124,6 +128,7 @@ export function ReminderList({
           onCancel={() => {
             setEditing(null);
           }}
+          onSetTime={onSetTime}
         />
       ) : (
         <Button
