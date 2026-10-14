@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
-import { listDoneItems, reopenItem } from '../services/itemService';
+import { byDoneTime } from '../lib/itemRules';
+import { listDoneItems, listRecurringDone, reopenItem } from '../services/itemService';
 import type { Item, ItemKind } from '../types/domain';
 
 const doneLimit = 100;
@@ -21,7 +22,12 @@ export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
 
   const load = useCallback(async (): Promise<void> => {
     try {
-      const items = await listDoneItems(doneLimit, kind);
+      // A recurring task stays open; each time it was done is listed as well.
+      const [closed, repeated] = await Promise.all([
+        listDoneItems(doneLimit, kind),
+        kind === null || kind === 'task' ? listRecurringDone({ limit: doneLimit }) : [],
+      ]);
+      const items = byDoneTime([...closed, ...repeated]).slice(0, doneLimit);
       setState({ items, loading: false, error: null });
     } catch (error: unknown) {
       setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));

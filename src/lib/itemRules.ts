@@ -111,23 +111,31 @@ export function recurrenceOf(rule: string | null): Recurrence | null {
 }
 
 /**
- * The next occurrence after a recurring item is done.
- * Counted from today, or from the due date when it is still in the future.
+ * The next occurrence after a recurring item is done. It keeps its own rhythm: the next
+ * step after its due date, skipping any that already passed, so a Tuesday chore done late
+ * on Thursday is next due on Tuesday. With no due date, it counts from today.
  */
 export function nextDueDate(current: string | null, recurrence: Recurrence, today: string): string {
-  const base = current !== null && current > today ? current : today;
-  if (recurrence === 'daily') {
-    return addDays(base, 1);
+  const step = (date: string): string => {
+    if (recurrence === 'daily') {
+      return addDays(date, 1);
+    }
+    if (recurrence === 'weekly') {
+      return addDays(date, 7);
+    }
+    // Monthly keeps the day, or the last day of a shorter month (the 31st → the 30th).
+    const start = fromIsoDate(date);
+    const target = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+    target.setDate(Math.min(start.getDate(), lastDay));
+    return toIsoDate(target);
+  };
+  let next = step(current ?? today);
+  // Bounded, for an item left undone for years.
+  for (let guard = 0; next <= today && guard < 1000; guard += 1) {
+    next = step(next);
   }
-  if (recurrence === 'weekly') {
-    return addDays(base, 7);
-  }
-  // Monthly keeps the day, or the last day of a shorter month (the 31st → the 30th).
-  const start = fromIsoDate(base);
-  const target = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
-  target.setDate(Math.min(start.getDate(), lastDay));
-  return toIsoDate(target);
+  return next;
 }
 
 /** A moment moved by whole days, keeping its local clock time across daylight saving. */
@@ -206,11 +214,13 @@ export const activeSections = [
   'thisWeek',
   'upcoming',
   'undated',
+  'passed',
 ] as const satisfies readonly ActiveSection[];
 
 /** Active entries split by how soon they are due. */
 export function splitBySection<
   T extends {
+    readonly item: Pick<Item, 'kind'>;
     readonly dueDate: string | null;
     readonly urgent: boolean;
     readonly target: string | null;
@@ -223,6 +233,7 @@ export function splitBySection<
     thisWeek: [],
     upcoming: [],
     undated: [],
+    passed: [],
   };
   for (const entry of entries) {
     groups[sectionOfEntry(entry, today)].push(entry);
@@ -342,12 +353,17 @@ export function toListEntries(
  */
 export function sectionOfEntry(
   entry: {
+    readonly item: Pick<Item, 'kind'>;
     readonly dueDate: string | null;
     readonly urgent: boolean;
     readonly target: string | null;
   },
   today: string,
 ): ActiveSection {
+  // An appointment whose day has passed is not late: it either happened or needs a new date.
+  if (entry.item.kind === 'appointment' && entry.dueDate !== null && entry.dueDate < today) {
+    return 'passed';
+  }
   if (entry.target !== null && entry.target < today) {
     return 'overdue';
   }
@@ -380,6 +396,11 @@ export function compareBySection(today: string): (a: ListEntry, b: ListEntry) =>
   return (a, b) =>
     activeSections.indexOf(sectionOfEntry(a, today)) -
       activeSections.indexOf(sectionOfEntry(b, today)) || compareEntries(a, b);
+}
+
+/** Newest first by when they were done. */
+export function byDoneTime(items: readonly Item[]): Item[] {
+  return [...items].sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''));
 }
 
 /** A missing item already in a shopping run is shown inside the run, not again on its own. */
@@ -506,6 +527,8 @@ export type Agenda = {
   /** Marked urgent, with no date or a later one. */
   readonly urgent: readonly ListEntry[];
   readonly today: readonly ListEntry[];
+  /** Appointments whose day has passed and were not marked as held; not counted as late. */
+  readonly passed: readonly ListEntry[];
 };
 
 /**
@@ -530,6 +553,7 @@ export function agendaOf(assigned: readonly Item[], steps: readonly Item[], toda
     overdue: [...sections.overdue].sort(compareEntries),
     urgent: [...sections.urgent].sort(compareEntries),
     today: [...sections.today].sort(compareEntries),
+    passed: [...sections.passed].sort(compareEntries),
   };
 }
 

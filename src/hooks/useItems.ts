@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { hasRowLists, readCache, writeCache } from '../lib/cache';
+import { labels } from '../constants/labels';
 import { toMessage } from '../lib/errors';
 import { announceItemsChanged, onItemsChanged } from '../lib/itemChanges';
 import { agendaOf, todayIso } from '../lib/itemRules';
@@ -14,6 +15,7 @@ import {
   listOpenItems,
   listSteps,
   reopenItem,
+  undoComplete,
   subscribeToItems,
   updateItem,
 } from '../services/itemService';
@@ -30,6 +32,7 @@ import type {
   NewMissingItem,
 } from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
+import { offerUndo } from './useUndoOffer';
 
 type ItemsState = {
   readonly items: readonly Item[];
@@ -187,9 +190,16 @@ export function useItems(): UseItems {
     [run],
   );
 
+  // Marked done by mistake? For a few seconds it can be taken back.
   const handleComplete = useCallback(
     (item: Item): void => {
-      void run(() => completeItem(item));
+      void run(() => completeItem(item)).then((done) => {
+        if (done) {
+          offerUndo(labels.undo.done, () => {
+            void run(() => undoComplete(item));
+          });
+        }
+      });
     },
     [run],
   );

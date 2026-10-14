@@ -5,10 +5,14 @@ import type { EverythingShortcut } from '../../hooks/useEverythingShortcut';
 import { BottomNav } from './BottomNav';
 import { EverythingButton } from './EverythingButton';
 import { Icon } from './Icon';
+import { useDocked } from '../../hooks/useScopeDock';
 import { IconButton } from './IconButton';
+import { UndoToast } from './UndoToast';
 
 type PageShellProps = {
   readonly title: string;
+  /** A shorter title, such as the bottom bar's name, for when the entity's picture docks. */
+  readonly shortTitle?: string | undefined;
   /** A quiet line: above the title on main pages (such as today's date), below it on inner ones. */
   readonly subtitle?: string | undefined;
   readonly incompleteCount: number;
@@ -34,6 +38,7 @@ const headerLinkClass =
 
 export function PageShell({
   title,
+  shortTitle,
   subtitle,
   incompleteCount,
   todayCount,
@@ -44,6 +49,9 @@ export function PageShell({
   toEverything,
 }: PageShellProps): ReactElement {
   const navigate = useNavigate();
+  // Once the entity's picture sits in the header there is less room: the title takes its
+  // short form and a smaller size, and the line above it steps aside, so nothing is cut.
+  const docked = useDocked();
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col">
       <header className="sticky top-0 z-10 bg-paper/85 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 backdrop-blur-md">
@@ -71,10 +79,20 @@ export function PageShell({
           <div className="flex items-end gap-1">
             <div className="flex min-w-0 flex-1 flex-col">
               {subtitle !== undefined && (
-                <p className="truncate text-[13px] font-medium text-muted">{subtitle}</p>
+                <p
+                  className={`truncate text-[13px] font-medium text-muted transition-opacity duration-200 ${
+                    docked ? 'opacity-0' : ''
+                  }`}
+                >
+                  {subtitle}
+                </p>
               )}
-              <h1 className="truncate font-display text-[30px] leading-9 font-bold tracking-tight">
-                {title}
+              <h1
+                className={`truncate font-display leading-9 font-bold tracking-tight transition-[font-size] duration-200 ${
+                  docked ? 'text-[24px]' : 'text-[30px]'
+                }`}
+              >
+                {docked ? (shortTitle ?? title) : title}
               </h1>
             </div>
             {toEverything !== undefined && <EverythingButton shortcut={toEverything} />}
@@ -115,6 +133,7 @@ export function PageShell({
         {children}
       </main>
       {!hideNav && <BottomNav />}
+      <UndoToast />
     </div>
   );
 }

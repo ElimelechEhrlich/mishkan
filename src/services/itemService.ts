@@ -74,6 +74,45 @@ export async function listDoneSince(since: string): Promise<Item[]> {
   return data;
 }
 
+/**
+ * Each time a recurring task was done, as a done copy of the task stamped with when and by
+ * whom; the task itself stays open. Newest first, since a moment or up to a count.
+ */
+export async function listRecurringDone(range: {
+  readonly since?: string;
+  readonly limit?: number;
+}): Promise<Item[]> {
+  const base = supabase.from('completions').select('*').order('completed_at', { ascending: false });
+  const { data: completions, error } = await (range.since === undefined
+    ? base.limit(range.limit ?? 100)
+    : base.gte('completed_at', range.since));
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  const ids = [...new Set(completions.map((completion) => completion.item_id))];
+  if (ids.length === 0) {
+    return [];
+  }
+  const items = await supabase.from('items').select('*').in('id', ids).eq('hidden', false);
+  if (items.error !== null) {
+    throw new Error(items.error.message);
+  }
+  const byId = new Map(items.data.map((item) => [item.id, item]));
+  return completions.flatMap((completion) => {
+    const item = byId.get(completion.item_id);
+    return item === undefined
+      ? []
+      : [
+          {
+            ...item,
+            status: 'done' as const,
+            completed_at: completion.completed_at,
+            completed_by: completion.completed_by,
+          },
+        ];
+  });
+}
+
 /** One item in any status, or null when it does not exist or is not visible. */
 export async function getItem(itemId: string): Promise<Item | null> {
   const { data, error } = await supabase.from('items').select('*').eq('id', itemId).maybeSingle();
@@ -193,6 +232,18 @@ export async function completeItem(item: Item): Promise<void> {
       ? {}
       : { remind_at: shiftByDays(item.remind_at, daysBetween(item.due_date ?? todayIso(), next)) }),
   });
+}
+
+/**
+ * Takes back marking `item` done, given as it was before: a recurring task gets its date and
+ * reminder back, anything else is open again.
+ */
+export async function undoComplete(item: Item): Promise<void> {
+  if (item.kind === 'task' && item.time_mode === 'recurring') {
+    await updateItem(item.id, { due_date: item.due_date, remind_at: item.remind_at });
+    return;
+  }
+  await reopenItem(item.id);
 }
 
 export async function reopenItem(itemId: string): Promise<void> {

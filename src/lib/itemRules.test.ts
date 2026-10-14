@@ -79,9 +79,9 @@ describe('activeSectionOf', () => {
   it('groups entries in the same way', () => {
     const groups = splitBySection(
       [
-        { dueDate: '2026-10-01', urgent: false, target: null },
-        { dueDate: '2026-10-15', urgent: false, target: null },
-        { dueDate: null, urgent: false, target: null },
+        { item: { kind: 'task' }, dueDate: '2026-10-01', urgent: false, target: null },
+        { item: { kind: 'task' }, dueDate: '2026-10-15', urgent: false, target: null },
+        { item: { kind: 'task' }, dueDate: null, urgent: false, target: null },
       ],
       today,
     );
@@ -213,6 +213,13 @@ describe('steps standing on their own', () => {
 });
 
 describe('nextDueDate', () => {
+  it('keeps its rhythm when done late', () => {
+    // A Tuesday chore (2026-10-06) done on Thursday 2026-10-15 is next due Tuesday the 20th.
+    expect(nextDueDate('2026-10-06', 'weekly', '2026-10-15')).toBe('2026-10-20');
+    expect(nextDueDate('2026-10-10', 'daily', '2026-10-15')).toBe('2026-10-16');
+    expect(nextDueDate(null, 'weekly', '2026-10-15')).toBe('2026-10-22');
+  });
+
   it('keeps a monthly day, or the last day of a shorter month', () => {
     expect(nextDueDate('2027-01-31', 'monthly', '2027-01-01')).toBe('2027-02-28');
     expect(nextDueDate('2027-03-15', 'monthly', '2027-03-01')).toBe('2027-04-15');
@@ -225,6 +232,15 @@ describe('time left by a conversion', () => {
     const [entry] = toListEntries([note], []);
     expect(entry?.dueDate).toBeNull();
     expect(entry?.urgent).toBe(false);
+  });
+});
+
+describe('appointments that passed', () => {
+  it('are asked about rather than counted as late', () => {
+    const past = item({ id: 'p', kind: 'appointment', due_date: '2026-10-09' });
+    const agenda = agendaOf([past], [], today);
+    expect(agenda.overdue).toHaveLength(0);
+    expect(agenda.passed.map((entry) => entry.item.id)).toEqual(['p']);
   });
 });
 

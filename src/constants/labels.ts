@@ -100,6 +100,7 @@ const section = {
   thisWeek: 'השבוע הקרוב',
   upcoming: 'בהמשך',
   undated: 'ללא מועד',
+  passed: 'עבר – התקיים?',
 } as const satisfies Record<ActiveSection, string>;
 
 const entityKind = {
@@ -252,6 +253,10 @@ export const labels = {
     noNotes: 'אין פתקים',
     runNotFound: 'הסבב הסתיים או נמחק.',
     entityNotFound: 'הישות לא נמצאה. ייתכן שהיא נמחקה.',
+  },
+  undo: {
+    done: 'סומן כבוצע',
+    action: 'ביטול',
   },
   actions: {
     order: 'סדר',

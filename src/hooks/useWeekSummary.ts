@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toMessage } from '../lib/errors';
-import { listDoneSince } from '../services/itemService';
+import { listDoneSince, listRecurringDone } from '../services/itemService';
 import type { Item, Member } from '../types/domain';
 
 export type WeekSummary = {
@@ -31,7 +31,10 @@ export function useWeekSummary(
 
   useEffect(() => {
     let active = true;
-    listDoneSince(new Date(Date.now() - weekMs).toISOString())
+    const since = new Date(Date.now() - weekMs).toISOString();
+    // Each time a recurring task was done counts too.
+    Promise.all([listDoneSince(since), listRecurringDone({ since })])
+      .then(([closed, repeated]) => [...closed, ...repeated])
       .then((items) => {
         if (active) {
           setState({ items, loading: false, error: null });

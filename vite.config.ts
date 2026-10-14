@@ -8,7 +8,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // A new version waits, and src/lib/pwa.ts applies it when the app is not in use.
+      registerType: 'prompt',
       includeAssets: ['icons/icon.svg'],
       // Adds the handlers that show reminders sent by web push.
       workbox: {

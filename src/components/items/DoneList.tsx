@@ -21,7 +21,12 @@ export function DoneList({ items, lookups, loading, onReopen }: DoneListProps): 
   return (
     <ul className="overflow-hidden rounded-2xl bg-surface shadow-card">
       {items.map((item) => (
-        <DoneRow key={item.id} item={item} lookups={lookups} onReopen={onReopen} />
+        <DoneRow
+          key={`${item.id}-${item.completed_at ?? ''}`}
+          item={item}
+          lookups={lookups}
+          onReopen={onReopen}
+        />
       ))}
     </ul>
   );

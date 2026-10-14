@@ -68,19 +68,29 @@ export function ItemRow({
       className={`group flex gap-3 ps-3.5 transition duration-300 ${completing ? 'opacity-40' : ''}`}
     >
       <span className="w-5.5 shrink-0 pt-2">
-        {item.kind !== 'note' && item.kind !== 'tracker' && (
-          <CheckButton
-            checked={completing}
-            label={labels.actions.markDone}
-            toneClass={tone?.border}
-            onClick={() => {
-              if (!completing) {
-                setCompleting(true);
-                onComplete(item);
-              }
-            }}
+        {/* A goal or an issue is closed only from its own page; in a list it shows its mark. */}
+        {(item.kind === 'goal' || item.kind === 'issue') && (
+          <Icon
+            name={item.kind === 'goal' ? 'target' : 'alert'}
+            className={`size-5.5 ${tone?.text ?? 'text-muted'}`}
           />
         )}
+        {item.kind !== 'note' &&
+          item.kind !== 'tracker' &&
+          item.kind !== 'goal' &&
+          item.kind !== 'issue' && (
+            <CheckButton
+              checked={completing}
+              label={labels.actions.markDone}
+              toneClass={tone?.border}
+              onClick={() => {
+                if (!completing) {
+                  setCompleting(true);
+                  onComplete(item);
+                }
+              }}
+            />
+          )}
       </span>
       <Link
         to={`/item/${item.id}`}

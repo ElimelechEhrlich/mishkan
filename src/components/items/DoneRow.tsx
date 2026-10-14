@@ -5,6 +5,7 @@ import { formatTimestampDate } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
+import { Icon } from '../ui/Icon';
 
 type DoneRowProps = {
   readonly item: Item;
@@ -20,17 +21,23 @@ export function DoneRow({ item, lookups, onReopen }: DoneRowProps): ReactElement
     item.completed_by === null ? undefined : lookups.memberNames.get(item.completed_by);
   const doneOn = item.completed_at === null ? undefined : formatTimestampDate(item.completed_at);
   const details = [domainLabel, doneBy, doneOn].filter((part) => part !== undefined);
+  const repeated = item.kind === 'task' && item.time_mode === 'recurring';
 
   return (
     <li className="group flex gap-3 ps-3.5">
       <span className="w-5.5 shrink-0 pt-3">
-        <CheckButton
-          checked
-          label={labels.actions.markOpen}
-          onClick={() => {
-            onReopen(item.id);
-          }}
-        />
+        {/* A recurring task is still open; this row is one time it was done. */}
+        {repeated ? (
+          <Icon name="repeat" className="size-5.5 text-faint" />
+        ) : (
+          <CheckButton
+            checked
+            label={labels.actions.markOpen}
+            onClick={() => {
+              onReopen(item.id);
+            }}
+          />
+        )}
       </span>
       <Link
         to={`/item/${item.id}`}

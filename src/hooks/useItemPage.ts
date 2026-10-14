@@ -89,7 +89,8 @@ export function useItemPage(): UseItemPage {
         kind: 'task',
         domainId: parent.domain_id,
         parentId: parent.id,
-        time: null,
+        // A new step is open with no date ("ללא מועד"), not one more item to complete.
+        time: { time_mode: 'anytime', due_date: null, recurrence_rule: null },
       });
     },
     [addItem],

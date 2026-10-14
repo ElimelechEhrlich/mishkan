@@ -39,6 +39,7 @@ export function GoalsPage(): ReactElement {
     <PageShell
       toEverything={toEverything}
       title={labels.pages.goals}
+      shortTitle={labels.nav.goals}
       incompleteCount={scoped.incomplete.length}
       todayCount={items.todayCount}
     >

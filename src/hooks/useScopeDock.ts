@@ -47,3 +47,11 @@ function subscribe(listener: () => void): () => void {
 export function useScopeDock(): ScopeDock {
   return useSyncExternalStore(subscribe, () => dock);
 }
+
+/**
+ * Whether the entity's picture has gone up into the header. Changes only when it crosses
+ * half way, so the header is redrawn twice per scroll at most, not on every frame.
+ */
+export function useDocked(): boolean {
+  return useSyncExternalStore(subscribe, () => dock.progress >= 0.5);
+}

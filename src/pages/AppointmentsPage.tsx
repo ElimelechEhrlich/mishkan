@@ -31,6 +31,7 @@ export function AppointmentsPage(): ReactElement {
     <PageShell
       toEverything={toEverything}
       title={labels.pages.appointments}
+      shortTitle={labels.nav.appointments}
       incompleteCount={scoped.incomplete.length}
       todayCount={items.todayCount}
     >

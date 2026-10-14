@@ -19,7 +19,12 @@ type TodayListProps = {
  * then what is due today in time order, the ones with an hour first.
  */
 export function TodayList({ agenda, lookups, loading, onComplete }: TodayListProps): ReactElement {
-  if (agenda.overdue.length === 0 && agenda.urgent.length === 0 && agenda.today.length === 0) {
+  if (
+    agenda.overdue.length === 0 &&
+    agenda.urgent.length === 0 &&
+    agenda.today.length === 0 &&
+    agenda.passed.length === 0
+  ) {
     return loading ? <SkeletonList /> : <EmptyState text={labels.today.empty} />;
   }
   return (
@@ -45,6 +50,12 @@ export function TodayList({ agenda, lookups, loading, onComplete }: TodayListPro
         lookups={lookups}
         onComplete={onComplete}
         defaultOpen
+      />
+      <TimeGroup
+        label={labels.section.passed}
+        entries={agenda.passed}
+        lookups={lookups}
+        onComplete={onComplete}
       />
     </section>
   );
