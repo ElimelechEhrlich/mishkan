@@ -71,7 +71,7 @@ export function ItemMeta({
       {extra !== undefined && (
         <span className="rounded-[5px] bg-line/70 px-1.5 text-[11px] font-semibold">{extra}</span>
       )}
-      {showTime && <DueText item={item} today={today} />}
+      {showTime && <DueText item={item} today={today} dayTimes={lookups.dayTimes.get(item.id)} />}
     </span>
   );
 }

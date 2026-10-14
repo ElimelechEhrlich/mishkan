@@ -42,6 +42,8 @@ export type Lookups = {
   readonly itemData: ReadonlyMap<string, readonly ItemData[]>;
   /** The entries of trackers ("מעקב"), by tracker id. */
   readonly trackerEntries: ReadonlyMap<string, readonly TrackerEntry[]>;
+  /** The hours of each day of a repeating item (HH:MM), by item id, when it has more than one. */
+  readonly dayTimes: ReadonlyMap<string, readonly string[]>;
 };
 
 export function buildLookups(
@@ -49,6 +51,7 @@ export function buildLookups(
   members: readonly Member[],
   itemData: ReadonlyMap<string, readonly ItemData[]> = new Map(),
   trackerEntries: ReadonlyMap<string, readonly TrackerEntry[]> = new Map(),
+  dayTimes: ReadonlyMap<string, readonly string[]> = new Map(),
 ): Lookups {
   const domainLabels = new Map<string, string>();
   const domainTones = new Map<string, EntityTone>();
@@ -61,7 +64,15 @@ export function buildLookups(
     }
   });
   const memberNames = new Map(members.map((member) => [member.id, member.name]));
-  return { domainLabels, domainTones, domainEntities, memberNames, itemData, trackerEntries };
+  return {
+    domainLabels,
+    domainTones,
+    domainEntities,
+    memberNames,
+    itemData,
+    trackerEntries,
+    dayTimes,
+  };
 }
 
 /** Every entity with its shopping domain, the home first: most missing items are for it. */

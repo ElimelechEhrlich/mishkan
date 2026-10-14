@@ -42,15 +42,34 @@ export async function listOccurrences(range: {
 }
 
 export async function setRepeat(itemId: string, draft: RepeatDraft): Promise<void> {
-  const { error } = await supabase.rpc('set_repeat', {
+  const { error } = await supabase.rpc('save_repeat', {
     p_item_id: itemId,
     p_every: draft.every,
     p_unit: draft.unit,
     p_starts_on: draft.startsOn,
-    p_at_time: draft.atTime,
+    p_times: [...draft.times],
+    p_weekdays: draft.unit === 'week' ? [...draft.weekdays] : [],
+    p_from_kind: draft.fromKind,
     p_end_kind: draft.endKind,
     p_end_count: draft.endKind === 'count' ? draft.endCount : null,
     p_end_until: draft.endKind === 'until' ? draft.endUntil : null,
+    p_tracker_closes: draft.trackerCloses,
+  });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
+
+/** Moves the current occurrence to another day (and hour); the rhythm goes on as planned. */
+export async function moveOccurrence(
+  itemId: string,
+  day: string,
+  time: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('move_occurrence', {
+    p_item_id: itemId,
+    p_date: day,
+    p_time: time,
   });
   if (error !== null) {
     throw new Error(error.message);

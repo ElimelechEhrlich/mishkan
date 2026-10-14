@@ -758,3 +758,44 @@ update public.item_reminders r
 set item_id = r.item_id
 from public.items i
 where i.id = r.item_id and i.time_mode = 'recurring' and r.rule in ('before', 'day');
+
+-- ---------- A new repeating appointment -----------------------------
+-- One appointment that repeats (every week, every two weeks or every month, a number of
+-- times), instead of separate ones; each time can be moved or skipped on its own.
+create function public.create_repeating_appointment(
+  p_title       text,
+  p_domain_id   uuid,
+  p_starts      timestamptz,
+  p_place_kind  public.meeting_place,
+  p_place       text,
+  p_meeting_url text,
+  p_with_whom   text,
+  p_entity_id   uuid,
+  p_every       integer,
+  p_unit        public.repeat_unit,
+  p_count       integer
+) returns uuid
+language plpgsql set search_path = '' as $$
+declare
+  v_id    uuid;
+  v_local timestamp := p_starts at time zone 'Asia/Jerusalem';
+begin
+  insert into public.items
+    (title, kind, domain_id, entity_id, time_mode, due_date, starts_at,
+     place_kind, place, meeting_url, with_whom)
+  values
+    (p_title, 'appointment', p_domain_id, p_entity_id, 'scheduled', v_local::date, p_starts,
+     p_place_kind, nullif(trim(p_place), ''), nullif(trim(p_meeting_url), ''),
+     nullif(trim(p_with_whom), ''))
+  returning id into v_id;
+  perform public.save_repeat(
+    v_id, p_every, p_unit, v_local::date, array[v_local::time], '{}', 'schedule',
+    case when p_count is null then 'never' else 'count' end::public.repeat_end,
+    p_count, null, false);
+  return v_id;
+end $$;
+
+grant execute on function public.create_repeating_appointment(
+  text, uuid, timestamptz, public.meeting_place, text, text, text, uuid, integer,
+  public.repeat_unit, integer
+) to authenticated;

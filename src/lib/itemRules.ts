@@ -155,11 +155,21 @@ export function nextDueDate(current: string | null, recurrence: Recurrence, toda
  * conversion is kept, hidden, for converting back, and is not shown or used.
  */
 export function hasOwnTime(item: Item): boolean {
-  return item.kind === 'task' || item.kind === 'goal' || item.kind === 'appointment';
+  return (
+    item.kind === 'task' ||
+    item.kind === 'goal' ||
+    item.kind === 'appointment' ||
+    // A tracker or a missing item has a time only while it repeats.
+    ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring')
+  );
 }
 
 /** Which time tab shows this item. Notes, debts and shopping have no time and their own pages. */
 export function segmentOf(item: Item): OpenSegment | null {
+  // A repeating tracker or missing item is listed by its occurrences, like a task.
+  if ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring') {
+    return 'active';
+  }
   if (
     item.kind === 'debt' ||
     item.kind === 'note' ||
@@ -369,7 +379,10 @@ export function sectionOfEntry(
 ): ActiveSection {
   // A repeating task whose occurrences have run out waits to be marked done itself.
   if (
-    entry.item.kind === 'task' &&
+    (entry.item.kind === 'task' ||
+      entry.item.kind === 'appointment' ||
+      entry.item.kind === 'tracker' ||
+      entry.item.kind === 'missing_item') &&
     entry.item.time_mode === 'recurring' &&
     entry.dueDate === null &&
     !entry.urgent
@@ -517,6 +530,22 @@ export const appointmentRepeats = [
   'monthly',
 ] as const satisfies readonly AppointmentRepeat[];
 
+/** The rhythm a new appointment series repeats by; null for a single appointment. */
+export function appointmentRhythm(
+  repeat: AppointmentRepeat,
+): { readonly every: number; readonly unit: 'week' | 'month' } | null {
+  switch (repeat) {
+    case 'weekly':
+      return { every: 1, unit: 'week' };
+    case 'biweekly':
+      return { every: 2, unit: 'week' };
+    case 'monthly':
+      return { every: 1, unit: 'month' };
+    case 'none':
+      return null;
+  }
+}
+
 /**
  * The local start times of a series, from the first one (YYYY-MM-DDTHH:mm), as
  * datetime-local values. A monthly series keeps the day of the month, or the
@@ -576,7 +605,9 @@ export function agendaOf(assigned: readonly Item[], steps: readonly Item[], toda
       item.kind === 'issue' ||
       item.kind === 'appointment' ||
       item.kind === 'task' ||
-      item.kind === 'goal',
+      item.kind === 'goal' ||
+      // A repeating tracker or missing item shows on the days of its occurrences.
+      ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring'),
   );
   const sections = splitBySection(toListEntries(rows, steps, assigned), today);
   return {

@@ -7,7 +7,9 @@ import {
   rhythmOfRule,
   rhythmText,
   stepFrom,
-  upcomingDays,
+  isRhythmDay,
+  nextSlot,
+  upcomingSlots,
 } from './recurrence';
 import type { ItemRepeat, Occurrence } from '../types/domain';
 
@@ -24,6 +26,12 @@ function repeat(overrides: Partial<ItemRepeat>): ItemRepeat {
     stopped_on: null,
     missed_from: '2026-10-14',
     updated_at: '',
+    times: [],
+    weekdays: [],
+    from_kind: 'schedule',
+    planned_date: null,
+    planned_time: null,
+    tracker_closes: false,
     ...overrides,
   };
 }
@@ -62,8 +70,11 @@ describe('the rhythm', () => {
 });
 
 describe('the occurrences ahead', () => {
+  const days = (slots: readonly { readonly day: string }[]): string[] =>
+    slots.map((slot) => slot.day);
+
   it('runs on with no end', () => {
-    expect(upcomingDays(repeat({}), '2026-10-14', 0, 3)).toEqual([
+    expect(days(upcomingSlots(repeat({}), { day: '2026-10-14', time: null }, 0, 3))).toEqual([
       '2026-10-14',
       '2026-10-15',
       '2026-10-16',
@@ -71,23 +82,64 @@ describe('the occurrences ahead', () => {
   });
 
   it('stops at a number of times, counting what went by', () => {
-    expect(upcomingDays(repeat({ end_kind: 'count', end_count: 5 }), '2026-10-14', 3, 9)).toEqual([
-      '2026-10-14',
-      '2026-10-15',
-    ]);
+    expect(
+      days(
+        upcomingSlots(
+          repeat({ end_kind: 'count', end_count: 5 }),
+          { day: '2026-10-14', time: null },
+          3,
+          9,
+        ),
+      ),
+    ).toEqual(['2026-10-14', '2026-10-15']);
   });
 
   it('stops at a last day and at "stop repeating"', () => {
+    const current = { day: '2026-10-14', time: null };
     expect(
-      upcomingDays(repeat({ end_kind: 'until', end_until: '2026-10-15' }), '2026-10-14', 0, 9),
+      days(upcomingSlots(repeat({ end_kind: 'until', end_until: '2026-10-15' }), current, 0, 9)),
     ).toEqual(['2026-10-14', '2026-10-15']);
-    expect(upcomingDays(repeat({ stopped_on: '2026-10-14' }), '2026-10-14', 0, 9)).toEqual([
+    expect(days(upcomingSlots(repeat({ stopped_on: '2026-10-14' }), current, 0, 9))).toEqual([
       '2026-10-14',
     ]);
   });
 
   it('none when the series has ended', () => {
-    expect(upcomingDays(repeat({}), null, 0, 3)).toEqual([]);
+    expect(upcomingSlots(repeat({}), null, 0, 3)).toEqual([]);
+  });
+
+  it('several hours a day, each an occurrence', () => {
+    const daily = repeat({ times: ['08:00:00', '14:00:00', '20:00:00'] });
+    expect(upcomingSlots(daily, { day: '2026-10-14', time: '14:00' }, 0, 4)).toEqual([
+      { day: '2026-10-14', time: '14:00' },
+      { day: '2026-10-14', time: '20:00' },
+      { day: '2026-10-15', time: '08:00' },
+      { day: '2026-10-15', time: '14:00' },
+    ]);
+  });
+
+  it('chosen days of the week, every other week', () => {
+    // 2026-10-14 is a Wednesday; its week starts on Sunday the 11th.
+    const twoWeeks = repeat({ unit: 'week', every: 2, weekdays: [0, 3] });
+    expect(isRhythmDay(twoWeeks, '2026-10-18')).toBe(false);
+    expect(isRhythmDay(twoWeeks, '2026-10-25')).toBe(true);
+    expect(nextSlot(twoWeeks, { day: '2026-10-14', time: null }, 0)).toEqual({
+      day: '2026-10-25',
+      time: null,
+    });
+    expect(nextSlot(twoWeeks, { day: '2026-10-25', time: null }, 0)).toEqual({
+      day: '2026-10-28',
+      time: null,
+    });
+  });
+
+  it('a moved occurrence: the rhythm goes on from where it was planned', () => {
+    const moved = repeat({ planned_date: '2026-10-14' });
+    expect(days(upcomingSlots(moved, { day: '2026-10-16', time: null }, 0, 3))).toEqual([
+      '2026-10-16',
+      '2026-10-15',
+      '2026-10-16',
+    ]);
   });
 });
 
@@ -106,7 +158,10 @@ describe('in words', () => {
         every: 3,
         unit: 'month',
         startsOn: '2026-10-14',
-        atTime: '08:00',
+        times: ['08:00'],
+        weekdays: [],
+        fromKind: 'schedule',
+        trackerCloses: false,
         endKind: 'count',
         endCount: 7,
         endUntil: null,

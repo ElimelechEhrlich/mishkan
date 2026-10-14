@@ -7,6 +7,8 @@ import type { Item } from '../../types/domain';
 type DueTextProps = {
   readonly item: Item;
   readonly today: string;
+  /** The hours of each day of a repeating item, when it has several. */
+  readonly dayTimes?: readonly string[] | undefined;
 };
 
 /**
@@ -14,7 +16,7 @@ type DueTextProps = {
  * Items without a date show nothing here, as their tab or section already says so; only
  * urgent ones are marked.
  */
-export function DueText({ item, today }: DueTextProps): ReactElement | null {
+export function DueText({ item, today, dayTimes }: DueTextProps): ReactElement | null {
   // Urgent with no date: said outright, since it sits with today's.
   if (item.due_date === null && item.time_mode === 'urgent' && hasOwnTime(item)) {
     return (
@@ -30,5 +32,19 @@ export function DueText({ item, today }: DueTextProps): ReactElement | null {
   const overdue = isOverdue(item, today);
   const dueToday = item.due_date === today;
   const tone = overdue ? 'text-alert' : dueToday ? 'text-primary' : 'text-muted';
-  return <span className={`shrink-0 text-xs font-semibold whitespace-nowrap ${tone}`}>{time}</span>;
+  // Several hours a day: the ones after the current occurrence today are said as well.
+  const current = item.due_time?.slice(0, 5);
+  const later =
+    dueToday && current !== undefined ? (dayTimes ?? []).filter((hour) => hour > current) : [];
+  return (
+    <span className={`shrink-0 text-xs font-semibold whitespace-nowrap ${tone}`}>
+      {time}
+      {later.length > 0 && (
+        <span className="font-normal text-muted">
+          {labels.item.separator}
+          {labels.occurrence.alsoToday(later.join(', '))}
+        </span>
+      )}
+    </span>
+  );
 }

@@ -89,6 +89,7 @@ export function ItemPage(): ReactElement {
           onSkip={repeats.skip}
           onUnmarkOccurrence={repeats.unmark}
           onCloseItem={repeats.close}
+          onMoveOccurrence={repeats.move}
           onStructureChanged={entities.reload}
           onComplete={items.completeItem}
           onReopen={items.reopenItem}

@@ -47,6 +47,7 @@ export type MeetingPlace = Enums['meeting_place'];
 export type ReminderRule = Enums['reminder_rule'];
 export type RepeatUnit = Enums['repeat_unit'];
 export type RepeatEnd = Enums['repeat_end'];
+export type { RepeatFrom } from './database';
 export type OccurrenceStatus = Enums['occurrence_status'];
 
 /** What a parent sets for a repeating item. */
@@ -55,8 +56,14 @@ export type RepeatDraft = {
   readonly unit: RepeatUnit;
   /** The first occurrence (YYYY-MM-DD). */
   readonly startsOn: string;
-  /** Its hour (HH:MM), or null for the whole day. */
-  readonly atTime: string | null;
+  /** The hours of each day (HH:MM), earliest first; empty for the whole day. */
+  readonly times: readonly string[];
+  /** For a weekly rhythm: the days of the week (0 = Sunday); empty for the first day's. */
+  readonly weekdays: readonly number[];
+  /** 'completion': the next occurrence counts from when the current one was marked. */
+  readonly fromKind: 'schedule' | 'completion';
+  /** A tracker: entering a value marks its current occurrence done. */
+  readonly trackerCloses: boolean;
   readonly endKind: RepeatEnd;
   readonly endCount: number | null;
   readonly endUntil: string | null;

@@ -28,6 +28,7 @@ type DebtDirection = 'we_owe' | 'owed_to_us';
 export type ReminderRule = 'at' | 'before' | 'day' | 'repeat';
 export type RepeatUnit = 'day' | 'week' | 'month' | 'year';
 export type RepeatEnd = 'never' | 'count' | 'until';
+export type RepeatFrom = 'schedule' | 'completion';
 export type OccurrenceStatus = 'done' | 'skipped' | 'missed' | 'closed_with_parent';
 
 export type Database = {
@@ -515,6 +516,17 @@ export type Database = {
           stopped_on: string | null;
           missed_from: string;
           updated_at: string;
+          /** The hours of each day (HH:MM:SS), earliest first; empty for the whole day. */
+          times: string[];
+          /** For a weekly rhythm: the days of the week (0 = Sunday); empty for the first day's. */
+          weekdays: number[];
+          /** 'completion': the next occurrence counts from when the current one was marked. */
+          from_kind: RepeatFrom;
+          /** Where the current occurrence was planned, while it is moved. */
+          planned_date: string | null;
+          planned_time: string | null;
+          /** A tracker: entering a value marks its current occurrence done. */
+          tracker_closes: boolean;
         };
         // Written only through set_repeat(), stop_repeat() and resume_repeat().
         Insert: never;
@@ -593,6 +605,42 @@ export type Database = {
           p_end_until: string | null;
         };
         Returns: undefined;
+      };
+      save_repeat: {
+        Args: {
+          p_item_id: string;
+          p_every: number;
+          p_unit: RepeatUnit;
+          p_starts_on: string;
+          p_times: string[];
+          p_weekdays: number[];
+          p_from_kind: RepeatFrom;
+          p_end_kind: RepeatEnd;
+          p_end_count: number | null;
+          p_end_until: string | null;
+          p_tracker_closes: boolean;
+        };
+        Returns: undefined;
+      };
+      move_occurrence: {
+        Args: { p_item_id: string; p_date: string; p_time: string | null };
+        Returns: undefined;
+      };
+      create_repeating_appointment: {
+        Args: {
+          p_title: string;
+          p_domain_id: string | null;
+          p_starts: string;
+          p_place_kind: MeetingPlace | null;
+          p_place: string | null;
+          p_meeting_url: string | null;
+          p_with_whom: string | null;
+          p_entity_id: string | null;
+          p_every: number;
+          p_unit: RepeatUnit;
+          p_count: number | null;
+        };
+        Returns: string;
       };
       stop_repeat: {
         Args: { p_item_id: string };

@@ -127,7 +127,7 @@ export function ItemRow({
           <span className="pt-0.5 text-sm font-semibold whitespace-nowrap">{trackerSummary}</span>
         ) : (
           <span className="pt-0.5">
-            <DueText item={item} today={today} />
+            <DueText item={item} today={today} dayTimes={lookups.dayTimes.get(item.id)} />
           </span>
         )}
       </Link>

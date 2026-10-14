@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { addDays, formatDueDate, todayIso } from '../../lib/itemRules';
-import { repeatSummary, startingRepeat } from '../../lib/recurrence';
+import { repeatSummary, startingRepeat, weekdays } from '../../lib/recurrence';
 import { repeatUnits } from '../../lib/reminders';
 import type { Item, ItemRepeat, RepeatDraft, RepeatEnd } from '../../types/domain';
 import { Button } from '../ui/Button';
@@ -27,7 +27,7 @@ type RepeatEditorProps = {
 
 const endKinds = ['never', 'count', 'until'] as const satisfies readonly RepeatEnd[];
 
-/** How a task repeats: every how often, at what hour, from when, until when. */
+/** How an item repeats: every how often, on which days, at what hours, from when, until when. */
 export function RepeatEditor({
   item,
   repeat,
@@ -49,9 +49,18 @@ export function RepeatEditor({
   // The occurrence already due and still to be marked counts as gone by.
   const dueNow = series && item.due_date !== null && item.due_date <= today ? 1 : 0;
   const sameEnd = series && draft.endKind === original.endKind;
+  const isAppointment = item.kind === 'appointment';
+  const canFromCompletion =
+    draft.times.length <= 1 && (draft.unit !== 'week' || draft.weekdays.length === 0);
 
   function set(changes: Partial<RepeatDraft>): void {
     setDraft((current) => ({ ...current, ...changes }));
+  }
+
+  /** Several hours a day can not count from when it was done. */
+  function setTimes(times: readonly string[]): void {
+    const sorted = [...new Set(times)].sort();
+    set({ times: sorted, ...(sorted.length > 1 ? { fromKind: 'schedule' as const } : {}) });
   }
 
   function chooseEnd(kind: RepeatEnd): void {
@@ -71,6 +80,7 @@ export function RepeatEditor({
   const leastTotal = Math.max(1, gone + dueNow);
   const valid =
     draft.startsOn !== '' &&
+    (!isAppointment || draft.times.length === 1) &&
     (draft.endKind !== 'count' || total >= leastTotal) &&
     (draft.endKind !== 'until' || (draft.endUntil !== null && draft.endUntil >= today));
   const end = { endKind: draft.endKind, endCount: draft.endCount, endUntil: draft.endUntil };
@@ -117,15 +127,85 @@ export function RepeatEditor({
           />
         </SettingRow>
 
-        <SettingRow label={labels.repeat.hour}>
-          <TimeField
-            label={labels.repeat.hour}
-            optional
-            value={draft.atTime ?? ''}
-            onChange={(hour) => {
-              set({ atTime: hour === '' ? null : hour });
-            }}
-          />
+        {draft.unit === 'week' && (
+          <SettingRow
+            label={labels.repeat.onDays}
+            note={draft.weekdays.length === 0 ? labels.repeat.onDaysHint : undefined}
+          >
+            <div className="flex gap-1">
+              {weekdays.map((day) => {
+                const chosen = draft.weekdays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-pressed={chosen}
+                    aria-label={labels.repeat.weekdayNames[day]}
+                    onClick={() => {
+                      set({
+                        weekdays: chosen
+                          ? draft.weekdays.filter((other) => other !== day)
+                          : [...draft.weekdays, day].sort(),
+                        fromKind: 'schedule',
+                      });
+                    }}
+                    className={`flex size-9 items-center justify-center rounded-full border text-[13px] transition active:scale-95 ${
+                      chosen
+                        ? 'border-primary bg-surface font-semibold text-primary'
+                        : 'border-line bg-surface text-muted'
+                    }`}
+                  >
+                    {labels.repeat.weekdayShort[day]}
+                  </button>
+                );
+              })}
+            </div>
+          </SettingRow>
+        )}
+
+        <SettingRow label={isAppointment ? labels.repeat.appointmentHour : labels.repeat.hours}>
+          <div className="flex w-full flex-col gap-2">
+            {(isAppointment && draft.times.length === 0 ? [''] : draft.times).map((time, index) => (
+              <TimeField
+                key={index}
+                label={labels.picker.pickHour}
+                optional={!isAppointment}
+                value={time}
+                onChange={(hour) => {
+                  const times = [...draft.times];
+                  if (hour === '') {
+                    times.splice(index, 1);
+                  } else {
+                    times[index] = hour;
+                  }
+                  setTimes(times);
+                }}
+              />
+            ))}
+            {draft.times.length === 0 && !isAppointment && (
+              <TimeField
+                label={labels.picker.pickHour}
+                optional
+                value=""
+                onChange={(hour) => {
+                  setTimes(hour === '' ? [] : [hour]);
+                }}
+              />
+            )}
+            {!isAppointment && draft.times.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const last = draft.times[draft.times.length - 1] ?? '08:00';
+                  const next = `${String(Math.min(23, Number(last.slice(0, 2)) + 4)).padStart(2, '0')}:${last.slice(3, 5)}`;
+                  setTimes([...draft.times, next]);
+                }}
+                className="self-start px-1 text-[13px] font-semibold text-primary"
+              >
+                + {labels.repeat.addHour}
+              </button>
+            )}
+          </div>
         </SettingRow>
 
         <SettingRow label={labels.repeat.startsOn}>
@@ -138,6 +218,49 @@ export function RepeatEditor({
             }}
           />
         </SettingRow>
+
+        <SettingRow
+          label={labels.repeat.fromKindTitle}
+          note={
+            canFromCompletion
+              ? draft.fromKind === 'completion'
+                ? labels.repeat.fromHint
+                : undefined
+              : labels.repeat.fromNeedsOne
+          }
+        >
+          <OptionGroup
+            label={labels.repeat.fromKindTitle}
+            options={[
+              { value: 'schedule', label: labels.repeat.fromKind.schedule },
+              {
+                value: 'completion',
+                label: labels.repeat.fromKind.completion,
+                disabled: !canFromCompletion,
+              },
+            ]}
+            value={draft.fromKind}
+            onChange={(fromKind) => {
+              set({ fromKind });
+            }}
+          />
+        </SettingRow>
+
+        {item.kind === 'tracker' && (
+          <SettingRow label={labels.repeat.trackerCloses}>
+            <OptionGroup
+              label={labels.repeat.trackerCloses}
+              options={[
+                { value: 'yes', label: labels.repeat.yes },
+                { value: 'no', label: labels.repeat.no },
+              ]}
+              value={draft.trackerCloses ? 'yes' : 'no'}
+              onChange={(answer) => {
+                set({ trackerCloses: answer === 'yes' });
+              }}
+            />
+          </SettingRow>
+        )}
 
         <SettingRow
           label={labels.repeat.end}

@@ -1,4 +1,4 @@
-import { fromLocalDateTime, seriesStarts } from '../lib/itemRules';
+import { appointmentRhythm, fromLocalDateTime, seriesStarts } from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
 import { allPages, inGroups } from './pages';
 import { closeItem, listOccurrences, markOccurrence, unmarkOccurrence } from './repeatService';
@@ -150,6 +150,27 @@ export async function createItem(newItem: NewItem): Promise<void> {
  * sets the day each is listed on and its reminders. Returns how many were made.
  */
 export async function createAppointments(appointment: NewAppointment): Promise<number> {
+  // A series is one appointment that repeats; each time can be moved or skipped on its own.
+  const rhythm = appointmentRhythm(appointment.repeat);
+  if (rhythm !== null && appointment.count > 1) {
+    const { error } = await supabase.rpc('create_repeating_appointment', {
+      p_title: appointment.title,
+      p_domain_id: appointment.domainId,
+      p_starts: fromLocalDateTime(appointment.startsAt),
+      p_place_kind: appointment.placeKind,
+      p_place: appointment.place,
+      p_meeting_url: appointment.meetingUrl,
+      p_with_whom: appointment.withWhom,
+      p_entity_id: appointment.entityId ?? null,
+      p_every: rhythm.every,
+      p_unit: rhythm.unit,
+      p_count: appointment.count,
+    });
+    if (error !== null) {
+      throw new Error(error.message);
+    }
+    return 1;
+  }
   const starts = seriesStarts(appointment.startsAt, appointment.repeat, appointment.count);
   const { data, error } = await supabase.rpc('create_appointments', {
     p_title: appointment.title,
@@ -215,13 +236,21 @@ export async function deleteItem(itemId: string): Promise<void> {
   }
 }
 
+/** The kinds that repeat by occurrences. */
+const repeatingKinds: ReadonlySet<Item['kind']> = new Set([
+  'task',
+  'appointment',
+  'tracker',
+  'missing_item',
+]);
+
 /**
  * Marks an item done. A repeating task stays open: its current occurrence is marked and it
  * moves on to the next one (the reminders, which count from its date, move with it). One
  * whose occurrences have run out is closed. Returns the occurrence marked, to take it back.
  */
 export async function completeItem(item: Item): Promise<string | null> {
-  if (item.kind === 'task' && item.time_mode === 'recurring') {
+  if (item.time_mode === 'recurring' && repeatingKinds.has(item.kind)) {
     if (item.due_date !== null) {
       return markOccurrence(item.id, 'done');
     }

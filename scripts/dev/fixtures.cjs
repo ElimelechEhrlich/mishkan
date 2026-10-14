@@ -584,9 +584,47 @@ const Rp = (o) => ({
   stopped_on: null,
   missed_from: day(-30),
   updated_at: now,
+  times: [],
+  weekdays: [],
+  from_kind: 'schedule',
+  planned_date: null,
+  planned_time: null,
+  tracker_closes: false,
   ...o,
 });
+const pill = item({
+  id: 'i-pill-0000-0000-0000-000000000000',
+  title: 'ויטמין D',
+  domain_id: dom('רחל', 'בריאות'),
+  time_mode: 'recurring',
+  due_date: day(0),
+  due_time: '08:00:00',
+  recurrence_rule: 'FREQ=DAILY',
+});
+const gym = item({
+  id: 'i-gym1-0000-0000-0000-000000000000',
+  title: 'חוג שחייה',
+  kind: 'appointment',
+  domain_id: dom('אלי', 'חינוך'),
+  time_mode: 'recurring',
+  due_date: day(1),
+  starts_at: at(1, '16:00'),
+  recurrence_rule: 'FREQ=WEEKLY',
+});
 const item_repeats = [
+  Rp({
+    item_id: pill.id,
+    unit: 'day',
+    times: ['08:00:00', '14:00:00', '20:00:00'],
+    at_time: '08:00:00',
+  }),
+  Rp({
+    item_id: gym.id,
+    times: ['16:00:00'],
+    at_time: '16:00:00',
+    weekdays: [2, 4],
+    starts_on: day(1),
+  }),
   Rp({ item_id: trash.id }),
   Rp({
     item_id: filt.id,

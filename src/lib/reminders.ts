@@ -71,8 +71,9 @@ export function reminderDay(item: Item): string | null {
     return item.starts_at === null ? null : item.due_date;
   }
   const dated =
-    (item.kind === 'task' || item.kind === 'goal') &&
-    (item.time_mode === 'scheduled' || item.time_mode === 'recurring');
+    ((item.kind === 'task' || item.kind === 'goal') &&
+      (item.time_mode === 'scheduled' || item.time_mode === 'recurring')) ||
+    ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring');
   return dated ? item.due_date : null;
 }
 

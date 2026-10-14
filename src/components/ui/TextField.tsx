@@ -53,6 +53,16 @@ export function TextField({
         onChange={(event) => {
           onChange(event.target.value);
         }}
+        onClick={(event) => {
+          // A date or time field opens the phone's picker from a tap anywhere on it.
+          if (type === 'date' || type === 'time' || type === 'datetime-local') {
+            try {
+              event.currentTarget.showPicker();
+            } catch {
+              // Not allowed here (or not supported): the phone opens it on its own.
+            }
+          }
+        }}
         className="min-h-11 w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-[15px] placeholder:text-faint transition focus:border-primary focus:ring-3 focus:ring-primary/12 focus:outline-none"
       />
     </div>

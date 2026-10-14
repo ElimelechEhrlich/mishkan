@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toMessage } from '../lib/errors';
-import { shoppingCategories } from '../lib/itemRules';
+import { shoppingCategories, todayIso } from '../lib/itemRules';
 import { shoppingTargets } from '../lib/lookups';
 import { createShoppingRun, listBoughtRunItems } from '../services/shoppingService';
 import type {
@@ -117,8 +117,14 @@ export function useShopping(
         item.kind !== 'shopping_run' &&
         inScope(item),
     );
+    // A missing item that repeats is on the list from the day of its occurrence.
+    const today = todayIso();
     const listed = openItems.filter(
-      (item) => item.kind === 'missing_item' && item.run_id === null && inScope(item),
+      (item) =>
+        item.kind === 'missing_item' &&
+        item.run_id === null &&
+        inScope(item) &&
+        !(item.time_mode === 'recurring' && (item.due_date === null || item.due_date > today)),
     );
     const isPersonal = (item: Item): boolean =>
       item.domain_id !== null && personalDomains.has(item.domain_id);

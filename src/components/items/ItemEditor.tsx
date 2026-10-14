@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
+import { needsTime, shoppingCategories, todayIso, toLocalDateTime } from '../../lib/itemRules';
 import { describeReminder, draftOf, isWaiting } from '../../lib/reminders';
 import { fullTimeText } from '../../lib/itemText';
 import { canSeeItem } from '../../lib/lookups';
@@ -39,6 +39,7 @@ import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
 import { OccurrencesCard } from './OccurrencesCard';
+import { RepeatChoice } from './RepeatChoice';
 import type { ReminderPerson } from '../../hooks/useReminderPeople';
 import { ReminderList } from './ReminderList';
 import { PrerequisiteList } from './PrerequisiteList';
@@ -103,6 +104,7 @@ type ItemEditorProps = {
   readonly onUnmarkOccurrence: (occurrenceId: string) => void;
   /** Marks a repeating item itself done, ending its series. */
   readonly onCloseItem: (itemId: string) => void;
+  readonly onMoveOccurrence: (itemId: string, day: string, time: string | null) => void;
   readonly onAddReminder: (itemId: string, draft: ReminderDraft) => void;
   readonly onUpdateReminder: (reminderId: string, draft: ReminderDraft) => void;
   readonly onRemoveReminder: (reminderId: string) => void;
@@ -131,7 +133,7 @@ function remindersText(reminders: readonly ItemReminder[]): string {
     : text;
 }
 
-type Row = 'kind' | 'domain' | 'inMain' | 'category' | 'time' | 'reminder' | 'parent';
+type Row = 'kind' | 'domain' | 'inMain' | 'category' | 'time' | 'repeat' | 'reminder' | 'parent';
 
 const convertibleKinds = [
   'task',
@@ -193,6 +195,7 @@ export function ItemEditor({
   onSkip,
   onUnmarkOccurrence,
   onCloseItem,
+  onMoveOccurrence,
   onAddReminder,
   onUpdateReminder,
   onRemoveReminder,
@@ -254,9 +257,27 @@ export function ItemEditor({
     domains: entity.domains.filter((domain) => (domain.role === 'shopping') === isShopping),
   }));
   const done = item.status === 'done';
-  // A repeating task: its own button marks the current occurrence, or, once none is left,
-  // the task itself.
-  const repeating = item.kind === 'task' && item.time_mode === 'recurring';
+  // A repeating item: its own button marks the current occurrence, or, once none is left,
+  // the item itself.
+  const repeatable =
+    item.kind === 'task' ||
+    item.kind === 'appointment' ||
+    item.kind === 'tracker' ||
+    item.kind === 'missing_item';
+  const repeating = repeatable && item.time_mode === 'recurring' && repeat !== null;
+  const repeatControls = {
+    repeat,
+    gone: occurrences.filter((occurrence) => occurrence.status !== 'closed_with_parent').length,
+    onSave: (draft: RepeatDraft): void => {
+      onSetRepeat(item.id, draft);
+    },
+    onStop: (): void => {
+      onStopRepeat(item.id);
+    },
+    onResume: (end: Pick<RepeatDraft, 'endKind' | 'endCount' | 'endUntil'>): void => {
+      onResumeRepeat(item.id, end);
+    },
+  };
   // A reminder can only go to a parent who can see the item (not the other parent's private
   // entity, nor someone else's "needs completion").
   const reachable = reminderPeople.filter((person) => canSeeItem(item, entities, person.id));
@@ -460,9 +481,42 @@ export function ItemEditor({
             item={item}
             health={healthDomain}
             onUpdate={(changes) => {
+              // A repeating appointment moves only this time; the rhythm goes on.
+              if (repeating && changes.starts_at !== undefined && changes.starts_at !== null) {
+                const local = toLocalDateTime(changes.starts_at);
+                onMoveOccurrence(item.id, local.slice(0, 10), local.slice(11, 16));
+                return;
+              }
               onUpdate(item.id, changes);
             }}
           />
+        )}
+
+        {!isStep && (isAppointment || item.kind === 'tracker' || item.kind === 'missing_item') && (
+          <PropertyRow
+            label={labels.repeat.repeats}
+            value={repeating ? (timeLabel ?? labels.repeat.repeats) : labels.repeat.noRepeat}
+            open={openRow === 'repeat'}
+            onToggle={() => {
+              toggle('repeat');
+            }}
+          >
+            <RepeatChoice
+              item={item}
+              repeat={repeatControls}
+              onNoRepeat={() => {
+                onUpdate(
+                  item.id,
+                  isAppointment
+                    ? { time_mode: 'scheduled', recurrence_rule: null }
+                    : { time_mode: null, due_date: null, due_time: null, recurrence_rule: null },
+                );
+              }}
+              onDone={() => {
+                setOpenRow(null);
+              }}
+            />
+          </PropertyRow>
         )}
 
         {hasSchedule && (
@@ -479,19 +533,17 @@ export function ItemEditor({
               item={item}
               onPick={update}
               repeat={{
-                repeat,
-                gone: occurrences.filter((occurrence) => occurrence.status !== 'closed_with_parent')
-                  .length,
+                ...repeatControls,
                 onSave: (draft) => {
-                  onSetRepeat(item.id, draft);
+                  repeatControls.onSave(draft);
                   setOpenRow(null);
                 },
                 onStop: () => {
-                  onStopRepeat(item.id);
+                  repeatControls.onStop();
                   setOpenRow(null);
                 },
                 onResume: (end) => {
-                  onResumeRepeat(item.id, end);
+                  repeatControls.onResume(end);
                   setOpenRow(null);
                 },
               }}
@@ -499,7 +551,7 @@ export function ItemEditor({
           </PropertyRow>
         )}
 
-        {item.status === 'open' && item.kind !== 'missing_item' && (
+        {item.status === 'open' && (item.kind !== 'missing_item' || repeating) && (
           <PropertyRow
             label={labels.reminders.title}
             value={remindersText(reminders)}
@@ -551,7 +603,7 @@ export function ItemEditor({
         )}
       </section>
 
-      {repeating && !done && repeat !== null && (
+      {repeating && !done && (
         <OccurrencesCard
           item={item}
           repeat={repeat}
@@ -559,6 +611,16 @@ export function ItemEditor({
           onSkip={() => {
             onSkip(item.id);
           }}
+          onMove={(day, time) => {
+            onMoveOccurrence(item.id, day, time);
+          }}
+          onDone={
+            item.kind === 'tracker' && item.due_date !== null
+              ? (): void => {
+                  onComplete(item);
+                }
+              : undefined
+          }
           onUnmark={onUnmarkOccurrence}
           onClose={() => {
             onCloseItem(item.id);

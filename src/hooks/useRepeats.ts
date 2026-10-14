@@ -7,6 +7,7 @@ import {
   closeItem,
   listRepeats,
   markOccurrence,
+  moveOccurrence,
   resumeRepeat,
   setRepeat,
   stopRepeat,
@@ -30,6 +31,8 @@ export type UseRepeats = {
   readonly unmark: (occurrenceId: string) => void;
   /** Marks the item itself done, ending its series. */
   readonly close: (itemId: string) => void;
+  /** Moves the current occurrence; the rhythm goes on. */
+  readonly move: (itemId: string, day: string, time: string | null) => void;
   readonly error: string | null;
 };
 
@@ -108,6 +111,9 @@ export function useRepeats(): UseRepeats {
     },
     close: (itemId): void => {
       void run(() => closeItem(itemId));
+    },
+    move: (itemId, day, time): void => {
+      void run(() => moveOccurrence(itemId, day, time));
     },
     error,
   };
