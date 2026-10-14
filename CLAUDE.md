@@ -4,6 +4,8 @@ Hebrew RTL home-management PWA for two parents. React + Vite + TypeScript + Tail
 
 `DATA_MODEL.md` holds the agreed data model (entities, item kinds, shopping, conversions). It supersedes the areas model in migration 0001; read it before any schema or data change.
 
+**At the start of every session, read `CURRENT_CONTEXT.md` in full before doing anything.** It holds the owner's working rules (language, deploy flow, approvals, security), how every change is tested, the decisions that must not be broken, the current state and the next tasks. `CURRENT_CONTEXT.md` and `DATA_MODEL.md` are the only source of truth: do not rely on earlier conversations. Keep `CURRENT_CONTEXT.md` up to date at the end of each piece of work.
+
 ## Structure
 
 ```
