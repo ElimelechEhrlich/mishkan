@@ -29,7 +29,16 @@ export function PrerequisiteList({
   const titles = new Map(candidates.map((candidate) => [candidate.id, candidate.title]));
   const usedIds = new Set(prerequisites.map((prerequisite) => prerequisite.depends_on_item_id));
   const options = candidates
-    .filter((candidate) => candidate.id !== item.id && !usedIds.has(candidate.id))
+    // Only what gets done can be waited on: a note, a tracker or a repeating task never is.
+    .filter(
+      (candidate) =>
+        candidate.id !== item.id &&
+        !usedIds.has(candidate.id) &&
+        (candidate.kind === 'goal' ||
+          candidate.kind === 'issue' ||
+          candidate.kind === 'appointment' ||
+          (candidate.kind === 'task' && candidate.time_mode !== 'recurring')),
+    )
     .map((candidate) => ({ value: candidate.id, label: candidate.title }));
 
   return (

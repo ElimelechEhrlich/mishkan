@@ -104,6 +104,7 @@ export function useShopping(
     );
     const misplaced = openItems.filter(
       (item) =>
+        item.is_complete &&
         item.domain_id !== null &&
         shoppingDomains.has(item.domain_id) &&
         item.parent_id === null &&

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { toListEntries, withoutNestedSteps } from '../lib/itemRules';
+import { isInRun, toListEntries, withoutNestedSteps } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
 import type { Domain, EntityWithDomains, Item } from '../types/domain';
 
@@ -22,7 +22,9 @@ export function useEntitySections(
     if (entity === undefined) {
       return [];
     }
-    const rows = withoutNestedSteps(items).filter((item) => item.kind !== 'question');
+    const rows = withoutNestedSteps(items).filter(
+      (item) => item.kind !== 'question' && !isInRun(item),
+    );
     return entity.domains
       .filter((domain) => topic === null || domain.name.trim() === topic)
       .map((domain) => ({
@@ -30,6 +32,7 @@ export function useEntitySections(
         entries: toListEntries(
           rows.filter((item) => item.domain_id === domain.id),
           steps,
+          items,
         ),
       }));
   }, [entity, items, steps, topic]);

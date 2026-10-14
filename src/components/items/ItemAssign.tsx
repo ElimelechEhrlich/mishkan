@@ -25,6 +25,12 @@ export function ItemAssign({
   onStructureChanged,
 }: ItemAssignProps): ReactElement {
   const missing = missingFields(item);
+  // A shopping domain is only for something to buy, as on the item's page.
+  const isShopping = item.kind === 'missing_item';
+  const domainChoices = entities.map((entity) => ({
+    ...entity,
+    domains: entity.domains.filter((domain) => (domain.role === 'shopping') === isShopping),
+  }));
   const current = missing[0];
 
   return (
@@ -56,7 +62,7 @@ export function ItemAssign({
       </div>
       {current === 'domain' && (
         <DomainPicker
-          entities={entities}
+          entities={domainChoices}
           value={null}
           initialEntityId={item.entity_id}
           onEntityChange={(entityId) => {

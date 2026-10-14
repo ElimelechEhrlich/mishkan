@@ -65,6 +65,23 @@ export async function subscribeDevice(): Promise<DeviceSubscription | null> {
   return toDevice(subscription);
 }
 
+/**
+ * Before signing out: turns this device's notifications off if they are on, without
+ * waiting for a service worker that was never registered. Returns the removed endpoint.
+ */
+export async function releaseDevice(): Promise<string | null> {
+  if (!pushSupported()) {
+    return null;
+  }
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = (await registration?.pushManager.getSubscription()) ?? null;
+  if (subscription === null) {
+    return null;
+  }
+  await subscription.unsubscribe();
+  return subscription.endpoint;
+}
+
 /** Turns this device's notifications off; returns the endpoint that was removed, if any. */
 export async function unsubscribeDevice(): Promise<string | null> {
   const registration = await navigator.serviceWorker.ready;

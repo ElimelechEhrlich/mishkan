@@ -1,3 +1,4 @@
+import { segmentOf } from '../lib/itemRules';
 import type { ReactElement } from 'react';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { ScopeBar } from '../components/entities/ScopeBar';
@@ -27,8 +28,9 @@ export function OpenItemsPage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
   const scoped = useScopedItems(items, entities.entities, true);
   const view = useOpenSegments(scoped.assigned, scoped.steps, 'task');
+  // The carousel counts what this tab lists: what runs on time, of every kind.
   const entityCounts = useEntityCounts(
-    items.assigned.filter(scoped.inTopic),
+    items.assigned.filter((item) => scoped.inTopic(item) && segmentOf(item) !== null),
     lookups.domainEntities,
   );
   const domainGroups = useDomainGroups(view.visible, entities.entities, scoped.scope);

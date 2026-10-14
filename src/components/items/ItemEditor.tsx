@@ -281,7 +281,7 @@ export function ItemEditor({
               key={item.id}
               item={item}
               kind={convertible}
-              hasSteps={steps.length > 0 || questions.length > 0}
+              hasSteps={steps.length > 0 || questions.length > 0 || trackers.length > 0}
               hasDebtDetails={hasDebtDetails}
               onConvert={(conversion) => {
                 onConvert(item.id, conversion);

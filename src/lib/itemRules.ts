@@ -122,9 +122,27 @@ export function nextDueDate(current: string | null, recurrence: Recurrence, toda
   if (recurrence === 'weekly') {
     return addDays(base, 7);
   }
-  const date = fromIsoDate(base);
-  date.setMonth(date.getMonth() + 1);
-  return toIsoDate(date);
+  // Monthly keeps the day, or the last day of a shorter month (the 31st → the 30th).
+  const start = fromIsoDate(base);
+  const target = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  target.setDate(Math.min(start.getDate(), lastDay));
+  return toIsoDate(target);
+}
+
+/** A moment moved by whole days, keeping its local clock time across daylight saving. */
+export function shiftByDays(timestamp: string, days: number): string {
+  const moment = new Date(timestamp);
+  moment.setDate(moment.getDate() + days);
+  return moment.toISOString();
+}
+
+/**
+ * Whether the kind runs on time of its own. A date or rhythm left on another kind by a
+ * conversion is kept, hidden, for converting back, and is not shown or used.
+ */
+export function hasOwnTime(item: Item): boolean {
+  return item.kind === 'task' || item.kind === 'goal' || item.kind === 'appointment';
 }
 
 /** Which time tab shows this item. Notes, debts and shopping have no time and their own pages. */
@@ -309,8 +327,10 @@ export function toListEntries(
         ? (stepsDue ?? target)
         : item.kind === 'issue'
           ? stepsDue
-          : earliest([item.due_date, stepsDue]);
-    const urgent = [item, ...openSteps].some((entry) => entry.time_mode === 'urgent');
+          : earliest([hasOwnTime(item) ? item.due_date : null, stepsDue]);
+    const urgent = [...(hasOwnTime(item) ? [item] : []), ...openSteps].some(
+      (entry) => entry.time_mode === 'urgent',
+    );
     const parent = item.parent_id === null ? null : (parents.get(item.parent_id) ?? null);
     return { item, steps, dueDate, urgent, target, parent };
   });
@@ -350,6 +370,21 @@ export function isAfterTarget(step: Item, goal: Item): boolean {
     step.due_date !== null &&
     step.due_date > goal.due_date
   );
+}
+
+/**
+ * For one list of mixed rows, such as a domain's: late first, then urgent, then by how
+ * soon they are due, as the sections of the time lists run.
+ */
+export function compareBySection(today: string): (a: ListEntry, b: ListEntry) => number {
+  return (a, b) =>
+    activeSections.indexOf(sectionOfEntry(a, today)) -
+      activeSections.indexOf(sectionOfEntry(b, today)) || compareEntries(a, b);
+}
+
+/** A missing item already in a shopping run is shown inside the run, not again on its own. */
+export function isInRun(item: Item): boolean {
+  return item.kind === 'missing_item' && item.run_id !== null;
 }
 
 /** By due date (undated last), then by start time on the same day, then newest first. */

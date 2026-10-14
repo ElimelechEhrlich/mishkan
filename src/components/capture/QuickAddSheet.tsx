@@ -369,7 +369,7 @@ export function QuickAddSheet({
           )}
 
           {asksTime && (
-            <QuickTimePicker value={quickTime} onChange={setQuickTime} forGoal={kind === 'goal'} />
+            <QuickTimePicker value={pickedTime} onChange={setQuickTime} forGoal={kind === 'goal'} />
           )}
         </div>
         <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">

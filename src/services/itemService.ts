@@ -1,8 +1,10 @@
+import { daysBetween } from '../lib/hebrewDate';
 import {
   fromLocalDateTime,
   nextDueDate,
   recurrenceOf,
   seriesStarts,
+  shiftByDays,
   todayIso,
 } from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
@@ -169,12 +171,13 @@ export async function deleteItem(itemId: string): Promise<void> {
 }
 
 /**
- * A recurring item stays open: the completion is logged and the due date moves
- * to the next occurrence. Anything else is closed.
+ * A recurring task stays open: the completion is logged and the due date moves to the
+ * next occurrence, its reminder with it. Anything else is closed, including another kind
+ * that still carries a rhythm left from a conversion.
  */
 export async function completeItem(item: Item): Promise<void> {
   const recurrence = recurrenceOf(item.recurrence_rule);
-  if (item.time_mode !== 'recurring' || recurrence === null) {
+  if (item.kind !== 'task' || item.time_mode !== 'recurring' || recurrence === null) {
     await updateItem(item.id, { status: 'done' });
     return;
   }
@@ -182,7 +185,14 @@ export async function completeItem(item: Item): Promise<void> {
   if (error !== null) {
     throw new Error(error.message);
   }
-  await updateItem(item.id, { due_date: nextDueDate(item.due_date, recurrence, todayIso()) });
+  const next = nextDueDate(item.due_date, recurrence, todayIso());
+  await updateItem(item.id, {
+    due_date: next,
+    // The reminder moves by as many days as the due date did, so each occurrence rings.
+    ...(item.remind_at === null
+      ? {}
+      : { remind_at: shiftByDays(item.remind_at, daysBetween(item.due_date ?? todayIso(), next)) }),
+  });
 }
 
 export async function reopenItem(itemId: string): Promise<void> {

@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
-import { isAfterTarget } from '../../lib/itemRules';
+import { isAfterTarget, segmentOf } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
@@ -34,6 +34,12 @@ export function GoalRow({
 }: GoalRowProps): ReactElement {
   const tone = goal.domain_id === null ? undefined : lookups.domainTones.get(goal.domain_id);
   const open = steps.filter((step) => step.status === 'open');
+  // A goal that waits or is on the shelf keeps only its undated steps inside it; a step with a
+  // date, or urgent, stands on its own among the active, so it is not shown twice.
+  const resting = segmentOf(goal) === 'waiting' || segmentOf(goal) === 'someday';
+  const shown = resting
+    ? open.filter((step) => step.due_date === null && step.time_mode !== 'urgent')
+    : open;
   const doneCount = steps.length - open.length;
   const percent = steps.length === 0 ? 0 : Math.round((doneCount / steps.length) * 100);
   const progress = `${String(doneCount)} ${labels.goals.progressOf} ${String(steps.length)}`;
@@ -65,9 +71,9 @@ export function GoalRow({
             style={{ width: `${String(percent)}%` }}
           />
         </span>
-        {open.length > 0 && (
+        {shown.length > 0 && (
           <ul className="flex flex-col gap-2 pt-0.5">
-            {open.map((step) => (
+            {shown.map((step) => (
               <li key={`${step.id}-${step.due_date ?? ''}`} className="flex items-center gap-2.5">
                 <CheckButton
                   checked={false}

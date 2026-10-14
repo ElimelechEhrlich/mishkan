@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { toListEntries, withoutNestedSteps } from '../lib/itemRules';
+import { isInRun, toListEntries, withoutNestedSteps } from '../lib/itemRules';
 import type { ListEntry } from '../lib/itemRules';
 import { groupByTopic } from '../lib/lookups';
 import type { TopicGroup } from '../lib/lookups';
@@ -12,7 +12,9 @@ export function useTopicSections(
   steps: readonly Item[],
 ): readonly TopicGroup<ListEntry>[] {
   return useMemo(() => {
-    const rows = withoutNestedSteps(items).filter((item) => item.kind !== 'question');
-    return groupByTopic(entities, toListEntries(rows, steps));
+    const rows = withoutNestedSteps(items).filter(
+      (item) => item.kind !== 'question' && !isInRun(item),
+    );
+    return groupByTopic(entities, toListEntries(rows, steps, items));
   }, [entities, items, steps]);
 }

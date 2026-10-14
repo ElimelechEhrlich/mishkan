@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { compareEntries, todayIso } from '../../lib/itemRules';
+import { compareBySection, todayIso } from '../../lib/itemRules';
 import type { ListEntry } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
@@ -67,7 +67,7 @@ export function TopicSection({
       </div>
       {open && (
         <ul className="animate-fade-in border-t border-line">
-          {[...entries].sort(compareEntries).map((entry) => (
+          {[...entries].sort(compareBySection(today)).map((entry) => (
             <EntryRow
               key={entry.item.id}
               entry={entry}

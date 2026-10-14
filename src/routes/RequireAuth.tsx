@@ -13,12 +13,13 @@ export function RequireAuth(): ReactElement {
   if (loading) {
     return <SplashScreen />;
   }
+  if (session === null) {
+    // The query string is kept so an invite link survives the login step. After signing
+    // out, a failure on the way out does not keep the app on an error screen.
+    return <Navigate to={`/login${location.search}`} replace />;
+  }
   if (error !== null) {
     return <StatusScreen text={error} isError />;
-  }
-  if (session === null) {
-    // The query string is kept so an invite link survives the login step.
-    return <Navigate to={`/login${location.search}`} replace />;
   }
 
   const context: SessionContext = {

@@ -62,6 +62,11 @@ export function DomainPicker({
                 const next = entity.id === entityId ? null : entity.id;
                 setEntityId(next);
                 onEntityChange?.(next);
+                // A domain chosen under another entity no longer applies.
+                const nextEntity = entities.find((candidate) => candidate.id === next);
+                if (value !== null && !nextEntity?.domains.some((domain) => domain.id === value)) {
+                  onChange(null);
+                }
               }}
             />
           ))}

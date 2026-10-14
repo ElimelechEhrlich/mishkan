@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
+import { entryNumber } from '../../lib/trackers';
 import type { DebtDetails, DebtDirection } from '../../types/domain';
 import { Card } from '../ui/Card';
 import { InlineEdit } from '../ui/InlineEdit';
@@ -33,7 +34,8 @@ export function DebtCard({ debt, onChange }: DebtCardProps): ReactElement {
             value={String(debt.amount)}
             textClass="font-display text-2xl font-bold"
             onSave={(text) => {
-              const amount = Number(text.replace(',', '.'));
+              // "1,200" is twelve hundred, and "₪500" is 500, as everywhere else in the app.
+              const amount = entryNumber(text) ?? Number.NaN;
               // Anything that is not a positive amount is left as it was.
               if (Number.isFinite(amount) && amount > 0) {
                 onChange({ amount });

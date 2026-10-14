@@ -56,3 +56,15 @@ describe('trackerLine', () => {
     expect(trackerLine('sum', null, [])).toBeNull();
   });
 });
+
+describe('entryNumber with units and marks', () => {
+  it('reads amounts written with units, signs and direction marks', () => {
+    expect(entryNumber('72.5 ק"ג')).toBe(72.5);
+    expect(entryNumber('3,000 ש״ח')).toBe(3000);
+    expect(entryNumber('+500')).toBe(500);
+    expect(entryNumber('\u2212500')).toBe(-500);
+    expect(entryNumber('\u200f3,000')).toBe(3000);
+    expect(entryNumber('1,200')).toBe(1200);
+    expect(entryNumber('לא מספר')).toBeNull();
+  });
+});

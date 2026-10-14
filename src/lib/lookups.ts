@@ -90,7 +90,9 @@ export function countByEntity(
     if (
       entityId !== undefined &&
       item.kind !== 'question' &&
-      !(item.kind === 'tracker' && item.parent_id !== null)
+      !(item.kind === 'tracker' && item.parent_id !== null) &&
+      // A missing item in a shopping run is counted with its run.
+      !(item.kind === 'missing_item' && item.run_id !== null)
     ) {
       counts.set(entityId, (counts.get(entityId) ?? 0) + 1);
     }

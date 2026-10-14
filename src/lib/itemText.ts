@@ -1,6 +1,6 @@
 import { labels } from '../constants/labels';
 import type { Item, OpenSegment } from '../types/domain';
-import { addDays, formatClock, formatDueDate, recurrenceOf } from './itemRules';
+import { addDays, formatClock, formatDueDate, hasOwnTime, recurrenceOf } from './itemRules';
 
 function dateText(dueDate: string, today: string): string {
   if (dueDate === today) {
@@ -14,7 +14,8 @@ function dateText(dueDate: string, today: string): string {
 
 /** When an item is due, in words: a date, "today", or the name of its time mode. */
 export function timeText(item: Item, today: string): string | null {
-  if (item.time_mode === null) {
+  // Time left on a kind that has none of its own, after a conversion, is not shown.
+  if (item.time_mode === null || !hasOwnTime(item)) {
     return null;
   }
   if (item.kind === 'appointment' && item.starts_at !== null && item.due_date !== null) {

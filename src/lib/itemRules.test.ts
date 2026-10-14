@@ -7,6 +7,7 @@ import {
   seriesStarts,
   snoozeUntil,
   isAfterTarget,
+  nextDueDate,
   rowsOfSegment,
   sectionOfEntry,
   splitBySection,
@@ -208,6 +209,22 @@ describe('steps standing on their own', () => {
 
   it('keeps an undated step inside its shelved goal', () => {
     expect(rowsOfSegment(all, 'someday').map((row) => row.id)).toEqual(['shelf']);
+  });
+});
+
+describe('nextDueDate', () => {
+  it('keeps a monthly day, or the last day of a shorter month', () => {
+    expect(nextDueDate('2027-01-31', 'monthly', '2027-01-01')).toBe('2027-02-28');
+    expect(nextDueDate('2027-03-15', 'monthly', '2027-03-01')).toBe('2027-04-15');
+  });
+});
+
+describe('time left by a conversion', () => {
+  it('is not used for a kind without time of its own', () => {
+    const note = item({ id: 'n', kind: 'note', due_date: '2026-10-01', time_mode: 'urgent' });
+    const [entry] = toListEntries([note], []);
+    expect(entry?.dueDate).toBeNull();
+    expect(entry?.urgent).toBe(false);
   });
 });
 

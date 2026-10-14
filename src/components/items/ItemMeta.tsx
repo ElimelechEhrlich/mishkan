@@ -37,7 +37,8 @@ export function ItemMeta({
   const domainLabel =
     item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
-  const recurrence = recurrenceOf(item.recurrence_rule);
+  // Only a task repeats; a rhythm left on another kind by a conversion is not shown.
+  const recurrence = item.kind === 'task' ? recurrenceOf(item.recurrence_rule) : null;
 
   return (
     <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-5 text-muted">

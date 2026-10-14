@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import { labels } from '../constants/labels';
 import { clearCache } from '../lib/cache';
+import { releaseDevice } from '../lib/push';
 import {
   AuthFailure,
   getSession,
@@ -11,6 +12,7 @@ import {
   signOut,
   signUp,
 } from '../services/authService';
+import { deleteSubscription } from '../services/pushService';
 
 type SessionState = {
   readonly session: Session | null;
@@ -109,11 +111,19 @@ export function useSession(): UseSession {
   }, []);
 
   const handleSignOut = useCallback((): void => {
-    // Another person may sign in on this device next; nothing of this household stays on it.
+    // Another person may sign in on this device next; nothing of this household stays on it,
+    // and this parent's reminders stop coming to it. The device is released while still
+    // signed in, so its row can be removed; a failure there does not keep anyone signed in.
     clearCache();
-    signOut().catch((error: unknown) => {
-      setState((previous) => ({ ...previous, error: toMessage(error) }));
-    });
+    releaseDevice()
+      .then((endpoint) => (endpoint === null ? undefined : deleteSubscription(endpoint)))
+      .catch((error: unknown) => {
+        setState((previous) => ({ ...previous, error: toMessage(error) }));
+      })
+      .then(signOut)
+      .catch((error: unknown) => {
+        setState((previous) => ({ ...previous, error: toMessage(error) }));
+      });
   }, []);
 
   return {
