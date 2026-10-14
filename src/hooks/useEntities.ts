@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isRowList, readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
+import { onAppReturn } from '../lib/itemChanges';
 import { listEntitiesWithDomains } from '../services/entityService';
 import type { EntityWithDomains } from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
@@ -50,6 +51,10 @@ export function useEntities(): UseEntities {
 
   useEffect(() => {
     void reload();
+    // Back in the app: the other parent may have added a child or a domain meanwhile.
+    return onAppReturn(() => {
+      void reload();
+    });
   }, [reload]);
 
   return { ...state, reload };

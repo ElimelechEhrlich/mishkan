@@ -30,6 +30,15 @@ self.addEventListener('push', (event) => {
   );
 });
 
+// The browser may replace this device's subscription. A new one is made here at once; the
+// app saves it for the parent the next time it opens (useKeepPushSubscription).
+self.addEventListener('pushsubscriptionchange', (event) => {
+  const options = event.oldSubscription ? event.oldSubscription.options : null;
+  if (options) {
+    event.waitUntil(self.registration.pushManager.subscribe(options));
+  }
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};

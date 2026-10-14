@@ -20,3 +20,42 @@ export function onItemsChanged(listener: () => void): () => void {
     listeners.delete(listener);
   };
 }
+
+const returnListeners = new Set<() => void>();
+
+/** Called when the app comes back to the foreground, or a new day begins. */
+export function onAppReturn(listener: () => void): () => void {
+  returnListeners.add(listener);
+  return () => {
+    returnListeners.delete(listener);
+  };
+}
+
+function refreshEverything(): void {
+  announceItemsChanged();
+  returnListeners.forEach((listener) => {
+    listener();
+  });
+}
+
+/**
+ * Keeps what is shown current without a manual refresh: everything is fetched again when the
+ * app comes back to the foreground (what the other parent changed meanwhile, in any part of
+ * the app), and at midnight, so yesterday's "today" becomes late on time.
+ */
+export function refreshOnReturnAndAtMidnight(): void {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshEverything();
+    }
+  });
+  const scheduleMidnight = (): void => {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+    window.setTimeout(() => {
+      refreshEverything();
+      scheduleMidnight();
+    }, midnight.getTime() - now.getTime());
+  };
+  scheduleMidnight();
+}

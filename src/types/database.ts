@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations (0001_initial_schema.sql to 0026_urgent_today.sql).
+// Mirrors supabase/migrations (0001_initial_schema.sql to 0032_reliability_fixes.sql).
 // Written by hand in the shape `supabase gen types typescript` produces,
 // so it can be replaced by the generated file once the project is linked.
 
@@ -490,6 +490,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      move_item_data: {
+        Args: { p_row_id: string; p_step: number };
+        Returns: undefined;
+      };
       create_household: {
         Args: { p_household_name: string; p_parent_name: string };
         Returns: string;

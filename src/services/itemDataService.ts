@@ -42,13 +42,12 @@ export async function deleteItemData(dataId: string): Promise<void> {
   }
 }
 
-/** Swaps where two rows of an item stand, moving one past the other. */
-export async function swapItemData(first: ItemData, second: ItemData): Promise<void> {
-  const [a, b] = await Promise.all([
-    supabase.from('item_data').update({ position: second.position }).eq('id', first.id),
-    supabase.from('item_data').update({ position: first.position }).eq('id', second.id),
-  ]);
-  const error = a.error ?? b.error;
+/**
+ * Moves a row one place up (-1) or down (1) among its item's rows. Done in one step on the
+ * server by the order saved there, so quick taps cannot leave two rows in the same place.
+ */
+export async function moveItemData(rowId: string, step: -1 | 1): Promise<void> {
+  const { error } = await supabase.rpc('move_item_data', { p_row_id: rowId, p_step: step });
   if (error !== null) {
     throw new Error(error.message);
   }

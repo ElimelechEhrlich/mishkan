@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { refreshOnReturnAndAtMidnight } from './lib/itemChanges';
 import { registerAppUpdates } from './lib/pwa';
 import './index.css';
 
@@ -10,6 +11,7 @@ if (container === null) {
 }
 
 registerAppUpdates();
+refreshOnReturnAndAtMidnight();
 
 createRoot(container).render(
   <StrictMode>

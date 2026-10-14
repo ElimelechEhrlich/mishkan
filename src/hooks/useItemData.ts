@@ -6,7 +6,7 @@ import {
   addItemData,
   deleteItemData,
   listItemData,
-  swapItemData,
+  moveItemData,
   updateItemData,
 } from '../services/itemDataService';
 import type { ItemData } from '../types/domain';
@@ -90,11 +90,7 @@ export function useItemData(): UseItemData {
       run(() => deleteItemData(dataId));
     },
     move: (row, step): void => {
-      const siblings = byItem.get(row.item_id) ?? [];
-      const other = siblings[siblings.findIndex((candidate) => candidate.id === row.id) + step];
-      if (other !== undefined) {
-        run(() => swapItemData(row, other));
-      }
+      run(() => moveItemData(row.id, step));
     },
     error,
   };

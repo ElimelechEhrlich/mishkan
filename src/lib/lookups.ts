@@ -78,6 +78,24 @@ export function shoppingTargets(entities: readonly EntityWithDomains[]): Shoppin
   );
 }
 
+/**
+ * Whether a parent can see an item, by the same rule as the database: with no domain only
+ * the parent who completes it, in a private entity only its owner, otherwise both.
+ */
+export function canSeeItem(
+  item: Pick<Item, 'domain_id' | 'review_by'>,
+  entities: readonly EntityWithDomains[],
+  memberId: string,
+): boolean {
+  if (item.domain_id === null) {
+    return item.review_by === memberId;
+  }
+  const entity = entities.find((candidate) =>
+    candidate.domains.some((domain) => domain.id === item.domain_id),
+  );
+  return entity === undefined || entity.kind !== 'personal' || entity.member_id === memberId;
+}
+
 /** How many open rows each entity holds, by entity id. Questions and nested steps are not counted. */
 export function countByEntity(
   rows: readonly Item[],

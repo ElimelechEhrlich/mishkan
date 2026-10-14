@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatReminder, needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
 import { fullTimeText } from '../../lib/itemText';
+import { canSeeItem } from '../../lib/lookups';
 import type { Lookups } from '../../lib/lookups';
 import type {
   Conversion,
@@ -218,6 +219,9 @@ export function ItemEditor({
     domains: entity.domains.filter((domain) => (domain.role === 'shopping') === isShopping),
   }));
   const done = item.status === 'done';
+  // A reminder can only go to a parent who can see the item (not the other parent's private
+  // entity, nor someone else's "needs completion").
+  const reachable = reminderPeople.filter((person) => canSeeItem(item, entities, person.id));
 
   const domainLabel =
     item.domain_id === null ? undefined : lookups.domainLabels.get(item.domain_id);
@@ -434,7 +438,7 @@ export function ItemEditor({
         {item.status === 'open' && item.kind !== 'missing_item' && (
           <PropertyRow
             label={labels.push.reminder}
-            value={reminderText(item, reminderPeople)}
+            value={reminderText(item, reachable)}
             open={openRow === 'reminder'}
             onToggle={() => {
               toggle('reminder');
@@ -445,7 +449,7 @@ export function ItemEditor({
               remindAt={item.remind_at}
               memberIds={item.remind_member_ids}
               dueDate={item.due_date}
-              people={reminderPeople}
+              people={reachable}
               onChange={(choice) => {
                 update({
                   remind_at: choice.remindAt,

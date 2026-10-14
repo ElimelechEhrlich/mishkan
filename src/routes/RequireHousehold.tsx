@@ -4,6 +4,7 @@ import { WelcomeTour } from '../components/onboarding/WelcomeTour';
 import { SplashScreen } from '../components/ui/SplashScreen';
 import { StatusScreen } from '../components/ui/StatusScreen';
 import { useHousehold } from '../hooks/useHousehold';
+import { useKeepPushSubscription } from '../hooks/useKeepPushSubscription';
 import { useScopeState } from '../hooks/useScopeState';
 import { useSessionContext } from '../hooks/useRouteContext';
 import { useWelcomeTour } from '../hooks/useWelcomeTour';
@@ -15,6 +16,7 @@ export function RequireHousehold(): ReactElement {
   const { data, loading, error } = useHousehold(session.userId);
   const scope = useScopeState();
   const tour = useWelcomeTour();
+  useKeepPushSubscription(data?.member.id ?? null);
 
   if (loading) {
     return <SplashScreen />;

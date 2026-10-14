@@ -91,7 +91,12 @@ export function useItems(): UseItems {
       : { ...cached, loading: false, error: null };
   });
 
+  // Loads can overlap (a change, then a return to the app); only the latest one is shown, so
+  // an older answer arriving last does not undo a newer one.
+  const latestLoad = useRef(0);
   const load = useCallback(async (): Promise<void> => {
+    latestLoad.current += 1;
+    const thisLoad = latestLoad.current;
     try {
       const items = await listOpenItems();
       const steps = await listSteps(
@@ -99,10 +104,15 @@ export function useItems(): UseItems {
           .filter((item) => item.kind === 'goal' || item.kind === 'issue')
           .map((item) => item.id),
       );
+      if (thisLoad !== latestLoad.current) {
+        return;
+      }
       setState({ items, steps, loading: false, error: null });
       writeCache(cacheKey, { items, steps });
     } catch (error: unknown) {
-      setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
+      if (thisLoad === latestLoad.current) {
+        setState((previous) => ({ ...previous, loading: false, error: toMessage(error) }));
+      }
     }
   }, [cacheKey]);
 
