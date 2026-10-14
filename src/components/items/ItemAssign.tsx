@@ -2,7 +2,13 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import { missingFields } from '../../lib/itemRules';
-import type { EntityWithDomains, Item, ItemRepeat, ItemUpdate, RepeatDraft } from '../../types/domain';
+import type {
+  EntityWithDomains,
+  Item,
+  ItemRepeat,
+  ItemUpdate,
+  RepeatDraft,
+} from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
 import { TimePicker } from './TimePicker';
 

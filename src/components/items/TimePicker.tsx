@@ -46,7 +46,14 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
   // A goal's date is a target for all its steps, and a goal does not repeat.
   const isGoal = item.kind === 'goal';
   const canRepeat = item.kind === 'task' && repeat !== undefined;
-  const [panel, setPanel] = useState<Panel | null>(null);
+  // A date or a rhythm already chosen opens with its settings shown.
+  const [panel, setPanel] = useState<Panel | null>(
+    item.time_mode !== null &&
+      isPanel(item.time_mode) &&
+      (item.time_mode !== 'recurring' || canRepeat)
+      ? item.time_mode
+      : null,
+  );
   const [date, setDate] = useState(item.due_date ?? todayIso());
   // An hour is optional, and only on a task.
   const [hour, setHour] = useState(item.due_time?.slice(0, 5) ?? '');
@@ -81,9 +88,7 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
           summary={
             date === ''
               ? undefined
-              : [formatPickedDate(date), ...(hour === '' ? [] : [hour])].join(
-                  labels.item.separator,
-                )
+              : [formatPickedDate(date), ...(hour === '' ? [] : [hour])].join(labels.item.separator)
           }
           actions={
             <>
@@ -113,12 +118,7 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
           }
         >
           <SettingRow label={isGoal ? labels.goals.targetDate : labels.fields.dueDate}>
-            <DateField
-              label={labels.picker.pickDate}
-              value={date}
-              shortcuts
-              onChange={setDate}
-            />
+            <DateField label={labels.picker.pickDate} value={date} shortcuts onChange={setDate} />
           </SettingRow>
           {!isGoal && (
             <SettingRow label={labels.fields.dueTime}>

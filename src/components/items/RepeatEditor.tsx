@@ -74,8 +74,7 @@ export function RepeatEditor({
     (draft.endKind !== 'count' || total >= leastTotal) &&
     (draft.endKind !== 'until' || (draft.endUntil !== null && draft.endUntil >= today));
   const end = { endKind: draft.endKind, endCount: draft.endCount, endUntil: draft.endUntil };
-  const canResume =
-    draft.endKind !== 'count' || (draft.endCount !== null && draft.endCount > gone);
+  const canResume = draft.endKind !== 'count' || (draft.endCount !== null && draft.endCount > gone);
 
   return (
     <div className="flex flex-col gap-3">

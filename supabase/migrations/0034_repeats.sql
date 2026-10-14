@@ -588,6 +588,13 @@ from public.items i
 where i.recurrence_rule in ('FREQ=DAILY', 'FREQ=WEEKLY', 'FREQ=MONTHLY')
   and i.kind = 'task';
 
+-- One with no date (not made by the app, but possible) gets its first day, so it is not
+-- taken for a series that has ended.
+update public.items i
+set due_date = r.starts_on
+from public.item_repeats r
+where r.item_id = i.id and i.due_date is null and i.time_mode = 'recurring';
+
 -- Each time one was done is a done occurrence, on the day it was done.
 insert into public.occurrences (item_id, on_date, status, done_by, done_at)
 select c.item_id, (c.completed_at at time zone 'Asia/Jerusalem')::date, 'done',

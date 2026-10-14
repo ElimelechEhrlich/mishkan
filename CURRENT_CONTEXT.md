@@ -266,11 +266,38 @@
   - **לא נבדק עדיין:** שליחה אמיתית לטלפון. זה המשימה הבאה בסעיף 5.
 - **כלי בדיקה בריפו:** `scripts/dev/` (צילום מסכים, נתונים מדומים, seed ל־SQL).
 
+### בענף בלבד, ממתין להרצה של `0034_repeats.sql`: שלב 2א
+- **SQL** (`supabase/migrations/0034_repeats.sql`):
+  - טבלאות `item_repeats` ו־`occurrences`.
+  - פונקציות: `set_repeat`, `stop_repeat`, `resume_repeat`, `mark_occurrence`, `unmark_occurrence`, `close_item`, `roll_item`, `roll_occurrences`.
+  - `claim_due_reminders` מגלגלת לפני השליחה, ואין צורך לפרסם את ה־edge function.
+  - תאימות לגרסה ישנה: הטריגרים `items_a_repeat_status`, `completions_to_occurrence` ו־`items_repeat_from_rule`.
+  - מעבר של המשימות החוזרות הקיימות וההיסטוריה שלהן.
+  - נבדק על `t34`, עותק של `t33` עם `scripts/dev/seed_0034.sql`.
+- **lib:**
+  - `recurrence.ts`: חישוב ימים זהה לשרת, "הבאים", סיכום במילים, `rhythmOfRule`. יש לו בדיקות.
+  - `itemRules`: הקבוצה `ended` ("הסתיימו – לסמן בוצע?"), ו־`formatPickedDate`.
+- **services ו־hooks:**
+  - `repeatService.ts`, `useRepeats.ts`, `useItemOccurrences.ts`.
+  - `itemService.completeItem` מסמן מופע. "בוצעו" וסיכום השבוע נבנים מ־`occurrences`.
+- **רכיבי ui לפי כלל ההיררכיה:**
+  - `ChoiceGrid` (רמה 1), `SettingsCard` / `SettingRow` (רמה 2), `OptionGroup` / `Stepper` (רמה 3).
+  - `DateField` / `TimeField` / `PickerInput`: לחיצה בכל מקום פותחת את הבורר, ויש קיצורים.
+  - `Chip` עם `outline`, ובו משתמשים הנמענים.
+- **מסכים:**
+  - `TimePicker` מחדש, ו־`RepeatEditor` (כל כמה, שעה, התחלה, סיום, הפסק/המשך).
+  - `ReminderForm` מחדש, עם "קביעת זמן לפריט".
+  - `OccurrencesCard` בדף הפריט: נוכחי ודלג, הבאים, היסטוריה וביטול סימון, סגירת הפריט בשתי לחיצות.
+  - שעה בהוספה מהירה.
+  - "חוזרת" גם מ"להשלמה".
+  - "בוצעו" מציג דילגת או הוחמץ, עם ביטול סימון.
+
 ---
 
 ## 5. משימות לפי הסדר
 
-1. **הצעד המיידי:** לבקש מהבעלים לבדוק בטלפון, אחרי שהגרסה עולה:
+1. **הצעד המיידי:** הבעלים מריץ את `0034_repeats.sql` וכותב "רץ". אחר כך `git push origin HEAD:main` ובדיקה בטלפון של 2א. בדיקת שלב 1 בטלפון כבר עברה ("הכל עובד").
+   - (היסטורי) בדיקת שלב 1 בטלפון:
    - תזכורת "בזמן עצמו" על משימה עם שעה.
    - תזכורת חוזרת על פתק.
    - שתזכורות של תור קיים לא נשלחו פעמיים.

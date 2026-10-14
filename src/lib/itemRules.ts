@@ -216,6 +216,7 @@ export const activeSections = [
   'overdue',
   'urgent',
   'today',
+  'ended',
   'thisWeek',
   'upcoming',
   'undated',
@@ -225,7 +226,7 @@ export const activeSections = [
 /** Active entries split by how soon they are due. */
 export function splitBySection<
   T extends {
-    readonly item: Pick<Item, 'kind'>;
+    readonly item: Pick<Item, 'kind' | 'time_mode'>;
     readonly dueDate: string | null;
     readonly urgent: boolean;
     readonly target: string | null;
@@ -235,6 +236,7 @@ export function splitBySection<
     overdue: [],
     urgent: [],
     today: [],
+    ended: [],
     thisWeek: [],
     upcoming: [],
     undated: [],
@@ -358,13 +360,22 @@ export function toListEntries(
  */
 export function sectionOfEntry(
   entry: {
-    readonly item: Pick<Item, 'kind'>;
+    readonly item: Pick<Item, 'kind' | 'time_mode'>;
     readonly dueDate: string | null;
     readonly urgent: boolean;
     readonly target: string | null;
   },
   today: string,
 ): ActiveSection {
+  // A repeating task whose occurrences have run out waits to be marked done itself.
+  if (
+    entry.item.kind === 'task' &&
+    entry.item.time_mode === 'recurring' &&
+    entry.dueDate === null &&
+    !entry.urgent
+  ) {
+    return 'ended';
+  }
   // An appointment whose day has passed is not late: it either happened or needs a new date.
   if (entry.item.kind === 'appointment' && entry.dueDate !== null && entry.dueDate < today) {
     return 'passed';
@@ -546,6 +557,8 @@ export type Agenda = {
   readonly today: readonly ListEntry[];
   /** Appointments whose day has passed and were not marked as held; not counted as late. */
   readonly passed: readonly ListEntry[];
+  /** Repeating tasks with no occurrence left, waiting to be marked done themselves. */
+  readonly ended: readonly ListEntry[];
 };
 
 /**
@@ -571,6 +584,7 @@ export function agendaOf(assigned: readonly Item[], steps: readonly Item[], toda
     urgent: [...sections.urgent].sort(compareEntries),
     today: [...sections.today].sort(compareEntries),
     passed: [...sections.passed].sort(compareEntries),
+    ended: [...sections.ended].sort(compareEntries),
   };
 }
 

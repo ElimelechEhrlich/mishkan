@@ -23,6 +23,7 @@ export function TodayList({ agenda, lookups, loading, onComplete }: TodayListPro
     agenda.overdue.length === 0 &&
     agenda.urgent.length === 0 &&
     agenda.today.length === 0 &&
+    agenda.ended.length === 0 &&
     agenda.passed.length === 0
   ) {
     return loading ? <SkeletonList /> : <EmptyState text={labels.today.empty} />;
@@ -47,6 +48,13 @@ export function TodayList({ agenda, lookups, loading, onComplete }: TodayListPro
       <TimeGroup
         label={labels.section.today}
         entries={agenda.today}
+        lookups={lookups}
+        onComplete={onComplete}
+        defaultOpen
+      />
+      <TimeGroup
+        label={labels.section.ended}
+        entries={agenda.ended}
         lookups={lookups}
         onComplete={onComplete}
         defaultOpen

@@ -114,6 +114,7 @@ export type ActiveSection =
   | 'overdue'
   | 'urgent'
   | 'today'
+  | 'ended'
   | 'thisWeek'
   | 'upcoming'
   | 'undated'

@@ -115,9 +115,9 @@ describe('in words', () => {
   });
 
   it('counts the history, leaving out what is zero', () => {
-    expect(
-      historyCounts([occurrence('done'), occurrence('done'), occurrence('missed')]),
-    ).toBe('בוצע 2 · הוחמץ 1');
+    expect(historyCounts([occurrence('done'), occurrence('done'), occurrence('missed')])).toBe(
+      'בוצע 2 · הוחמץ 1',
+    );
   });
 });
 

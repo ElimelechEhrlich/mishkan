@@ -21,7 +21,10 @@ export type UseRepeats = {
   readonly byItem: ReadonlyMap<string, ItemRepeat>;
   readonly set: (itemId: string, draft: RepeatDraft) => void;
   readonly stop: (itemId: string) => void;
-  readonly resume: (itemId: string, end: Pick<RepeatDraft, 'endKind' | 'endCount' | 'endUntil'>) => void;
+  readonly resume: (
+    itemId: string,
+    end: Pick<RepeatDraft, 'endKind' | 'endCount' | 'endUntil'>,
+  ) => void;
   /** Skips the current occurrence, with a moment to take it back. */
   readonly skip: (itemId: string) => void;
   readonly unmark: (occurrenceId: string) => void;

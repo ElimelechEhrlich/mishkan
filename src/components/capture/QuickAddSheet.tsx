@@ -203,7 +203,10 @@ export function QuickAddSheet({
       kind,
       domainId,
       parentId: null,
-      time: asksTime && pickedTime !== null ? quickTimeChoice(pickedTime, todayIso(), kind === 'task' ? quickHour : '') : null,
+      time:
+        asksTime && pickedTime !== null
+          ? quickTimeChoice(pickedTime, todayIso(), kind === 'task' ? quickHour : '')
+          : null,
       ...(isValue ? { value: valueText.trim() } : {}),
       entityId: pickedEntityId,
     });

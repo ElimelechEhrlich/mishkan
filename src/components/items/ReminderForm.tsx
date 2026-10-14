@@ -2,7 +2,13 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { ReminderPerson } from '../../hooks/useReminderPeople';
-import { addDays, fromLocalDateTime, hasOwnTime, todayIso, toLocalDateTime } from '../../lib/itemRules';
+import {
+  addDays,
+  fromLocalDateTime,
+  hasOwnTime,
+  todayIso,
+  toLocalDateTime,
+} from '../../lib/itemRules';
 import {
   amountText,
   describeReminder,
@@ -75,7 +81,10 @@ function fieldsOf(draft: ReminderDraft): Fields {
 }
 
 function draftOf(fields: Fields, memberIds: readonly string[] | null): ReminderDraft {
-  const at = fields.date === '' || fields.hour === '' ? null : fromLocalDateTime(`${fields.date}T${fields.hour}`);
+  const at =
+    fields.date === '' || fields.hour === ''
+      ? null
+      : fromLocalDateTime(`${fields.date}T${fields.hour}`);
   const base = {
     at: null,
     minutes_before: null,
@@ -88,7 +97,11 @@ function draftOf(fields: Fields, memberIds: readonly string[] | null): ReminderD
   } as const;
   switch (fields.rule) {
     case 'before':
-      return { ...base, rule: 'before', minutes_before: toMinutes(fields.before, fields.beforeUnit) };
+      return {
+        ...base,
+        rule: 'before',
+        minutes_before: toMinutes(fields.before, fields.beforeUnit),
+      };
     case 'day':
       return {
         ...base,
@@ -99,7 +112,14 @@ function draftOf(fields: Fields, memberIds: readonly string[] | null): ReminderD
     case 'at':
       return { ...base, rule: 'at', at };
     case 'repeat':
-      return { ...base, rule: 'repeat', at, every: fields.every, unit: fields.unit, until: fields.until };
+      return {
+        ...base,
+        rule: 'repeat',
+        at,
+        every: fields.every,
+        unit: fields.unit,
+        until: fields.until,
+      };
   }
 }
 

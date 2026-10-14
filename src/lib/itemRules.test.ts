@@ -82,15 +82,38 @@ describe('activeSectionOf', () => {
   it('groups entries in the same way', () => {
     const groups = splitBySection(
       [
-        { item: { kind: 'task' }, dueDate: '2026-10-01', urgent: false, target: null },
-        { item: { kind: 'task' }, dueDate: '2026-10-15', urgent: false, target: null },
-        { item: { kind: 'task' }, dueDate: null, urgent: false, target: null },
+        {
+          item: { kind: 'task', time_mode: 'scheduled' },
+          dueDate: '2026-10-01',
+          urgent: false,
+          target: null,
+        },
+        {
+          item: { kind: 'task', time_mode: 'scheduled' },
+          dueDate: '2026-10-15',
+          urgent: false,
+          target: null,
+        },
+        {
+          item: { kind: 'task', time_mode: 'anytime' },
+          dueDate: null,
+          urgent: false,
+          target: null,
+        },
+        // A repeating task with no occurrence left waits to be marked done itself.
+        {
+          item: { kind: 'task', time_mode: 'recurring' },
+          dueDate: null,
+          urgent: false,
+          target: null,
+        },
       ],
       today,
     );
     expect(groups.overdue).toHaveLength(1);
     expect(groups.thisWeek).toHaveLength(1);
     expect(groups.undated).toHaveLength(1);
+    expect(groups.ended).toHaveLength(1);
     expect(groups.today).toHaveLength(0);
   });
 });
