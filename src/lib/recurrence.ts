@@ -82,6 +82,25 @@ export function upcomingDays(
   return days;
 }
 
+const ruleUnits: Readonly<Record<string, RepeatUnit>> = {
+  DAILY: 'day',
+  WEEKLY: 'week',
+  MONTHLY: 'month',
+  YEARLY: 'year',
+};
+
+/** The rhythm kept on an item for older versions of the app: "FREQ=MONTHLY;INTERVAL=3". */
+export function rhythmOfRule(
+  rule: string | null,
+): { readonly every: number; readonly unit: RepeatUnit } | null {
+  const match = rule === null ? null : /^FREQ=([A-Z]+)(?:;INTERVAL=(\d+))?$/.exec(rule);
+  const unit = match?.[1] === undefined ? undefined : ruleUnits[match[1]];
+  if (match === null || unit === undefined) {
+    return null;
+  }
+  return { every: match[2] === undefined ? 1 : Number(match[2]), unit };
+}
+
 /** "every day", "every 3 months". */
 export function rhythmText(every: number, unit: RepeatUnit): string {
   return `${labels.reminders.every} ${amountText(every, unit)}`;

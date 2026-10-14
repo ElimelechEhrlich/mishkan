@@ -1,6 +1,12 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import type { EntityWithDomains, Item, ItemUpdate } from '../../types/domain';
+import type {
+  EntityWithDomains,
+  Item,
+  ItemRepeat,
+  ItemUpdate,
+  RepeatDraft,
+} from '../../types/domain';
 import { EmptyState } from '../ui/EmptyState';
 import { SkeletonList } from '../ui/SkeletonList';
 import { ItemAssign } from './ItemAssign';
@@ -12,6 +18,8 @@ type IncompleteListProps = {
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
   /** Reloads the entities after a child or domain is added while choosing a domain. */
   readonly onStructureChanged: () => Promise<void>;
+  readonly repeats: ReadonlyMap<string, ItemRepeat>;
+  readonly onSetRepeat: (itemId: string, draft: RepeatDraft) => void;
 };
 
 export function IncompleteList({
@@ -20,6 +28,8 @@ export function IncompleteList({
   loading,
   onUpdate,
   onStructureChanged,
+  repeats,
+  onSetRepeat,
 }: IncompleteListProps): ReactElement {
   if (items.length === 0) {
     return loading ? <SkeletonList /> : <EmptyState text={labels.status.nothingMissing} />;
@@ -34,6 +44,8 @@ export function IncompleteList({
           entities={entities}
           onUpdate={onUpdate}
           onStructureChanged={onStructureChanged}
+          repeat={repeats.get(item.id) ?? null}
+          onSetRepeat={onSetRepeat}
         />
       ))}
     </ul>

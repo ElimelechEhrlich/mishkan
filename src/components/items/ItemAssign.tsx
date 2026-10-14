@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import { missingFields } from '../../lib/itemRules';
-import type { EntityWithDomains, Item, ItemUpdate } from '../../types/domain';
+import type { EntityWithDomains, Item, ItemRepeat, ItemUpdate, RepeatDraft } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
 import { TimePicker } from './TimePicker';
 
@@ -12,6 +12,9 @@ type ItemAssignProps = {
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
   /** Reloads the entities after a child or domain is added while choosing a domain. */
   readonly onStructureChanged: () => Promise<void>;
+  /** Settings kept from when the item repeated before, if it did. */
+  readonly repeat: ItemRepeat | null;
+  readonly onSetRepeat: (itemId: string, draft: RepeatDraft) => void;
 };
 
 /**
@@ -23,6 +26,8 @@ export function ItemAssign({
   entities,
   onUpdate,
   onStructureChanged,
+  repeat,
+  onSetRepeat,
 }: ItemAssignProps): ReactElement {
   const missing = missingFields(item);
   // A shopping domain is only for something to buy, as on the item's page.
@@ -81,6 +86,16 @@ export function ItemAssign({
           item={item}
           onPick={(choice) => {
             onUpdate(item.id, choice);
+          }}
+          repeat={{
+            repeat,
+            gone: 0,
+            onSave: (draft) => {
+              onSetRepeat(item.id, draft);
+            },
+            // Not repeating yet, it has no series to stop or continue.
+            onStop: () => undefined,
+            onResume: () => undefined,
           }}
         />
       )}

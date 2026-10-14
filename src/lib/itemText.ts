@@ -1,6 +1,7 @@
 import { labels } from '../constants/labels';
 import type { Item, OpenSegment } from '../types/domain';
-import { addDays, formatClock, formatDueDate, hasOwnTime, recurrenceOf } from './itemRules';
+import { addDays, formatClock, formatDueDate, hasOwnTime } from './itemRules';
+import { rhythmOfRule, rhythmText } from './recurrence';
 
 function dateText(dueDate: string, today: string): string {
   if (dueDate === today) {
@@ -31,17 +32,18 @@ export function timeText(item: Item, today: string): string | null {
       ? dateText(item.due_date, today)
       : `${dateText(item.due_date, today)} ${hour}`;
   }
-  return labels.timeMode[item.time_mode];
+  // A repeating series with no occurrence left waits to be marked done itself.
+  return item.time_mode === 'recurring' ? labels.repeat.ended : labels.timeMode[item.time_mode];
 }
 
 /** Like `timeText`, with the rhythm of a recurring item added. */
 export function fullTimeText(item: Item, today: string): string | null {
   const time = timeText(item, today);
-  const recurrence = recurrenceOf(item.recurrence_rule);
-  if (time === null || recurrence === null) {
+  const rhythm = item.time_mode === 'recurring' ? rhythmOfRule(item.recurrence_rule) : null;
+  if (time === null || rhythm === null) {
     return time;
   }
-  return `${labels.recurrence[recurrence]}${labels.item.separator}${time}`;
+  return `${rhythmText(rhythm.every, rhythm.unit)}${labels.item.separator}${time}`;
 }
 
 const timeOrder = ['active', 'waiting', 'someday'] as const satisfies readonly OpenSegment[];

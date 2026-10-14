@@ -78,6 +78,17 @@ export function formatDueDate(isoDate: string): string {
   return dueDateFormat.format(fromIsoDate(isoDate));
 }
 
+const pickedDateFormat = new Intl.DateTimeFormat('he-IL', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
+
+/** A chosen day as a field shows it: "יום ד׳, 14 באוק׳". */
+export function formatPickedDate(isoDate: string): string {
+  return pickedDateFormat.format(fromIsoDate(isoDate));
+}
+
 const longDateFormat = new Intl.DateTimeFormat('he-IL', {
   weekday: 'long',
   day: 'numeric',

@@ -7,10 +7,12 @@ import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
+import { useRepeats } from '../hooks/useRepeats';
 
 export function IncompletePage(): ReactElement {
   const entities = useEntities();
   const items = useItems();
+  const repeats = useRepeats();
 
   return (
     <PageShell
@@ -18,7 +20,7 @@ export function IncompletePage(): ReactElement {
       incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
-      <ErrorBanner message={items.error ?? entities.error} />
+      <ErrorBanner message={items.error ?? entities.error ?? repeats.error} />
       <AttentionList
         entries={items.attention.map((item) => ({
           item,
@@ -32,6 +34,8 @@ export function IncompletePage(): ReactElement {
           loading={items.loading}
           onUpdate={items.updateItem}
           onStructureChanged={entities.reload}
+          repeats={repeats.byItem}
+          onSetRepeat={repeats.set}
         />
       )}
       <QuickAddSheet

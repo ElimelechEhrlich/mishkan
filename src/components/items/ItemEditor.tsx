@@ -16,8 +16,11 @@ import type {
   ItemData,
   ItemKind,
   ItemReminder,
+  ItemRepeat,
   ItemUpdate,
+  Occurrence,
   ReminderDraft,
+  RepeatDraft,
   TrackerEntry,
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
@@ -35,6 +38,7 @@ import { AppointmentRows } from './AppointmentRows';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
+import { OccurrencesCard } from './OccurrencesCard';
 import type { ReminderPerson } from '../../hooks/useReminderPeople';
 import { ReminderList } from './ReminderList';
 import { PrerequisiteList } from './PrerequisiteList';
@@ -85,6 +89,20 @@ type ItemEditorProps = {
   /** The parents a reminder can go to. */
   readonly reminderPeople: readonly ReminderPerson[];
   readonly reminders: readonly ItemReminder[];
+  /** How the item repeats, or its settings kept from before; null when it never repeated. */
+  readonly repeat: ItemRepeat | null;
+  /** Its occurrences that were marked or missed, newest first. */
+  readonly occurrences: readonly Occurrence[];
+  readonly onSetRepeat: (itemId: string, draft: RepeatDraft) => void;
+  readonly onStopRepeat: (itemId: string) => void;
+  readonly onResumeRepeat: (
+    itemId: string,
+    end: Pick<RepeatDraft, 'endKind' | 'endCount' | 'endUntil'>,
+  ) => void;
+  readonly onSkip: (itemId: string) => void;
+  readonly onUnmarkOccurrence: (occurrenceId: string) => void;
+  /** Marks a repeating item itself done, ending its series. */
+  readonly onCloseItem: (itemId: string) => void;
   readonly onAddReminder: (itemId: string, draft: ReminderDraft) => void;
   readonly onUpdateReminder: (reminderId: string, draft: ReminderDraft) => void;
   readonly onRemoveReminder: (reminderId: string) => void;
@@ -167,6 +185,14 @@ export function ItemEditor({
   onUpdateDebt,
   reminderPeople,
   reminders,
+  repeat,
+  occurrences,
+  onSetRepeat,
+  onStopRepeat,
+  onResumeRepeat,
+  onSkip,
+  onUnmarkOccurrence,
+  onCloseItem,
   onAddReminder,
   onUpdateReminder,
   onRemoveReminder,
@@ -228,6 +254,9 @@ export function ItemEditor({
     domains: entity.domains.filter((domain) => (domain.role === 'shopping') === isShopping),
   }));
   const done = item.status === 'done';
+  // A repeating task: its own button marks the current occurrence, or, once none is left,
+  // the task itself.
+  const repeating = item.kind === 'task' && item.time_mode === 'recurring';
   // A reminder can only go to a parent who can see the item (not the other parent's private
   // entity, nor someone else's "needs completion").
   const reachable = reminderPeople.filter((person) => canSeeItem(item, entities, person.id));
@@ -251,12 +280,18 @@ export function ItemEditor({
             onClick={() => {
               if (done) {
                 onReopen(item.id);
+              } else if (repeating && item.due_date === null) {
+                onCloseItem(item.id);
               } else {
                 onComplete(item);
               }
             }}
           >
-            {doneLabel(item.kind, done)}
+            {repeating && !done
+              ? item.due_date === null
+                ? labels.occurrence.closeItem
+                : labels.occurrence.markCurrentDone
+              : doneLabel(item.kind, done)}
           </Button>
         )}
         {isAppointment && <AppointmentActions item={item} />}
@@ -440,7 +475,27 @@ export function ItemEditor({
               toggle('time');
             }}
           >
-            <TimePicker item={item} onPick={update} />
+            <TimePicker
+              item={item}
+              onPick={update}
+              repeat={{
+                repeat,
+                gone: occurrences.filter((occurrence) => occurrence.status !== 'closed_with_parent')
+                  .length,
+                onSave: (draft) => {
+                  onSetRepeat(item.id, draft);
+                  setOpenRow(null);
+                },
+                onStop: () => {
+                  onStopRepeat(item.id);
+                  setOpenRow(null);
+                },
+                onResume: (end) => {
+                  onResumeRepeat(item.id, end);
+                  setOpenRow(null);
+                },
+              }}
+            />
           </PropertyRow>
         )}
 
@@ -488,6 +543,21 @@ export function ItemEditor({
           </PropertyRow>
         )}
       </section>
+
+      {repeating && !done && repeat !== null && (
+        <OccurrencesCard
+          item={item}
+          repeat={repeat}
+          occurrences={occurrences}
+          onSkip={() => {
+            onSkip(item.id);
+          }}
+          onUnmark={onUnmarkOccurrence}
+          onClose={() => {
+            onCloseItem(item.id);
+          }}
+        />
+      )}
 
       {item.time_mode === 'waiting' && (
         <Card title={labels.sections.prerequisites}>

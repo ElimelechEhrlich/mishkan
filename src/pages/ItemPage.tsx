@@ -8,7 +8,9 @@ import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
 import { useItemData } from '../hooks/useItemData';
 import { useTrackerEntries } from '../hooks/useTrackerEntries';
+import { useItemOccurrences } from '../hooks/useItemOccurrences';
 import { useItemPage } from '../hooks/useItemPage';
+import { useRepeats } from '../hooks/useRepeats';
 import { useLookups } from '../hooks/useLookups';
 import { useReminderPeople } from '../hooks/useReminderPeople';
 import { useSnoozeRequest } from '../hooks/useSnoozeRequest';
@@ -25,6 +27,8 @@ export function ItemPage(): ReactElement {
   const itemData = useItemData();
   const trackerEntries = useTrackerEntries();
   const { reminders } = items;
+  const repeats = useRepeats();
+  const history = useItemOccurrences(item?.id ?? null);
 
   return (
     <PageShell
@@ -42,6 +46,8 @@ export function ItemPage(): ReactElement {
           snooze.error ??
           itemData.error ??
           reminders.error ??
+          repeats.error ??
+          history.error ??
           trackerEntries.error
         }
       />
@@ -75,6 +81,14 @@ export function ItemPage(): ReactElement {
           onAddReminder={reminders.add}
           onUpdateReminder={reminders.update}
           onRemoveReminder={reminders.remove}
+          repeat={repeats.byItem.get(item.id) ?? null}
+          occurrences={history.occurrences}
+          onSetRepeat={repeats.set}
+          onStopRepeat={repeats.stop}
+          onResumeRepeat={repeats.resume}
+          onSkip={repeats.skip}
+          onUnmarkOccurrence={repeats.unmark}
+          onCloseItem={repeats.close}
           onStructureChanged={entities.reload}
           onComplete={items.completeItem}
           onReopen={items.reopenItem}

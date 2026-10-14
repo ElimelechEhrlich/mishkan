@@ -4,6 +4,7 @@ import {
   endText,
   historyCounts,
   repeatSummary,
+  rhythmOfRule,
   rhythmText,
   stepFrom,
   upcomingDays,
@@ -117,5 +118,14 @@ describe('in words', () => {
     expect(
       historyCounts([occurrence('done'), occurrence('done'), occurrence('missed')]),
     ).toBe('בוצע 2 · הוחמץ 1');
+  });
+});
+
+describe('the rule kept for older versions', () => {
+  it('reads the rhythm back', () => {
+    expect(rhythmOfRule('FREQ=WEEKLY')).toEqual({ every: 1, unit: 'week' });
+    expect(rhythmOfRule('FREQ=MONTHLY;INTERVAL=3')).toEqual({ every: 3, unit: 'month' });
+    expect(rhythmOfRule('nonsense')).toBeNull();
+    expect(rhythmOfRule(null)).toBeNull();
   });
 });

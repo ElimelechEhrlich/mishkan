@@ -776,6 +776,17 @@ export const labels = {
     attentionHint: 'הפריטים האלה מופיעים גם ברשימות. כאן הם מחכים לטיפול.',
     attentionWaiting: 'תזכורת ממתינה לזמן',
   },
+  picker: {
+    today: 'היום',
+    tomorrow: 'מחר',
+    inWeek: 'בעוד שבוע',
+    noHour: 'בלי שעה',
+    clear: 'ניקוי',
+    pickDate: 'בחירת תאריך',
+    pickHour: 'בחירת שעה',
+    more: 'עוד',
+    less: 'פחות',
+  },
   repeat: {
     every: 'כל כמה',
     hour: 'שעה',
@@ -802,7 +813,7 @@ export const labels = {
     asBefore: 'כמו שהיה',
     stopped: (day: string): string => `הופסק ב־${day}`,
     ended: 'הסדרה הסתיימה',
-    tooFew: 'אי אפשר פחות ממה שכבר עבר',
+    resumeNeedsMore: 'כל הפעמים שהוגדרו כבר עברו. הגדילו את מספר הפעמים כדי להמשיך.',
     needsDate: 'בחרו תאריך',
   },
   occurrence: {
@@ -826,6 +837,9 @@ export const labels = {
         : `נשארו ${String(left)} מופעים. לחיצה נוספת תסמן את הפריט כבוצע ותפסיק את החזרה.`,
     closeOpenEnded: 'הסדרה בלי סוף. לחיצה נוספת תסמן את הפריט כבוצע ותפסיק את החזרה.',
     skippedToast: 'דילגת על המופע',
+    markCurrentDone: 'סימון המופע כבוצע',
+    closeItem: 'סימון הפריט כבוצע',
+    closeHint: 'הפריט עצמו עובר ל"בוצעו" רק כשמסמנים אותו כאן.',
   },
   week: {
     title: 'השבוע',
