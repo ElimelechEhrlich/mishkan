@@ -25,7 +25,7 @@ export type UseDoneItems = {
   readonly items: readonly Item[];
   readonly loading: boolean;
   readonly error: string | null;
-  /** Whether older ones may be left to show. */
+  /** Whether older ones are left to show. */
   readonly hasMore: boolean;
   readonly loadMore: () => void;
   readonly reopen: (itemId: string) => void;
@@ -62,13 +62,14 @@ export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
       }
       return next;
     };
-    listDoneItems(limit, kind)
+    // One more than shown is asked for, to know for sure whether there is more.
+    listDoneItems(limit + 1, kind)
       .then((closed) => {
         setState((previous) => save({ ...previous, closed, loading: false, error: null }));
       })
       .catch(fail);
     if (withRepeats) {
-      listRecurringDone({ limit })
+      listRecurringDone({ limit: limit + 1 })
         .then((repeated) => {
           setState((previous) => save({ ...previous, repeated }));
         })
@@ -95,11 +96,13 @@ export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
     setLimit((current) => current + doneStep);
   }, []);
 
+  const all = byDoneTime([...state.closed, ...state.repeated]);
   return {
-    items: byDoneTime([...state.closed, ...state.repeated]).slice(0, limit),
+    items: all.slice(0, limit),
     loading: state.loading,
     error: state.error,
-    hasMore: state.closed.length >= limit || state.repeated.length >= limit,
+    // Only when something older is really left to show.
+    hasMore: all.length > limit,
     loadMore,
     reopen,
   };
