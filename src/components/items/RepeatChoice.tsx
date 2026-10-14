@@ -2,7 +2,9 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { Item } from '../../types/domain';
+import { Button } from '../ui/Button';
 import { ChoiceGrid } from '../ui/ChoiceGrid';
+import { SettingsCard } from '../ui/SettingsCard';
 import { RepeatEditor } from './RepeatEditor';
 import type { RepeatControls } from './TimePicker';
 
@@ -25,7 +27,8 @@ export function RepeatChoice({
   onDone,
 }: RepeatChoiceProps): ReactElement {
   const repeating = item.time_mode === 'recurring';
-  const [open, setOpen] = useState(repeating);
+  const [choice, setChoice] = useState<'no' | 'yes'>(repeating ? 'yes' : 'no');
+  const open = choice === 'yes';
 
   return (
     <div className="flex flex-col gap-3">
@@ -35,19 +38,35 @@ export function RepeatChoice({
           { value: 'no', label: labels.repeat.noRepeat },
           { value: 'yes', label: labels.repeat.repeats },
         ]}
-        value={open ? 'yes' : 'no'}
-        onChange={(choice) => {
-          if (choice === 'yes') {
-            setOpen(true);
-            return;
-          }
-          setOpen(false);
-          if (repeating) {
-            onNoRepeat();
-            onDone();
-          }
-        }}
+        value={choice}
+        onChange={setChoice}
       />
+      {choice === 'no' && repeating && (
+        <SettingsCard
+          actions={
+            <>
+              <Button
+                onClick={() => {
+                  onNoRepeat();
+                  onDone();
+                }}
+              >
+                {labels.actions.save}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setChoice('yes');
+                }}
+              >
+                {labels.actions.cancel}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-muted">{labels.repeat.noRepeatHint}</p>
+        </SettingsCard>
+      )}
       {open && (
         <RepeatEditor
           item={item}
@@ -58,7 +77,7 @@ export function RepeatChoice({
             onDone();
           }}
           onCancel={() => {
-            setOpen(repeating);
+            setChoice(repeating ? 'yes' : 'no');
             onDone();
           }}
           onStop={() => {

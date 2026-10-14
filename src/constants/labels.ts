@@ -23,6 +23,14 @@ const timeMode = {
   someday: 'על המדף',
 } as const satisfies Record<TimeMode, string>;
 
+/** What each undated time means, shown before it is saved. */
+const timeModeHint = {
+  urgent: 'בלי תאריך. מופיע בקבוצה "דחוף", יחד עם מה שלהיום.',
+  anytime: 'פעיל, בלי תאריך יעד. מופיע ב"ללא מועד".',
+  waiting: 'מחכה למשהו אחר. אפשר להוסיף תנאים מקדימים בדף הפריט.',
+  someday: 'לא פעיל כרגע. נשמר ב"על המדף" לעתיד.',
+} as const satisfies Record<Exclude<TimeMode, 'scheduled' | 'recurring'>, string>;
+
 const kind = {
   task: 'משימה',
   goal: 'יעד',
@@ -741,19 +749,19 @@ export const labels = {
     waitingHint:
       'התזכורת תלויה בתאריך או בשעה של הפריט, ואין לו כרגע. היא תחזור לפעול כשיוגדר זמן.',
     rule: {
-      before: 'לפני השעה',
-      day: 'ביום, בשעה קבועה',
-      at: 'תאריך ושעה',
-      repeat: 'חוזרת',
-    },
-    ruleHint: {
-      before: 'דקות, שעות או ימים לפני',
-      day: 'ימים לפני, בשעה קבועה',
-      at: 'יום ושעה מסוימים',
+      before: 'זמן מה לפני',
+      day: 'ביום מסוים, בשעה שבוחרים',
+      at: 'בתאריך ובשעה אחרים',
       repeat: 'שוב ושוב',
     },
-    howLongBefore: 'כמה לפני',
-    howManyDaysBefore: 'כמה ימים לפני',
+    ruleHint: {
+      before: 'למשל 10 דקות או שעה לפני השעה של הפריט',
+      day: 'ביום עצמו או כמה ימים לפני, למשל ב־09:00',
+      at: 'יום ושעה שלא קשורים לזמן של הפריט',
+      repeat: 'למשל כל יום ב־20:00, עד שהפריט נסגר',
+    },
+    howLongBefore: 'כמה זמן לפני השעה של הפריט',
+    howManyDaysBefore: 'באיזה יום (ביחס לתאריך הפריט)',
     atWhatHour: 'באיזו שעה',
     date: 'תאריך',
     untilMode: {
@@ -823,6 +831,7 @@ export const labels = {
     yes: 'כן',
     no: 'לא',
     noRepeat: 'לא חוזר',
+    noRepeatHint: 'הפריט יפסיק לחזור ויישאר על המופע הנוכחי. הגדרות החזרה וההיסטוריה נשמרות.',
     repeats: 'חוזר',
     appointmentHour: 'השעה של התור',
     every: 'כל כמה',
@@ -1121,6 +1130,7 @@ export const labels = {
     debtsDomainName: 'חובות',
   },
   timeMode,
+  timeModeHint,
   kind,
   missing,
   recurrence,

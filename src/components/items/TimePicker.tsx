@@ -29,28 +29,20 @@ type TimePickerProps = {
   readonly repeat?: RepeatControls | undefined;
 };
 
-type Panel = 'scheduled' | 'recurring';
-
 /** Urgent has no date but shows with today's, everywhere today's are shown. */
 const undatedModes = ['urgent', 'anytime', 'waiting', 'someday'] as const;
 
-function isPanel(mode: TimeMode): mode is Panel {
-  return mode === 'scheduled' || mode === 'recurring';
-}
-
 /**
- * When an item is due. The kind of time is the main choice; a date, or a repeating rhythm,
- * opens its settings below it. The undated kinds apply at once.
+ * When an item is due. The kind of time is the main choice; each opens below it, with what it
+ * means and its settings, and applies only on save, so a choice can be changed before then.
  */
 export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElement {
   // A goal's date is a target for all its steps, and a goal does not repeat.
   const isGoal = item.kind === 'goal';
   const canRepeat = item.kind === 'task' && repeat !== undefined;
   // A date or a rhythm already chosen opens with its settings shown.
-  const [panel, setPanel] = useState<Panel | null>(
-    item.time_mode !== null &&
-      isPanel(item.time_mode) &&
-      (item.time_mode !== 'recurring' || canRepeat)
+  const [panel, setPanel] = useState<TimeMode | null>(
+    item.time_mode === 'scheduled' || (item.time_mode === 'recurring' && canRepeat)
       ? item.time_mode
       : null,
   );
@@ -74,14 +66,41 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
         }))}
         value={chosen}
         onChange={(mode) => {
-          if (isPanel(mode)) {
-            setPanel(panel === mode ? null : mode);
-            return;
-          }
-          setPanel(null);
-          onPick({ time_mode: mode, due_date: null, due_time: null, recurrence_rule: null });
+          setPanel(panel === mode ? null : mode);
         }}
       />
+
+      {panel !== null && panel !== 'scheduled' && panel !== 'recurring' && (
+        <SettingsCard
+          actions={
+            <>
+              <Button
+                onClick={() => {
+                  onPick({
+                    time_mode: panel,
+                    due_date: null,
+                    due_time: null,
+                    recurrence_rule: null,
+                  });
+                  setPanel(null);
+                }}
+              >
+                {labels.actions.save}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setPanel(null);
+                }}
+              >
+                {labels.actions.cancel}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-muted">{labels.timeModeHint[panel]}</p>
+        </SettingsCard>
+      )}
 
       {panel === 'scheduled' && (
         <SettingsCard
