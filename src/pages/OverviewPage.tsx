@@ -70,7 +70,7 @@ export function OverviewPage(): ReactElement {
       toEverything={toEverything}
       title={scoped.scope?.name ?? labels.overview.title}
       subtitle={formatToday()}
-      incompleteCount={scoped.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error ?? remindersError ?? week.error} />
@@ -99,7 +99,7 @@ export function OverviewPage(): ReactElement {
               overdue={overview.overdue}
               urgent={overview.urgent}
               today={overview.today}
-              incomplete={scoped.incomplete.length}
+              incomplete={items.incompleteCount}
             />
             <OverviewCards
               overview={overview}

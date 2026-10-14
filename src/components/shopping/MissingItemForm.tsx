@@ -44,12 +44,7 @@ export function MissingItemForm({ targets, onAdd }: MissingItemFormProps): React
     <Card>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <TextField
-            label={labels.fields.missingItem}
-            value={title}
-            onChange={setTitle}
-            compact
-          />
+          <TextField label={labels.fields.missingItem} value={title} onChange={setTitle} compact />
           <button
             type="submit"
             aria-label={labels.actions.add}

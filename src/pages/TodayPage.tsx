@@ -21,7 +21,7 @@ export function TodayPage(): ReactElement {
     <PageShell
       title={labels.pages.today}
       subtitle={formatToday()}
-      incompleteCount={items.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error} />

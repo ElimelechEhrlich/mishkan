@@ -31,6 +31,8 @@ import type {
   NewItem,
   NewMissingItem,
 } from '../types/domain';
+import { useItemReminders } from './useItemReminders';
+import type { UseItemReminders } from './useItemReminders';
 import { useHouseholdContext } from './useRouteContext';
 import { offerUndo } from './useUndoOffer';
 
@@ -50,6 +52,15 @@ export type UseItems = {
   readonly assigned: readonly Item[];
   /** Open items still missing a domain or a time, that the current parent has to complete. */
   readonly incomplete: readonly Item[];
+  /**
+   * Fully assigned open items with something waiting on them (a reminder that waits for a date
+   * or an hour). Shown in "needs completion" for attention, and in the lists as well.
+   */
+  readonly attention: readonly Item[];
+  /** How many items "needs completion" holds, for its badge. */
+  readonly incompleteCount: number;
+  /** The reminders of the items. */
+  readonly reminders: UseItemReminders;
   /** What is late and what is due today, across the whole home. */
   readonly agenda: Agenda;
   /** How many items the agenda holds, late and today together. */
@@ -246,6 +257,14 @@ export function useItems(): UseItems {
     [state.items, member.id],
   );
 
+  const reminders = useItemReminders();
+  const attention = useMemo(() => {
+    const listed = new Set(incomplete.map((item) => item.id));
+    return state.items.filter(
+      (item) => reminders.waitingItemIds.has(item.id) && !listed.has(item.id),
+    );
+  }, [state.items, incomplete, reminders.waitingItemIds]);
+
   const agenda = useMemo(
     () => agendaOf(assigned, state.steps, todayIso()),
     [assigned, state.steps],
@@ -256,6 +275,9 @@ export function useItems(): UseItems {
     steps: state.steps,
     assigned,
     incomplete,
+    attention,
+    incompleteCount: incomplete.length + attention.length,
+    reminders,
     agenda,
     todayCount: agenda.overdue.length + agenda.urgent.length + agenda.today.length,
     loading: state.loading,

@@ -40,7 +40,7 @@ export function OpenItemsPage(): ReactElement {
     <PageShell
       toEverything={toEverything}
       title={labels.pages.open}
-      incompleteCount={scoped.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error} />

@@ -12,7 +12,12 @@ type DebtSectionProps = {
 };
 
 /** The open debts in one direction, with their total. */
-export function DebtSection({ title, debts, tone, onClose }: DebtSectionProps): ReactElement | null {
+export function DebtSection({
+  title,
+  debts,
+  tone,
+  onClose,
+}: DebtSectionProps): ReactElement | null {
   if (debts.length === 0) {
     return null;
   }

@@ -25,6 +25,8 @@ export type Attachment = Tables['attachments']['Row'];
 export type ItemData = Tables['item_data']['Row'];
 /** One entry of a tracker: a date, a value and maybe a note. */
 export type TrackerEntry = Tables['tracker_entries']['Row'];
+/** One of an item's reminders. */
+export type ItemReminder = Tables['item_reminders']['Row'];
 
 export type TimeMode = Enums['item_time_mode'];
 export type ItemKind = Enums['item_kind'];
@@ -33,6 +35,25 @@ export type DomainRole = Enums['domain_role'];
 export type DebtDirection = Enums['debt_direction'];
 export type ShoppingCategory = Enums['shopping_category'];
 export type MeetingPlace = Enums['meeting_place'];
+export type ReminderRule = Enums['reminder_rule'];
+export type RepeatUnit = Enums['repeat_unit'];
+
+/** What a parent sets for a reminder: when it rings, and for whom (null for everyone). */
+export type ReminderDraft = {
+  readonly rule: ReminderRule;
+  /** 'at': when it rings; 'repeat': its first ring (both ISO timestamps). */
+  readonly at: string | null;
+  /** 'before': how many minutes before the item's hour. */
+  readonly minutes_before: number | null;
+  /** 'day': how many days before the item's date, and at what hour (HH:MM). */
+  readonly days_before: number | null;
+  readonly at_time: string | null;
+  /** 'repeat': every how many of what, and until which day (null until the item is closed). */
+  readonly every: number | null;
+  readonly unit: RepeatUnit | null;
+  readonly until: string | null;
+  readonly member_ids: readonly string[] | null;
+};
 
 export type EntityWithDomains = Entity & {
   readonly domains: readonly Domain[];
@@ -77,6 +98,8 @@ export type ActiveSection =
 export type TimeChoice = {
   readonly time_mode: TimeMode;
   readonly due_date: string | null;
+  /** An optional hour on the date (HH:MM), for a task. */
+  readonly due_time?: string | null;
   readonly recurrence_rule: string | null;
 };
 

@@ -11,6 +11,7 @@ type TextFieldProps = {
     | 'password'
     | 'date'
     | 'datetime-local'
+    | 'time'
     | 'number'
     | 'tel'
     | 'url';

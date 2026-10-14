@@ -24,6 +24,9 @@ export function TimePicker({ item, onPick }: TimePickerProps): ReactElement {
   const isGoal = item.kind === 'goal';
   const [panel, setPanel] = useState<Panel>(null);
   const [date, setDate] = useState(item.due_date ?? todayIso());
+  // An hour is optional, and only for a task's single date.
+  const [hour, setHour] = useState(item.due_time?.slice(0, 5) ?? '');
+  const withHour = panel === 'scheduled' && !isGoal;
   const [recurrence, setRecurrence] = useState<Recurrence>(
     recurrenceOf(item.recurrence_rule) ?? 'weekly',
   );
@@ -58,7 +61,7 @@ export function TimePicker({ item, onPick }: TimePickerProps): ReactElement {
             selected={panel === null && item.time_mode === mode}
             onClick={() => {
               setPanel(null);
-              onPick({ time_mode: mode, due_date: null, recurrence_rule: null });
+              onPick({ time_mode: mode, due_date: null, due_time: null, recurrence_rule: null });
             }}
           />
         ))}
@@ -78,32 +81,55 @@ export function TimePicker({ item, onPick }: TimePickerProps): ReactElement {
         </div>
       )}
       {panel !== null && (
-        <div className="flex items-end gap-2">
-          <TextField
-            label={
-              panel === 'recurring'
-                ? labels.fields.startDate
-                : isGoal
-                  ? labels.goals.targetDate
-                  : labels.fields.dueDate
-            }
-            type="date"
-            value={date}
-            onChange={setDate}
-          />
-          <Button
-            disabled={date === ''}
-            onClick={() => {
-              onPick({
-                time_mode: panel,
-                due_date: date,
-                recurrence_rule: panel === 'recurring' ? recurrenceRule(recurrence) : null,
-              });
-              setPanel(null);
-            }}
-          >
-            {labels.actions.confirm}
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-end gap-2">
+            <TextField
+              label={
+                panel === 'recurring'
+                  ? labels.fields.startDate
+                  : isGoal
+                    ? labels.goals.targetDate
+                    : labels.fields.dueDate
+              }
+              type="date"
+              value={date}
+              onChange={setDate}
+            />
+            {withHour && (
+              <TextField
+                label={labels.fields.dueTime}
+                type="time"
+                direction="ltr"
+                value={hour}
+                onChange={setHour}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              disabled={date === ''}
+              onClick={() => {
+                onPick({
+                  time_mode: panel,
+                  due_date: date,
+                  due_time: withHour && hour !== '' ? hour : null,
+                  recurrence_rule: panel === 'recurring' ? recurrenceRule(recurrence) : null,
+                });
+                setPanel(null);
+              }}
+            >
+              {labels.actions.confirm}
+            </Button>
+            {withHour && hour !== '' && (
+              <Chip
+                label={labels.fields.clearTime}
+                selected={false}
+                onClick={() => {
+                  setHour('');
+                }}
+              />
+            )}
+          </div>
         </div>
       )}
     </div>

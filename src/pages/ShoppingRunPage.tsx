@@ -19,7 +19,7 @@ export function ShoppingRunPage(): ReactElement {
   return (
     <PageShell
       title={run?.run.title ?? labels.kind.shopping_run}
-      incompleteCount={items.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
       inner
     >

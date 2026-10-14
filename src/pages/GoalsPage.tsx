@@ -40,7 +40,7 @@ export function GoalsPage(): ReactElement {
       toEverything={toEverything}
       title={labels.pages.goals}
       shortTitle={labels.nav.goals}
-      incompleteCount={scoped.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? resolved.error ?? entities.error} />

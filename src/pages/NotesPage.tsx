@@ -34,7 +34,7 @@ export function NotesPage(): ReactElement {
     <PageShell
       toEverything={toEverything}
       title={labels.pages.notes}
-      incompleteCount={scoped.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error} />

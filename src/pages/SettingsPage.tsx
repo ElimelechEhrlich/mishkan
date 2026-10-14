@@ -25,7 +25,7 @@ export function SettingsPage(): ReactElement {
   return (
     <PageShell
       title={labels.pages.settings}
-      incompleteCount={items.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
       inner
     >

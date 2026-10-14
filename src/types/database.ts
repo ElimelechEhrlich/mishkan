@@ -24,6 +24,9 @@ type ShoppingCategory = 'food' | 'clothing' | 'urgent' | 'planned';
 type ItemTimeMode = 'scheduled' | 'recurring' | 'urgent' | 'anytime' | 'waiting' | 'someday';
 type ItemStatus = 'open' | 'done';
 type DebtDirection = 'we_owe' | 'owed_to_us';
+/** A set time, a time before the item's hour, a day before at an hour, or again and again. */
+export type ReminderRule = 'at' | 'before' | 'day' | 'repeat';
+export type RepeatUnit = 'day' | 'week' | 'month' | 'year';
 
 export type Database = {
   public: {
@@ -180,6 +183,8 @@ export type Database = {
           parent_id: string | null;
           time_mode: ItemTimeMode | null;
           due_date: string | null;
+          /** An optional hour on the due date (HH:MM:SS), for a task. */
+          due_time: string | null;
           remind_at: string | null;
           recurrence_rule: string | null;
           status: ItemStatus;
@@ -223,6 +228,7 @@ export type Database = {
           parent_id?: string | null;
           time_mode?: ItemTimeMode | null;
           due_date?: string | null;
+          due_time?: string | null;
           remind_at?: string | null;
           recurrence_rule?: string | null;
           status?: ItemStatus;
@@ -257,6 +263,7 @@ export type Database = {
           parent_id?: string | null;
           time_mode?: ItemTimeMode | null;
           due_date?: string | null;
+          due_time?: string | null;
           remind_at?: string | null;
           remind_member_ids?: string[] | null;
           recurrence_rule?: string | null;
@@ -347,6 +354,52 @@ export type Database = {
           label?: string | null;
           value?: string;
           position?: number;
+        };
+        Relationships: [];
+      };
+      item_reminders: {
+        Row: {
+          id: string;
+          item_id: string;
+          rule: ReminderRule;
+          at: string | null;
+          minutes_before: number | null;
+          days_before: number | null;
+          at_time: string | null;
+          every: number | null;
+          unit: RepeatUnit | null;
+          until: string | null;
+          member_ids: string[] | null;
+          /** Kept by the server: the next ring; null when waiting for a date or hour, or done. */
+          due_at: string | null;
+          sent_for: string | null;
+          sent_at: string | null;
+          legacy: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          rule: ReminderRule;
+          at?: string | null;
+          minutes_before?: number | null;
+          days_before?: number | null;
+          at_time?: string | null;
+          every?: number | null;
+          unit?: RepeatUnit | null;
+          until?: string | null;
+          member_ids?: string[] | null;
+        };
+        Update: {
+          rule?: ReminderRule;
+          at?: string | null;
+          minutes_before?: number | null;
+          days_before?: number | null;
+          at_time?: string | null;
+          every?: number | null;
+          unit?: RepeatUnit | null;
+          until?: string | null;
+          member_ids?: string[] | null;
         };
         Relationships: [];
       };
@@ -576,6 +629,8 @@ export type Database = {
       item_status: ItemStatus;
       debt_direction: DebtDirection;
       meeting_place: MeetingPlace;
+      reminder_rule: ReminderRule;
+      repeat_unit: RepeatUnit;
     };
     CompositeTypes: {
       [_ in never]: never;

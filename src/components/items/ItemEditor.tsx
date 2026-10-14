@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { formatReminder, needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
+import { needsTime, shoppingCategories, todayIso } from '../../lib/itemRules';
+import { describeReminder, draftOf, isWaiting } from '../../lib/reminders';
 import { fullTimeText } from '../../lib/itemText';
 import { canSeeItem } from '../../lib/lookups';
 import type { Lookups } from '../../lib/lookups';
@@ -14,7 +15,9 @@ import type {
   Item,
   ItemData,
   ItemKind,
+  ItemReminder,
   ItemUpdate,
+  ReminderDraft,
   TrackerEntry,
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
@@ -33,7 +36,7 @@ import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
 import type { ReminderPerson } from '../../hooks/useReminderPeople';
-import { ReminderPicker } from './ReminderPicker';
+import { ReminderList } from './ReminderList';
 import { PrerequisiteList } from './PrerequisiteList';
 import { DataSection } from './DataSection';
 import { IssueTrackers } from './IssueTrackers';
@@ -81,6 +84,10 @@ type ItemEditorProps = {
   ) => void;
   /** The parents a reminder can go to. */
   readonly reminderPeople: readonly ReminderPerson[];
+  readonly reminders: readonly ItemReminder[];
+  readonly onAddReminder: (itemId: string, draft: ReminderDraft) => void;
+  readonly onUpdateReminder: (reminderId: string, draft: ReminderDraft) => void;
+  readonly onRemoveReminder: (reminderId: string) => void;
   /** Reloads the entities after a child or domain is added while choosing a domain. */
   readonly onStructureChanged: () => Promise<void>;
   readonly onComplete: (item: Item) => void;
@@ -92,20 +99,18 @@ type ItemEditorProps = {
   readonly onPrerequisitesChange: () => void;
 };
 
-/** When a reminder rings, and for whom when it is not for everyone. */
-function reminderText(item: Item, people: readonly ReminderPerson[]): string {
-  if (item.remind_at === null) {
-    return item.kind === 'appointment' ? labels.push.appointmentAuto : labels.push.noReminder;
-  }
-  const when = formatReminder(item.remind_at);
-  if (item.remind_member_ids === null) {
-    return when;
-  }
-  const names = people
-    .filter((person) => item.remind_member_ids?.includes(person.id) === true)
-    .map((person) => person.name)
-    .join(', ');
-  return `${when}${labels.item.separator}${labels.push.toPrefix}${names}`;
+/** An item's reminders in a few words: the one there is, or how many. */
+function remindersText(reminders: readonly ItemReminder[]): string {
+  const [only] = reminders;
+  const text =
+    only === undefined
+      ? labels.push.noReminder
+      : reminders.length === 1
+        ? describeReminder(draftOf(only))
+        : labels.reminders.count(reminders.length);
+  return reminders.some(isWaiting)
+    ? `${text}${labels.item.separator}${labels.reminders.waiting}`
+    : text;
 }
 
 type Row = 'kind' | 'domain' | 'inMain' | 'category' | 'time' | 'reminder' | 'parent';
@@ -161,6 +166,10 @@ export function ItemEditor({
   onUpdate,
   onUpdateDebt,
   reminderPeople,
+  reminders,
+  onAddReminder,
+  onUpdateReminder,
+  onRemoveReminder,
   onStructureChanged,
   onComplete,
   onReopen,
@@ -437,26 +446,23 @@ export function ItemEditor({
 
         {item.status === 'open' && item.kind !== 'missing_item' && (
           <PropertyRow
-            label={labels.push.reminder}
-            value={reminderText(item, reachable)}
+            label={labels.reminders.title}
+            value={remindersText(reminders)}
+            missing={reminders.some(isWaiting)}
             open={openRow === 'reminder'}
             onToggle={() => {
               toggle('reminder');
             }}
           >
-            <ReminderPicker
-              key={`${item.remind_at ?? ''}-${(item.remind_member_ids ?? []).join(',')}`}
-              remindAt={item.remind_at}
-              memberIds={item.remind_member_ids}
-              dueDate={item.due_date}
+            <ReminderList
+              item={item}
+              reminders={reminders}
               people={reachable}
-              onChange={(choice) => {
-                update({
-                  remind_at: choice.remindAt,
-                  remind_member_ids: choice.memberIds === null ? null : [...choice.memberIds],
-                });
-                setOpenRow(null);
+              onAdd={(draft) => {
+                onAddReminder(item.id, draft);
               }}
+              onUpdate={onUpdateReminder}
+              onRemove={onRemoveReminder}
             />
           </PropertyRow>
         )}

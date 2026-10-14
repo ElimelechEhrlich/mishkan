@@ -23,9 +23,13 @@ export function timeText(item: Item, today: string): string | null {
   }
   if (item.due_date !== null) {
     // A goal's date is its target: when all its steps are to be done.
-    return item.kind === 'goal'
-      ? `${labels.goals.by} ${dateText(item.due_date, today)}`
-      : dateText(item.due_date, today);
+    if (item.kind === 'goal') {
+      return `${labels.goals.by} ${dateText(item.due_date, today)}`;
+    }
+    const hour = item.due_time?.slice(0, 5);
+    return hour === undefined
+      ? dateText(item.due_date, today)
+      : `${dateText(item.due_date, today)} ${hour}`;
   }
   return labels.timeMode[item.time_mode];
 }

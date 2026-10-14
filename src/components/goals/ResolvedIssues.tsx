@@ -11,7 +11,11 @@ type ResolvedIssuesProps = {
 };
 
 /** Resolved issues stay here for reference, with their answers and steps on their pages. */
-export function ResolvedIssues({ issues, lookups, onReopen }: ResolvedIssuesProps): ReactElement | null {
+export function ResolvedIssues({
+  issues,
+  lookups,
+  onReopen,
+}: ResolvedIssuesProps): ReactElement | null {
   if (issues.length === 0) {
     return null;
   }

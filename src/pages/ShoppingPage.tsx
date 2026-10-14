@@ -35,7 +35,7 @@ export function ShoppingPage(): ReactElement {
     <PageShell
       toEverything={toEverything}
       title={labels.pages.shopping}
-      incompleteCount={scoped.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />

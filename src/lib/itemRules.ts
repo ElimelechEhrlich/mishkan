@@ -138,13 +138,6 @@ export function nextDueDate(current: string | null, recurrence: Recurrence, toda
   return next;
 }
 
-/** A moment moved by whole days, keeping its local clock time across daylight saving. */
-export function shiftByDays(timestamp: string, days: number): string {
-  const moment = new Date(timestamp);
-  moment.setDate(moment.getDate() + days);
-  return moment.toISOString();
-}
-
 /**
  * Whether the kind runs on time of its own. A date or rhythm left on another kind by a
  * conversion is kept, hidden, for converting back, and is not shown or used.
@@ -408,20 +401,32 @@ export function isInRun(item: Item): boolean {
   return item.kind === 'missing_item' && item.run_id !== null;
 }
 
-/** By due date (undated last), then by start time on the same day, then newest first. */
+/** The hour an item is set for on its day (HH:MM): an appointment's start, or a task's hour. */
+export function clockOf(item: Item): string | null {
+  if (item.starts_at !== null) {
+    return toLocalDateTime(item.starts_at).slice(11, 16);
+  }
+  return item.due_time === null ? null : item.due_time.slice(0, 5);
+}
+
+/**
+ * By due date (undated last), then on the same day those with an hour first, by hour, then
+ * newest first.
+ */
 export function compareEntries(a: ListEntry, b: ListEntry): number {
   if (a.dueDate !== null && b.dueDate !== null && a.dueDate !== b.dueDate) {
     return a.dueDate < b.dueDate ? -1 : 1;
   }
-  const aStarts = a.item.starts_at;
-  const bStarts = b.item.starts_at;
-  if (aStarts !== null && bStarts !== null && aStarts !== bStarts) {
-    return aStarts < bStarts ? -1 : 1;
+  // An hour counts only when the row is dated by the item itself, not by one of its steps.
+  const aClock = a.dueDate !== null && a.dueDate === a.item.due_date ? clockOf(a.item) : null;
+  const bClock = b.dueDate !== null && b.dueDate === b.item.due_date ? clockOf(b.item) : null;
+  if (aClock !== null && bClock !== null && aClock !== bClock) {
+    return aClock < bClock ? -1 : 1;
   }
-  if (aStarts !== null && bStarts === null && a.dueDate === b.dueDate) {
+  if (aClock !== null && bClock === null && a.dueDate === b.dueDate) {
     return -1;
   }
-  if (aStarts === null && bStarts !== null && a.dueDate === b.dueDate) {
+  if (aClock === null && bClock !== null && a.dueDate === b.dueDate) {
     return 1;
   }
   if (a.dueDate === null && b.dueDate !== null) {

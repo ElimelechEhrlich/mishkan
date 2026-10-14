@@ -3,6 +3,7 @@ import {
   activeSectionOf,
   addDays,
   agendaOf,
+  compareEntries,
   missingFields,
   seriesStarts,
   snoozeUntil,
@@ -13,6 +14,7 @@ import {
   splitBySection,
   toListEntries,
 } from './itemRules';
+import { timeText } from './itemText';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-11';
@@ -28,6 +30,7 @@ function item(overrides: Partial<Item>): Item {
     parent_id: null,
     time_mode: 'scheduled',
     due_date: today,
+    due_time: null,
     remind_at: null,
     recurrence_rule: null,
     status: 'open',
@@ -267,5 +270,28 @@ describe('snoozeUntil', () => {
   it('puts it off to nine tomorrow morning', () => {
     const next = new Date(snoozeUntil('tomorrow', now));
     expect([next.getDate(), next.getHours(), next.getMinutes()]).toEqual([12, 9, 0]);
+  });
+});
+
+describe('an hour on a task', () => {
+  it('is shown after its day', () => {
+    expect(timeText(item({ due_time: '16:30:00' }), today)).toBe('היום 16:30');
+    expect(timeText(item({}), today)).toBe('היום');
+  });
+
+  it('orders the day: with an hour first, by hour, appointments among them', () => {
+    const late = item({ id: 'late', due_time: '18:00:00', created_at: '3' });
+    const early = item({ id: 'early', due_time: '08:15:00', created_at: '2' });
+    const plain = item({ id: 'plain', created_at: '9' });
+    const appointment = item({
+      id: 'appointment',
+      kind: 'appointment',
+      starts_at: new Date(2026, 9, 11, 12, 0).toISOString(),
+      created_at: '1',
+    });
+    const sorted = toListEntries([plain, late, appointment, early], [])
+      .sort(compareEntries)
+      .map((entry) => entry.item.id);
+    expect(sorted).toEqual(['early', 'appointment', 'late', 'plain']);
   });
 });

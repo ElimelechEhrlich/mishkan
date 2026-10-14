@@ -20,7 +20,7 @@ export function DonePage(): ReactElement {
   return (
     <PageShell
       title={labels.pages.done}
-      incompleteCount={items.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
       inner
     >

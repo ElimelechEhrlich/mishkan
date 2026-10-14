@@ -32,7 +32,7 @@ export function AppointmentsPage(): ReactElement {
       toEverything={toEverything}
       title={labels.pages.appointments}
       shortTitle={labels.nav.appointments}
-      incompleteCount={scoped.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error} />

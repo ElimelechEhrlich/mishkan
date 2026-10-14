@@ -27,7 +27,7 @@ export function DebtsPage(): ReactElement {
     <PageShell
       toEverything={toEverything}
       title={labels.pages.debts}
-      incompleteCount={scoped.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
     >
       <ErrorBanner message={debts.error ?? items.error ?? entities.error} />

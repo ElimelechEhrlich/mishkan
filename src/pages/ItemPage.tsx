@@ -24,11 +24,12 @@ export function ItemPage(): ReactElement {
   const snooze = useSnoozeRequest();
   const itemData = useItemData();
   const trackerEntries = useTrackerEntries();
+  const { reminders } = items;
 
   return (
     <PageShell
       title={item === null ? labels.pages.item : labels.kind[item.kind]}
-      incompleteCount={items.incomplete.length}
+      incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
       inner
     >
@@ -40,6 +41,7 @@ export function ItemPage(): ReactElement {
           reminderPeople.error ??
           snooze.error ??
           itemData.error ??
+          reminders.error ??
           trackerEntries.error
         }
       />
@@ -69,6 +71,10 @@ export function ItemPage(): ReactElement {
           onUpdate={items.updateItem}
           onUpdateDebt={items.updateDebt}
           reminderPeople={reminderPeople.people}
+          reminders={reminders.byItem.get(item.id) ?? []}
+          onAddReminder={reminders.add}
+          onUpdateReminder={reminders.update}
+          onRemoveReminder={reminders.remove}
           onStructureChanged={entities.reload}
           onComplete={items.completeItem}
           onReopen={items.reopenItem}
