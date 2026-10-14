@@ -392,7 +392,7 @@ export function compareBySection(today: string): (a: ListEntry, b: ListEntry) =>
 }
 
 /** Newest first by when they were done. */
-export function byDoneTime(items: readonly Item[]): Item[] {
+export function byDoneTime<T extends Item>(items: readonly T[]): T[] {
   return [...items].sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''));
 }
 

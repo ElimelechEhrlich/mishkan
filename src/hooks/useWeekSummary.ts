@@ -32,9 +32,12 @@ export function useWeekSummary(
   useEffect(() => {
     let active = true;
     const since = new Date(Date.now() - weekMs).toISOString();
-    // Each time a recurring task was done counts too.
+    // Each time a repeating task was done counts too; skipped and missed ones do not.
     Promise.all([listDoneSince(since), listRecurringDone({ since })])
-      .then(([closed, repeated]) => [...closed, ...repeated])
+      .then(([closed, repeated]) => [
+        ...closed,
+        ...repeated.filter((item) => item.occurrence?.status === 'done'),
+      ])
       .then((items) => {
         if (active) {
           setState({ items, loading: false, error: null });

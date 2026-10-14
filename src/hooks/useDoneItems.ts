@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
+import { announceItemsChanged } from '../lib/itemChanges';
 import { byDoneTime } from '../lib/itemRules';
 import { listDoneItems, listRecurringDone, reopenItem } from '../services/itemService';
-import type { Item, ItemKind } from '../types/domain';
+import { unmarkOccurrence } from '../services/repeatService';
+import type { DoneItem, Item, ItemKind } from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
 
 /** How many are shown at first, and how many more each "load more" brings. */
@@ -12,8 +14,8 @@ const doneStep = 100;
 type DoneLists = {
   /** Items closed for good. */
   readonly closed: readonly Item[];
-  /** Each time a recurring task (which stays open) was done. */
-  readonly repeated: readonly Item[];
+  /** Each occurrence of a repeating task (which stays open) that was marked or missed. */
+  readonly repeated: readonly DoneItem[];
 };
 
 type DoneState = DoneLists & {
@@ -22,13 +24,15 @@ type DoneState = DoneLists & {
 };
 
 export type UseDoneItems = {
-  readonly items: readonly Item[];
+  readonly items: readonly DoneItem[];
   readonly loading: boolean;
   readonly error: string | null;
   /** Whether older ones are left to show. */
   readonly hasMore: boolean;
   readonly loadMore: () => void;
   readonly reopen: (itemId: string) => void;
+  /** Takes back marking one occurrence of a repeating task. */
+  readonly unmark: (occurrenceId: string) => void;
 };
 
 function isDoneLists(value: unknown): value is DoneLists {
@@ -92,6 +96,21 @@ export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
     [load],
   );
 
+  const unmark = useCallback(
+    (occurrenceId: string): void => {
+      unmarkOccurrence(occurrenceId)
+        .then(() => {
+          // The task moves back to that occurrence in every list.
+          announceItemsChanged();
+          load();
+        })
+        .catch((error: unknown) => {
+          setState((previous) => ({ ...previous, error: toMessage(error) }));
+        });
+    },
+    [load],
+  );
+
   const loadMore = useCallback((): void => {
     setLimit((current) => current + doneStep);
   }, []);
@@ -105,5 +124,6 @@ export function useDoneItems(kind: ItemKind | null = null): UseDoneItems {
     hasMore: all.length > limit,
     loadMore,
     reopen,
+    unmark,
   };
 }

@@ -27,6 +27,8 @@ type DebtDirection = 'we_owe' | 'owed_to_us';
 /** A set time, a time before the item's hour, a day before at an hour, or again and again. */
 export type ReminderRule = 'at' | 'before' | 'day' | 'repeat';
 export type RepeatUnit = 'day' | 'week' | 'month' | 'year';
+export type RepeatEnd = 'never' | 'count' | 'until';
+export type OccurrenceStatus = 'done' | 'skipped' | 'missed' | 'closed_with_parent';
 
 export type Database = {
   public: {
@@ -498,6 +500,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      item_repeats: {
+        Row: {
+          item_id: string;
+          every: number;
+          unit: RepeatUnit;
+          /** The first occurrence; the rhythm counts from it. */
+          starts_on: string;
+          at_time: string | null;
+          end_kind: RepeatEnd;
+          end_count: number | null;
+          end_until: string | null;
+          /** Set by "stop repeating": no occurrence after this day. */
+          stopped_on: string | null;
+          missed_from: string;
+          updated_at: string;
+        };
+        // Written only through set_repeat(), stop_repeat() and resume_repeat().
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      occurrences: {
+        Row: {
+          id: string;
+          item_id: string;
+          on_date: string;
+          at_time: string | null;
+          status: OccurrenceStatus;
+          done_by: string | null;
+          done_at: string;
+        };
+        // Written only through mark_occurrence() and unmark_occurrence().
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       completions: {
         Row: {
           id: string;
@@ -543,6 +581,44 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      set_repeat: {
+        Args: {
+          p_item_id: string;
+          p_every: number;
+          p_unit: RepeatUnit;
+          p_starts_on: string;
+          p_at_time: string | null;
+          p_end_kind: RepeatEnd;
+          p_end_count: number | null;
+          p_end_until: string | null;
+        };
+        Returns: undefined;
+      };
+      stop_repeat: {
+        Args: { p_item_id: string };
+        Returns: undefined;
+      };
+      resume_repeat: {
+        Args: {
+          p_item_id: string;
+          p_end_kind: RepeatEnd;
+          p_end_count: number | null;
+          p_end_until: string | null;
+        };
+        Returns: undefined;
+      };
+      mark_occurrence: {
+        Args: { p_item_id: string; p_status: OccurrenceStatus };
+        Returns: string;
+      };
+      unmark_occurrence: {
+        Args: { p_occurrence_id: string };
+        Returns: undefined;
+      };
+      close_item: {
+        Args: { p_item_id: string };
+        Returns: undefined;
+      };
       move_item_data: {
         Args: { p_row_id: string; p_step: number };
         Returns: undefined;
@@ -631,6 +707,8 @@ export type Database = {
       meeting_place: MeetingPlace;
       reminder_rule: ReminderRule;
       repeat_unit: RepeatUnit;
+      repeat_end: RepeatEnd;
+      occurrence_status: OccurrenceStatus;
     };
     CompositeTypes: {
       [_ in never]: never;

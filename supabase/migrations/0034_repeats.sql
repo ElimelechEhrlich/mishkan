@@ -505,6 +505,35 @@ create trigger completions_to_occurrence
   after insert on public.completions
   for each row execute function public.completions_to_occurrence();
 
+-- There, choosing "repeating" sets only the item's rule; its series is made from the rule.
+create function public.items_repeat_from_rule() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_unit  public.repeat_unit;
+  v_every integer;
+begin
+  if new.kind <> 'task' or new.time_mode is distinct from 'recurring'
+     or new.recurrence_rule is null or new.due_date is null
+     or exists (select 1 from public.item_repeats r where r.item_id = new.id) then
+    return null;
+  end if;
+  v_unit := case split_part(new.recurrence_rule, ';', 1)
+              when 'FREQ=DAILY' then 'day'
+              when 'FREQ=WEEKLY' then 'week'
+              when 'FREQ=YEARLY' then 'year'
+              else 'month'
+            end;
+  v_every := coalesce(nullif(substring(new.recurrence_rule from 'INTERVAL=([0-9]+)'), '')::integer, 1);
+  insert into public.item_repeats (item_id, every, unit, starts_on, at_time)
+  values (new.id, v_every, v_unit, new.due_date, new.due_time)
+  on conflict (item_id) do nothing;
+  return null;
+end $$;
+
+create trigger items_repeat_from_rule
+  after insert or update of time_mode, recurrence_rule on public.items
+  for each row execute function public.items_repeat_from_rule();
+
 -- ---------- Every run of the reminders moves series on first --------
 create or replace function public.claim_due_reminders()
 returns table (item_id uuid, title text, endpoint text, p256dh text, auth text)

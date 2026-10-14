@@ -1,14 +1,10 @@
-import {
-  fromLocalDateTime,
-  nextDueDate,
-  recurrenceOf,
-  seriesStarts,
-  todayIso,
-} from '../lib/itemRules';
+import { fromLocalDateTime, seriesStarts } from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
 import { allPages, inGroups } from './pages';
+import { closeItem, listOccurrences, markOccurrence, unmarkOccurrence } from './repeatService';
 import type {
   Conversion,
+  DoneItem,
   Item,
   ItemKind,
   ItemUpdate,
@@ -81,39 +77,43 @@ export async function listDoneSince(since: string): Promise<Item[]> {
 }
 
 /**
- * Each time a recurring task was done, as a done copy of the task stamped with when and by
- * whom; the task itself stays open. Newest first, since a moment or up to a count.
+ * Each time a repeating task fell due and was marked (or missed), as a done copy of the task
+ * stamped with when and by whom; the task itself stays open. Newest first, since a moment or
+ * up to a count.
  */
 export async function listRecurringDone(range: {
   readonly since?: string;
   readonly limit?: number;
-}): Promise<Item[]> {
-  const base = supabase.from('completions').select('*').order('completed_at', { ascending: false });
-  const { data: completions, error } = await (range.since === undefined
-    ? base.limit(range.limit ?? 100)
-    : base.gte('completed_at', range.since));
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  const ids = [...new Set(completions.map((completion) => completion.item_id))];
+}): Promise<DoneItem[]> {
+  const occurrences = await listOccurrences(range);
+  const ids = [...new Set(occurrences.map((occurrence) => occurrence.item_id))];
   if (ids.length === 0) {
     return [];
   }
-  const items = await supabase.from('items').select('*').in('id', ids).eq('hidden', false);
-  if (items.error !== null) {
-    throw new Error(items.error.message);
+  const items: Item[] = [];
+  for (const group of inGroups(ids)) {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*')
+      .in('id', group)
+      .eq('hidden', false);
+    if (error !== null) {
+      throw new Error(error.message);
+    }
+    items.push(...data);
   }
-  const byId = new Map(items.data.map((item) => [item.id, item]));
-  return completions.flatMap((completion) => {
-    const item = byId.get(completion.item_id);
+  const byId = new Map(items.map((item) => [item.id, item]));
+  return occurrences.flatMap((occurrence) => {
+    const item = byId.get(occurrence.item_id);
     return item === undefined
       ? []
       : [
           {
             ...item,
             status: 'done' as const,
-            completed_at: completion.completed_at,
-            completed_by: completion.completed_by,
+            completed_at: occurrence.done_at,
+            completed_by: occurrence.done_by,
+            occurrence,
           },
         ];
   });
@@ -216,31 +216,29 @@ export async function deleteItem(itemId: string): Promise<void> {
 }
 
 /**
- * A recurring task stays open: the completion is logged and the due date moves to the
- * next occurrence; its reminders, which count from that date, move with it on the server.
- * Anything else is closed, including another kind that still carries a rhythm left from a
- * conversion.
+ * Marks an item done. A repeating task stays open: its current occurrence is marked and it
+ * moves on to the next one (the reminders, which count from its date, move with it). One
+ * whose occurrences have run out is closed. Returns the occurrence marked, to take it back.
  */
-export async function completeItem(item: Item): Promise<void> {
-  const recurrence = recurrenceOf(item.recurrence_rule);
-  if (item.kind !== 'task' || item.time_mode !== 'recurring' || recurrence === null) {
-    await updateItem(item.id, { status: 'done' });
-    return;
+export async function completeItem(item: Item): Promise<string | null> {
+  if (item.kind === 'task' && item.time_mode === 'recurring') {
+    if (item.due_date !== null) {
+      return markOccurrence(item.id, 'done');
+    }
+    await closeItem(item.id);
+    return null;
   }
-  const { error } = await supabase.from('completions').insert({ item_id: item.id });
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-  await updateItem(item.id, { due_date: nextDueDate(item.due_date, recurrence, todayIso()) });
+  await updateItem(item.id, { status: 'done' });
+  return null;
 }
 
 /**
- * Takes back marking `item` done, given as it was before: a recurring task gets its date back
- * (and its reminders with it), anything else is open again.
+ * Takes back marking `item` done, given as it was before: the occurrence marked is unmarked,
+ * anything else is open again.
  */
-export async function undoComplete(item: Item): Promise<void> {
-  if (item.kind === 'task' && item.time_mode === 'recurring') {
-    await updateItem(item.id, { due_date: item.due_date });
+export async function undoComplete(item: Item, occurrenceId: string | null): Promise<void> {
+  if (occurrenceId !== null) {
+    await unmarkOccurrence(occurrenceId);
     return;
   }
   await reopenItem(item.id);

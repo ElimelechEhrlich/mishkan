@@ -25,6 +25,15 @@ export type Attachment = Tables['attachments']['Row'];
 export type ItemData = Tables['item_data']['Row'];
 /** One entry of a tracker: a date, a value and maybe a note. */
 export type TrackerEntry = Tables['tracker_entries']['Row'];
+/** How an item repeats. */
+export type ItemRepeat = Tables['item_repeats']['Row'];
+/** One time a repeating item fell due, as it was marked (or missed). */
+export type Occurrence = Tables['occurrences']['Row'];
+/**
+ * A row of "done": a closed item, or one occurrence of a repeating one (marked or missed),
+ * shown as a done copy of the item.
+ */
+export type DoneItem = Item & { readonly occurrence?: Occurrence };
 /** One of an item's reminders. */
 export type ItemReminder = Tables['item_reminders']['Row'];
 
@@ -37,6 +46,21 @@ export type ShoppingCategory = Enums['shopping_category'];
 export type MeetingPlace = Enums['meeting_place'];
 export type ReminderRule = Enums['reminder_rule'];
 export type RepeatUnit = Enums['repeat_unit'];
+export type RepeatEnd = Enums['repeat_end'];
+export type OccurrenceStatus = Enums['occurrence_status'];
+
+/** What a parent sets for a repeating item. */
+export type RepeatDraft = {
+  readonly every: number;
+  readonly unit: RepeatUnit;
+  /** The first occurrence (YYYY-MM-DD). */
+  readonly startsOn: string;
+  /** Its hour (HH:MM), or null for the whole day. */
+  readonly atTime: string | null;
+  readonly endKind: RepeatEnd;
+  readonly endCount: number | null;
+  readonly endUntil: string | null;
+};
 
 /** What a parent sets for a reminder: when it rings, and for whom (null for everyone). */
 export type ReminderDraft = {

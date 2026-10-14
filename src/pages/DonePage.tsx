@@ -30,6 +30,7 @@ export function DonePage(): ReactElement {
         lookups={lookups}
         loading={done.loading}
         onReopen={done.reopen}
+        onUnmark={done.unmark}
       />
       {done.hasMore && (
         <Button variant="soft" onClick={done.loadMore}>

@@ -219,10 +219,14 @@ export function useItems(): UseItems {
   // Marked done by mistake? For a few seconds it can be taken back.
   const handleComplete = useCallback(
     (item: Item): void => {
-      void run(() => completeItem(item)).then((done) => {
+      // The occurrence marked, for a repeating task, so the offer to undo unmarks it.
+      let occurrenceId: string | null = null;
+      void run(async () => {
+        occurrenceId = await completeItem(item);
+      }).then((done) => {
         if (done) {
           offerUndo(labels.undo.done, () => {
-            void run(() => undoComplete(item));
+            void run(() => undoComplete(item, occurrenceId));
           });
         }
       });
