@@ -29,6 +29,7 @@ export type TrackerEntry = Tables['tracker_entries']['Row'];
 export type ItemRepeat = Tables['item_repeats']['Row'];
 /** One time a repeating item fell due, as it was marked (or missed). */
 export type Occurrence = Tables['occurrences']['Row'];
+export type OccurrenceCount = Database['public']['Views']['occurrence_counts']['Row'];
 /**
  * A row of "done": a closed item, or one occurrence of a repeating one (marked or missed),
  * shown as a done copy of the item.
@@ -154,11 +155,11 @@ export type NewItem = {
 /** Kinds an item can be converted to and from; runs and questions are left out. */
 export type ConvertibleKind = Extract<
   ItemKind,
-  'task' | 'goal' | 'issue' | 'note' | 'tracker' | 'debt' | 'missing_item'
+  'task' | 'goal' | 'issue' | 'note' | 'tracker' | 'debt' | 'missing_item' | 'appointment'
 >;
 
 /** Kinds the add sheet makes: the convertible ones and appointments, which keep their kind. */
-export type AddableKind = ConvertibleKind | 'appointment';
+export type AddableKind = ConvertibleKind;
 
 export type DebtInput = {
   readonly counterparty: string;
@@ -174,6 +175,8 @@ export type Conversion = {
   readonly category: ShoppingCategory | null;
   /** For a new debt that never had details. */
   readonly debt: DebtInput | null;
+  /** For a new appointment whose item has no hour: when it starts (local, YYYY-MM-DDTHH:MM). */
+  readonly startsAt: string | null;
 };
 
 /** How often a series of appointments repeats; 'none' makes one appointment. */

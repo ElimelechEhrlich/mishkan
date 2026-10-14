@@ -32,6 +32,8 @@ import type {
   NewMissingItem,
 } from '../types/domain';
 import { useItemReminders } from './useItemReminders';
+import { useRepeats } from './useRepeats';
+import { isLateStep } from '../lib/goals';
 import type { UseItemReminders } from './useItemReminders';
 import { useHouseholdContext } from './useRouteContext';
 import { offerUndo } from './useUndoOffer';
@@ -41,6 +43,12 @@ type ItemsState = {
   readonly steps: readonly Item[];
   readonly loading: boolean;
   readonly error: string | null;
+};
+
+/** An item shown for attention, and why. */
+export type AttentionEntry = {
+  readonly item: Item;
+  readonly reason: 'waitingReminder' | 'lateStep';
 };
 
 export type UseItems = {
@@ -53,10 +61,11 @@ export type UseItems = {
   /** Open items still missing a domain or a time, that the current parent has to complete. */
   readonly incomplete: readonly Item[];
   /**
-   * Fully assigned open items with something waiting on them (a reminder that waits for a date
-   * or an hour). Shown in "needs completion" for attention, and in the lists as well.
+   * Fully assigned open items with something waiting on them: a reminder that waits for a date
+   * or an hour, or a step later than its goal's date. Shown in "needs completion" for
+   * attention, and in the lists as well.
    */
-  readonly attention: readonly Item[];
+  readonly attention: readonly AttentionEntry[];
   /** How many items "needs completion" holds, for its badge. */
   readonly incompleteCount: number;
   /** The reminders of the items. */
@@ -262,12 +271,28 @@ export function useItems(): UseItems {
   );
 
   const reminders = useItemReminders();
-  const attention = useMemo(() => {
+  const repeats = useRepeats();
+  const attention = useMemo((): AttentionEntry[] => {
     const listed = new Set(incomplete.map((item) => item.id));
-    return state.items.filter(
-      (item) => reminders.waitingItemIds.has(item.id) && !listed.has(item.id),
+    const waiting = state.items
+      .filter((item) => reminders.waitingItemIds.has(item.id) && !listed.has(item.id))
+      .map((item) => ({ item, reason: 'waitingReminder' as const }));
+    const goals = new Map(
+      state.items.filter((item) => item.kind === 'goal').map((goal) => [goal.id, goal]),
     );
-  }, [state.items, incomplete, reminders.waitingItemIds]);
+    const late = state.steps
+      .filter((step) => {
+        const goal = step.parent_id === null ? undefined : goals.get(step.parent_id);
+        return (
+          goal !== undefined &&
+          !listed.has(step.id) &&
+          !reminders.waitingItemIds.has(step.id) &&
+          isLateStep(step, goal, repeats.byItem.get(step.id), repeats.counts.get(step.id))
+        );
+      })
+      .map((item) => ({ item, reason: 'lateStep' as const }));
+    return [...waiting, ...late];
+  }, [state.items, state.steps, incomplete, reminders.waitingItemIds, repeats]);
 
   const agenda = useMemo(
     () => agendaOf(assigned, state.steps, todayIso()),

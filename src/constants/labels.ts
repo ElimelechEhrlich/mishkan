@@ -25,10 +25,10 @@ const timeMode = {
 
 /** What each undated time means, shown before it is saved. */
 const timeModeHint = {
-  urgent: 'בלי תאריך. מופיע בקבוצה "דחוף", יחד עם מה שלהיום.',
-  anytime: 'פעיל, בלי תאריך יעד. מופיע ב"ללא מועד".',
-  waiting: 'מחכה למשהו אחר. אפשר להוסיף תנאים מקדימים בדף הפריט.',
-  someday: 'לא פעיל כרגע. נשמר ב"על המדף" לעתיד.',
+  urgent: 'מוצג עם של היום',
+  anytime: 'בלי תאריך יעד',
+  waiting: 'מחכה לתנאי',
+  someday: 'לא פעיל כרגע',
 } as const satisfies Record<Exclude<TimeMode, 'scheduled' | 'recurring'>, string>;
 
 const kind = {
@@ -426,6 +426,14 @@ export const labels = {
     targetDate: 'תאריך יעד',
     by: 'עד',
     afterTarget: 'אחרי תאריך היעד',
+    byTarget: (day: string): string => `עד תאריך היעד, ${day}`,
+    fixFirst: (titles: string): string => `קודם להקדים את: ${titles}`,
+    endOnTarget: (count: number): string =>
+      count === 1
+        ? 'צעד חוזר אחד יסתיים בתאריך הזה'
+        : `${String(count)} צעדים חוזרים יסתיימו בתאריך הזה`,
+    attentionLate: 'צעד אחרי תאריך היעד',
+    closedWithGoal: 'נסגר עם היעד',
     allStepsDone: 'כל הצעדים בוצעו. הגעתם ליעד?',
     noSteps: 'אין צעדים עדיין',
     resolved: 'סוגיות שנפתרו',
@@ -435,6 +443,12 @@ export const labels = {
     noIssues: 'אין סוגיות פתוחות',
     goals: 'יעדים',
     issues: 'סוגיות',
+  },
+  errors: {
+    stepAfterGoal: 'תאריך הצעד אחרי תאריך היעד',
+    repeatsAfterGoal: 'החזרה נמשכת אחרי תאריך היעד',
+    stepsAfterGoal: (titles: string): string => `יש צעדים אחרי התאריך הזה: ${titles}`,
+    appointmentHour: 'לתור צריך תאריך ושעה',
   },
   summary: {
     overdue: 'באיחור',
@@ -749,19 +763,13 @@ export const labels = {
     waitingHint:
       'התזכורת תלויה בתאריך או בשעה של הפריט, ואין לו כרגע. היא תחזור לפעול כשיוגדר זמן.',
     rule: {
-      before: 'זמן מה לפני',
-      day: 'ביום מסוים, בשעה שבוחרים',
-      at: 'בתאריך ובשעה אחרים',
-      repeat: 'שוב ושוב',
+      before: 'זמן לפני',
+      day: 'בשעה קבועה',
+      at: 'מועד אחר',
+      repeat: 'חוזרת',
     },
-    ruleHint: {
-      before: 'למשל 10 דקות או שעה לפני השעה של הפריט',
-      day: 'ביום עצמו או כמה ימים לפני, למשל ב־09:00',
-      at: 'יום ושעה שלא קשורים לזמן של הפריט',
-      repeat: 'למשל כל יום ב־20:00, עד שהפריט נסגר',
-    },
-    howLongBefore: 'כמה זמן לפני השעה של הפריט',
-    howManyDaysBefore: 'באיזה יום (ביחס לתאריך הפריט)',
+    howLongBefore: 'כמה לפני',
+    howManyDaysBefore: 'באיזה יום',
     atWhatHour: 'באיזו שעה',
     date: 'תאריך',
     untilMode: {
@@ -831,7 +839,7 @@ export const labels = {
     yes: 'כן',
     no: 'לא',
     noRepeat: 'לא חוזר',
-    noRepeatHint: 'הפריט יפסיק לחזור ויישאר על המופע הנוכחי. הגדרות החזרה וההיסטוריה נשמרות.',
+    noRepeatHint: 'ההגדרות וההיסטוריה נשמרות',
     repeats: 'חוזר',
     appointmentHour: 'השעה של התור',
     every: 'כל כמה',
@@ -1063,10 +1071,20 @@ export const labels = {
   },
   convert: {
     convertTo: 'המרה ל',
-    stepsQuestion: 'מה לעשות בצעדים ובשאלות שלו?',
-    hideSteps: 'להסתיר אותם (יחזרו אם יחזור להיות יעד או סוגיה)',
-    detachSteps: 'להפוך אותם לפריטים עצמאיים',
-    hint: 'שום נתון לא נמחק בהמרה. אם חסר משהו לסוג החדש, הפריט יחכה לך ב"להשלמה".',
+    stepsQuestion: 'הצעדים שבתוכו',
+    hint: 'שום נתון לא נמחק בהמרה',
+    stepsHide: 'להסתיר',
+    stepsDetach: 'לפריטים עצמאיים',
+    whenStarts: 'מתי התור',
+    changes: {
+      targetFrom: (day: string): string => `תאריך היעד: ${day}`,
+      repeatHidden: 'החזרה נשמרת בצד',
+      timeHidden: 'הזמן נשמר בצד',
+      remindersHidden: 'תזכורות לפני הזמן נשמרות בצד',
+      repeatKept: 'החזרה נשארת',
+      oneHour: 'בתור נשארת שעה אחת',
+      placeHidden: 'מקום ועם מי נשמרים בצד',
+    },
   },
   questions: {
     answer: 'תשובה',

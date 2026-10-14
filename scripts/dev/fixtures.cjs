@@ -150,6 +150,7 @@ const item = (o) => {
     with_whom: null,
     series_id: null,
     in_main: false,
+    closed_with_parent: false,
     created_at: now,
     completed_at: null,
     ...o,
@@ -653,10 +654,19 @@ for (let n = 1; n <= 7; n += 1)
       done_by: n === 3 ? null : SP,
     }),
   );
+const occurrence_counts = Object.values(
+  occurrences.reduce((counts, o) => {
+    const c = (counts[o.item_id] ??= { item_id: o.item_id, done: 0, gone: 0 });
+    if (o.status === 'done') c.done += 1;
+    if (o.status !== 'closed_with_parent') c.gone += 1;
+    return counts;
+  }, {}),
+);
 module.exports = {
   tables: {
     item_repeats,
     occurrences,
+    occurrence_counts,
     item_reminders,
     tracker_entries,
     item_data,

@@ -5,6 +5,7 @@ import { toMessage } from '../lib/errors';
 import { announceItemsChanged, onItemsChanged } from '../lib/itemChanges';
 import {
   closeItem,
+  listOccurrenceCounts,
   listRepeats,
   markOccurrence,
   moveOccurrence,
@@ -13,13 +14,15 @@ import {
   stopRepeat,
   unmarkOccurrence,
 } from '../services/repeatService';
-import type { ItemRepeat, RepeatDraft } from '../types/domain';
+import type { ItemRepeat, OccurrenceCount, RepeatDraft } from '../types/domain';
 import { useHouseholdContext } from './useRouteContext';
 import { offerUndo } from './useUndoOffer';
 
 export type UseRepeats = {
   /** How each item repeats, by item id; kept also while another time is chosen. */
   readonly byItem: ReadonlyMap<string, ItemRepeat>;
+  /** How many occurrences each item has had, by item id. */
+  readonly counts: ReadonlyMap<string, OccurrenceCount>;
   readonly set: (itemId: string, draft: RepeatDraft) => void;
   readonly stop: (itemId: string) => void;
   readonly resume: (
@@ -36,8 +39,10 @@ export type UseRepeats = {
   readonly error: string | null;
 };
 
-function isRepeatSnapshot(value: unknown): value is { readonly rows: ItemRepeat[] } {
-  return hasRowLists(value, ['rows']);
+function isRepeatSnapshot(
+  value: unknown,
+): value is { readonly rows: ItemRepeat[]; readonly counts: OccurrenceCount[] } {
+  return hasRowLists(value, ['rows', 'counts']);
 }
 
 /** How items repeat, and every change to a series or its occurrences. */
@@ -47,14 +52,18 @@ export function useRepeats(): UseRepeats {
   const [rows, setRows] = useState<readonly ItemRepeat[]>(
     () => readCache(cacheKey, isRepeatSnapshot)?.rows ?? [],
   );
+  const [countRows, setCountRows] = useState<readonly OccurrenceCount[]>(
+    () => readCache(cacheKey, isRepeatSnapshot)?.counts ?? [],
+  );
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     try {
-      const fresh = await listRepeats();
+      const [fresh, counted] = await Promise.all([listRepeats(), listOccurrenceCounts()]);
       setRows(fresh);
+      setCountRows(counted);
       setError(null);
-      writeCache(cacheKey, { rows: fresh });
+      writeCache(cacheKey, { rows: fresh, counts: counted });
     } catch (caught: unknown) {
       setError(toMessage(caught));
     }
@@ -81,9 +90,11 @@ export function useRepeats(): UseRepeats {
   }, []);
 
   const byItem = useMemo(() => new Map(rows.map((row) => [row.item_id, row])), [rows]);
+  const counts = useMemo(() => new Map(countRows.map((row) => [row.item_id, row])), [countRows]);
 
   return {
     byItem,
+    counts,
     set: (itemId, draft): void => {
       void run(() => setRepeat(itemId, draft));
     },

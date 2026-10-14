@@ -27,6 +27,15 @@ type TimePickerProps = {
   readonly item: Item;
   readonly onPick: (choice: TimeChoice) => void;
   readonly repeat?: RepeatControls | undefined;
+  /** For a step of a goal with a date: the latest day it can have. */
+  readonly limit?: string | null | undefined;
+  /** For a goal: its open steps that end after a day, and how many repeat with no end. */
+  readonly goalSteps?:
+    | {
+        readonly after: (day: string) => readonly Item[];
+        readonly openEnded: number;
+      }
+    | undefined;
 };
 
 /** Urgent has no date but shows with today's, everywhere today's are shown. */
@@ -36,7 +45,13 @@ const undatedModes = ['urgent', 'anytime', 'waiting', 'someday'] as const;
  * When an item is due. The kind of time is the main choice; each opens below it, with what it
  * means and its settings, and applies only on save, so a choice can be changed before then.
  */
-export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElement {
+export function TimePicker({
+  item,
+  onPick,
+  repeat,
+  limit = null,
+  goalSteps,
+}: TimePickerProps): ReactElement {
   // A goal's date is a target for all its steps, and a goal does not repeat.
   const isGoal = item.kind === 'goal';
   const canRepeat = item.kind === 'task' && repeat !== undefined;
@@ -56,6 +71,10 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
     ...undatedModes,
   ];
   const chosen = panel ?? item.time_mode;
+  const tooLate = limit !== null && date > limit;
+  // A goal can not move before its steps; steps that repeat with no end will end on its date.
+  const lateSteps = goalSteps === undefined || date === '' ? [] : goalSteps.after(date);
+  const hadDate = item.time_mode === 'scheduled' && item.due_date !== null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -112,7 +131,7 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
           actions={
             <>
               <Button
-                disabled={date === ''}
+                disabled={date === '' || tooLate || lateSteps.length > 0}
                 onClick={() => {
                   onPick({
                     time_mode: 'scheduled',
@@ -137,8 +156,32 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
           }
         >
           <SettingRow label={isGoal ? labels.goals.targetDate : labels.fields.dueDate}>
-            <DateField label={labels.picker.pickDate} value={date} shortcuts onChange={setDate} />
+            <DateField
+              label={labels.picker.pickDate}
+              value={date}
+              max={limit ?? undefined}
+              shortcuts
+              onChange={setDate}
+            />
           </SettingRow>
+          {limit !== null && (
+            <p className={`text-[13px] ${tooLate ? 'text-alert' : 'text-muted'}`}>
+              {labels.goals.byTarget(formatPickedDate(limit))}
+            </p>
+          )}
+          {lateSteps.length > 0 && (
+            <p className="text-[13px] text-alert">
+              {labels.goals.fixFirst(lateSteps.map((step) => step.title).join(', '))}
+            </p>
+          )}
+          {lateSteps.length === 0 &&
+            !hadDate &&
+            goalSteps !== undefined &&
+            goalSteps.openEnded > 0 && (
+              <p className="text-[13px] text-muted">
+                {labels.goals.endOnTarget(goalSteps.openEnded)}
+              </p>
+            )}
           {!isGoal && (
             <SettingRow label={labels.fields.dueTime}>
               <TimeField label={labels.picker.pickHour} optional value={hour} onChange={setHour} />
@@ -150,6 +193,7 @@ export function TimePicker({ item, onPick, repeat }: TimePickerProps): ReactElem
       {panel === 'recurring' && repeat !== undefined && (
         <RepeatEditor
           item={item}
+          limit={limit}
           repeat={repeat.repeat}
           gone={repeat.gone}
           onSave={(draft) => {

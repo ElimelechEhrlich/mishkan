@@ -2,7 +2,9 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import type { Item } from '../../types/domain';
-import { isAfterTarget, todayIso } from '../../lib/itemRules';
+import { isLateStep } from '../../lib/goals';
+import { todayIso } from '../../lib/itemRules';
+import type { Lookups } from '../../lib/lookups';
 import { AddRow } from '../ui/AddRow';
 import { DueText } from './DueText';
 import { CheckButton } from '../ui/CheckButton';
@@ -12,6 +14,7 @@ type StepListProps = {
   readonly parent: Item;
   /** The steps of one goal or issue, done ones included. */
   readonly steps: readonly Item[];
+  readonly lookups: Lookups;
   readonly onComplete: (step: Item) => void;
   readonly onReopen: (stepId: string) => void;
   readonly onAdd: (title: string) => void;
@@ -20,6 +23,7 @@ type StepListProps = {
 export function StepList({
   parent,
   steps,
+  lookups,
   onComplete,
   onReopen,
   onAdd,
@@ -50,7 +54,17 @@ export function StepList({
               >
                 {step.title}
               </Link>
-              {!done && isAfterTarget(step, parent) && (
+              {step.closed_with_parent && (
+                <span className="text-[11px] font-semibold text-muted">
+                  {labels.goals.closedWithGoal}
+                </span>
+              )}
+              {isLateStep(
+                step,
+                parent,
+                lookups.repeats.get(step.id),
+                lookups.occurrenceCounts.get(step.id),
+              ) && (
                 <span className="text-[11px] font-semibold text-alert">
                   {labels.goals.afterTarget}
                 </span>

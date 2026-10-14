@@ -1,11 +1,24 @@
 import { supabase } from '../lib/supabase';
 import { allPages } from './pages';
-import type { ItemRepeat, Occurrence, OccurrenceStatus, RepeatDraft } from '../types/domain';
+import type {
+  ItemRepeat,
+  Occurrence,
+  OccurrenceCount,
+  OccurrenceStatus,
+  RepeatDraft,
+} from '../types/domain';
 
 /** How every item the parent can see repeats, including settings kept while another time is chosen. */
 export async function listRepeats(): Promise<ItemRepeat[]> {
   return allPages((from, to) =>
     supabase.from('item_repeats').select('*').order('item_id').range(from, to),
+  );
+}
+
+/** How many occurrences each item has had, done and gone by, for a goal's progress. */
+export async function listOccurrenceCounts(): Promise<OccurrenceCount[]> {
+  return allPages((from, to) =>
+    supabase.from('occurrence_counts').select('*').order('item_id').range(from, to),
   );
 }
 

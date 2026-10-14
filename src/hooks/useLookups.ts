@@ -22,6 +22,14 @@ export function useLookups(
         dayTimes.set(itemId, times);
       }
     }
-    return buildLookups(entities, members, data.byItem, entries.byItem, dayTimes);
-  }, [entities, members, data.byItem, entries.byItem, repeats.byItem]);
+    return buildLookups(
+      entities,
+      members,
+      data.byItem,
+      entries.byItem,
+      dayTimes,
+      repeats.byItem,
+      repeats.counts,
+    );
+  }, [entities, members, data.byItem, entries.byItem, repeats.byItem, repeats.counts]);
 }

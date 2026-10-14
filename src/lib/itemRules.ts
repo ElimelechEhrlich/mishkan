@@ -407,16 +407,6 @@ export function sectionOfEntry(
   return section;
 }
 
-/** A step dated after its goal's target date: the plan does not fit the goal. */
-export function isAfterTarget(step: Item, goal: Item): boolean {
-  return (
-    goal.kind === 'goal' &&
-    goal.due_date !== null &&
-    step.due_date !== null &&
-    step.due_date > goal.due_date
-  );
-}
-
 /**
  * For one list of mixed rows, such as a domain's: late first, then urgent, then by how
  * soon they are due, as the sections of the time lists run.

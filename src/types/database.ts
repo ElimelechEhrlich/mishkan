@@ -220,6 +220,8 @@ export type Database = {
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
+          /** Closed because its goal or issue was closed, not done; opens again with it. */
+          closed_with_parent: boolean;
         };
         Insert: {
           id?: string;
@@ -594,7 +596,16 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      occurrence_counts: {
+        Row: {
+          item_id: string;
+          /** Occurrences marked done. */
+          done: number;
+          /** Occurrences gone by: done, skipped or missed. */
+          gone: number;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       set_repeat: {
@@ -708,6 +719,8 @@ export type Database = {
           p_amount?: number;
           p_counterparty?: string;
           p_direction?: DebtDirection;
+          /** For a new appointment whose item has no hour. */
+          p_starts_at?: string;
         };
         Returns: undefined;
       };

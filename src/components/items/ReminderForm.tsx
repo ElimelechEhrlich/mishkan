@@ -172,7 +172,6 @@ export function ReminderForm({
           options={choices.map((rule) => ({
             value: rule,
             label: labels.reminders.rule[rule],
-            hint: labels.reminders.ruleHint[rule],
           }))}
           value={fields.rule}
           onChange={chooseRule}

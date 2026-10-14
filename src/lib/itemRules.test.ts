@@ -7,7 +7,6 @@ import {
   missingFields,
   seriesStarts,
   snoozeUntil,
-  isAfterTarget,
   nextDueDate,
   rowsOfSegment,
   sectionOfEntry,
@@ -45,6 +44,7 @@ function item(overrides: Partial<Item>): Item {
     created_at: '',
     completed_at: null,
     is_complete: true,
+    closed_with_parent: false,
     auto_key: null,
     reminder_sent_at: null,
     remind_member_ids: null,
@@ -212,12 +212,6 @@ describe('goal target dates', () => {
     const goal = item({ id: 'g', kind: 'goal', due_date: '2026-10-20' });
     const [entry] = toListEntries([goal], []);
     expect(entry?.dueDate).toBe('2026-10-20');
-  });
-
-  it('marks a step dated after the target', () => {
-    const goal = item({ id: 'g', kind: 'goal', due_date: '2026-10-12' });
-    expect(isAfterTarget(item({ due_date: '2026-10-13' }), goal)).toBe(true);
-    expect(isAfterTarget(item({ due_date: '2026-10-12' }), goal)).toBe(false);
   });
 });
 

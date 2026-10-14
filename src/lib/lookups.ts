@@ -4,7 +4,9 @@ import type {
   EntityWithDomains,
   Item,
   ItemData,
+  ItemRepeat,
   Member,
+  OccurrenceCount,
   ShoppingTarget,
   TrackerEntry,
 } from '../types/domain';
@@ -44,6 +46,10 @@ export type Lookups = {
   readonly trackerEntries: ReadonlyMap<string, readonly TrackerEntry[]>;
   /** The hours of each day of a repeating item (HH:MM), by item id, when it has more than one. */
   readonly dayTimes: ReadonlyMap<string, readonly string[]>;
+  /** How each item repeats, by item id. */
+  readonly repeats: ReadonlyMap<string, ItemRepeat>;
+  /** How many occurrences each item has had, by item id. */
+  readonly occurrenceCounts: ReadonlyMap<string, OccurrenceCount>;
 };
 
 export function buildLookups(
@@ -52,6 +58,8 @@ export function buildLookups(
   itemData: ReadonlyMap<string, readonly ItemData[]> = new Map(),
   trackerEntries: ReadonlyMap<string, readonly TrackerEntry[]> = new Map(),
   dayTimes: ReadonlyMap<string, readonly string[]> = new Map(),
+  repeats: ReadonlyMap<string, ItemRepeat> = new Map(),
+  occurrenceCounts: ReadonlyMap<string, OccurrenceCount> = new Map(),
 ): Lookups {
   const domainLabels = new Map<string, string>();
   const domainTones = new Map<string, EntityTone>();
@@ -72,6 +80,8 @@ export function buildLookups(
     itemData,
     trackerEntries,
     dayTimes,
+    repeats,
+    occurrenceCounts,
   };
 }
 

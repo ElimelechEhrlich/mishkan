@@ -1,3 +1,4 @@
+import { goalProgress, goalTarget, isOpenEnded, stepsAfter } from '../../lib/goals';
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
@@ -143,6 +144,7 @@ const convertibleKinds = [
   'tracker',
   'debt',
   'missing_item',
+  'appointment',
 ] as const satisfies readonly ConvertibleKind[];
 
 function asConvertible(kind: ItemKind): ConvertibleKind | null {
@@ -290,6 +292,7 @@ export function ItemEditor({
   );
   const parent = goals.find((goal) => goal.id === item.parent_id);
   const parentTitle = parent?.title;
+  const progress = goalProgress(steps, lookups.repeats, lookups.occurrenceCounts);
 
   return (
     <div className="flex flex-col gap-4">
@@ -317,14 +320,11 @@ export function ItemEditor({
         )}
         {isAppointment && <AppointmentActions item={item} />}
         {/* Every step done: the goal may be reached, but it is closed only when asked. */}
-        {item.kind === 'goal' &&
-          !done &&
-          steps.length > 0 &&
-          steps.every((step) => step.status === 'done') && (
-            <p className="text-center text-sm font-semibold text-primary">
-              {labels.goals.allStepsDone}
-            </p>
-          )}
+        {item.kind === 'goal' && !done && progress.allDone && (
+          <p className="text-center text-sm font-semibold text-primary">
+            {labels.goals.allStepsDone}
+          </p>
+        )}
       </Card>
 
       {debt !== null && (
@@ -352,6 +352,8 @@ export function ItemEditor({
               kind={convertible}
               hasSteps={steps.length > 0 || questions.length > 0 || trackers.length > 0}
               hasDebtDetails={hasDebtDetails}
+              repeat={repeat}
+              reminders={reminders}
               onConvert={(conversion) => {
                 onConvert(item.id, conversion);
                 setOpenRow(null);
@@ -532,6 +534,24 @@ export function ItemEditor({
             <TimePicker
               item={item}
               onPick={update}
+              limit={parent === undefined ? null : goalTarget(parent)}
+              goalSteps={
+                item.kind === 'goal'
+                  ? {
+                      // Only a new or earlier date is checked; steps that repeat with no end
+                      // will end on it.
+                      after: (day): readonly Item[] => {
+                        const target = goalTarget(item);
+                        return target !== null && day >= target
+                          ? []
+                          : stepsAfter(steps, day, lookups.repeats, lookups.occurrenceCounts, true);
+                      },
+                      openEnded: steps.filter((step) =>
+                        isOpenEnded(step, lookups.repeats.get(step.id)),
+                      ).length,
+                    }
+                  : undefined
+              }
               repeat={{
                 ...repeatControls,
                 onSave: (draft) => {
@@ -705,6 +725,7 @@ export function ItemEditor({
           <StepList
             parent={item}
             steps={steps}
+            lookups={lookups}
             onComplete={onComplete}
             onReopen={onReopen}
             onAdd={(title) => {

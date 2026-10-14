@@ -216,6 +216,9 @@ export async function convertItem(itemId: string, conversion: Conversion): Promi
           p_counterparty: conversion.debt.counterparty,
           p_direction: conversion.debt.direction,
         }),
+    ...(conversion.startsAt === null
+      ? {}
+      : { p_starts_at: fromLocalDateTime(conversion.startsAt) }),
   });
   if (error !== null) {
     throw new Error(error.message);

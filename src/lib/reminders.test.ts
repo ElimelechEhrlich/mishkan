@@ -43,6 +43,7 @@ function item(overrides: Partial<Item>): Item {
     created_at: '',
     completed_at: null,
     is_complete: true,
+    closed_with_parent: false,
     auto_key: null,
     reminder_sent_at: null,
     remind_member_ids: null,

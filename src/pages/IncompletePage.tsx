@@ -22,9 +22,10 @@ export function IncompletePage(): ReactElement {
     >
       <ErrorBanner message={items.error ?? entities.error ?? repeats.error} />
       <AttentionList
-        entries={items.attention.map((item) => ({
+        entries={items.attention.map(({ item, reason }) => ({
           item,
-          reason: labels.reminders.attentionWaiting,
+          reason:
+            reason === 'lateStep' ? labels.goals.attentionLate : labels.reminders.attentionWaiting,
         }))}
       />
       {(items.incomplete.length > 0 || items.attention.length === 0) && (

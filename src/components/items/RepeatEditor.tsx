@@ -23,6 +23,8 @@ type RepeatEditorProps = {
   readonly onCancel: () => void;
   readonly onStop: () => void;
   readonly onResume: (end: Pick<RepeatDraft, 'endKind' | 'endCount' | 'endUntil'>) => void;
+  /** For a step of a goal with a date: the series ends by it, and can not go on with no end. */
+  readonly limit?: string | null | undefined;
 };
 
 const endKinds = ['never', 'count', 'until'] as const satisfies readonly RepeatEnd[];
@@ -36,9 +38,15 @@ export function RepeatEditor({
   onCancel,
   onStop,
   onResume,
+  limit = null,
 }: RepeatEditorProps): ReactElement {
   const today = todayIso();
-  const original = startingRepeat(item, repeat);
+  const starting = startingRepeat(item, repeat);
+  // Within a goal's date it ends by that date, unless set otherwise.
+  const original: RepeatDraft =
+    limit !== null && starting.endKind === 'never'
+      ? { ...starting, endKind: 'until', endCount: null, endUntil: limit }
+      : starting;
   const [draft, setDraft] = useState<RepeatDraft>(original);
   // When the end changes kind it is set anew: how many times from today.
   const [freshCount, setFreshCount] = useState(5);
@@ -72,7 +80,7 @@ export function RepeatEditor({
     set({
       endKind: kind,
       endCount: kind === 'count' ? gone + freshCount : null,
-      endUntil: kind === 'until' ? (draft.endUntil ?? addDays(today, 30)) : null,
+      endUntil: kind === 'until' ? (draft.endUntil ?? limit ?? addDays(today, 30)) : null,
     });
   }
 
@@ -82,9 +90,15 @@ export function RepeatEditor({
     draft.startsOn !== '' &&
     (!isAppointment || draft.times.length === 1) &&
     (draft.endKind !== 'count' || total >= leastTotal) &&
-    (draft.endKind !== 'until' || (draft.endUntil !== null && draft.endUntil >= today));
+    (draft.endKind !== 'until' ||
+      (draft.endUntil !== null &&
+        draft.endUntil >= today &&
+        (limit === null || draft.endUntil <= limit))) &&
+    (limit === null || draft.endKind !== 'never');
   const end = { endKind: draft.endKind, endCount: draft.endCount, endUntil: draft.endUntil };
-  const canResume = draft.endKind !== 'count' || (draft.endCount !== null && draft.endCount > gone);
+  const canResume =
+    (draft.endKind !== 'count' || (draft.endCount !== null && draft.endCount > gone)) &&
+    (limit === null || draft.endKind !== 'never');
 
   const stopControls = (
     <>
@@ -325,10 +339,12 @@ export function RepeatEditor({
         >
           <OptionGroup
             label={labels.repeat.end}
-            options={endKinds.map((kind) => ({
-              value: kind,
-              label: labels.repeat.endKind[kind],
-            }))}
+            options={endKinds
+              .filter((kind) => limit === null || kind !== 'never')
+              .map((kind) => ({
+                value: kind,
+                label: labels.repeat.endKind[kind],
+              }))}
             value={draft.endKind}
             onChange={chooseEnd}
           />
@@ -364,6 +380,7 @@ export function RepeatEditor({
                 label={labels.repeat.untilWhich}
                 value={draft.endUntil ?? ''}
                 min={today}
+                max={limit ?? undefined}
                 onChange={(endUntil) => {
                   set({ endUntil: endUntil === '' ? null : endUntil });
                 }}

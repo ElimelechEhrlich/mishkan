@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
-import { isAfterTarget, segmentOf } from '../../lib/itemRules';
+import { goalProgress, isLateStep } from '../../lib/goals';
+import { segmentOf } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
@@ -40,9 +41,10 @@ export function GoalRow({
   const shown = resting
     ? open.filter((step) => step.due_date === null && step.time_mode !== 'urgent')
     : open;
-  const doneCount = steps.length - open.length;
-  const percent = steps.length === 0 ? 0 : Math.round((doneCount / steps.length) * 100);
-  const progress = `${String(doneCount)} ${labels.goals.progressOf} ${String(steps.length)}`;
+  // Counted by occurrences: a repeating step counts each of its times.
+  const counted = goalProgress(steps, lookups.repeats, lookups.occurrenceCounts);
+  const percent = counted.total === 0 ? 0 : Math.round((counted.done / counted.total) * 100);
+  const progress = `${String(counted.done)} ${labels.goals.progressOf} ${String(counted.total)}`;
 
   return (
     <li className="group flex gap-3 ps-3.5">
@@ -89,7 +91,12 @@ export function GoalRow({
                   className="flex min-w-0 flex-1 items-center gap-2 text-sm active:opacity-70"
                 >
                   <span className="min-w-0 flex-1 break-words">{step.title}</span>
-                  {isAfterTarget(step, goal) && (
+                  {isLateStep(
+                    step,
+                    goal,
+                    lookups.repeats.get(step.id),
+                    lookups.occurrenceCounts.get(step.id),
+                  ) && (
                     <span className="text-[11px] font-semibold text-alert">
                       {labels.goals.afterTarget}
                     </span>

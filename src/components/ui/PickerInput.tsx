@@ -6,6 +6,7 @@ type PickerInputProps = {
   readonly onChange: (value: string) => void;
   readonly label: string;
   readonly min?: string | undefined;
+  readonly max?: string | undefined;
   /** What the field shows: an icon and the chosen value in words. */
   readonly children: ReactNode;
 };
@@ -20,6 +21,7 @@ export function PickerInput({
   onChange,
   label,
   min,
+  max,
   children,
 }: PickerInputProps): ReactElement {
   return (
@@ -30,6 +32,7 @@ export function PickerInput({
         aria-label={label}
         value={value}
         min={min}
+        max={max}
         onChange={(event) => {
           onChange(event.target.value);
         }}

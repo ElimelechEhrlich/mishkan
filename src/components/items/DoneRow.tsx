@@ -72,6 +72,11 @@ export function DoneRow({ item, lookups, onReopen, onUnmark }: DoneRowProps): Re
               {labels.occurrence[occurrence.status]}
             </span>
           )}
+          {occurrence === undefined && item.closed_with_parent && (
+            <span className="rounded-[5px] bg-line/70 px-1.5 text-[11px] font-semibold">
+              {labels.goals.closedWithGoal}
+            </span>
+          )}
           {item.kind !== 'task' && (
             <span className="rounded-[5px] bg-line/70 px-1.5 text-[11px] font-semibold">
               {labels.kind[item.kind]}

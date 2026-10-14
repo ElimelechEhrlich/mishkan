@@ -190,6 +190,7 @@ export function useShopping(
         detachSteps: false,
         category: null,
         debt: null,
+        startsAt: null,
       });
     },
     [convertItem],

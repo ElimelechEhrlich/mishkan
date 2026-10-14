@@ -12,6 +12,8 @@ type DateFieldProps = {
   readonly label: string;
   /** The earliest day that can be chosen. */
   readonly min?: string | undefined;
+  /** The latest day that can be chosen. */
+  readonly max?: string | undefined;
   /** Offers today, tomorrow and in a week as one tap each. */
   readonly shortcuts?: boolean;
 };
@@ -25,6 +27,7 @@ export function DateField({
   onChange,
   label,
   min,
+  max,
   shortcuts = false,
 }: DateFieldProps): ReactElement {
   const today = todayIso();
@@ -32,11 +35,14 @@ export function DateField({
     { day: today, text: labels.picker.today },
     { day: addDays(today, 1), text: labels.picker.tomorrow },
     { day: addDays(today, 7), text: labels.picker.inWeek },
-  ].filter((choice) => min === undefined || choice.day >= min);
+  ].filter(
+    (choice) =>
+      (min === undefined || choice.day >= min) && (max === undefined || choice.day <= max),
+  );
 
   return (
     <div className="flex flex-col gap-1.5">
-      <PickerInput type="date" value={value} onChange={onChange} label={label} min={min}>
+      <PickerInput type="date" value={value} onChange={onChange} label={label} min={min} max={max}>
         <Icon name="calendar" className="size-4.5 shrink-0 text-primary" />
         <span className={value === '' ? 'text-faint' : 'text-ink'}>
           {value === '' ? label : formatPickedDate(value)}
