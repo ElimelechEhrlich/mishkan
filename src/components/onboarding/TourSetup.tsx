@@ -19,7 +19,7 @@ type TourSetupProps = {
 export function TourSetup({ memberId, parents, onClose }: TourSetupProps): ReactElement | null {
   const setup = useSetupSteps(cachedEntities(memberId), parents);
   const navigate = useNavigate();
-  const steps = setup.steps.filter((entry) => entry.step !== 'tour');
+  const steps = setup.steps;
 
   return (
     <div className="w-full text-start">

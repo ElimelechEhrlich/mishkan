@@ -7,7 +7,7 @@ import { apkPath } from '../../lib/install';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 
-/** A small text button, for what is rarely needed: bringing a step back, the tour again. */
+/** A small text button, for what is rarely needed: bringing a step back. */
 const quietLinkClass = 'min-h-9 px-1.5 text-[13px] font-medium text-primary';
 
 type SetupCardProps = {
@@ -26,7 +26,7 @@ type SetupCardProps = {
 /**
  * "Getting started": the first steps, each done, put aside, or with a button to do it. It stays
  * in its place: once nothing is left it folds to one line, and opening it shows every step, so
- * one put aside can be brought back and the tour seen again.
+ * one put aside can be brought back.
  */
 export function SetupCard({
   steps,
@@ -103,19 +103,7 @@ export function SetupCard({
                   >
                     {labels.setup.bringBack}
                   </button>
-                ) : done ? (
-                  step === 'tour' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onAct(step);
-                      }}
-                      className={quietLinkClass}
-                    >
-                      {labels.setup.again}
-                    </button>
-                  )
-                ) : (
+                ) : done ? null : (
                   <>
                     <button
                       type="button"

@@ -10,7 +10,6 @@ import { usePushNotifications } from './usePushNotifications';
 import type { UsePushNotifications } from './usePushNotifications';
 import { useHouseholdContext } from './useRouteContext';
 
-const tourDoneKey = 'mishkan.tourDone';
 const setAsideKey = 'mishkan.setupSetAside';
 const pushNotNowKey = 'mishkan.pushNotNow';
 
@@ -58,18 +57,12 @@ function setAside(): ReadonlySet<SetupStep> {
   }
 }
 
-/** The full tour was gone through to its end on this device. */
-export function markTourDone(): void {
-  write(tourDoneKey, 'yes');
-}
-
 function facts(
   entities: readonly EntityWithDomains[],
   parents: number,
   notificationsOn: boolean,
 ): SetupFacts {
   return {
-    tourDone: read(tourDoneKey) === 'yes',
     hasChildren: entities.some((entity) => entity.kind === 'child'),
     bothParents: parents >= 2,
     notificationsOn,

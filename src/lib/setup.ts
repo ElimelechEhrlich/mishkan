@@ -1,11 +1,10 @@
 /** The first things to do in the app, in order. */
-export const setupSteps = ['tour', 'children', 'invite', 'notifications', 'install'] as const;
+export const setupSteps = ['children', 'invite', 'notifications', 'install'] as const;
 
 export type SetupStep = (typeof setupSteps)[number];
 
 /** What is known of the home and of this device, for the first steps. */
 export type SetupFacts = {
-  readonly tourDone: boolean;
   readonly hasChildren: boolean;
   readonly bothParents: boolean;
   readonly notificationsOn: boolean;
@@ -26,8 +25,6 @@ export type SetupState = {
 /** Whether a step is done; a step that can not be done here is left out (null). */
 function stateOf(step: SetupStep, facts: SetupFacts): boolean | null {
   switch (step) {
-    case 'tour':
-      return facts.tourDone;
     case 'children':
       return facts.hasChildren;
     case 'invite':

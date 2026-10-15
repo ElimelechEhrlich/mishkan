@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { markTourDone } from '../../hooks/useSetupSteps';
 import { TourSetup } from './TourSetup';
 import { TourVisual } from './TourVisual';
 import type { TourStep } from './TourVisual';
@@ -63,13 +62,6 @@ export function WelcomeTour({ memberId, parents, onClose }: WelcomeTourProps): R
   const [direction, setDirection] = useState<'next' | 'previous'>('next');
   const touchStart = useRef<number | null>(null);
   const step = steps[index];
-  const reachedEnd = index === steps.length - 1;
-  // Gone through to its last page: the tour is done, among the first steps.
-  useEffect(() => {
-    if (reachedEnd) {
-      markTourDone();
-    }
-  }, [reachedEnd]);
   if (step === undefined) {
     return null;
   }

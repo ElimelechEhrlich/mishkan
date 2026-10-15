@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { ReactElement } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { EntitySettings } from '../components/settings/EntitySettings';
 import { ApkUpdateCard } from '../components/settings/ApkUpdateCard';
 import { AutoReminderCard } from '../components/settings/AutoReminderCard';
@@ -26,7 +26,6 @@ export function SettingsPage(): ReactElement {
   const items = useItems();
   const settings = useEntitySettings(member, entities.entities, entities.reload);
   const setup = useSetupSteps(entities.entities, members.length);
-  const navigate = useNavigate();
   const { hash } = useLocation();
 
   // Arriving for a step (from the tour's end), the page opens at the place it is done.
@@ -55,6 +54,17 @@ export function SettingsPage(): ReactElement {
     >
       <ErrorBanner message={entities.error ?? setup.push.error} />
       <ApkUpdateCard />
+      <Link
+        to="/?tour=1"
+        className="group block overflow-hidden rounded-2xl bg-surface shadow-card active:bg-paper"
+      >
+        <ListRow
+          icon="help"
+          title={labels.tour.replay}
+          subtitle={labels.tour.replayHint}
+          trailing={<Icon name="forward" className="size-4 text-faint" />}
+        />
+      </Link>
       <SetupCard
         steps={setup.steps}
         pushBlocked={setup.push.status === 'blocked'}
@@ -62,9 +72,7 @@ export function SettingsPage(): ReactElement {
         onSetAside={setup.setAside}
         onBringBack={setup.bringBack}
         onAct={(step) => {
-          if (step === 'tour') {
-            void navigate('/?tour=1');
-          } else if (step === 'notifications') {
+          if (step === 'notifications') {
             setup.push.enable();
           } else if (step === 'children') {
             scrollTo('setup-children');
@@ -88,14 +96,6 @@ export function SettingsPage(): ReactElement {
           {labels.settings.account}
         </h2>
         <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
-          <Link to="/?tour=1" className="group block active:bg-paper">
-            <ListRow
-              icon="help"
-              title={labels.tour.replay}
-              subtitle={labels.tour.replayHint}
-              trailing={<Icon name="forward" className="size-4 text-faint" />}
-            />
-          </Link>
           <ListRow
             icon="logout"
             iconClass="bg-alert-soft text-alert"

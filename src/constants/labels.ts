@@ -448,14 +448,12 @@ export const labels = {
   setup: {
     title: 'מתחילים',
     steps: {
-      tour: 'ההדרכה המלאה',
       children: 'הוספת הילדים',
       invite: 'הזמנת ההורה השני',
       notifications: 'התראות בטלפון הזה',
       install: 'התקנה כאפליקציה',
     },
     actions: {
-      tour: 'להדרכה',
       children: 'הוספה',
       invite: 'הזמנה',
       notifications: 'הפעלה',
@@ -463,7 +461,6 @@ export const labels = {
     },
     notRelevant: 'לא רלוונטי',
     allSet: 'הכול מוכן',
-    again: 'שוב',
     bringBack: 'החזרה',
     left: (count: number): string =>
       count === 1 ? 'נשאר צעד אחד' : `נשארו ${String(count)} צעדים`,
