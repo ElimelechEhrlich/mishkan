@@ -9,7 +9,7 @@ function paths(name) {
   const m = new RegExp(`\\b${name}: \\[([\\s\\S]*?)\\]`).exec(src);
   return [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
 }
-const icons = { shopping: 'cart', new: 'plus', incomplete: 'alert', today: 'calendar', debts: 'wallet' };
+const icons = { shopping: 'cart', new: 'plus', incomplete: 'alert', today: 'calendar' };
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 192, height: 192 } });
