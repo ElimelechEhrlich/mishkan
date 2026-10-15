@@ -17,7 +17,7 @@ type TimelineListProps = {
 /**
  * Every item that runs on time, across the whole home, on one card: today's groups as on
  * the today page, and on to tomorrow, the coming week, later, no date, waiting and the
- * shelf. The long ones at the end start folded, with their count.
+ * shelf. Every group starts folded, with its count.
  */
 export function TimelineList({
   timeline,
@@ -32,13 +32,12 @@ export function TimelineList({
       label: labels.section.urgent,
       entries: timeline.urgent,
       alert: true,
-      open: true,
     },
-    { key: 'today', label: labels.section.today, entries: timeline.today, open: true },
-    { key: 'ended', label: labels.section.ended, entries: timeline.ended, open: true },
+    { key: 'today', label: labels.section.today, entries: timeline.today },
+    { key: 'ended', label: labels.section.ended, entries: timeline.ended },
     { key: 'passed', label: labels.section.passed, entries: timeline.passed },
-    { key: 'tomorrow', label: labels.today.tomorrow, entries: timeline.tomorrow, open: true },
-    { key: 'thisWeek', label: labels.section.thisWeek, entries: timeline.thisWeek, open: true },
+    { key: 'tomorrow', label: labels.today.tomorrow, entries: timeline.tomorrow },
+    { key: 'thisWeek', label: labels.section.thisWeek, entries: timeline.thisWeek },
     { key: 'upcoming', label: labels.section.upcoming, entries: timeline.upcoming },
     { key: 'undated', label: labels.section.undated, entries: timeline.undated },
     { key: 'waiting', label: labels.segment.waiting, entries: timeline.waiting },
@@ -57,7 +56,6 @@ export function TimelineList({
           lookups={lookups}
           onComplete={onComplete}
           alert={group.alert ?? false}
-          defaultOpen={group.open ?? false}
         />
       ))}
     </section>
