@@ -7,12 +7,19 @@ import { useHouseholdContext } from './useRouteContext';
  * chooses the entity (or everything) and that arrangement, then goes there in place of
  * the old address.
  */
-export function useOpenOnMain(entityId: string | null): void {
+export function useOpenOnMain(
+  entityId: string | null,
+  /** False while the entity is still being found; it goes there once it is known. */
+  ready = true,
+): void {
   const { setScope, setHomeView } = useHouseholdContext();
   const navigate = useNavigate();
   useEffect(() => {
+    if (!ready) {
+      return;
+    }
     setScope(entityId);
     setHomeView('domain');
     void navigate('/', { replace: true });
-  }, [entityId, setScope, setHomeView, navigate]);
+  }, [entityId, ready, setScope, setHomeView, navigate]);
 }
