@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>משכן · מפתח לטקסט</title>
+<style>
+  body { margin: 0; background: #f6f1e7; color: #1d1d1f; font: 16px/1.6 system-ui, sans-serif; }
+  main { max-width: 32rem; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 14px; }
+  h1 { margin: 0; font-size: 22px; color: #1f5c52; }
+  p { margin: 0; }
+  .note { font-size: 14px; color: #86868b; }
+  label.pick, button { display: block; text-align: center; padding: 14px; border-radius: 14px; font: inherit; font-weight: 600; border: 0; }
+  label.pick { background: #1f5c52; color: #fff; }
+  button { background: #e6f0ed; color: #1f5c52; width: 100%; }
+  button:disabled { opacity: .4; }
+  textarea { width: 100%; box-sizing: border-box; height: 7em; border-radius: 12px; border: 1px solid #ebebe8; padding: 10px; font: 12px/1.4 monospace; direction: ltr; background: #fff; }
+  input { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>מפתח החתימה לטקסט</h1>
+  <p>בוחרים את קובץ המפתח (<span dir="ltr">signing.keystore</span>). הוא נקרא כאן בטלפון בלבד, ולא נשלח לשום מקום.</p>
+  <label class="pick" for="file">בחירת קובץ המפתח</label>
+  <input id="file" type="file">
+  <p id="name" class="note"></p>
+  <textarea id="out" readonly placeholder="הטקסט יופיע כאן"></textarea>
+  <button id="copy" disabled>העתקה</button>
+  <p class="note">את הטקסט מדביקים ב־GitHub, בסוד <span dir="ltr">ANDROID_KEYSTORE_BASE64</span>, ולא בשום מקום אחר. אחרי ההדבקה אפשר לסגור את הדף.</p>
+</main>
+<script>
+  const out = document.getElementById('out');
+  const copy = document.getElementById('copy');
+  document.getElementById('file').addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    out.value = btoa(binary);
+    document.getElementById('name').textContent = file.name + ' · ' + bytes.length + ' בתים';
+    copy.disabled = false;
+    copy.textContent = 'העתקה';
+  });
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(out.value);
+    } catch {
+      out.select();
+      document.execCommand('copy');
+    }
+    copy.textContent = 'הועתק ✓';
+  });
+</script>
+</body>
+</html>

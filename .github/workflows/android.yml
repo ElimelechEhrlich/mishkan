@@ -74,6 +74,14 @@ jobs:
             '.signingKey.alias = $alias | .appVersionCode = $code | .appVersionName = ("1." + ($code|tostring))' \
             .github/twa-manifest.json > build/twa-manifest.json
 
+      - name: Android SDK
+        run: |
+          set -euo pipefail
+          # Bubblewrap looks for the SDK's tools under tools/, and builds with these versions.
+          sudo ln -sfn "$ANDROID_HOME/cmdline-tools/latest" "$ANDROID_HOME/tools"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            "build-tools;36.1.0" "platforms;android-36" > /dev/null
+
       - name: Build
         working-directory: build
         run: |
