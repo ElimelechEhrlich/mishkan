@@ -124,4 +124,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/mishkan.apk
           git commit -m "Android app: version 1.$((GITHUB_RUN_NUMBER + 1))"
+          # Main may have moved on while building.
+          git pull --rebase origin main
           git push origin HEAD:main
