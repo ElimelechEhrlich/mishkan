@@ -33,6 +33,7 @@ const pages: readonly { readonly step: TourStep; readonly section: TourSection }
   { step: 'notes', section: 'items' },
   { step: 'trackers', section: 'items' },
   { step: 'shopping', section: 'items' },
+  { step: 'debts', section: 'items' },
   { step: 'add', section: 'items' },
   { step: 'incomplete', section: 'items' },
   { step: 'arenas', section: 'places' },

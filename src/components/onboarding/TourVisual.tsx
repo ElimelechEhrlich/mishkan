@@ -264,13 +264,74 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
       );
     case 'shopping':
       return (
-        <div className="flex gap-3">
-          {(['cart', 'wallet'] as const).map((icon) => (
+        <div className={`${cardClass} overflow-hidden`}>
+          <span className="px-3.5 pt-3 pb-2 text-[15px] font-semibold">
+            {labels.tour.runSample.title}
+          </span>
+          {labels.tour.runSample.departments.map((department) => {
+            const done = department.items.length === 0;
+            return (
+              <div key={department.name} className="flex flex-col">
+                <span
+                  className={`flex items-center gap-1.5 border-t border-line px-3.5 py-1 ${
+                    done ? 'bg-primary-soft/60' : 'bg-paper'
+                  }`}
+                >
+                  {done && <Icon name="check" className="size-3 text-primary" />}
+                  <span className={`text-[11px] font-bold ${done ? 'text-primary' : 'text-muted'}`}>
+                    {department.name}
+                  </span>
+                  <span className="text-[10px] text-faint">{department.count}</span>
+                  <Icon
+                    name="down"
+                    className={`ms-auto size-3 text-faint ${done ? '' : 'rotate-180'}`}
+                  />
+                </span>
+                {department.items.map((row) => (
+                  <span
+                    key={row.title}
+                    className="flex items-center gap-2.5 border-t border-line px-3.5 py-2 text-sm"
+                  >
+                    <span
+                      className={`flex size-4 items-center justify-center rounded-full ${
+                        row.bought ? 'bg-primary text-white' : 'border-2 border-faint'
+                      }`}
+                    >
+                      {row.bought && <Icon name="check" className="size-3" />}
+                    </span>
+                    <span className={row.bought ? 'text-muted line-through' : 'font-medium'}>
+                      {row.title}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      );
+    case 'debts':
+      return (
+        <div className={`${cardClass} overflow-hidden`}>
+          <span className="flex items-center gap-2 px-3.5 py-2.5">
+            <Icon name="wallet" className="size-5 text-primary" />
+            <span className="text-[13px] font-semibold text-primary">
+              {labels.tour.debtSample.total}
+            </span>
+          </span>
+          {labels.tour.debtSample.rows.map((row) => (
             <span
-              key={icon}
-              className="flex size-20 items-center justify-center rounded-[24px] bg-surface text-primary shadow-card"
+              key={row.name}
+              className="flex items-center gap-2 border-t border-line px-3.5 py-2.5"
             >
-              <Icon name={icon} className="size-10" />
+              <span className="flex flex-1 flex-col">
+                <span className="text-[15px] font-medium">{row.name}</span>
+                <span className="text-xs text-muted">{row.direction}</span>
+              </span>
+              <span
+                className={`text-[15px] font-semibold ${row.ours ? 'text-alert' : 'text-primary'}`}
+              >
+                {row.amount}
+              </span>
             </span>
           ))}
         </div>
