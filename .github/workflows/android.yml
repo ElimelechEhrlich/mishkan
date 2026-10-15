@@ -1,0 +1,114 @@
+name: Android app
+
+# Builds the Android app (mishkan.apk): a shell that opens the site full screen, with the
+# shortcuts and icons of .github/twa-manifest.json. Run it from the Actions tab whenever the
+# shortcuts or the icon change; changes to the site itself reach the app without it.
+#
+# With the signing key in the secrets, the new APK replaces public/mishkan.apk on main, so the
+# install button serves it, and it installs over the one on the phone. Without them, it is
+# only a test: built with a throwaway key, kept as a run artifact, and not published.
+#
+# Secrets (Settings -> Secrets and variables -> Actions), from the key of the first build:
+#   ANDROID_KEYSTORE_BASE64    the keystore file, as base64
+#   ANDROID_KEYSTORE_PASSWORD  the keystore's password
+#   ANDROID_KEY_ALIAS          the key's alias
+#   ANDROID_KEY_PASSWORD       the key's password
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      # The fingerprint public/.well-known/assetlinks.json trusts: the APK must be signed with it.
+      EXPECTED_FINGERPRINT: F2:F3:12:1B:EA:72:33:AA:52:88:01:CE:54:95:E9:65:2F:51:63:16:BF:E0:98:D1:33:DF:58:60:C4:5C:0D:08
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install -g @bubblewrap/cli@1.25.0
+
+      - name: Prepare the project
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.bubblewrap" build
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$ANDROID_HOME" \
+            > "$HOME/.bubblewrap/config.json"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > build/android.keystore
+            echo "RELEASE=yes" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No signing key in the secrets: a test build with a throwaway key."
+            keytool -genkeypair -keystore build/android.keystore -alias test -keyalg RSA \
+              -keysize 2048 -validity 10000 -storepass testtest -keypass testtest \
+              -dname "CN=Test" -noprompt
+            {
+              echo "KEY_ALIAS=test"
+              echo "BUBBLEWRAP_KEYSTORE_PASSWORD=testtest"
+              echo "BUBBLEWRAP_KEY_PASSWORD=testtest"
+              echo "RELEASE=no"
+            } >> "$GITHUB_ENV"
+          fi
+          # Each build is a newer version than the one on the phone, so it installs over it.
+          CODE=$((GITHUB_RUN_NUMBER + 1))
+          ALIAS="${KEY_ALIAS:-test}"
+          jq --arg alias "$ALIAS" --argjson code "$CODE" \
+            '.signingKey.alias = $alias | .appVersionCode = $code | .appVersionName = ("1." + ($code|tostring))' \
+            .github/twa-manifest.json > build/twa-manifest.json
+
+      - name: Build
+        working-directory: build
+        run: |
+          set -euo pipefail
+          bubblewrap update --skipVersionUpgrade --manifest=./twa-manifest.json
+          bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json
+          ls -la
+
+      - name: Check the signature
+        working-directory: build
+        run: |
+          set -euo pipefail
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          FOUND=$("$APKSIGNER" verify --print-certs app-release-signed.apk \
+            | sed -n 's/.*SHA-256 digest: //p' | head -1 | tr 'a-f' 'A-F')
+          EXPECTED=$(echo "$EXPECTED_FINGERPRINT" | tr -d ':')
+          echo "Signed with: $FOUND"
+          if [ "$RELEASE" = "yes" ] && [ "$FOUND" != "$EXPECTED" ]; then
+            echo "::error::The APK is not signed with the key of the first build; it would not install over it."
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mishkan-apk
+          path: build/app-release-signed.apk
+          retention-days: 14
+
+      - name: Publish
+        if: env.RELEASE == 'yes'
+        run: |
+          set -euo pipefail
+          cp build/app-release-signed.apk public/mishkan.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/mishkan.apk
+          git commit -m "Android app: version 1.$((GITHUB_RUN_NUMBER + 1))"
+          git push origin HEAD:main
