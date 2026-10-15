@@ -26,12 +26,22 @@ export async function apkAvailable(): Promise<boolean> {
 const apkVersionKey = 'mishkan.apkVersion';
 const inApkKey = 'mishkan.inApk';
 const latestApkKey = 'mishkan.apkLatest';
+/** The version downloaded from the update offer, until the app is next opened from its icon. */
+const updatingToKey = 'mishkan.apkUpdatingTo';
 
 function readStored(key: string): string | null {
   try {
     return window.localStorage.getItem(key);
   } catch {
     return null;
+  }
+}
+
+function forget(key: string): void {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Blocked storage: nothing was kept to forget.
   }
 }
 
@@ -52,6 +62,9 @@ export function rememberApkLaunch(): void {
   if (version !== null && /^\d+$/.test(version)) {
     store(apkVersionKey, version);
     store(inApkKey, 'yes');
+    // Opened from the icon, the app tells its own version: an update that did not install
+    // is offered again.
+    forget(updatingToKey);
   } else if (document.referrer.startsWith('android-app://app.vercel.mishkan.twa')) {
     store(inApkKey, 'yes');
   }
@@ -115,5 +128,21 @@ export async function fetchLatestApk(): Promise<number | null> {
 /** Whether the Android app on this phone is older than the newest one. */
 export function apkUpdateDue(latest: number | null): boolean {
   const installed = installedApkVersion();
-  return installed !== null && latest !== null && latest > installed;
+  const updatingTo = Number(readStored(updatingToKey) ?? '0');
+  return installed !== null && latest !== null && latest > Math.max(installed, updatingTo);
+}
+
+/**
+ * The update was downloaded: the offer and the dot go away at once. Android's "open" after
+ * installing returns to the page that was open, so the app's new version is only told when it
+ * is next opened from its icon; if it did not install, the offer comes back then.
+ */
+export function markApkUpdating(): void {
+  const latest = knownLatestApk();
+  if (latest !== null) {
+    store(updatingToKey, String(latest));
+    latestListeners.forEach((listener) => {
+      listener();
+    });
+  }
 }

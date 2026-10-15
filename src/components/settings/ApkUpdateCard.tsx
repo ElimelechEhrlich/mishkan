@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { useApkUpdate } from '../../hooks/useApkUpdate';
-import { apkPath } from '../../lib/install';
+import { apkPath, markApkUpdating } from '../../lib/install';
 import { Icon } from '../ui/Icon';
 
 /**
@@ -17,6 +17,7 @@ export function ApkUpdateCard(): ReactElement | null {
     <a
       href={apkPath}
       download="mishkan.apk"
+      onClick={markApkUpdating}
       className="flex items-center gap-3 rounded-2xl bg-primary-soft p-3.5 active:opacity-80"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
