@@ -37,6 +37,8 @@ export type OccurrenceCount = Database['public']['Views']['occurrence_counts']['
 export type DoneItem = Item & { readonly occurrence?: Occurrence };
 /** One of an item's reminders. */
 export type ItemReminder = Tables['item_reminders']['Row'];
+/** A name on the fixed shopping list, kept from every "סופר" item added. */
+export type ShoppingStaple = Tables['shopping_staples']['Row'];
 /** A department of the supermarket, in the order the household walks it. */
 export type ShoppingDepartment = Tables['shopping_departments']['Row'];
 /** The department chosen for an item, by its name. */

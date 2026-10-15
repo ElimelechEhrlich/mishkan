@@ -362,6 +362,31 @@ export type Database = {
         };
         Relationships: [];
       };
+      shopping_staples: {
+        Row: {
+          id: string;
+          household_id: string;
+          title: string;
+          /** The name trimmed, in lower case, single spaces. */
+          title_key: string;
+          /** How many times it was added to the list. */
+          times: number;
+          last_added_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string;
+          title: string;
+          title_key: string;
+          times?: number;
+          last_added_at?: string;
+        };
+        Update: {
+          title?: string;
+          title_key?: string;
+        };
+        Relationships: [];
+      };
       shopping_departments: {
         Row: {
           id: string;

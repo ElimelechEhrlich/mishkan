@@ -328,6 +328,17 @@ const shopping_departments = departmentNames.map(([key, name], n) => ({
   created_at: now,
 }));
 const shopping_item_departments = [];
+const shopping_staples = [
+  ['חלב', 14], ['לחם', 12], ['ביצים', 9], ['עגבניות', 8], ['מלפפונים', 8], ['קוטג׳', 7],
+  ['נייר טואלט', 5], ['במבה', 5], ['שמפו', 2], ['חזה עוף', 4], ['אורז', 3], ['מתנה לגננת', 1],
+].map(([title, times], n) => ({
+  id: `00000000-0000-4000-8000-0000000002${String(n).padStart(2, '0')}`,
+  household_id: H,
+  title,
+  title_key: title,
+  times,
+  last_added_at: now,
+}));
 item({ title: 'לסדר את המחסן', domain_id: null });
 const shid = item({
   title: 'שידוך לאחיינית',
@@ -720,6 +731,7 @@ module.exports = {
     item_data,
     shopping_departments,
     shopping_item_departments,
+    shopping_staples,
     households,
     members,
     entities,

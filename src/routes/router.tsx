@@ -19,6 +19,7 @@ import { SettingsPage } from '../pages/SettingsPage';
 import { ShoppingPage } from '../pages/ShoppingPage';
 import { ShoppingDepartmentsPage } from '../pages/ShoppingDepartmentsPage';
 import { ShoppingRunPage } from '../pages/ShoppingRunPage';
+import { ShoppingStaplesPage } from '../pages/ShoppingStaplesPage';
 import { RequireAuth } from './RequireAuth';
 import { RequireHousehold } from './RequireHousehold';
 
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
           { path: '/shopping', element: <ShoppingPage /> },
           { path: '/shopping/run/:runId', element: <ShoppingRunPage /> },
           { path: '/shopping/departments', element: <ShoppingDepartmentsPage /> },
+          { path: '/shopping/staples', element: <ShoppingStaplesPage /> },
           { path: '/debts', element: <DebtsPage /> },
           { path: '/incomplete', element: <IncompletePage /> },
           { path: '/today', element: <TodayPage /> },
