@@ -2,7 +2,15 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { addDays, formatDueDate, todayIso } from '../../lib/itemRules';
-import { repeatSummary, startingRepeat, weekdays } from '../../lib/recurrence';
+import {
+  countsPeriods,
+  periodsEnd,
+  periodsOf,
+  repeatSummary,
+  startingRepeat,
+  weekdays,
+} from '../../lib/recurrence';
+import { amountText } from '../../lib/reminders';
 import { repeatUnits } from '../../lib/reminders';
 import type { Item, ItemRepeat, RepeatDraft, RepeatEnd } from '../../types/domain';
 import { Button } from '../ui/Button';
@@ -50,6 +58,11 @@ export function RepeatEditor({
   const [draft, setDraft] = useState<RepeatDraft>(original);
   // When the end changes kind it is set anew: how many times from today.
   const [freshCount, setFreshCount] = useState(5);
+  // Several times a day (or set weekdays) end best after so many days (or weeks), not times.
+  const [periods, setPeriods] = useState(() => periodsOf(original) ?? 10);
+  const [byPeriods, setByPeriods] = useState(
+    () => countsPeriods(original) && periodsOf(original) !== null,
+  );
   // The common settings show; the rest open under "custom", already open when used.
   const [custom, setCustom] = useState(
     original.every > 1 ||
@@ -93,15 +106,25 @@ export function RepeatEditor({
 
   const total = draft.endCount ?? gone + freshCount;
   const leastTotal = Math.max(1, gone + dueNow);
+  // What is saved: "so many days" is kept as the last of those days.
+  const saved: RepeatDraft = byPeriods
+    ? {
+        ...draft,
+        endKind: 'until',
+        endCount: null,
+        endUntil: periodsEnd(draft.startsOn, draft.every, draft.unit, periods),
+      }
+    : draft;
+  const periodsWords = amountText(periods, draft.unit);
   const valid =
-    draft.startsOn !== '' &&
+    saved.startsOn !== '' &&
     (!isAppointment || draft.times.length === 1) &&
     (draft.endKind !== 'count' || total >= leastTotal) &&
-    (draft.endKind !== 'until' ||
-      (draft.endUntil !== null &&
-        draft.endUntil >= today &&
-        (limit === null || draft.endUntil <= limit))) &&
-    (limit === null || draft.endKind !== 'never');
+    (saved.endKind !== 'until' ||
+      (saved.endUntil !== null &&
+        saved.endUntil >= today &&
+        (limit === null || saved.endUntil <= limit))) &&
+    (limit === null || saved.endKind !== 'never');
   const end = { endKind: draft.endKind, endCount: draft.endCount, endUntil: draft.endUntil };
   const canResume =
     (draft.endKind !== 'count' || (draft.endCount !== null && draft.endCount > gone)) &&
@@ -163,13 +186,13 @@ export function RepeatEditor({
   return (
     <div className="flex flex-col gap-3">
       <SettingsCard
-        summary={repeatSummary(draft)}
+        summary={repeatSummary(saved, byPeriods ? periodsWords : undefined)}
         actions={
           <>
             <Button
               disabled={!valid}
               onClick={() => {
-                onSave(draft);
+                onSave(saved);
               }}
             >
               {labels.actions.save}
@@ -363,16 +386,27 @@ export function RepeatEditor({
             >
               <OptionGroup
                 label={labels.repeat.end}
-                options={endKinds
-                  .filter((kind) => limit === null || kind !== 'never')
-                  .map((kind) => ({
-                    value: kind,
-                    label: labels.repeat.endKind[kind],
-                  }))}
-                value={draft.endKind}
-                onChange={chooseEnd}
+                options={[
+                  ...endKinds
+                    .filter((kind) => limit === null || kind !== 'never')
+                    .map((kind) => ({ value: kind, label: labels.repeat.endKind[kind] })),
+                  ...(countsPeriods(draft) || byPeriods
+                    ? [{ value: 'periods' as const, label: labels.repeat.periodsKind[draft.unit] }]
+                    : []),
+                ]}
+                value={byPeriods ? 'periods' : draft.endKind}
+                onChange={(kind) => {
+                  setByPeriods(kind === 'periods');
+                  if (kind !== 'periods') {
+                    chooseEnd(kind);
+                  }
+                }}
               />
-              {draft.endKind === 'count' &&
+              {byPeriods && (
+                <Stepper value={periods} min={1} display={periodsWords} onChange={setPeriods} />
+              )}
+              {!byPeriods &&
+                draft.endKind === 'count' &&
                 (sameEnd ? (
                   <Stepper
                     value={total}
@@ -398,7 +432,7 @@ export function RepeatEditor({
                     />
                   </div>
                 ))}
-              {draft.endKind === 'until' && (
+              {!byPeriods && draft.endKind === 'until' && (
                 <div className="w-full">
                   <DateField
                     label={labels.repeat.untilWhich}

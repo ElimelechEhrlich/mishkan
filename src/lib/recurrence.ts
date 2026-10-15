@@ -1,6 +1,6 @@
 import { labels } from '../constants/labels';
 import type { Item, ItemRepeat, Occurrence, RepeatDraft, RepeatUnit } from '../types/domain';
-import { formatDueDate, recurrenceOf, todayIso, toLocalDateTime } from './itemRules';
+import { addDays, formatDueDate, recurrenceOf, todayIso, toLocalDateTime } from './itemRules';
 import { amountText } from './reminders';
 
 function parts(isoDate: string): [number, number, number] {
@@ -200,17 +200,73 @@ export function endText(draft: Pick<RepeatDraft, 'endKind' | 'endCount' | 'endUn
   return labels.repeat.noEnd;
 }
 
+/** A day so many days, weeks, months or years on (a month's end kept within the month). */
+function addUnits(day: string, amount: number, unit: RepeatUnit): string {
+  if (unit === 'day' || unit === 'week') {
+    return addDays(day, unit === 'week' ? amount * 7 : amount);
+  }
+  const months = unit === 'year' ? amount * 12 : amount;
+  const [year = 0, month = 1, date = 1] = day.split('-').map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const last = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  target.setUTCDate(Math.min(date, last));
+  return target.toISOString().slice(0, 10);
+}
+
+/**
+ * The last day of so many days (or weeks, months, years) of a rhythm from its first day: ten
+ * days of an antibiotic twice a day end on the tenth day, whatever the number of times.
+ */
+export function periodsEnd(
+  startsOn: string,
+  every: number,
+  unit: RepeatUnit,
+  periods: number,
+): string {
+  return addDays(addUnits(startsOn, periods * every, unit), -1);
+}
+
+/** How many days (weeks, …) a series ending on its last day runs, when it ends on one. */
+export function periodsOf(
+  draft: Pick<RepeatDraft, 'startsOn' | 'every' | 'unit' | 'endKind' | 'endUntil'>,
+): number | null {
+  if (draft.endKind !== 'until' || draft.endUntil === null) {
+    return null;
+  }
+  for (let periods = 1; periods <= 500; periods += 1) {
+    const end = periodsEnd(draft.startsOn, draft.every, draft.unit, periods);
+    if (end === draft.endUntil) {
+      return periods;
+    }
+    if (end > draft.endUntil) {
+      return null;
+    }
+  }
+  return null;
+}
+
+/** Whether a rhythm has more than one time in a period, so its end is better counted in days. */
+export function countsPeriods(draft: Pick<RepeatDraft, 'times' | 'weekdays' | 'unit'>): boolean {
+  return draft.times.length > 1 || (draft.unit === 'week' && draft.weekdays.length > 0);
+}
+
 /** The sentence at the head of the repeat settings: "every 3 months · at 08:00 · 7 times". */
-export function repeatSummary(draft: RepeatDraft): string {
+export function repeatSummary(draft: RepeatDraft, endWords?: string): string {
   const days =
     draft.unit === 'week' && draft.weekdays.length > 0
       ? [draft.weekdays.map((day) => labels.repeat.weekdayShort[day] ?? '').join(', ')]
       : [];
   const times = draft.times.length === 0 ? [] : [`${labels.reminders.at}${draft.times.join(', ')}`];
   const from = draft.fromKind === 'completion' ? [labels.repeat.fromKind.completion] : [];
-  return [rhythmText(draft.every, draft.unit), ...days, ...times, ...from, endText(draft)].join(
-    labels.item.separator,
-  );
+  return [
+    rhythmText(draft.every, draft.unit),
+    ...days,
+    ...times,
+    ...from,
+    endWords ?? endText(draft),
+  ].join(labels.item.separator);
 }
 
 export function draftOfRepeat(repeat: ItemRepeat): RepeatDraft {

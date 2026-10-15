@@ -851,8 +851,8 @@ export const labels = {
       schedule: 'לפי לוח קבוע',
       completion: 'מאז הביצוע האחרון',
     },
-    fromHint: 'מאז הביצוע האחרון: המופע הבא נספר מהיום שבו סימנתם, ואין "הוחמץ".',
-    fromNeedsOne: 'אפשרי רק עם שעה אחת לכל היותר ובלי ימים בשבוע.',
+    fromHint: 'נספר מהיום שסימנתם',
+    fromNeedsOne: 'רק עם שעה אחת ביום',
     trackerCloses: 'הזנת ערך סוגרת את המופע',
     yes: 'כן',
     no: 'לא',
@@ -875,6 +875,12 @@ export const labels = {
       until: 'עד תאריך',
     },
     noEnd: 'בלי סוף',
+    periodsKind: {
+      day: 'מספר ימים',
+      week: 'מספר שבועות',
+      month: 'מספר חודשים',
+      year: 'מספר שנים',
+    },
     times: (count: number): string => (count === 1 ? 'פעם אחת' : `${String(count)} פעמים`),
     progress: (gone: number, left: number): string =>
       `עברו ${String(gone)} · נשארו ${String(left)}`,

@@ -8,6 +8,9 @@ import {
   rhythmText,
   stepFrom,
   isRhythmDay,
+  countsPeriods,
+  periodsEnd,
+  periodsOf,
   nextSlot,
   upcomingSlots,
 } from './recurrence';
@@ -203,5 +206,31 @@ describe('the rule kept for older versions', () => {
     expect(rhythmOfRule('FREQ=MONTHLY;INTERVAL=3')).toEqual({ every: 3, unit: 'month' });
     expect(rhythmOfRule('nonsense')).toBeNull();
     expect(rhythmOfRule(null)).toBeNull();
+  });
+});
+
+describe('an end in days rather than times', () => {
+  it('ends ten days of twice a day on the tenth day', () => {
+    expect(periodsEnd('2026-10-15', 1, 'day', 10)).toBe('2026-10-24');
+    expect(periodsEnd('2026-10-15', 1, 'week', 2)).toBe('2026-10-28');
+    expect(periodsEnd('2026-01-31', 1, 'month', 1)).toBe('2026-02-27');
+  });
+
+  it('reads the days back from the last day, and only then', () => {
+    const base = {
+      startsOn: '2026-10-15',
+      every: 1,
+      unit: 'day' as const,
+      endKind: 'until' as const,
+    };
+    expect(periodsOf({ ...base, endUntil: '2026-10-24' })).toBe(10);
+    expect(periodsOf({ ...base, every: 2, endUntil: '2026-11-03' })).toBe(10);
+    expect(periodsOf({ ...base, unit: 'week', endUntil: '2026-10-30' })).toBeNull();
+  });
+
+  it('is offered with several hours a day, or set weekdays', () => {
+    expect(countsPeriods({ times: ['08:00', '20:00'], weekdays: [], unit: 'day' })).toBe(true);
+    expect(countsPeriods({ times: ['08:00'], weekdays: [2, 4], unit: 'week' })).toBe(true);
+    expect(countsPeriods({ times: ['08:00'], weekdays: [], unit: 'day' })).toBe(false);
   });
 });
