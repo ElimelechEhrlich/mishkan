@@ -7,6 +7,9 @@ import { apkPath } from '../../lib/install';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 
+/** A small text button, for what is rarely needed: bringing a step back, the tour again. */
+const quietLinkClass = 'min-h-9 px-1.5 text-[13px] font-medium text-primary';
+
 type SetupCardProps = {
   readonly steps: readonly SetupState[];
   /** Notifications blocked in the phone's settings: the button can not turn them on. */
@@ -91,24 +94,26 @@ export function SetupCard({
               </span>
               <span className="flex shrink-0 items-center gap-1">
                 {setAside ? (
-                  <Button
-                    variant="ghost"
+                  <button
+                    type="button"
                     onClick={() => {
                       onBringBack(step);
                     }}
+                    className={quietLinkClass}
                   >
                     {labels.setup.bringBack}
-                  </Button>
+                  </button>
                 ) : done ? (
                   step === 'tour' && (
-                    <Button
-                      variant="ghost"
+                    <button
+                      type="button"
                       onClick={() => {
                         onAct(step);
                       }}
+                      className={quietLinkClass}
                     >
                       {labels.setup.again}
-                    </Button>
+                    </button>
                   )
                 ) : (
                   <>
