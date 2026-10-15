@@ -1,12 +1,17 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
+import { markTourDone } from '../../hooks/useSetupSteps';
+import { TourSetup } from './TourSetup';
 import { TourVisual } from './TourVisual';
 import type { TourStep } from './TourVisual';
 
 type WelcomeTourProps = {
+  readonly memberId: string;
+  /** How many parents the home has, for the first steps on the last page. */
+  readonly parents: number;
   readonly onClose: () => void;
 };
 
@@ -52,11 +57,18 @@ const swipeDistance = 50;
  * blocks, and every part of it, one idea per page, with a picture drawn like the real
  * screen and a few short points. Big buttons, and a swipe to move on.
  */
-export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null {
+export function WelcomeTour({ memberId, parents, onClose }: WelcomeTourProps): ReactElement | null {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState<'next' | 'previous'>('next');
   const touchStart = useRef<number | null>(null);
   const step = steps[index];
+  const reachedEnd = index === steps.length - 1;
+  // Gone through to its last page: the tour is done, among the first steps.
+  useEffect(() => {
+    if (reachedEnd) {
+      markTourDone();
+    }
+  }, [reachedEnd]);
   if (step === undefined) {
     return null;
   }
@@ -135,7 +147,10 @@ export function WelcomeTour({ onClose }: WelcomeTourProps): ReactElement | null 
               <h2 className="font-display text-[26px] leading-8 font-bold">{page.title}</h2>
               <p className="text-[16px] leading-7 text-ink/75">{page.text}</p>
             </div>
-            {page.points.length > 0 && (
+            {step === 'begin' && (
+              <TourSetup memberId={memberId} parents={parents} onClose={onClose} />
+            )}
+            {step !== 'begin' && page.points.length > 0 && (
               <ul className="flex w-full flex-col gap-2.5 text-start">
                 {page.points.map((point) => (
                   <li key={point} className="flex gap-2.5 text-[15px] leading-6">

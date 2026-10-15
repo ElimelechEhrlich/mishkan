@@ -1,13 +1,17 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { usePushNotifications } from '../../hooks/usePushNotifications';
+import type { UsePushNotifications } from '../../hooks/usePushNotifications';
 import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Icon } from '../ui/Icon';
 
 /** Turns reminders on this device on or off. */
-export function NotificationsCard(): ReactElement {
-  const push = usePushNotifications();
+type NotificationsCardProps = {
+  /** Shared with the first steps above, so turning it on shows in both. */
+  readonly push: UsePushNotifications;
+};
+
+export function NotificationsCard({ push }: NotificationsCardProps): ReactElement {
   const on = push.status === 'on';
   const note =
     push.status === 'blocked'

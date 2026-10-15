@@ -30,6 +30,11 @@ export type UseEntities = EntitiesState & {
   readonly reload: () => Promise<void>;
 };
 
+/** The entities as last loaded on this device, without loading them again. */
+export function cachedEntities(memberId: string): readonly EntityWithDomains[] {
+  return readCache(`entities.${memberId}`, isEntityList) ?? [];
+}
+
 export function useEntities(): UseEntities {
   const { member } = useHouseholdContext();
   const cacheKey = `entities.${member.id}`;

@@ -34,7 +34,9 @@ export function RequireHousehold(): ReactElement {
   return (
     <>
       <Outlet context={context} />
-      {tour.open && <WelcomeTour onClose={tour.close} />}
+      {tour.open && (
+        <WelcomeTour memberId={data.member.id} parents={data.members.length} onClose={tour.close} />
+      )}
     </>
   );
 }

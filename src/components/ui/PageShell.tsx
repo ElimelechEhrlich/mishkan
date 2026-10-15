@@ -6,6 +6,7 @@ import { BottomNav } from './BottomNav';
 import { EverythingButton } from './EverythingButton';
 import { Icon } from './Icon';
 import { useDocked } from '../../hooks/useScopeDock';
+import { useSetupPending } from '../../hooks/useSetupSteps';
 import { hasAppHistory } from '../../lib/appHistory';
 import { IconButton } from './IconButton';
 import { UndoToast } from './UndoToast';
@@ -53,6 +54,8 @@ export function PageShell({
   // Once the entity's picture sits in the header there is less room: the title takes its
   // short form and a smaller size, and the line above it steps aside, so nothing is cut.
   const docked = useDocked();
+  // A first step still to do: a dot on the settings button, where the steps are.
+  const setupPending = useSetupPending();
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col">
       <header className="sticky top-0 z-10 bg-paper/85 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 backdrop-blur-md">
@@ -124,8 +127,15 @@ export function PageShell({
             <Link to="/done" aria-label={labels.actions.showDone} className={headerLinkClass}>
               <Icon name="done" className="size-5.5" />
             </Link>
-            <Link to="/settings" aria-label={labels.actions.settings} className={headerLinkClass}>
+            <Link
+              to="/settings"
+              aria-label={labels.actions.settings}
+              className={`relative ${headerLinkClass}`}
+            >
               <Icon name="settings" className="size-5.5" />
+              {setupPending && (
+                <span className="absolute top-1.5 end-1.5 size-2.5 rounded-full border-2 border-paper bg-alert" />
+              )}
             </Link>
           </div>
         )}

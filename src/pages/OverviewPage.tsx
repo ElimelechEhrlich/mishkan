@@ -1,3 +1,4 @@
+import { PushPrompt } from '../components/onboarding/PushPrompt';
 import type { ReactElement } from 'react';
 import { useSearchParams } from 'react-router';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
@@ -74,6 +75,7 @@ export function OverviewPage(): ReactElement {
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error ?? remindersError ?? week.error} />
+      <PushPrompt />
       <ScopeBar
         onEntityChanged={entities.reload}
         entities={entities.entities}
