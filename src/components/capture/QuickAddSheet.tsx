@@ -1,5 +1,5 @@
 import { useKeyboardSpace } from '../../hooks/useKeyboardSpace';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
 import { quickTimeChoice, seriesStarts, todayIso } from '../../lib/itemRules';
@@ -119,6 +119,19 @@ export function QuickAddSheet({
   const [saving, setSaving] = useState(false);
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
+
+  // While the sheet is open the page behind it stays still; scrolling moves the sheet.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const root = document.documentElement;
+    const before = root.style.overflow;
+    root.style.overflow = 'hidden';
+    return (): void => {
+      root.style.overflow = before;
+    };
+  }, [open]);
 
   const trimmedTitle = title.trim();
   // A missing item is written as a list, a line per item.
@@ -265,7 +278,7 @@ export function QuickAddSheet({
 
   return (
     <div
-      className="fixed inset-0 z-20 flex animate-fade-in flex-col justify-end bg-ink/30 backdrop-blur-[2px]"
+      className="fixed inset-0 z-20 flex animate-fade-in flex-col justify-end overscroll-contain bg-ink/30 backdrop-blur-[2px]"
       // Above the keyboard, so the add button stays in sight while typing.
       style={{ paddingBottom: keyboard.covered }}
       onClick={() => {
@@ -323,7 +336,7 @@ export function QuickAddSheet({
             />
           )}
         </div>
-        <div className="flex flex-col gap-5 overflow-y-auto px-4 py-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 py-4">
           <div className="flex flex-col gap-2">
             <span className="text-xs font-bold tracking-wide text-muted">
               {labels.capture.kind}
