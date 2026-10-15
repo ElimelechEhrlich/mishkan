@@ -1,10 +1,12 @@
 import { hasAppHistory } from '../lib/appHistory';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { labels } from '../constants/labels';
 import { toMessage } from '../lib/errors';
 import { getItem, listSteps } from '../services/itemService';
 import type { DebtDetails, Item } from '../types/domain';
 import { useDebts } from './useDebts';
+import { offerUndo } from './useUndoOffer';
 import { useItems } from './useItems';
 import type { UseItems } from './useItems';
 
@@ -27,6 +29,8 @@ export type UseItemPage = {
   readonly addStep: (parent: Item, title: string) => void;
   readonly addTracker: (parent: Item, title: string) => void;
   readonly deleteAndLeave: (itemId: string) => void;
+  /** Copies the item and opens the copy, with "undo" for a few seconds. */
+  readonly duplicateAndOpen: (itemId: string) => void;
 };
 
 /** Everything the item page needs about the item in its URL. */
@@ -150,6 +154,27 @@ export function useItemPage(): UseItemPage {
     [deleteItem, navigate],
   );
 
+  const { duplicateItem } = items;
+  const duplicateAndOpen = useCallback(
+    (sourceId: string): void => {
+      void duplicateItem(sourceId).then((copyId) => {
+        if (copyId === null) {
+          return;
+        }
+        void navigate(`/item/${copyId}`);
+        offerUndo(labels.duplicate.done, () => {
+          void deleteItem(copyId).then((deleted) => {
+            // Still on the copy's page: back to the item it was copied from.
+            if (deleted && window.location.pathname === `/item/${copyId}`) {
+              void navigate(-1);
+            }
+          });
+        });
+      });
+    },
+    [duplicateItem, deleteItem, navigate],
+  );
+
   return {
     items,
     item,
@@ -162,5 +187,6 @@ export function useItemPage(): UseItemPage {
     addStep,
     addTracker,
     deleteAndLeave,
+    duplicateAndOpen,
   };
 }

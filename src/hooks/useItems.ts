@@ -12,6 +12,7 @@ import {
   createItem,
   createQuestion,
   deleteItem,
+  duplicateItem,
   listOpenItems,
   listSteps,
   reopenItem,
@@ -92,6 +93,8 @@ export type UseItems = {
   readonly completeItem: (item: Item) => void;
   readonly reopenItem: (itemId: string) => void;
   readonly deleteItem: (itemId: string) => Promise<boolean>;
+  /** Makes a copy of the item; resolves to the copy's id, or null when it failed. */
+  readonly duplicateItem: (itemId: string) => Promise<string | null>;
 };
 
 function isItemsSnapshot(
@@ -255,6 +258,17 @@ export function useItems(): UseItems {
     [run],
   );
 
+  const handleDuplicate = useCallback(
+    async (itemId: string): Promise<string | null> => {
+      let copyId: string | null = null;
+      const done = await run(async () => {
+        copyId = await duplicateItem(itemId);
+      });
+      return done ? copyId : null;
+    },
+    [run],
+  );
+
   const assigned = useMemo(() => state.items.filter((item) => item.is_complete), [state.items]);
   const incomplete = useMemo(
     // One whose parent to complete it is gone (review_by cleared) goes to both, so it is not lost.
@@ -323,5 +337,6 @@ export function useItems(): UseItems {
     completeItem: handleComplete,
     reopenItem: handleReopen,
     deleteItem: handleDelete,
+    duplicateItem: handleDuplicate,
   };
 }

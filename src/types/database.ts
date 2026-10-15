@@ -732,6 +732,10 @@ export type Database = {
         Args: { p_ids: string[] };
         Returns: undefined;
       };
+      duplicate_item: {
+        Args: { p_item_id: string };
+        Returns: string;
+      };
       move_item_data: {
         Args: { p_row_id: string; p_step: number };
         Returns: undefined;

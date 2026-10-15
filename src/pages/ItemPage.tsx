@@ -98,6 +98,7 @@ export function ItemPage(): ReactElement {
           onComplete={items.completeItem}
           onReopen={items.reopenItem}
           onDelete={page.deleteAndLeave}
+          onDuplicate={page.duplicateAndOpen}
           onAddStep={page.addStep}
           onAddQuestion={items.addQuestion}
           onConvert={(itemId, conversion) => {

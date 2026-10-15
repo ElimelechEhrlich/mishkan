@@ -1199,6 +1199,10 @@ export const labels = {
     listPrompt: 'מה חסר? שורה לכל פריט',
     addCount: (count: number): string => (count <= 1 ? 'הוספה' : `הוספת ${String(count)} פריטים`),
   },
+  duplicate: {
+    action: 'שכפול',
+    done: 'זה העותק',
+  },
   departments: {
     title: 'מחלקות הסופר',
     byDepartment: 'לפי מחלקות',

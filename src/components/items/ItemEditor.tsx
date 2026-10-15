@@ -27,6 +27,7 @@ import type {
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { Card } from '../ui/Card';
 import { CopyButton } from '../ui/CopyButton';
 import { InlineEdit } from '../ui/InlineEdit';
@@ -115,6 +116,8 @@ type ItemEditorProps = {
   readonly onComplete: (item: Item) => void;
   readonly onReopen: (itemId: string) => void;
   readonly onDelete: (itemId: string) => void;
+  /** Copies the item and opens the copy. */
+  readonly onDuplicate: (itemId: string) => void;
   readonly onAddStep: (parent: Item, title: string) => void;
   readonly onAddQuestion: (issueId: string, title: string) => void;
   readonly onConvert: (itemId: string, conversion: Conversion) => void;
@@ -226,6 +229,7 @@ export function ItemEditor({
   onComplete,
   onReopen,
   onDelete,
+  onDuplicate,
   onAddStep,
   onAddQuestion,
   onConvert,
@@ -813,6 +817,18 @@ export function ItemEditor({
       <Card title={labels.sections.attachments}>
         <AttachmentList key={item.id} item={item} />
       </Card>
+
+      {item.kind !== 'shopping_run' && item.kind !== 'question' && (
+        <Button
+          variant="soft"
+          onClick={() => {
+            onDuplicate(item.id);
+          }}
+        >
+          <Icon name="copy" className="size-5" />
+          {labels.duplicate.action}
+        </Button>
+      )}
 
       <ConfirmButton
         label={labels.actions.delete}

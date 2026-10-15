@@ -232,6 +232,18 @@ export async function updateItem(itemId: string, changes: ItemUpdate): Promise<v
   }
 }
 
+/**
+ * Makes a new, open item like this one, with its time, repeat, reminders, values, conditions
+ * and the steps under it; returns the new item's id.
+ */
+export async function duplicateItem(itemId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('duplicate_item', { p_item_id: itemId });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
 export async function deleteItem(itemId: string): Promise<void> {
   const { error } = await supabase.from('items').delete().eq('id', itemId);
   if (error !== null) {
