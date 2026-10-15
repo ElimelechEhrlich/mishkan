@@ -37,12 +37,6 @@
       "chosenIconUrl": "https://mishkan.vercel.app/icons/shortcut-new.png"
     },
     {
-      "name": "להשלמה",
-      "shortName": "להשלמה",
-      "url": "https://mishkan.vercel.app/incomplete",
-      "chosenIconUrl": "https://mishkan.vercel.app/icons/shortcut-incomplete.png"
-    },
-    {
       "name": "היום",
       "shortName": "היום",
       "url": "https://mishkan.vercel.app/today",
