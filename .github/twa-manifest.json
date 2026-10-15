@@ -56,7 +56,7 @@
   "alphaDependencies": {
     "enabled": false
   },
-  "enableSiteSettingsShortcut": true,
+  "enableSiteSettingsShortcut": false,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://mishkan.vercel.app/",
