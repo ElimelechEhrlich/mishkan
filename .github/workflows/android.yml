@@ -88,7 +88,11 @@ jobs:
         run: |
           set -euo pipefail
           bubblewrap update --skipVersionUpgrade --manifest=./twa-manifest.json
-          bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json
+          # On failure, what went wrong first, ahead of the long trace.
+          if ! bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json > build.log 2>&1; then
+            grep -E "ERROR|What went wrong" -A6 build.log | head -40 | sed 's/^/::error::/'
+            exit 1
+          fi
           ls -la
 
       - name: Check the signature
