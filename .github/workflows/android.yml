@@ -77,10 +77,11 @@ jobs:
       - name: Android SDK
         run: |
           set -euo pipefail
-          # Bubblewrap looks for the SDK's tools under tools/, and builds with these versions.
-          sudo ln -sfn "$ANDROID_HOME/cmdline-tools/latest" "$ANDROID_HOME/tools"
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+          # Bubblewrap builds with these versions, and looks for the SDK's tools under tools/.
+          # `yes` answers the licences; it ends cut off once they are answered.
+          (yes || true) | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
             "build-tools;36.1.0" "platforms;android-36" > /dev/null
+          sudo ln -sfn "$ANDROID_HOME/cmdline-tools/latest" "$ANDROID_HOME/tools"
 
       - name: Build
         working-directory: build
