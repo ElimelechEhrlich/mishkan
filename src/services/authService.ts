@@ -1,5 +1,38 @@
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { authStorageKey, supabase } from '../lib/supabase';
+
+/** Who is signed in, as far as the app needs to know. */
+export type SignedIn = { readonly userId: string; readonly email: string | null };
+
+export function signedInOf(session: Session | null): SignedIn | null {
+  return session === null ? null : { userId: session.user.id, email: session.user.email ?? null };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * The sign-in kept on this device, read at once without the network, so the app can open from
+ * what it already has while the server confirms it (renewing it can take seconds on a phone).
+ */
+export function storedSignIn(): SignedIn | null {
+  try {
+    const stored = window.localStorage.getItem(authStorageKey);
+    const value: unknown = stored === null ? null : JSON.parse(stored);
+    if (!isObject(value) || typeof value['refresh_token'] !== 'string') {
+      return null;
+    }
+    const user = value['user'];
+    if (!isObject(user) || typeof user['id'] !== 'string') {
+      return null;
+    }
+    const email = user['email'];
+    return { userId: user['id'], email: typeof email === 'string' ? email : null };
+  } catch {
+    return null;
+  }
+}
 
 export async function getSession(): Promise<Session | null> {
   const { data, error } = await supabase.auth.getSession();

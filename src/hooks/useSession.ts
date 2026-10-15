@@ -1,4 +1,3 @@
-import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import { labels } from '../constants/labels';
@@ -9,13 +8,16 @@ import {
   getSession,
   onSessionChange,
   signIn,
+  signedInOf,
   signOut,
   signUp,
+  storedSignIn,
 } from '../services/authService';
+import type { SignedIn } from '../services/authService';
 import { deleteSubscription } from '../services/pushService';
 
 type SessionState = {
-  readonly session: Session | null;
+  readonly session: SignedIn | null;
   readonly loading: boolean;
   readonly busy: boolean;
   readonly error: string | null;
@@ -39,13 +41,17 @@ function authMessage(error: unknown): string {
   return toMessage(error);
 }
 
-const initialState: SessionState = {
-  session: null,
-  loading: true,
-  busy: false,
-  error: null,
-  confirmationSentTo: null,
-};
+/** A sign-in kept on the device opens the app at once; the server confirms it after. */
+function initialState(): SessionState {
+  const stored = storedSignIn();
+  return {
+    session: stored,
+    loading: stored === null,
+    busy: false,
+    error: null,
+    confirmationSentTo: null,
+  };
+}
 
 export function useSession(): UseSession {
   const [state, setState] = useState<SessionState>(initialState);
@@ -55,20 +61,21 @@ export function useSession(): UseSession {
     getSession()
       .then((session) => {
         if (active) {
-          setState((previous) => ({ ...previous, session, loading: false }));
+          setState((previous) => ({ ...previous, session: signedInOf(session), loading: false }));
         }
       })
       .catch((error: unknown) => {
+        // Offline with a sign-in kept on the device, the app goes on with what it has.
         if (active) {
           setState((previous) => ({
             ...previous,
             loading: false,
-            error: toMessage(error),
+            error: previous.session === null ? toMessage(error) : null,
           }));
         }
       });
     const unsubscribe = onSessionChange((session) => {
-      setState((previous) => ({ ...previous, session, loading: false }));
+      setState((previous) => ({ ...previous, session: signedInOf(session), loading: false }));
     });
     return (): void => {
       active = false;

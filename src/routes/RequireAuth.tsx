@@ -23,8 +23,8 @@ export function RequireAuth(): ReactElement {
   }
 
   const context: SessionContext = {
-    userId: session.user.id,
-    email: session.user.email ?? null,
+    userId: session.userId,
+    email: session.email,
     signOut,
   };
   return <Outlet context={context} />;

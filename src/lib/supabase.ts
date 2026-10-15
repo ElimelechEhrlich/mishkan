@@ -8,4 +8,9 @@ if (url === undefined || url === '' || anonKey === undefined || anonKey === '') 
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. See .env.example.');
 }
 
-export const supabase = createClient<Database>(url, anonKey);
+/** Where the sign-in is kept on the device: Supabase's own default, named here so it can be read at launch. */
+export const authStorageKey = `sb-${new URL(url).hostname.split('.')[0] ?? ''}-auth-token`;
+
+export const supabase = createClient<Database>(url, anonKey, {
+  auth: { storageKey: authStorageKey },
+});
