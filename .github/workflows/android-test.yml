@@ -1,7 +1,7 @@
 name: Android app check
 
 # Builds variants of the Android app with a throwaway key and opens each on an Android
-# emulator: whether it starts, why not (the crash, from the log), and which shortcuts the
+# emulator (twice): whether it starts, why not (the crash, from the log), and which shortcuts the
 # launcher gets. Nothing is published. Used to try a change before it reaches a phone.
 
 on:
@@ -20,19 +20,13 @@ jobs:
         include:
           # Version 10 as published: three shortcuts and the site settings entry.
           - variant: as-published
-            site_settings: true
-            hide_site_settings_shortcut: false
             shortcuts: 3
-          # Version 8: without the site settings entry, which did not open on the phone.
-          - variant: no-site-settings
-            site_settings: false
-            hide_site_settings_shortcut: false
+            remove_site_settings: false
+          # The site settings screen kept, its shortcut removed by the app once it starts,
+          # and four of the app's own.
+          - variant: shortcut-removed-on-start
             shortcuts: 4
-          # The entry kept, only its shortcut turned off, with four of the app's own.
-          - variant: entry-kept-shortcut-hidden
-            site_settings: true
-            hide_site_settings_shortcut: true
-            shortcuts: 4
+            remove_site_settings: true
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -61,10 +55,9 @@ jobs:
             -keysize 2048 -validity 10000 -storepass testtest -keypass testtest \
             -dname "CN=Test" -noprompt
           # The four shortcuts of the web app, as many as the variant takes.
-          jq --argjson site '${{ matrix.site_settings }}' --argjson count '${{ matrix.shortcuts }}' '
+          jq --argjson count '${{ matrix.shortcuts }}' '
             .signingKey.alias = "test"
             | .appVersionCode = 100
-            | .enableSiteSettingsShortcut = $site
             | .shortcuts = ([
                 {name: "רשימת קניות", shortName: "רשימת קניות", url: "https://mishkan.vercel.app/?new=shopping", chosenIconUrl: "https://mishkan.vercel.app/icons/shortcut-shopping.png"},
                 {name: "פריט חדש", shortName: "פריט חדש", url: "https://mishkan.vercel.app/?new=1", chosenIconUrl: "https://mishkan.vercel.app/icons/shortcut-new.png"},
@@ -81,10 +74,8 @@ jobs:
         run: |
           set -euo pipefail
           bubblewrap update --skipVersionUpgrade --manifest=./twa-manifest.json
-          if [ "${{ matrix.hide_site_settings_shortcut }}" = "true" ]; then
-            # Keep the site settings screen, turn off only the shortcut to it.
-            sed -i 's/resValue "bool", "enableSiteSettingsShortcut", twaManifest.enableSiteSettingsShortcut/resValue "bool", "enableSiteSettingsShortcut", "false"/' app/build.gradle
-            grep -n 'enableSiteSettingsShortcut' app/build.gradle
+          if [ "${{ matrix.remove_site_settings }}" = "true" ]; then
+            python3 ../.github/scripts/remove-site-settings-shortcut.py
           fi
           if ! bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json > build.log 2>&1; then
             grep -E "ERROR|What went wrong" -A6 build.log | head -40
@@ -112,6 +103,10 @@ jobs:
             adb logcat -c
             adb shell am start -W -n app.vercel.mishkan.twa/.LauncherActivity
             sleep 20
+            echo "=== second launch"
+            adb shell am force-stop app.vercel.mishkan.twa
+            adb shell am start -W -n app.vercel.mishkan.twa/.LauncherActivity
+            sleep 15
             echo "=== running: $(adb shell pidof app.vercel.mishkan.twa || echo NO)"
             echo "=== crash"; adb logcat -d -b crash | head -60 || true
             echo "=== errors"; adb logcat -d '*:E' | grep -i -E 'mishkan|AndroidRuntime|FATAL' | head -40 || true
