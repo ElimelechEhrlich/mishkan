@@ -96,6 +96,8 @@ jobs:
         run: |
           set -euo pipefail
           bubblewrap update --skipVersionUpgrade --manifest=./twa-manifest.json
+          # The site settings screen stays (the app does not open without it); its shortcut goes.
+          python3 ../.github/scripts/remove-site-settings-shortcut.py
           # On failure, what went wrong first, ahead of the long trace.
           if ! bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json > build.log 2>&1; then
             grep -E "ERROR|What went wrong" -A6 build.log | head -40 | sed 's/^/::error::/'
@@ -116,6 +118,34 @@ jobs:
             echo "::error::The APK is not signed with the key of the first build; it would not install over it."
             exit 1
           fi
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Nothing reaches the phones before it opens, twice, on an Android emulator.
+      - name: Open it on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            adb install -r build/app-release-signed.apk
+            adb shell am start -W -n app.vercel.mishkan.twa/.LauncherActivity
+            sleep 15
+            adb shell am force-stop app.vercel.mishkan.twa
+            adb logcat -c
+            adb shell am start -W -n app.vercel.mishkan.twa/.LauncherActivity
+            sleep 15
+            adb logcat -d -b crash | head -40
+            adb shell dumpsys shortcut | grep -A40 'Package: app.vercel.mishkan.twa' | grep -E 'id=|shortLabel' | head -20
+            adb shell pidof app.vercel.mishkan.twa > /dev/null || (echo "::error::The app did not stay open on the emulator." && exit 1)
 
       - uses: actions/upload-artifact@v4
         with:
