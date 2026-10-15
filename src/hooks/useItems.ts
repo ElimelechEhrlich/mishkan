@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { labels } from '../constants/labels';
-import { toMessage } from '../lib/errors';
+import { toMessage, withTimeout } from '../lib/errors';
 import { announceItemsChanged, onItemsChanged } from '../lib/itemChanges';
 import { agendaOf, todayIso } from '../lib/itemRules';
 import type { Agenda } from '../lib/itemRules';
@@ -166,13 +166,19 @@ export function useItems(): UseItems {
   const run = useCallback(
     async (change: () => Promise<void>): Promise<boolean> => {
       try {
-        await change();
-        await load();
+        await withTimeout(change());
+      } catch (error: unknown) {
+        setState((previous) => ({ ...previous, error: toMessage(error) }));
+        return false;
+      }
+      // Saved: the lists catch up, without holding the screen if the reload is slow.
+      try {
+        await withTimeout(load());
         announceItemsChanged(reloadOnChange.current);
         return true;
       } catch (error: unknown) {
         setState((previous) => ({ ...previous, error: toMessage(error) }));
-        return false;
+        return true;
       }
     },
     [load],

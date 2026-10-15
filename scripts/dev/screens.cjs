@@ -23,7 +23,7 @@ function filter(rows, params) {
     const req = route.request(); const url = new URL(req.url());
     const m = /\/rest\/v1\/([^/?]+)/.exec(url.pathname);
     if (!m) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-    if (req.method() !== 'GET' && req.method() !== 'HEAD') { if (process.env.LOGWRITE) console.log('WRITE', req.method(), m[1], (req.postData() || '').slice(0, 400)); if (process.env.FAILWRITE) return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'write refused (test)' }) }); }
+    if (req.method() !== 'GET' && req.method() !== 'HEAD') { if (process.env.LOGWRITE) console.log('WRITE', req.method(), m[1], (req.postData() || '').slice(0, 400)); if (process.env.HANGWRITE && m[1] === 'items') return; if (process.env.FAILWRITE) return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'write refused (test)' }) }); }
     let rows = filter(tables[m[1]] ?? [], url.searchParams);
     if ((req.headers()['accept'] || '').includes('vnd.pgrst.object')) return route.fulfill({ status: rows.length ? 200 : 406, contentType: 'application/json', body: JSON.stringify(rows[0] ?? {}) });
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });

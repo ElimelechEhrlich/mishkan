@@ -15,9 +15,37 @@ const serverMessages = [
   ['an appointment needs a day and an hour', labels.errors.appointmentHour],
 ] as const;
 
+/** The message of a request given up on, below in plain words. */
+const timedOut = 'request timed out';
+
+/**
+ * A change that got no answer from the server in time is given up on, so the screen is not
+ * left waiting for ever (a network that lets pages load but holds back what is sent).
+ */
+export function withTimeout<T>(work: Promise<T>, milliseconds = 20000): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error(timedOut));
+    }, milliseconds);
+    work.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        window.clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+    );
+  });
+}
+
 /** An error as people should read it; a lost connection in plain words. */
 export function toMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
+  if (message === timedOut) {
+    return labels.errors.timeout;
+  }
   if (networkMessages.some((text) => message.includes(text))) {
     return labels.status.offline;
   }

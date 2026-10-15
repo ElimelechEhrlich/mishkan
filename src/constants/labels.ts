@@ -476,6 +476,8 @@ export const labels = {
     notNow: 'לא עכשיו',
   },
   errors: {
+    timeout:
+      'השרת לא ענה, ולכן לא נשמר. אם יש סינון או VPN, ייתכן שהם חוסמים שמירה. כדאי לנסות שוב, או לנסות בלי ה־VPN.',
     stepAfterGoal: 'תאריך הצעד אחרי תאריך היעד',
     repeatsAfterGoal: 'החזרה נמשכת אחרי תאריך היעד',
     stepsAfterGoal: (titles: string): string => `יש צעדים אחרי התאריך הזה: ${titles}`,
