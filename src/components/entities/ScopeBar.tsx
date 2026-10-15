@@ -354,6 +354,12 @@ export function ScopeBar({
         ref={bar}
         className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
         onTouchStart={(event) => {
+          // While the page is scrolled, even part way while the picture goes up into the
+          // header, the carousel does not turn: the finger is moving the page.
+          if (window.scrollY > 0) {
+            touch.current = null;
+            return;
+          }
           const finger = event.touches[0];
           // A finger on a gliding carousel catches it where it is.
           cancelAnimationFrame(frame.current);
@@ -374,6 +380,14 @@ export function ScopeBar({
           const current = touch.current;
           const finger = event.touches[0];
           if (current === null || finger === undefined) {
+            return;
+          }
+          // The page started to scroll under the finger: let go of the carousel where it is.
+          if (window.scrollY > 0) {
+            touch.current = null;
+            if (movingRef.current !== null) {
+              glide(movingRef.current, 0, current.from);
+            }
             return;
           }
           const dx = finger.clientX - current.x;
