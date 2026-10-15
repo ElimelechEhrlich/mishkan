@@ -348,7 +348,10 @@ export const labels = {
     domain: 'תחום',
     kind: 'סוג',
     privateMark: 'פרטי',
-    noDomainHint: 'בלי תחום, הפריט נשמר רק אצלך עד שתשייך אותו.',
+    noDomainHint: 'בלי תחום, הפריט יחכה ב"להשלמה", אצל שניכם.',
+    saveFailed: 'לא נשמר. כדאי לבדוק את החיבור לאינטרנט (או סינון/VPN) ולנסות שוב.',
+    added: (count: number): string =>
+      count === 1 ? 'נוסף לרשימה ✓' : `נוספו ${String(count)} פריטים לרשימה ✓`,
     when: 'מתי',
     noTimeHint: 'בלי זמן, הפריט יחכה ב"להשלמה".',
     newChild: 'ילד/ה',

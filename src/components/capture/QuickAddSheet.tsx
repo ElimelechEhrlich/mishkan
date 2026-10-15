@@ -117,6 +117,8 @@ export function QuickAddSheet({
   const [amountText, setAmountText] = useState('');
   const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointmentDraft);
   const [saving, setSaving] = useState(false);
+  /** What the last save did, shown in the sheet itself: the page's own messages are behind it. */
+  const [outcome, setOutcome] = useState<{ readonly added: number } | 'failed' | null>(null);
   /** Bumped after each save so the picker starts again from the list of entities. */
   const [pickerVersion, setPickerVersion] = useState(0);
 
@@ -237,26 +239,32 @@ export function QuickAddSheet({
       return;
     }
     setSaving(true);
+    setOutcome(null);
+    const count = listTitles.length;
     void save().then((saved) => {
       setSaving(false);
-      if (saved && kind === 'missing_item') {
-        // The list is in; the field is ready for the next one, of the kind still chosen.
-        setTitle('');
+      if (!saved) {
+        // What was written stays, to try again.
+        setOutcome('failed');
         return;
       }
-      if (saved) {
+      if (kind === 'missing_item') {
+        // The list is in; the field is ready for the next one, of the kind still chosen.
         setTitle('');
-        setDomainId(null);
-        setQuickTime(null);
-        setQuickHour('');
-        setAmountText('');
-        setValueText('');
-        setNoteKind('note');
-        setAppointment(emptyAppointmentDraft);
-        setPickedEntityId(entityId ?? null);
-        setPickerVersion((version) => version + 1);
-        setOpen(false);
+        setOutcome({ added: count });
+        return;
       }
+      setTitle('');
+      setDomainId(null);
+      setQuickTime(null);
+      setQuickHour('');
+      setAmountText('');
+      setValueText('');
+      setNoteKind('note');
+      setAppointment(emptyAppointmentDraft);
+      setPickedEntityId(entityId ?? null);
+      setPickerVersion((version) => version + 1);
+      setOpen(false);
     });
   }
 
@@ -283,6 +291,7 @@ export function QuickAddSheet({
       style={{ paddingBottom: keyboard.covered }}
       onClick={() => {
         setOpen(false);
+        setOutcome(null);
       }}
     >
       <form
@@ -305,6 +314,7 @@ export function QuickAddSheet({
               label={labels.actions.close}
               onClick={() => {
                 setOpen(false);
+                setOutcome(null);
               }}
             />
             <h2 className="font-display text-[17px] font-semibold">{labels.actions.newItem}</h2>
@@ -318,6 +328,16 @@ export function QuickAddSheet({
             </button>
           </div>
         </div>
+        {outcome !== null && (
+          <p
+            role="status"
+            className={`shrink-0 px-4 py-2 text-[13px] font-semibold ${
+              outcome === 'failed' ? 'bg-alert-soft text-alert' : 'bg-primary-soft text-primary'
+            }`}
+          >
+            {outcome === 'failed' ? labels.capture.saveFailed : labels.capture.added(outcome.added)}
+          </p>
+        )}
         {/* One scroll for everything below the bar: the writing, the choices and the button. */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           <div className="px-4 pt-3">
