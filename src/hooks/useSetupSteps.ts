@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
-import { isAndroid, isInstalledApp } from '../lib/install';
+import { apkUpdateDue, isAndroid, isInstalledApp, knownLatestApk } from '../lib/install';
 import { notificationPermission, pushSupported } from '../lib/push';
 import { openSteps, setupState, setupSteps } from '../lib/setup';
 import type { SetupFacts, SetupState, SetupStep } from '../lib/setup';
@@ -107,15 +107,18 @@ export function useSetupSteps(
   return { steps, push, setAside: putAside, bringBack };
 }
 
-/** Whether a first step is still open, for a dot on the settings button; loads nothing. */
+/**
+ * Whether something waits in the settings, for a dot on their button: a first step still open,
+ * or an update of the Android app. Loads nothing.
+ */
 export function useSetupPending(): boolean {
   const { member, members } = useHouseholdContext();
   useSyncExternalStore(subscribe, () => version);
   const on = pushSupported() && notificationPermission() === 'granted';
-  return (
-    openSteps(setupState(facts(cachedEntities(member.id), members.length, on), setAside())).length >
-    0
+  const open = openSteps(
+    setupState(facts(cachedEntities(member.id), members.length, on), setAside()),
   );
+  return open.length > 0 || apkUpdateDue(knownLatestApk());
 }
 
 export type UsePushPrompt = {

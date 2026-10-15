@@ -1,7 +1,8 @@
 name: Android app
 
 # Builds the Android app (mishkan.apk): a shell that opens the site full screen, with the
-# shortcuts and icons of .github/twa-manifest.json. Run it from the Actions tab whenever the
+# shortcuts and icons of .github/twa-manifest.json. It opens the site with its version, and
+# public/apk-version.json holds the newest, so a phone with an older one is told to update. Run it from the Actions tab whenever the
 # shortcuts or the icon change; changes to the site itself reach the app without it.
 #
 # With the signing key in the secrets, the new APK replaces public/mishkan.apk on main, so the
@@ -70,9 +71,16 @@ jobs:
           # Each build is a newer version than the one on the phone, so it installs over it.
           CODE=$((GITHUB_RUN_NUMBER + 1))
           ALIAS="${KEY_ALIAS:-test}"
-          jq --arg alias "$ALIAS" --argjson code "$CODE" \
-            '.signingKey.alias = $alias | .appVersionCode = $code | .appVersionName = ("1." + ($code|tostring))' \
+          # The app opens the site with its version (?apk=N), so the site can tell it is out of date.
+          jq --arg alias "$ALIAS" --argjson code "$CODE" '
+            def withVersion: if contains("?") then . + "&apk=\($code)" else . + "?apk=\($code)" end;
+            .signingKey.alias = $alias
+            | .appVersionCode = $code
+            | .appVersionName = ("1." + ($code|tostring))
+            | .startUrl |= withVersion
+            | .shortcuts |= map(.url |= withVersion)' \
             .github/twa-manifest.json > build/twa-manifest.json
+          jq '{startUrl, shortcuts: [.shortcuts[].url], appVersionCode}' build/twa-manifest.json
 
       - name: Android SDK
         run: |
@@ -120,9 +128,11 @@ jobs:
         run: |
           set -euo pipefail
           cp build/app-release-signed.apk public/mishkan.apk
+          # The newest version, which the site compares with the one a phone opens it from.
+          printf '{"version":%s}\n' "$((GITHUB_RUN_NUMBER + 1))" > public/apk-version.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/mishkan.apk
+          git add public/mishkan.apk public/apk-version.json
           git commit -m "Android app: version 1.$((GITHUB_RUN_NUMBER + 1))"
           # Main may have moved on while building.
           git pull --rebase origin main

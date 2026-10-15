@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { rememberApkLaunch } from './lib/install';
 import { refreshOnReturnAndAtMidnight } from './lib/itemChanges';
 import { registerAppUpdates } from './lib/pwa';
 import './index.css';
@@ -10,6 +11,7 @@ if (container === null) {
   throw new Error('Root element #root was not found in index.html');
 }
 
+rememberApkLaunch();
 registerAppUpdates();
 refreshOnReturnAndAtMidnight();
 

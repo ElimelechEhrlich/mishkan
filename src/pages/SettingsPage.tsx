@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { ReactElement } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { EntitySettings } from '../components/settings/EntitySettings';
+import { ApkUpdateCard } from '../components/settings/ApkUpdateCard';
 import { AutoReminderCard } from '../components/settings/AutoReminderCard';
 import { InviteCard } from '../components/settings/InviteCard';
 import { NotificationsCard } from '../components/settings/NotificationsCard';
@@ -53,6 +54,7 @@ export function SettingsPage(): ReactElement {
       inner
     >
       <ErrorBanner message={entities.error ?? setup.push.error} />
+      <ApkUpdateCard />
       <SetupCard
         steps={setup.steps}
         pushBlocked={setup.push.status === 'blocked'}
