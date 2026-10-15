@@ -3,6 +3,7 @@ import {
   activeSectionOf,
   addDays,
   agendaOf,
+  timelineOf,
   compareEntries,
   missingFields,
   seriesStarts,
@@ -185,6 +186,31 @@ describe('agendaOf', () => {
     expect(agendaOf([goal, step], [step], today).today.map((entry) => entry.item.id)).toEqual([
       'goal',
     ]);
+  });
+});
+
+describe('timelineOf', () => {
+  it('goes on from today to tomorrow, the week, later, no date, waiting and the shelf', () => {
+    const rows = [
+      item({ id: 'today', created_at: '2026-10-01' }),
+      item({ id: 'tomorrow', due_date: '2026-10-12' }),
+      item({ id: 'week', due_date: '2026-10-15' }),
+      item({ id: 'later', due_date: '2026-11-20' }),
+      item({ id: 'undated', time_mode: 'anytime', due_date: null }),
+      item({ id: 'waiting', time_mode: 'waiting', due_date: null }),
+      item({ id: 'shelf', time_mode: 'someday', due_date: null }),
+      item({ id: 'note', kind: 'note' }),
+    ];
+    const timeline = timelineOf(rows, [], today);
+    const ids = (entries: readonly { readonly item: { readonly id: string } }[]): string[] =>
+      entries.map((entry) => entry.item.id);
+    expect(ids(timeline.today)).toEqual(['today']);
+    expect(ids(timeline.tomorrow)).toEqual(['tomorrow']);
+    expect(ids(timeline.thisWeek)).toEqual(['week']);
+    expect(ids(timeline.upcoming)).toEqual(['later']);
+    expect(ids(timeline.undated)).toEqual(['undated']);
+    expect(ids(timeline.waiting)).toEqual(['waiting']);
+    expect(ids(timeline.someday)).toEqual(['shelf']);
   });
 });
 

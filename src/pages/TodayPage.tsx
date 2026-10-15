@@ -1,11 +1,12 @@
 import type { ReactElement } from 'react';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
-import { TodayList } from '../components/items/TodayList';
+import { TodayViews } from '../components/items/TodayViews';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
+import { useTimeline } from '../hooks/useTimeline';
 import { useLookups } from '../hooks/useLookups';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { formatToday } from '../lib/itemRules';
@@ -16,6 +17,7 @@ export function TodayPage(): ReactElement {
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
+  const timeline = useTimeline(items.assigned, items.steps);
 
   return (
     <PageShell
@@ -25,8 +27,9 @@ export function TodayPage(): ReactElement {
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error} />
-      <TodayList
+      <TodayViews
         agenda={items.agenda}
+        timeline={timeline}
         lookups={lookups}
         loading={items.loading}
         onComplete={items.completeItem}

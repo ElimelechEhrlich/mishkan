@@ -580,32 +580,79 @@ export type Agenda = {
   readonly ended: readonly ListEntry[];
 };
 
+/** The kinds that run on time: tasks, goals, issues by their steps, appointments, and what repeats. */
+function runsOnTime(item: Item): boolean {
+  return (
+    item.kind === 'issue' ||
+    item.kind === 'appointment' ||
+    item.kind === 'task' ||
+    item.kind === 'goal' ||
+    // A repeating tracker or missing item shows on the days of its occurrences.
+    ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring')
+  );
+}
+
+/** The rows of one time tab, of every kind that runs on time, as list entries. */
+function entriesOf(
+  assigned: readonly Item[],
+  steps: readonly Item[],
+  segment: OpenSegment,
+): ListEntry[] {
+  // A step goes inside its goal only when the goal itself is listed; the step of a goal
+  // that waits or is on the shelf is listed on its own, so nothing due is missed.
+  return toListEntries(rowsOfSegment(assigned, segment, runsOnTime), steps, assigned);
+}
+
+function inOrder(entries: readonly ListEntry[]): ListEntry[] {
+  return [...entries].sort(compareEntries);
+}
+
 /**
  * Today's list, the same reckoning as the main page's "late" and "today": active tasks and
  * goals (a goal by its earliest open step), issues by their steps, and appointments. Each
  * group is in time order, the ones with an hour first.
  */
 export function agendaOf(assigned: readonly Item[], steps: readonly Item[], today: string): Agenda {
-  // A step goes inside its goal only when the goal itself is listed; the step of a goal
-  // that waits or is on the shelf is listed on its own, so nothing due today is missed.
-  const rows = rowsOfSegment(
-    assigned,
-    'active',
-    (item) =>
-      item.kind === 'issue' ||
-      item.kind === 'appointment' ||
-      item.kind === 'task' ||
-      item.kind === 'goal' ||
-      // A repeating tracker or missing item shows on the days of its occurrences.
-      ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring'),
-  );
-  const sections = splitBySection(toListEntries(rows, steps, assigned), today);
+  const sections = splitBySection(entriesOf(assigned, steps, 'active'), today);
   return {
-    overdue: [...sections.overdue].sort(compareEntries),
-    urgent: [...sections.urgent].sort(compareEntries),
-    today: [...sections.today].sort(compareEntries),
-    passed: [...sections.passed].sort(compareEntries),
-    ended: [...sections.ended].sort(compareEntries),
+    overdue: inOrder(sections.overdue),
+    urgent: inOrder(sections.urgent),
+    today: inOrder(sections.today),
+    passed: inOrder(sections.passed),
+    ended: inOrder(sections.ended),
+  };
+}
+
+/** Everything that runs on time, from what is late to what is on the shelf. */
+export type Timeline = Agenda & {
+  readonly tomorrow: readonly ListEntry[];
+  /** From the day after tomorrow to a week from today. */
+  readonly thisWeek: readonly ListEntry[];
+  readonly upcoming: readonly ListEntry[];
+  readonly undated: readonly ListEntry[];
+  readonly waiting: readonly ListEntry[];
+  readonly someday: readonly ListEntry[];
+};
+
+/**
+ * Today's list and on to every other time: tomorrow, the coming week, later, with no date,
+ * waiting and on the shelf, of the same kinds and in the same order as today's.
+ */
+export function timelineOf(
+  assigned: readonly Item[],
+  steps: readonly Item[],
+  today: string,
+): Timeline {
+  const sections = splitBySection(entriesOf(assigned, steps, 'active'), today);
+  const tomorrow = addDays(today, 1);
+  return {
+    ...agendaOf(assigned, steps, today),
+    tomorrow: inOrder(sections.thisWeek.filter((entry) => entry.dueDate === tomorrow)),
+    thisWeek: inOrder(sections.thisWeek.filter((entry) => entry.dueDate !== tomorrow)),
+    upcoming: inOrder(sections.upcoming),
+    undated: inOrder(sections.undated),
+    waiting: inOrder(entriesOf(assigned, steps, 'waiting')),
+    someday: inOrder(entriesOf(assigned, steps, 'someday')),
   };
 }
 
