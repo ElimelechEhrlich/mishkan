@@ -1,3 +1,4 @@
+import { useKeyboardSpace } from '../../hooks/useKeyboardSpace';
 import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
@@ -90,6 +91,7 @@ export function QuickAddSheet({
   const initialIsShopping = entities.some((entity) =>
     entity.domains.some((domain) => domain.id === initialDomainId && domain.role === 'shopping'),
   );
+  const keyboard = useKeyboardSpace();
   const [open, setOpen] = useState(initiallyOpen);
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<AddableKind>(initialIsShopping ? 'missing_item' : defaultKind);
@@ -264,6 +266,8 @@ export function QuickAddSheet({
   return (
     <div
       className="fixed inset-0 z-20 flex animate-fade-in flex-col justify-end bg-ink/30 backdrop-blur-[2px]"
+      // Above the keyboard, so the add button stays in sight while typing.
+      style={{ paddingBottom: keyboard.covered }}
       onClick={() => {
         setOpen(false);
       }}
@@ -273,6 +277,11 @@ export function QuickAddSheet({
         onClick={(event) => {
           event.stopPropagation();
         }}
+        style={
+          keyboard.visible === null
+            ? undefined
+            : { maxHeight: `${String(Math.round(keyboard.visible * 0.92))}px` }
+        }
         className="mx-auto flex max-h-[90dvh] w-full max-w-xl animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-sheet"
       >
         <div className="flex flex-col gap-3 border-b border-line px-4 pt-2.5 pb-3">
@@ -286,7 +295,14 @@ export function QuickAddSheet({
               }}
             />
             <h2 className="font-display text-[17px] font-semibold">{labels.actions.newItem}</h2>
-            <span className="size-10" />
+            {/* Also at the top, in sight from the first moment, whatever the keyboard covers. */}
+            <button
+              type="submit"
+              disabled={!canSave}
+              className="min-h-10 rounded-xl px-3 text-[15px] font-semibold text-primary transition active:scale-95 disabled:text-faint"
+            >
+              {kind === 'missing_item' ? labels.capture.addShort : labels.actions.save}
+            </button>
           </div>
           <label className="sr-only" htmlFor="quick-add-title">
             {labels.titlePrompt[kind]}

@@ -1,28 +1,11 @@
-import { useEffect, useState } from 'react';
-import { apkUpdateDue, fetchLatestApk, knownLatestApk } from '../lib/install';
+import { useSyncExternalStore } from 'react';
+import { apkUpdateDue, knownLatestApk, onLatestApkChange } from '../lib/install';
 
 /**
- * Whether the Android app on this phone is out of date: what was last learned shows at once,
- * and the site is asked again for the newest version.
+ * Whether the Android app on this phone is out of date. The newest version is asked for when
+ * the app opens; this follows it, so the offer and the dot show at once.
  */
 export function useApkUpdate(): boolean {
-  const [latest, setLatest] = useState(knownLatestApk);
-
-  useEffect(() => {
-    let active = true;
-    fetchLatestApk()
-      .then((version) => {
-        if (active && version !== null) {
-          setLatest(version);
-        }
-      })
-      .catch(() => {
-        // Offline: what was known before stands, and it is asked again next time.
-      });
-    return (): void => {
-      active = false;
-    };
-  }, []);
-
+  const latest = useSyncExternalStore(onLatestApkChange, knownLatestApk);
   return apkUpdateDue(latest);
 }

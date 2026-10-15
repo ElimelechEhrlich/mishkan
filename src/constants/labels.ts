@@ -340,6 +340,7 @@ export const labels = {
     wrongAccount: 'כבר הצטרפת לבית? כנראה שזו כתובת אחרת: צא/י והיכנס/י עם הכתובת שאיתה הצטרפת.',
   },
   capture: {
+    addShort: 'הוספה',
     entity: 'ישות',
     domain: 'תחום',
     kind: 'סוג',

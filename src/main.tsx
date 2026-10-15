@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { rememberApkLaunch } from './lib/install';
+import { fetchLatestApk, installedApkVersion, rememberApkLaunch } from './lib/install';
 import { refreshOnReturnAndAtMidnight } from './lib/itemChanges';
 import { registerAppUpdates } from './lib/pwa';
 import './index.css';
@@ -12,6 +12,15 @@ if (container === null) {
 }
 
 rememberApkLaunch();
+// Only the Android app is offered updates; offline, what was known before stands.
+if (installedApkVersion() !== null) {
+  fetchLatestApk().catch(() => undefined);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      fetchLatestApk().catch(() => undefined);
+    }
+  });
+}
 registerAppUpdates();
 refreshOnReturnAndAtMidnight();
 

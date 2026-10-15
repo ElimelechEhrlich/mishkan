@@ -1,9 +1,10 @@
 import { useCallback, useSyncExternalStore } from 'react';
-import { apkUpdateDue, isAndroid, isInstalledApp, knownLatestApk } from '../lib/install';
+import { isAndroid, isInstalledApp } from '../lib/install';
 import { notificationPermission, pushSupported } from '../lib/push';
 import { openSteps, setupState, setupSteps } from '../lib/setup';
 import type { SetupFacts, SetupState, SetupStep } from '../lib/setup';
 import type { EntityWithDomains } from '../types/domain';
+import { useApkUpdate } from './useApkUpdate';
 import { cachedEntities } from './useEntities';
 import { usePushNotifications } from './usePushNotifications';
 import type { UsePushNotifications } from './usePushNotifications';
@@ -114,11 +115,12 @@ export function useSetupSteps(
 export function useSetupPending(): boolean {
   const { member, members } = useHouseholdContext();
   useSyncExternalStore(subscribe, () => version);
+  const updateDue = useApkUpdate();
   const on = pushSupported() && notificationPermission() === 'granted';
   const open = openSteps(
     setupState(facts(cachedEntities(member.id), members.length, on), setAside()),
   );
-  return open.length > 0 || apkUpdateDue(knownLatestApk());
+  return open.length > 0 || updateDue;
 }
 
 export type UsePushPrompt = {

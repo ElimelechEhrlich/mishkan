@@ -71,6 +71,16 @@ export function knownLatestApk(): number | null {
   return latest === null ? null : Number(latest);
 }
 
+const latestListeners = new Set<() => void>();
+
+/** Follows what is known of the newest version, so the settings button's dot updates at once. */
+export function onLatestApkChange(listener: () => void): () => void {
+  latestListeners.add(listener);
+  return () => {
+    latestListeners.delete(listener);
+  };
+}
+
 function isVersionFile(value: unknown): value is { readonly version: number } {
   return (
     typeof value === 'object' &&
@@ -80,7 +90,10 @@ function isVersionFile(value: unknown): value is { readonly version: number } {
   );
 }
 
-/** Asks the site for the newest version of the Android app, and keeps it. */
+/**
+ * Asks the site for the newest version of the Android app, and keeps it. Asked when the app
+ * opens, so the dot and the offer are there before the settings are.
+ */
 export async function fetchLatestApk(): Promise<number | null> {
   const response = await fetch('/apk-version.json', { cache: 'no-store' });
   if (!response.ok) {
@@ -90,7 +103,12 @@ export async function fetchLatestApk(): Promise<number | null> {
   if (!isVersionFile(body)) {
     return null;
   }
-  store(latestApkKey, String(body.version));
+  if (knownLatestApk() !== body.version) {
+    store(latestApkKey, String(body.version));
+    latestListeners.forEach((listener) => {
+      listener();
+    });
+  }
   return body.version;
 }
 
