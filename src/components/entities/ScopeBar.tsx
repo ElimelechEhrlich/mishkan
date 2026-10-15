@@ -229,6 +229,35 @@ export function ScopeBar({
     }
   }
 
+  /**
+   * Stands the carousel at once on the place nearest to where it is, if it is between places:
+   * when the page starts to move, or a touch is cut off (a screenshot, a call), it never stays
+   * caught half way, and the picture going up into the header has one place to go from.
+   */
+  function settleNow(): void {
+    const position = movingRef.current;
+    if (position === null) {
+      return;
+    }
+    touch.current = null;
+    settle(Math.max(0, Math.min(options.length - 1, Math.round(position))));
+  }
+  const settleNowRef = useRef(settleNow);
+  settleNowRef.current = settleNow;
+
+  // The page scrolling while the carousel is between places ends its turn there and then.
+  useEffect(() => {
+    const onScroll = (): void => {
+      if (window.scrollY > 0) {
+        settleNowRef.current();
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return (): void => {
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+
   useEffect(() => {
     return (): void => {
       cancelAnimationFrame(frame.current);
@@ -357,6 +386,7 @@ export function ScopeBar({
           // While the page is scrolled, even part way while the picture goes up into the
           // header, the carousel does not turn: the finger is moving the page.
           if (window.scrollY > 0) {
+            settleNow();
             touch.current = null;
             return;
           }
@@ -384,10 +414,7 @@ export function ScopeBar({
           }
           // The page started to scroll under the finger: let go of the carousel where it is.
           if (window.scrollY > 0) {
-            touch.current = null;
-            if (movingRef.current !== null) {
-              glide(movingRef.current, 0, current.from);
-            }
+            settleNow();
             return;
           }
           const dx = finger.clientX - current.x;
@@ -397,6 +424,11 @@ export function ScopeBar({
               return;
             }
             current.sideways = Math.abs(dx) > Math.abs(dy);
+            // A finger that caught a gliding carousel and then went up or down moves the page.
+            if (!current.sideways) {
+              settleNow();
+              return;
+            }
           }
           if (!current.sideways) {
             return;
@@ -417,6 +449,7 @@ export function ScopeBar({
                 : position,
           );
         }}
+        onTouchCancel={settleNow}
         onTouchEnd={(event) => {
           const current = touch.current;
           touch.current = null;
