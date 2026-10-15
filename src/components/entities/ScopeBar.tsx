@@ -14,6 +14,7 @@ import {
   scopeOptions,
 } from '../../lib/lookups';
 import { cubicBezier, everythingFlight, flyDownAndOn, flyWhile } from '../../lib/flight';
+import { useCarouselTouch } from '../../hooks/useCarouselTouch';
 import { setEverythingUp, useEverythingUp } from '../../hooks/useEverythingUp';
 import { resetScopeDock, setScopeDock } from '../../hooks/useScopeDock';
 import { dockedScale } from '../ui/EverythingButton';
@@ -52,24 +53,6 @@ const scrollLinked = typeof CSS !== 'undefined' && CSS.supports('animation-timel
 /** Docking into the header, the picture first rises with the page and then slides over. */
 const dockSideways = cubicBezier(0.4, 0, 1, 1);
 
-/** How far the finger moves the carousel by one place, in pixels. */
-const stepWidth = 80;
-/** The finger's speed is taken from its last moves, this long back, in milliseconds. */
-const speedWindow = 100;
-/** Past either end the carousel follows the finger only this much, and springs back. */
-const edgePull = 0.3;
-/** A finger that moved less than this, in pixels, is still a tap. */
-const tapSlop = 8;
-
-type Touch = {
-  readonly x: number;
-  readonly y: number;
-  readonly from: number;
-  /** Whether the finger moves sideways (turning the carousel) or up and down; null until known. */
-  sideways: boolean | null;
-  samples: { readonly x: number; readonly at: number }[];
-};
-
 /**
  * Who the tabs are showing, as a row of pictures: the chosen one large in the middle,
  * its neighbours smaller on each side. Tapping a neighbour, the arrows or a swipe moves
@@ -87,20 +70,10 @@ export function ScopeBar({
   const found = options.indexOf(scopeId);
   const index = found === -1 ? 0 : found;
   const scope = ordered.find((entity) => entity.id === scopeId);
-  const touch = useRef<Touch | null>(null);
-  /**
-   * The picture the finger went down on, while the finger is still down. It stays in the page
-   * (out of sight) even when it leaves the carousel, as "everything" flying up to the header:
-   * a touch whose picture is taken out of the page stops reaching the carousel, which then
-   * stood still half way.
-   */
-  const [touched, setTouched] = useState<string | null>(null);
   /** Where the carousel is while a finger moves it or it glides on, in places; null at rest. */
   const [moving, setMoving] = useState<number | null>(null);
   const movingRef = useRef<number | null>(null);
   const frame = useRef(0);
-  /** Set when a finger turned the carousel, so the tap that ends it opens nothing. */
-  const swiped = useRef(false);
   const circle = mainCircle(entities);
   const [sheetOpen, setSheetOpen] = useState(false);
   const everythingUp = useEverythingUp();
@@ -236,35 +209,6 @@ export function ScopeBar({
     }
   }
 
-  /**
-   * Stands the carousel at once on the place nearest to where it is, if it is between places:
-   * when the page starts to move, or a touch is cut off (a screenshot, a call), it never stays
-   * caught half way, and the picture going up into the header has one place to go from.
-   */
-  function settleNow(): void {
-    const position = movingRef.current;
-    if (position === null) {
-      return;
-    }
-    touch.current = null;
-    settle(Math.max(0, Math.min(options.length - 1, Math.round(position))));
-  }
-  const settleNowRef = useRef(settleNow);
-  settleNowRef.current = settleNow;
-
-  // The page scrolling while the carousel is between places ends its turn there and then.
-  useEffect(() => {
-    const onScroll = (): void => {
-      if (window.scrollY > 0) {
-        settleNowRef.current();
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return (): void => {
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
-
   useEffect(() => {
     return (): void => {
       cancelAnimationFrame(frame.current);
@@ -376,6 +320,25 @@ export function ScopeBar({
     frame.current = requestAnimationFrame(tick);
   }
 
+  const touch = useCarouselTouch({
+    places: options.length,
+    rest: index,
+    position: () => movingRef.current,
+    catchAt: () => {
+      cancelAnimationFrame(frame.current);
+      pending.current = null;
+      return movingRef.current;
+    },
+    moveTo,
+    glide,
+    settleNearest: () => {
+      const position = movingRef.current;
+      if (position !== null) {
+        settle(Math.max(0, Math.min(options.length - 1, Math.round(position))));
+      }
+    },
+  });
+
   // While the carousel turns, the name below follows the picture nearest the middle.
   const nearest =
     moving === null
@@ -389,101 +352,7 @@ export function ScopeBar({
       <div
         ref={bar}
         className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
-        onTouchStart={(event) => {
-          // While the page is scrolled, even part way while the picture goes up into the
-          // header, the carousel does not turn: the finger is moving the page.
-          if (window.scrollY > 0) {
-            settleNow();
-            touch.current = null;
-            return;
-          }
-          const finger = event.touches[0];
-          const picture =
-            event.target instanceof Element ? event.target.closest('[data-option]') : null;
-          setTouched(picture?.getAttribute('data-option') ?? null);
-          // A finger on a gliding carousel catches it where it is.
-          cancelAnimationFrame(frame.current);
-          pending.current = null;
-          swiped.current = movingRef.current !== null;
-          touch.current =
-            finger === undefined
-              ? null
-              : {
-                  x: finger.clientX,
-                  y: finger.clientY,
-                  from: movingRef.current ?? index,
-                  sideways: null,
-                  samples: [{ x: finger.clientX, at: event.timeStamp }],
-                };
-        }}
-        onTouchMove={(event) => {
-          const current = touch.current;
-          const finger = event.touches[0];
-          if (current === null || finger === undefined) {
-            return;
-          }
-          // The page started to scroll under the finger: let go of the carousel where it is.
-          if (window.scrollY > 0) {
-            settleNow();
-            return;
-          }
-          const dx = finger.clientX - current.x;
-          if (current.sideways === null) {
-            const dy = finger.clientY - current.y;
-            if (Math.max(Math.abs(dx), Math.abs(dy)) < tapSlop) {
-              return;
-            }
-            current.sideways = Math.abs(dx) > Math.abs(dy);
-            // A finger that caught a gliding carousel and then went up or down moves the page.
-            if (!current.sideways) {
-              settleNow();
-              return;
-            }
-          }
-          if (!current.sideways) {
-            return;
-          }
-          swiped.current = true;
-          current.samples = [
-            ...current.samples.filter((sample) => event.timeStamp - sample.at <= speedWindow),
-            { x: finger.clientX, at: event.timeStamp },
-          ];
-          // Right to left: the next one waits on the left, so moving the finger right brings it.
-          const position = current.from + dx / stepWidth;
-          const last = options.length - 1;
-          moveTo(
-            position < 0
-              ? position * edgePull
-              : position > last
-                ? last + (position - last) * edgePull
-                : position,
-          );
-        }}
-        onTouchCancel={() => {
-          setTouched(null);
-          settleNow();
-        }}
-        onTouchEnd={(event) => {
-          setTouched(null);
-          const current = touch.current;
-          touch.current = null;
-          const position = movingRef.current;
-          if (current === null || position === null) {
-            return;
-          }
-          const first = current.samples[0];
-          const latest = current.samples[current.samples.length - 1];
-          // A finger that stopped before it let go throws nothing.
-          const speed =
-            current.sideways !== true ||
-            first === undefined ||
-            latest === undefined ||
-            latest.at === first.at ||
-            event.timeStamp - latest.at > speedWindow
-              ? 0
-              : (latest.x - first.x) / (latest.at - first.at) / stepWidth;
-          glide(position, speed, current.from);
-        }}
+        {...touch.handlers}
       >
         {options.map((option, position) => {
           const isAll = option === null;
@@ -499,7 +368,7 @@ export function ScopeBar({
           const hidden = isAll ? up : away > carouselReach + (moving === null ? 0 : 1);
           const optionKey = option ?? 'all';
           // Out of the carousel, but the finger is still on it: kept, out of sight.
-          const kept = hidden && touched === optionKey;
+          const kept = hidden && touch.touched === optionKey;
           if (hidden && !kept) {
             return null;
           }
@@ -522,9 +391,11 @@ export function ScopeBar({
               }
               tabIndex={position === index && !canOpenSheet ? -1 : 0}
               onClick={() => {
-                if (swiped.current) {
-                  swiped.current = false;
-                } else if (position === index && docked.current >= 0.5) {
+                // The tap that ends a swipe opens nothing.
+                if (touch.takeSwipe()) {
+                  return;
+                }
+                if (position === index && docked.current >= 0.5) {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else if (position === index) {
                   setSheetOpen(canOpenSheet);

@@ -16,7 +16,7 @@ pkill -f "vite --port 5179"   # on its own; exit code 144 is normal
 
 Each argument is `<path>=<name>@<step>|<step>…` (`==` when the path holds `=`). Steps: a
 selector or `text=…` to click, `wait:ms`, `snap:name`, `center:sel`, `bottom`, `quick:sel`,
-`fill:sel=>value`, `xprobe`, `scroll:y`, `wheel:sel` (scrolls over it and prints both scroll positions), `drag:sel=>dy` (drags it down by dy pixels, up when negative; `HOLD=1` saves `holding.png` before letting go), `back` (the browser's back), `y` (prints the scroll position). `TOUR=1` shows the tour, `HEIGHT=500` a shorter screen (as with the keyboard open), `TEXT=1` prints the page text.
+`fill:sel=>value`, `xprobe`, `scroll:y`, `wheel:sel` (scrolls over it and prints both scroll positions), `swipe:sel=>dx,dy[,holdMs]` (a real finger, with `TOUCH=1`; `CANCEL=1` ends it as cut off), `drag:sel=>dy` (drags it down by dy pixels, up when negative; `HOLD=1` saves `holding.png` before letting go), `back` (the browser's back), `y` (prints the scroll position). `TOUR=1` shows the tour, `HEIGHT=500` a shorter screen (as with the keyboard open), `TEXT=1` prints the page text.
 
 When the schema changes, add the new columns and tables to `fixtures.cjs`, with rows that
 show every state of the new feature.
