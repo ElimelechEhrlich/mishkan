@@ -14,8 +14,8 @@ export default defineConfig({
       // Adds the handlers that show reminders sent by web push.
       workbox: {
         importScripts: ['push-sw.js'],
-        // The Android app, its link file and the key page are real files, not pages of the app.
-        navigateFallbackDenylist: [/\.apk$/, /^\/\.well-known\//, /^\/key-to-text\.html$/],
+        // The Android app and its link file are real files, not pages of the app.
+        navigateFallbackDenylist: [/\.apk$/, /^\/\.well-known\//],
       },
       manifest: {
         name: 'משכן',
