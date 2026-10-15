@@ -45,7 +45,7 @@ export function ShoppingListField({
       }}
       className={
         large
-          ? 'max-h-[40dvh] w-full resize-none bg-transparent px-1 py-1 text-xl leading-snug font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none'
+          ? 'w-full resize-none bg-transparent px-1 py-1 text-xl leading-snug font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none'
           : 'max-h-[50dvh] w-full resize-none rounded-xl bg-paper px-3.5 py-3 text-[15px] leading-relaxed placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
       }
     />

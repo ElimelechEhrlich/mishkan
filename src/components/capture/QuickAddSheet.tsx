@@ -297,7 +297,7 @@ export function QuickAddSheet({
         }
         className="mx-auto flex max-h-[90dvh] w-full max-w-xl animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-sheet"
       >
-        <div className="flex flex-col gap-3 border-b border-line px-4 pt-2.5 pb-3">
+        <div className="flex shrink-0 flex-col gap-3 border-b border-line px-4 pt-2.5 pb-3">
           <span className="mx-auto h-1 w-9 shrink-0 rounded-full bg-line" />
           <div className="flex items-center justify-between">
             <IconButton
@@ -317,121 +317,126 @@ export function QuickAddSheet({
               {kind === 'missing_item' ? labels.capture.addShort : labels.actions.save}
             </button>
           </div>
-          <label className="sr-only" htmlFor="quick-add-title">
-            {labels.titlePrompt[kind]}
-          </label>
-          {kind === 'missing_item' ? (
-            <ShoppingListField value={title} onChange={setTitle} autoFocus large />
-          ) : (
-            <input
-              id="quick-add-title"
-              value={title}
-              autoFocus
-              autoComplete="off"
-              placeholder={isValue ? labels.data.valueName : labels.titlePrompt[kind]}
-              onChange={(event) => {
-                setTitle(event.target.value);
-              }}
-              className="w-full bg-transparent px-1 py-1 text-xl font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none"
-            />
-          )}
         </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 py-4">
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold tracking-wide text-muted">
-              {labels.capture.kind}
-            </span>
-            <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]">
-              {kinds.map((option) => (
-                <span key={option} className="shrink-0">
-                  <Chip
-                    label={labels.kind[option]}
-                    selected={option === kind}
-                    onClick={() => {
-                      setKind(option);
-                    }}
-                  />
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {kind === 'missing_item' && (
-            <MissingItemFields
-              category={category}
-              onCategoryChange={setCategory}
-              targets={targets}
-              domainId={missingItemDomainId}
-              onDomainChange={setShoppingDomainId}
-            />
-          )}
-
-          {kind === 'note' && (
-            <div className="flex flex-col gap-3">
-              <Segmented options={noteKinds} value={noteKind} onChange={setNoteKind} />
-              {noteKind === 'value' && (
-                <TextField
-                  label={labels.data.valueField}
-                  value={valueText}
-                  onChange={setValueText}
-                />
-              )}
-            </div>
-          )}
-
-          {kind === 'debt' && (
-            <DebtFields
-              direction={direction}
-              onDirectionChange={setDirection}
-              amount={amountText}
-              onAmountChange={setAmountText}
-            />
-          )}
-
-          {kind !== 'missing_item' && (
-            <div className="flex flex-col gap-3">
-              <DomainPicker
-                key={pickerVersion}
-                entities={entities}
-                value={domainId}
-                onChange={pickDomain}
-                initialEntityId={entityId}
-                onEntityChange={setPickedEntityId}
-                onStructureChanged={onStructureChanged}
+        {/* One scroll for everything below the bar: the writing, the choices and the button. */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+          <div className="px-4 pt-3">
+            <label className="sr-only" htmlFor="quick-add-title">
+              {labels.titlePrompt[kind]}
+            </label>
+            {kind === 'missing_item' ? (
+              <ShoppingListField value={title} onChange={setTitle} autoFocus large />
+            ) : (
+              <input
+                id="quick-add-title"
+                value={title}
+                autoFocus
+                autoComplete="off"
+                placeholder={isValue ? labels.data.valueName : labels.titlePrompt[kind]}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                }}
+                className="w-full bg-transparent px-1 py-1 text-xl font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none"
               />
-              {domainId === null && (
-                <p className="text-[13px] text-muted">{labels.capture.noDomainHint}</p>
-              )}
+            )}
+          </div>
+          <div className="flex flex-col gap-5 px-4 py-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-bold tracking-wide text-muted">
+                {labels.capture.kind}
+              </span>
+              <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]">
+                {kinds.map((option) => (
+                  <span key={option} className="shrink-0">
+                    <Chip
+                      label={labels.kind[option]}
+                      selected={option === kind}
+                      onClick={() => {
+                        setKind(option);
+                      }}
+                    />
+                  </span>
+                ))}
+              </div>
             </div>
-          )}
 
-          {kind === 'appointment' && (
-            <AppointmentFields
-              draft={appointment}
-              health={healthDomain}
-              onChange={(changes) => {
-                setAppointment((current) => ({ ...current, ...changes }));
-              }}
-            />
-          )}
+            {kind === 'missing_item' && (
+              <MissingItemFields
+                category={category}
+                onCategoryChange={setCategory}
+                targets={targets}
+                domainId={missingItemDomainId}
+                onDomainChange={setShoppingDomainId}
+              />
+            )}
 
-          {asksTime && (
-            <QuickTimePicker
-              value={pickedTime}
-              onChange={setQuickTime}
-              forGoal={kind === 'goal'}
-              hour={quickHour}
-              onHourChange={setQuickHour}
-            />
-          )}
-        </div>
-        <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-          <div className="flex flex-col">
-            <Button type="submit" disabled={!canSave}>
-              {kind === 'missing_item'
-                ? labels.shopping.addCount(listTitles.length)
-                : labels.actions.save}
-            </Button>
+            {kind === 'note' && (
+              <div className="flex flex-col gap-3">
+                <Segmented options={noteKinds} value={noteKind} onChange={setNoteKind} />
+                {noteKind === 'value' && (
+                  <TextField
+                    label={labels.data.valueField}
+                    value={valueText}
+                    onChange={setValueText}
+                  />
+                )}
+              </div>
+            )}
+
+            {kind === 'debt' && (
+              <DebtFields
+                direction={direction}
+                onDirectionChange={setDirection}
+                amount={amountText}
+                onAmountChange={setAmountText}
+              />
+            )}
+
+            {kind !== 'missing_item' && (
+              <div className="flex flex-col gap-3">
+                <DomainPicker
+                  key={pickerVersion}
+                  entities={entities}
+                  value={domainId}
+                  onChange={pickDomain}
+                  initialEntityId={entityId}
+                  onEntityChange={setPickedEntityId}
+                  onStructureChanged={onStructureChanged}
+                />
+                {domainId === null && (
+                  <p className="text-[13px] text-muted">{labels.capture.noDomainHint}</p>
+                )}
+              </div>
+            )}
+
+            {kind === 'appointment' && (
+              <AppointmentFields
+                draft={appointment}
+                health={healthDomain}
+                onChange={(changes) => {
+                  setAppointment((current) => ({ ...current, ...changes }));
+                }}
+              />
+            )}
+
+            {asksTime && (
+              <QuickTimePicker
+                value={pickedTime}
+                onChange={setQuickTime}
+                forGoal={kind === 'goal'}
+                hour={quickHour}
+                onHourChange={setQuickHour}
+              />
+            )}
+          </div>
+          <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <div className="flex flex-col">
+              <Button type="submit" disabled={!canSave}>
+                {kind === 'missing_item'
+                  ? labels.shopping.addCount(listTitles.length)
+                  : labels.actions.save}
+              </Button>
+            </div>
           </div>
         </div>
       </form>
