@@ -271,17 +271,15 @@ export function useItems(): UseItems {
 
   const assigned = useMemo(() => state.items.filter((item) => item.is_complete), [state.items]);
   const incomplete = useMemo(
-    // One whose parent to complete it is gone (review_by cleared) goes to both, so it is not lost.
+    // Both parents see everything that waits to be completed, whoever opened it; what is
+    // private (the parent's own entity) the database shows to its owner alone.
     // A step, question or tracker takes its domain from its goal or issue, so one that only
     // lacks a domain waits for its parent to be assigned, and is not listed on its own.
     () =>
       state.items.filter(
-        (item) =>
-          !item.is_complete &&
-          (item.review_by === member.id || item.review_by === null) &&
-          !(item.parent_id !== null && item.domain_id === null),
+        (item) => !item.is_complete && !(item.parent_id !== null && item.domain_id === null),
       ),
-    [state.items, member.id],
+    [state.items],
   );
 
   const reminders = useItemReminders();

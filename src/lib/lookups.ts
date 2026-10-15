@@ -100,19 +100,18 @@ export function shoppingTargets(entities: readonly EntityWithDomains[]): Shoppin
 }
 
 /**
- * Whether a parent can see an item, by the same rule as the database: with no domain only
- * the parent who completes it, in a private entity only its owner, otherwise both.
+ * Whether a parent can see an item, by the same rule as the database: in a private entity
+ * (by its domain, or by its entity while it has no domain) only its owner, otherwise both.
  */
 export function canSeeItem(
-  item: Pick<Item, 'domain_id' | 'review_by'>,
+  item: Pick<Item, 'domain_id' | 'entity_id'>,
   entities: readonly EntityWithDomains[],
   memberId: string,
 ): boolean {
-  if (item.domain_id === null) {
-    return item.review_by === memberId;
-  }
   const entity = entities.find((candidate) =>
-    candidate.domains.some((domain) => domain.id === item.domain_id),
+    item.domain_id === null
+      ? candidate.id === item.entity_id
+      : candidate.domains.some((domain) => domain.id === item.domain_id),
   );
   return entity === undefined || entity.kind !== 'personal' || entity.member_id === memberId;
 }
