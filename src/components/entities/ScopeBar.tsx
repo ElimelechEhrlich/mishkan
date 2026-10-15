@@ -88,6 +88,13 @@ export function ScopeBar({
   const index = found === -1 ? 0 : found;
   const scope = ordered.find((entity) => entity.id === scopeId);
   const touch = useRef<Touch | null>(null);
+  /**
+   * The picture the finger went down on, while the finger is still down. It stays in the page
+   * (out of sight) even when it leaves the carousel, as "everything" flying up to the header:
+   * a touch whose picture is taken out of the page stops reaching the carousel, which then
+   * stood still half way.
+   */
+  const [touched, setTouched] = useState<string | null>(null);
   /** Where the carousel is while a finger moves it or it glides on, in places; null at rest. */
   const [moving, setMoving] = useState<number | null>(null);
   const movingRef = useRef<number | null>(null);
@@ -391,6 +398,9 @@ export function ScopeBar({
             return;
           }
           const finger = event.touches[0];
+          const picture =
+            event.target instanceof Element ? event.target.closest('[data-option]') : null;
+          setTouched(picture?.getAttribute('data-option') ?? null);
           // A finger on a gliding carousel catches it where it is.
           cancelAnimationFrame(frame.current);
           pending.current = null;
@@ -449,8 +459,12 @@ export function ScopeBar({
                 : position,
           );
         }}
-        onTouchCancel={settleNow}
+        onTouchCancel={() => {
+          setTouched(null);
+          settleNow();
+        }}
         onTouchEnd={(event) => {
+          setTouched(null);
           const current = touch.current;
           touch.current = null;
           const position = movingRef.current;
@@ -483,7 +497,10 @@ export function ScopeBar({
           const away = Math.abs(distance);
           // "Everything" waits in the header once the carousel is past it.
           const hidden = isAll ? up : away > carouselReach + (moving === null ? 0 : 1);
-          if (hidden) {
+          const optionKey = option ?? 'all';
+          // Out of the carousel, but the finger is still on it: kept, out of sight.
+          const kept = hidden && touched === optionKey;
+          if (hidden && !kept) {
             return null;
           }
           const entity = ordered.find((candidate) => candidate.id === option);
@@ -491,10 +508,12 @@ export function ScopeBar({
           const middle = away < 0.5;
           return (
             <button
-              key={option ?? 'all'}
+              key={optionKey}
               ref={position === index ? center : undefined}
               type="button"
-              data-flight={option === null ? everythingFlight : undefined}
+              data-option={optionKey}
+              data-flight={option === null && !kept ? everythingFlight : undefined}
+              aria-hidden={kept || undefined}
               aria-pressed={position === index}
               aria-label={
                 position === index && canOpenSheet
@@ -514,8 +533,8 @@ export function ScopeBar({
                 }
               }}
               className={`absolute top-1/2 left-1/2 rounded-full ${
-                position === index ? 'dock-holder' : ''
-              } ${
+                kept ? 'pointer-events-none invisible' : ''
+              } ${position === index ? 'dock-holder' : ''} ${
                 moving === null && !(isAll && held !== null)
                   ? 'transition-[transform,opacity] duration-300 ease-out'
                   : ''
