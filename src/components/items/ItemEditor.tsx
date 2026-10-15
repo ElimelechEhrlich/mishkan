@@ -22,6 +22,7 @@ import type {
   Occurrence,
   ReminderDraft,
   RepeatDraft,
+  ShoppingDepartment,
   TrackerEntry,
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
@@ -118,6 +119,17 @@ type ItemEditorProps = {
   readonly onAddQuestion: (issueId: string, title: string) => void;
   readonly onConvert: (itemId: string, conversion: Conversion) => void;
   readonly onPrerequisitesChange: () => void;
+  /** The supermarket departments, for a missing item of the supermarket. */
+  readonly department?:
+    | {
+        readonly departments: readonly ShoppingDepartment[];
+        /** Where it goes now; null for "other". */
+        readonly current: ShoppingDepartment | null;
+        /** Whether it was put there by hand, and not by the built-in list. */
+        readonly chosen: boolean;
+        readonly onChoose: (departmentId: string | null) => void;
+      }
+    | undefined;
 };
 
 /** An item's reminders in a few words: the one there is, or how many. */
@@ -134,7 +146,16 @@ function remindersText(reminders: readonly ItemReminder[]): string {
     : text;
 }
 
-type Row = 'kind' | 'domain' | 'inMain' | 'category' | 'time' | 'repeat' | 'reminder' | 'parent';
+type Row =
+  | 'kind'
+  | 'domain'
+  | 'inMain'
+  | 'category'
+  | 'department'
+  | 'time'
+  | 'repeat'
+  | 'reminder'
+  | 'parent';
 
 const convertibleKinds = [
   'task',
@@ -209,6 +230,7 @@ export function ItemEditor({
   onAddQuestion,
   onConvert,
   onPrerequisitesChange,
+  department,
 }: ItemEditorProps): ReactElement {
   const [openRow, setOpenRow] = useState<Row | null>(null);
 
@@ -469,6 +491,47 @@ export function ItemEditor({
             </div>
           </PropertyRow>
         )}
+
+        {item.kind === 'missing_item' &&
+          item.shopping_category === 'food' &&
+          department !== undefined && (
+            <PropertyRow
+              label={labels.departments.department}
+              value={department.current?.name ?? labels.departments.other}
+              open={openRow === 'department'}
+              onToggle={() => {
+                toggle('department');
+              }}
+            >
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {department.departments.map((option) => (
+                    <Chip
+                      key={option.id}
+                      label={option.name}
+                      selected={option.id === department.current?.id}
+                      onClick={() => {
+                        department.onChoose(option.id);
+                      }}
+                    />
+                  ))}
+                  {department.chosen && (
+                    <Chip
+                      label={labels.departments.automatic}
+                      selected={false}
+                      outline
+                      onClick={() => {
+                        department.onChoose(null);
+                      }}
+                    />
+                  )}
+                </div>
+                {department.chosen && (
+                  <p className="text-[13px] text-muted">{labels.departments.chosenHint}</p>
+                )}
+              </div>
+            </PropertyRow>
+          )}
 
         {isAppointment && (
           <AppointmentRows

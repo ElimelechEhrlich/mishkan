@@ -280,6 +280,54 @@ item({
   domain_id: dom('הבית', 'קניות'),
   shopping_category: 'food',
 });
+// A supermarket run, to show it by department.
+const RUN = '00000000-0000-4000-8000-0000000000aa';
+item({ id: RUN, title: 'סבב קניות · סופר', kind: 'shopping_run', domain_id: dom('הבית', 'קניות') });
+[
+  ['עגבניות', 'done'],
+  ['נייר טואלט', 'open'],
+  ['לחם', 'open'],
+  ['קוטג׳', 'open'],
+  ['מלפפונים', 'done'],
+  ['שמפו', 'open'],
+  ['במבה', 'open'],
+  ['גבינה צהובה', 'open'],
+  ['מתנה לגננת', 'open'],
+  ['חזה עוף', 'open'],
+].forEach(([title, status], n) =>
+  item({
+    title,
+    status,
+    kind: 'missing_item',
+    domain_id: dom('הבית', 'קניות'),
+    shopping_category: 'food',
+    run_id: RUN,
+    created_at: new Date(Date.parse(now) + n * 60000).toISOString(),
+    completed_at: status === 'done' ? now : null,
+  }),
+);
+const departmentNames = [
+  ['produce', 'ירקות ופירות'],
+  ['bakery', 'לחם ומאפים'],
+  ['dairy', 'חלב וביצים'],
+  ['meat', 'בשר, עוף ודגים'],
+  ['frozen', 'קפואים'],
+  ['dry', 'יבשים ושימורים'],
+  ['drinks', 'משקאות'],
+  ['snacks', 'חטיפים ומתוקים'],
+  ['cleaning', 'ניקיון'],
+  ['hygiene', 'טיפוח והיגיינה'],
+  ['baby', 'תינוקות'],
+];
+const shopping_departments = departmentNames.map(([key, name], n) => ({
+  id: `00000000-0000-4000-8000-0000000001${String(n).padStart(2, '0')}`,
+  household_id: H,
+  name,
+  key,
+  position: n + 1,
+  created_at: now,
+}));
+const shopping_item_departments = [];
 item({ title: 'לסדר את המחסן', domain_id: null });
 const shid = item({
   title: 'שידוך לאחיינית',
@@ -670,6 +718,8 @@ module.exports = {
     item_reminders,
     tracker_entries,
     item_data,
+    shopping_departments,
+    shopping_item_departments,
     households,
     members,
     entities,

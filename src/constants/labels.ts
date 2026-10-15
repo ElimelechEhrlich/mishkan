@@ -45,7 +45,7 @@ const kind = {
 } as const satisfies Record<ItemKind, string>;
 
 const shoppingCategory = {
-  food: 'מזון',
+  food: 'סופר',
   clothing: 'ביגוד',
   urgent: 'דחוף',
   planned: 'מתוכננת',
@@ -1166,6 +1166,25 @@ export const labels = {
     makeMissing: 'להוסיף לרשימה',
     listPrompt: 'מה חסר? שורה לכל פריט',
     addCount: (count: number): string => (count <= 1 ? 'הוספה' : `הוספת ${String(count)} פריטים`),
+  },
+  departments: {
+    title: 'מחלקות הסופר',
+    byDepartment: 'לפי מחלקות',
+    byAdded: 'לפי סדר ההוספה',
+    sortedNote: 'בסדר המחלקות בסופר',
+    changeOrder: 'שינוי סדר',
+    other: 'אחר',
+    groupCount: (bought: number, total: number): string => `${String(bought)}/${String(total)}`,
+    dragHint:
+      'גוררים את הנקודות כדי לסדר לפי המסלול שלכם בסופר. הסדר נשמר לסבבים הבאים, אצל שניכם.',
+    drag: 'גרירה לשינוי המקום',
+    newDepartment: 'מחלקה חדשה',
+    remove: 'מחיקת המחלקה',
+    confirmRemove: 'לחיצה נוספת למחיקה. הפריטים שלה יעברו ל"אחר".',
+    otherHint: 'מה שלא שייך לאף מחלקה מגיע בסוף, תחת "אחר".',
+    department: 'מחלקה',
+    automatic: 'אוטומטי',
+    chosenHint: 'מעכשיו הפריט הזה יגיע לכאן לבד, גם אצל השני.',
   },
   debts: {
     total: 'סה"כ',

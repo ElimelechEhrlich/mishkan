@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 
 const paths = {
+  grip: ['M9 6h.01', 'M15 6h.01', 'M9 12h.01', 'M15 12h.01', 'M9 18h.01', 'M15 18h.01'],
   list: ['M9 6h11', 'M9 12h11', 'M9 18h11', 'M4.5 6h.01', 'M4.5 12h.01', 'M4.5 18h.01'],
   target: [
     'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18z',

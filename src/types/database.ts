@@ -362,6 +362,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      shopping_departments: {
+        Row: {
+          id: string;
+          household_id: string;
+          name: string;
+          /** The built-in department it started as; kept when renamed. */
+          key: string | null;
+          /** Where it stands in the walk through the shop. */
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string;
+          name: string;
+          key?: string | null;
+          position?: number;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          position?: number;
+        };
+        Relationships: [];
+      };
+      shopping_item_departments: {
+        Row: {
+          household_id: string;
+          /** The item's name, trimmed and in lower case. */
+          title_key: string;
+          department_id: string;
+        };
+        Insert: {
+          household_id?: string;
+          title_key: string;
+          department_id: string;
+        };
+        Update: {
+          department_id?: string;
+        };
+        Relationships: [];
+      };
       item_reminders: {
         Row: {
           id: string;
@@ -684,6 +726,10 @@ export type Database = {
       };
       close_item: {
         Args: { p_item_id: string };
+        Returns: undefined;
+      };
+      order_shopping_departments: {
+        Args: { p_ids: string[] };
         Returns: undefined;
       };
       move_item_data: {

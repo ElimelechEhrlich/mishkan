@@ -17,6 +17,7 @@ import { OpenItemsPage } from '../pages/OpenItemsPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ShoppingPage } from '../pages/ShoppingPage';
+import { ShoppingDepartmentsPage } from '../pages/ShoppingDepartmentsPage';
 import { ShoppingRunPage } from '../pages/ShoppingRunPage';
 import { RequireAuth } from './RequireAuth';
 import { RequireHousehold } from './RequireHousehold';
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
           { path: '/notes', element: <NotesPage /> },
           { path: '/shopping', element: <ShoppingPage /> },
           { path: '/shopping/run/:runId', element: <ShoppingRunPage /> },
+          { path: '/shopping/departments', element: <ShoppingDepartmentsPage /> },
           { path: '/debts', element: <DebtsPage /> },
           { path: '/incomplete', element: <IncompletePage /> },
           { path: '/today', element: <TodayPage /> },

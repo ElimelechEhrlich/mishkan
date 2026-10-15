@@ -11,6 +11,8 @@ import { useTrackerEntries } from '../hooks/useTrackerEntries';
 import { useItemOccurrences } from '../hooks/useItemOccurrences';
 import { useItemPage } from '../hooks/useItemPage';
 import { useRepeats } from '../hooks/useRepeats';
+import { useShoppingDepartments } from '../hooks/useShoppingDepartments';
+import { departmentFor, titleKey } from '../lib/departments';
 import { useLookups } from '../hooks/useLookups';
 import { useReminderPeople } from '../hooks/useReminderPeople';
 import { useSnoozeRequest } from '../hooks/useSnoozeRequest';
@@ -29,6 +31,7 @@ export function ItemPage(): ReactElement {
   const { reminders } = items;
   const repeats = useRepeats();
   const history = useItemOccurrences(item?.id ?? null);
+  const departments = useShoppingDepartments();
 
   return (
     <PageShell
@@ -48,7 +51,8 @@ export function ItemPage(): ReactElement {
           reminders.error ??
           repeats.error ??
           history.error ??
-          trackerEntries.error
+          trackerEntries.error ??
+          departments.error
         }
       />
       {item === null ? (
@@ -100,6 +104,18 @@ export function ItemPage(): ReactElement {
             void items.convertItem(itemId, conversion);
           }}
           onPrerequisitesChange={items.reload}
+          department={
+            departments.loaded
+              ? {
+                  departments: departments.departments,
+                  current: departmentFor(item.title, departments.departments, departments.chosen),
+                  chosen: departments.chosen.has(titleKey(item.title)),
+                  onChoose: (departmentId): void => {
+                    departments.choose(item.title, departmentId);
+                  },
+                }
+              : undefined
+          }
         />
       )}
       {snooze.open && item !== null && (
