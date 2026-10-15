@@ -150,6 +150,69 @@ export function newDraft(rule: ReminderRule, item: Item, now: Date): ReminderDra
   }
 }
 
+/** A reminder offered as one tap, with its short name. */
+export type ReminderPreset = { readonly label: string; readonly draft: ReminderDraft };
+
+/**
+ * The reminders most items need, one tap each: before the hour when the item has one, on the
+ * day when it has only a day, and otherwise soon, tomorrow morning or every day. Those the item
+ * already has are left out.
+ */
+export function reminderPresets(
+  item: Item,
+  existing: readonly ReminderDraft[],
+  now: Date,
+): ReminderPreset[] {
+  const quick = labels.reminders.quick;
+  const before = (minutes: number): ReminderDraft => ({
+    ...blank,
+    rule: 'before',
+    minutes_before: minutes,
+  });
+  const onDay = (days: number): ReminderDraft => ({
+    ...blank,
+    rule: 'day',
+    days_before: days,
+    at_time: '09:00',
+  });
+  const today = toIsoDate(now);
+  const presets: ReminderPreset[] =
+    reminderDay(item) === null
+      ? [
+          {
+            label: quick.inAnHour,
+            draft: {
+              ...blank,
+              rule: 'at',
+              at: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
+            },
+          },
+          {
+            label: quick.tomorrowMorning,
+            draft: { ...blank, rule: 'at', at: atHour(addDays(today, 1), '09:00') },
+          },
+          {
+            label: quick.everyDay,
+            draft: newDraft('repeat', item, now),
+          },
+        ]
+      : reminderHour(item) === null
+        ? [
+            { label: quick.morning, draft: onDay(0) },
+            { label: quick.dayBefore, draft: onDay(1) },
+          ]
+        : [
+            { label: quick.atTime, draft: before(0) },
+            { label: quick.tenBefore, draft: before(10) },
+            { label: quick.hourBefore, draft: before(60) },
+            { label: quick.dayBefore, draft: before(1440) },
+          ];
+  const had = new Set(existing.map(describeReminder));
+  return presets.filter(
+    (preset) => preset.draft.rule === 'at' || !had.has(describeReminder(preset.draft)),
+  );
+}
+
 /**
  * The first reminder an item is offered: at its hour when it has one, at nine on its day when
  * it has only a day, and today when it has neither.

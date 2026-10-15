@@ -39,14 +39,17 @@ function toColumns(draft: ReminderDraft): {
   };
 }
 
-export async function addReminder(itemId: string, draft: ReminderDraft): Promise<void> {
-  // Not read back: the row is written without asking for it again.
-  const { error } = await supabase
+/** Adds a reminder; returns its id, so adding it can be taken back. */
+export async function addReminder(itemId: string, draft: ReminderDraft): Promise<string> {
+  const { data, error } = await supabase
     .from('item_reminders')
-    .insert({ item_id: itemId, ...toColumns(draft) });
+    .insert({ item_id: itemId, ...toColumns(draft) })
+    .select('id')
+    .single();
   if (error !== null) {
     throw new Error(error.message);
   }
+  return data.id;
 }
 
 export async function updateReminder(reminderId: string, draft: ReminderDraft): Promise<void> {

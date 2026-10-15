@@ -50,6 +50,13 @@ export function RepeatEditor({
   const [draft, setDraft] = useState<RepeatDraft>(original);
   // When the end changes kind it is set anew: how many times from today.
   const [freshCount, setFreshCount] = useState(5);
+  // The common settings show; the rest open under "custom", already open when used.
+  const [custom, setCustom] = useState(
+    original.every > 1 ||
+      original.weekdays.length > 0 ||
+      original.fromKind === 'completion' ||
+      (original.endKind !== 'never' && limit === null),
+  );
 
   const series = repeat !== null && item.time_mode === 'recurring';
   const stopped = series && repeat.stopped_on !== null;
@@ -173,19 +180,24 @@ export function RepeatEditor({
           </>
         }
       >
-        <SettingRow label={labels.repeat.every}>
-          <Stepper
-            value={draft.every}
-            min={1}
-            onChange={(every) => {
-              set({ every });
-            }}
-          />
+        <SettingRow label={labels.repeat.everyShort}>
+          {custom && (
+            <Stepper
+              value={draft.every}
+              min={1}
+              onChange={(every) => {
+                set({ every });
+              }}
+            />
+          )}
           <OptionGroup
             label={labels.repeat.every}
             options={repeatUnits.map((unit) => ({
               value: unit,
-              label: labels.reminders.unitNames[unit],
+              label:
+                custom && draft.every > 1
+                  ? labels.reminders.unitNames[unit]
+                  : labels.reminders.units[unit][0],
             }))}
             value={draft.unit}
             onChange={(unit) => {
@@ -193,42 +205,6 @@ export function RepeatEditor({
             }}
           />
         </SettingRow>
-
-        {draft.unit === 'week' && (
-          <SettingRow
-            label={labels.repeat.onDays}
-            note={draft.weekdays.length === 0 ? labels.repeat.onDaysHint : undefined}
-          >
-            <div className="flex gap-1">
-              {weekdays.map((day) => {
-                const chosen = draft.weekdays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    aria-pressed={chosen}
-                    aria-label={labels.repeat.weekdayNames[day]}
-                    onClick={() => {
-                      set({
-                        weekdays: chosen
-                          ? draft.weekdays.filter((other) => other !== day)
-                          : [...draft.weekdays, day].sort(),
-                        fromKind: 'schedule',
-                      });
-                    }}
-                    className={`flex size-9 items-center justify-center rounded-full border text-[13px] transition active:scale-95 ${
-                      chosen
-                        ? 'border-primary bg-surface font-semibold text-primary'
-                        : 'border-line bg-surface text-muted'
-                    }`}
-                  >
-                    {labels.repeat.weekdayShort[day]}
-                  </button>
-                );
-              })}
-            </div>
-          </SettingRow>
-        )}
 
         <SettingRow label={isAppointment ? labels.repeat.appointmentHour : labels.repeat.hours}>
           <div className="flex w-full flex-col gap-2">
@@ -275,119 +251,169 @@ export function RepeatEditor({
           </div>
         </SettingRow>
 
-        <SettingRow label={labels.repeat.startsOn}>
-          <DateField
-            label={labels.repeat.startsOn}
-            value={draft.startsOn}
-            shortcuts
-            onChange={(startsOn) => {
-              set({ startsOn });
-            }}
-          />
-        </SettingRow>
-
-        <SettingRow
-          label={labels.repeat.fromKindTitle}
-          note={
-            canFromCompletion
-              ? draft.fromKind === 'completion'
-                ? labels.repeat.fromHint
-                : undefined
-              : labels.repeat.fromNeedsOne
-          }
+        <button
+          type="button"
+          aria-expanded={custom}
+          onClick={() => {
+            setCustom(!custom);
+          }}
+          className="self-start px-1 text-[13px] font-semibold text-primary"
         >
-          <OptionGroup
-            label={labels.repeat.fromKindTitle}
-            options={[
-              { value: 'schedule', label: labels.repeat.fromKind.schedule },
-              {
-                value: 'completion',
-                label: labels.repeat.fromKind.completion,
-                disabled: !canFromCompletion,
-              },
-            ]}
-            value={draft.fromKind}
-            onChange={(fromKind) => {
-              set({ fromKind });
-            }}
-          />
-        </SettingRow>
+          {custom ? labels.repeat.lessOptions : labels.repeat.custom}
+        </button>
+        {custom && (
+          <>
+            {draft.unit === 'week' && (
+              <SettingRow
+                label={labels.repeat.onDays}
+                note={draft.weekdays.length === 0 ? labels.repeat.onDaysHint : undefined}
+              >
+                <div className="flex gap-1">
+                  {weekdays.map((day) => {
+                    const chosen = draft.weekdays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        aria-pressed={chosen}
+                        aria-label={labels.repeat.weekdayNames[day]}
+                        onClick={() => {
+                          set({
+                            weekdays: chosen
+                              ? draft.weekdays.filter((other) => other !== day)
+                              : [...draft.weekdays, day].sort(),
+                            fromKind: 'schedule',
+                          });
+                        }}
+                        className={`flex size-9 items-center justify-center rounded-full border text-[13px] transition active:scale-95 ${
+                          chosen
+                            ? 'border-primary bg-surface font-semibold text-primary'
+                            : 'border-line bg-surface text-muted'
+                        }`}
+                      >
+                        {labels.repeat.weekdayShort[day]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </SettingRow>
+            )}
 
-        {item.kind === 'tracker' && (
-          <SettingRow label={labels.repeat.trackerCloses}>
-            <OptionGroup
-              label={labels.repeat.trackerCloses}
-              options={[
-                { value: 'yes', label: labels.repeat.yes },
-                { value: 'no', label: labels.repeat.no },
-              ]}
-              value={draft.trackerCloses ? 'yes' : 'no'}
-              onChange={(answer) => {
-                set({ trackerCloses: answer === 'yes' });
-              }}
-            />
-          </SettingRow>
-        )}
-
-        <SettingRow
-          label={labels.repeat.end}
-          note={
-            draft.endKind === 'count' && sameEnd
-              ? labels.repeat.progress(gone, Math.max(0, total - gone))
-              : undefined
-          }
-        >
-          <OptionGroup
-            label={labels.repeat.end}
-            options={endKinds
-              .filter((kind) => limit === null || kind !== 'never')
-              .map((kind) => ({
-                value: kind,
-                label: labels.repeat.endKind[kind],
-              }))}
-            value={draft.endKind}
-            onChange={chooseEnd}
-          />
-          {draft.endKind === 'count' &&
-            (sameEnd ? (
-              <Stepper
-                value={total}
-                min={leastTotal}
-                display={labels.repeat.times(total)}
-                onChange={(endCount) => {
-                  set({ endCount });
+            <SettingRow label={labels.repeat.startsOn}>
+              <DateField
+                label={labels.repeat.startsOn}
+                value={draft.startsOn}
+                shortcuts
+                onChange={(startsOn) => {
+                  set({ startsOn });
                 }}
               />
-            ) : (
-              <div className="flex w-full flex-col gap-1">
-                <span className="text-[13px] text-muted">
-                  {series ? labels.repeat.howManyFromToday : labels.repeat.howMany}
-                </span>
-                <Stepper
-                  value={freshCount}
-                  min={1}
-                  display={labels.repeat.times(freshCount)}
-                  onChange={(count) => {
-                    setFreshCount(count);
-                    set({ endCount: gone + count });
+            </SettingRow>
+
+            <SettingRow
+              label={labels.repeat.fromKindTitle}
+              note={
+                canFromCompletion
+                  ? draft.fromKind === 'completion'
+                    ? labels.repeat.fromHint
+                    : undefined
+                  : labels.repeat.fromNeedsOne
+              }
+            >
+              <OptionGroup
+                label={labels.repeat.fromKindTitle}
+                options={[
+                  { value: 'schedule', label: labels.repeat.fromKind.schedule },
+                  {
+                    value: 'completion',
+                    label: labels.repeat.fromKind.completion,
+                    disabled: !canFromCompletion,
+                  },
+                ]}
+                value={draft.fromKind}
+                onChange={(fromKind) => {
+                  set({ fromKind });
+                }}
+              />
+            </SettingRow>
+
+            {item.kind === 'tracker' && (
+              <SettingRow label={labels.repeat.trackerCloses}>
+                <OptionGroup
+                  label={labels.repeat.trackerCloses}
+                  options={[
+                    { value: 'yes', label: labels.repeat.yes },
+                    { value: 'no', label: labels.repeat.no },
+                  ]}
+                  value={draft.trackerCloses ? 'yes' : 'no'}
+                  onChange={(answer) => {
+                    set({ trackerCloses: answer === 'yes' });
                   }}
                 />
-              </div>
-            ))}
-          {draft.endKind === 'until' && (
-            <div className="w-full">
-              <DateField
-                label={labels.repeat.untilWhich}
-                value={draft.endUntil ?? ''}
-                min={today}
-                max={limit ?? undefined}
-                onChange={(endUntil) => {
-                  set({ endUntil: endUntil === '' ? null : endUntil });
-                }}
+              </SettingRow>
+            )}
+
+            <SettingRow
+              label={labels.repeat.end}
+              note={
+                draft.endKind === 'count' && sameEnd
+                  ? labels.repeat.progress(gone, Math.max(0, total - gone))
+                  : undefined
+              }
+            >
+              <OptionGroup
+                label={labels.repeat.end}
+                options={endKinds
+                  .filter((kind) => limit === null || kind !== 'never')
+                  .map((kind) => ({
+                    value: kind,
+                    label: labels.repeat.endKind[kind],
+                  }))}
+                value={draft.endKind}
+                onChange={chooseEnd}
               />
-            </div>
-          )}
-        </SettingRow>
+              {draft.endKind === 'count' &&
+                (sameEnd ? (
+                  <Stepper
+                    value={total}
+                    min={leastTotal}
+                    display={labels.repeat.times(total)}
+                    onChange={(endCount) => {
+                      set({ endCount });
+                    }}
+                  />
+                ) : (
+                  <div className="flex w-full flex-col gap-1">
+                    <span className="text-[13px] text-muted">
+                      {series ? labels.repeat.howManyFromToday : labels.repeat.howMany}
+                    </span>
+                    <Stepper
+                      value={freshCount}
+                      min={1}
+                      display={labels.repeat.times(freshCount)}
+                      onChange={(count) => {
+                        setFreshCount(count);
+                        set({ endCount: gone + count });
+                      }}
+                    />
+                  </div>
+                ))}
+              {draft.endKind === 'until' && (
+                <div className="w-full">
+                  <DateField
+                    label={labels.repeat.untilWhich}
+                    value={draft.endUntil ?? ''}
+                    min={today}
+                    max={limit ?? undefined}
+                    onChange={(endUntil) => {
+                      set({ endUntil: endUntil === '' ? null : endUntil });
+                    }}
+                  />
+                </div>
+              )}
+            </SettingRow>
+          </>
+        )}
       </SettingsCard>
 
       {stopControls}

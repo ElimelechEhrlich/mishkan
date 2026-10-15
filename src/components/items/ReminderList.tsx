@@ -7,11 +7,12 @@ import {
   describeReminder,
   draftOf,
   isWaiting,
+  reminderPresets,
   reminderRules,
   wasSent,
 } from '../../lib/reminders';
 import type { Item, ItemReminder, ReminderDraft } from '../../types/domain';
-import { Button } from '../ui/Button';
+import { Chip } from '../ui/Chip';
 import { ReminderForm } from './ReminderForm';
 
 type ReminderListProps = {
@@ -131,14 +132,28 @@ export function ReminderList({
           onSetTime={onSetTime}
         />
       ) : (
-        <Button
-          variant="soft"
-          onClick={() => {
-            setEditing('new');
-          }}
-        >
-          {labels.reminders.add}
-        </Button>
+        // The common ones in one tap; anything else in the full form.
+        <div className="flex flex-wrap gap-2">
+          {reminderPresets(item, reminders.map(draftOf), new Date()).map((preset) => (
+            <Chip
+              key={preset.label}
+              label={`+ ${preset.label}`}
+              selected={false}
+              outline
+              onClick={() => {
+                onAdd(preset.draft);
+              }}
+            />
+          ))}
+          <Chip
+            label={labels.reminders.quick.other}
+            selected={false}
+            outline
+            onClick={() => {
+              setEditing('new');
+            }}
+          />
+        </div>
       )}
       <p className="text-[13px] text-muted">{labels.push.reminderHint}</p>
     </div>

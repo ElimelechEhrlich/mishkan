@@ -10,7 +10,9 @@ import {
   updateReminder,
 } from '../services/reminderService';
 import type { ItemReminder, ReminderDraft } from '../types/domain';
+import { labels } from '../constants/labels';
 import { useHouseholdContext } from './useRouteContext';
+import { offerUndo } from './useUndoOffer';
 
 export type UseItemReminders = {
   /** The reminders of every item the parent can see, by item id, in the order added. */
@@ -87,8 +89,14 @@ export function useItemReminders(): UseItemReminders {
   return {
     byItem,
     waitingItemIds,
+    // Added at once, with a moment to take it back.
     add: (itemId, draft): void => {
-      run(() => addReminder(itemId, draft));
+      run(async () => {
+        const id = await addReminder(itemId, draft);
+        offerUndo(labels.reminders.added, () => {
+          run(() => deleteReminder(id));
+        });
+      });
     },
     update: (reminderId, draft): void => {
       run(() => updateReminder(reminderId, draft));

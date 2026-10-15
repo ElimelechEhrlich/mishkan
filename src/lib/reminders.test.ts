@@ -8,6 +8,7 @@ import {
   newDraft,
   reminderDay,
   reminderHour,
+  reminderPresets,
   reminderRules,
   splitDays,
   splitMinutes,
@@ -256,5 +257,30 @@ describe('state of a reminder', () => {
     expect(
       isCompleteDraft({ ...blank, rule: 'repeat', at, every: 0, unit: 'day', until: null }),
     ).toBe(false);
+  });
+});
+
+describe('reminders in one tap', () => {
+  const now = new Date('2026-10-14T10:00:00+03:00');
+
+  it('offers times before the hour, leaving out one the item has', () => {
+    const timed = item({ due_date: '2026-10-20', due_time: '16:00:00' });
+    const labelsOf = (existing: readonly ReminderDraft[]): string[] =>
+      reminderPresets(timed, existing, now).map((preset) => preset.label);
+    expect(labelsOf([])).toEqual(['בזמן', '10 דק׳ לפני', 'שעה לפני', 'יום לפני']);
+    expect(labelsOf([newDraft('before', timed, now)])).not.toContain('בזמן');
+  });
+
+  it('offers the day for a date with no hour, and soon for no date', () => {
+    expect(
+      reminderPresets(item({ due_date: '2026-10-20', due_time: null }), [], now).map(
+        (preset) => preset.label,
+      ),
+    ).toEqual(['ביום, ב־09:00', 'יום לפני']);
+    expect(
+      reminderPresets(item({ time_mode: 'anytime', due_date: null }), [], now).map(
+        (preset) => preset.label,
+      ),
+    ).toEqual(['בעוד שעה', 'מחר ב־09:00', 'כל יום']);
   });
 });

@@ -33,6 +33,11 @@ export function setScopeDock(next: ScopeDock): void {
   });
 }
 
+/** How far the picture has gone into the header now, read once (not followed). */
+export function scopeDockProgress(): number {
+  return dock.progress;
+}
+
 export function resetScopeDock(): void {
   setScopeDock(resting);
 }
