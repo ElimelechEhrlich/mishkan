@@ -141,6 +141,7 @@ export function OverviewPage(): ReactElement {
         onAddDebt={items.addDebt}
         onAddAppointments={items.addAppointments}
         initiallyOpen={searchParams.has('new') || add.request !== null}
+        defaultKind={searchParams.get('new') === 'shopping' ? 'missing_item' : 'task'}
         entityId={scoped.scope?.id}
         initialDomainId={add.request?.domainId}
       />

@@ -208,8 +208,9 @@ export type NewDebt = {
   readonly entityId?: string | null;
 };
 
+/** One or more missing items of the same kind, for the same entity: one per title. */
 export type NewMissingItem = {
-  readonly title: string;
+  readonly titles: readonly string[];
   readonly category: ShoppingCategory;
   /** The shopping domain of the chosen entity. */
   readonly domainId: string;

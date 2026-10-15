@@ -3,13 +3,16 @@ import { allPages, inGroups } from './pages';
 import type { Item, NewMissingItem, ShoppingCategory } from '../types/domain';
 
 /** `household_id` and `created_by` are filled in by the database. */
+/** Adds the missing items in one go, as a list is written. */
 export async function createMissingItem(newItem: NewMissingItem): Promise<void> {
-  const { error } = await supabase.from('items').insert({
-    title: newItem.title,
-    kind: 'missing_item',
-    domain_id: newItem.domainId,
-    shopping_category: newItem.category,
-  });
+  const { error } = await supabase.from('items').insert(
+    newItem.titles.map((title) => ({
+      title,
+      kind: 'missing_item' as const,
+      domain_id: newItem.domainId,
+      shopping_category: newItem.category,
+    })),
+  );
   if (error !== null) {
     throw new Error(error.message);
   }

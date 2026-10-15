@@ -32,11 +32,13 @@ export default defineConfig({
         start_url: '/',
         background_color: '#f6f1e7',
         theme_color: '#f6f1e7',
+        // Long-pressing the app's icon; each can be dragged to the home screen on its own.
         shortcuts: [
-          { name: 'פריט חדש', url: '/?new=1', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
-          { name: 'להשלמה', url: '/incomplete', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
-          { name: 'יעדים', url: '/goals', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
-          { name: 'חובות', url: '/debts', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'רשימת קניות', url: '/?new=shopping', icons: [{ src: 'icons/shortcut-shopping.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'פריט חדש', url: '/?new=1', icons: [{ src: 'icons/shortcut-new.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'להשלמה', url: '/incomplete', icons: [{ src: 'icons/shortcut-incomplete.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'יעדים', url: '/goals', icons: [{ src: 'icons/shortcut-goals.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'חובות', url: '/debts', icons: [{ src: 'icons/shortcut-debts.png', sizes: '192x192', type: 'image/png' }] },
         ],
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },

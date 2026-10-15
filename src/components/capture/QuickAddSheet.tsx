@@ -15,6 +15,8 @@ import type {
   ShoppingCategory,
 } from '../../types/domain';
 import { MissingItemFields } from '../shopping/MissingItemFields';
+import { ShoppingListField } from '../shopping/ShoppingListField';
+import { shoppingLines } from '../../lib/shoppingLines';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
@@ -117,6 +119,8 @@ export function QuickAddSheet({
   const [pickerVersion, setPickerVersion] = useState(0);
 
   const trimmedTitle = title.trim();
+  // A missing item is written as a list, a line per item.
+  const listTitles = shoppingLines(title);
 
   const targets = shoppingTargets(entities);
   const missingItemDomainId =
@@ -138,7 +142,7 @@ export function QuickAddSheet({
     ),
   );
   const canSave =
-    trimmedTitle !== '' &&
+    (kind === 'missing_item' ? listTitles.length > 0 : trimmedTitle !== '') &&
     !saving &&
     (kind !== 'appointment' || appointment.startsAt !== '') &&
     (kind !== 'missing_item' || missingItemDomainId !== null) &&
@@ -166,7 +170,7 @@ export function QuickAddSheet({
       return missingItemDomainId === null
         ? Promise.resolve(false)
         : onAddMissingItem({
-            title: trimmedTitle,
+            titles: listTitles,
             category,
             domainId: missingItemDomainId,
           });
@@ -220,6 +224,11 @@ export function QuickAddSheet({
     setSaving(true);
     void save().then((saved) => {
       setSaving(false);
+      if (saved && kind === 'missing_item') {
+        // The list is in; the field is ready for the next one, of the kind still chosen.
+        setTitle('');
+        return;
+      }
       if (saved) {
         setTitle('');
         setDomainId(null);
@@ -282,17 +291,21 @@ export function QuickAddSheet({
           <label className="sr-only" htmlFor="quick-add-title">
             {labels.titlePrompt[kind]}
           </label>
-          <input
-            id="quick-add-title"
-            value={title}
-            autoFocus
-            autoComplete="off"
-            placeholder={isValue ? labels.data.valueName : labels.titlePrompt[kind]}
-            onChange={(event) => {
-              setTitle(event.target.value);
-            }}
-            className="w-full bg-transparent px-1 py-1 text-xl font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none"
-          />
+          {kind === 'missing_item' ? (
+            <ShoppingListField value={title} onChange={setTitle} autoFocus large />
+          ) : (
+            <input
+              id="quick-add-title"
+              value={title}
+              autoFocus
+              autoComplete="off"
+              placeholder={isValue ? labels.data.valueName : labels.titlePrompt[kind]}
+              onChange={(event) => {
+                setTitle(event.target.value);
+              }}
+              className="w-full bg-transparent px-1 py-1 text-xl font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none"
+            />
+          )}
         </div>
         <div className="flex flex-col gap-5 overflow-y-auto px-4 py-4">
           <div className="flex flex-col gap-2">
@@ -386,7 +399,9 @@ export function QuickAddSheet({
         <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex flex-col">
             <Button type="submit" disabled={!canSave}>
-              {labels.actions.save}
+              {kind === 'missing_item'
+                ? labels.shopping.addCount(listTitles.length)
+                : labels.actions.save}
             </Button>
           </div>
         </div>

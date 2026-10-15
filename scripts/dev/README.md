@@ -26,3 +26,12 @@ show every state of the new feature.
 `seed_*.sql` hold rows that stand for the data as it is before a migration, so the migration's
 moving of existing data can be checked. See `CURRENT_CONTEXT.md` for starting the local
 database and copying the clean template.
+
+## Shortcut icons
+
+`shortcut-icons.cjs` draws the icons of the app's shortcuts (long-pressing its icon) from the
+symbols in `Icon.tsx`, white on the app's green:
+
+```
+node scripts/dev/shortcut-icons.cjs src/components/ui/Icon.tsx public/icons
+```
