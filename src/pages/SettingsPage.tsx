@@ -58,6 +58,7 @@ export function SettingsPage(): ReactElement {
         pushBlocked={setup.push.status === 'blocked'}
         busy={setup.push.busy}
         onSetAside={setup.setAside}
+        onBringBack={setup.bringBack}
         onAct={(step) => {
           if (step === 'tour') {
             void navigate('/?tour=1');

@@ -28,6 +28,8 @@ export function TourSetup({ memberId, parents, onClose }: TourSetupProps): React
         pushBlocked={setup.push.status === 'blocked'}
         busy={setup.push.busy}
         onSetAside={setup.setAside}
+        onBringBack={setup.bringBack}
+        foldable={false}
         onAct={(step) => {
           if (step === 'notifications') {
             setup.push.enable();

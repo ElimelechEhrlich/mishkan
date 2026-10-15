@@ -16,7 +16,12 @@ export type SetupFacts = {
   readonly installPossible: boolean;
 };
 
-export type SetupState = { readonly step: SetupStep; readonly done: boolean };
+export type SetupState = {
+  readonly step: SetupStep;
+  readonly done: boolean;
+  /** Put aside on purpose ("not relevant"); it can be brought back. */
+  readonly setAside: boolean;
+};
 
 /** Whether a step is done; a step that can not be done here is left out (null). */
 function stateOf(step: SetupStep, facts: SetupFacts): boolean | null {
@@ -35,16 +40,20 @@ function stateOf(step: SetupStep, facts: SetupFacts): boolean | null {
 }
 
 /**
- * The first steps as they stand: each one done or not, leaving out those set aside on purpose
- * ("not relevant") and those this device can not do. Empty once there is nothing left to do.
+ * The first steps as they stand: each one done or not, or put aside on purpose ("not
+ * relevant"), leaving out those this device can not do.
  */
 export function setupState(
   facts: SetupFacts,
   setAside: ReadonlySet<SetupStep>,
 ): readonly SetupState[] {
-  const shown = setupSteps.flatMap((step): SetupState[] => {
+  return setupSteps.flatMap((step): SetupState[] => {
     const done = stateOf(step, facts);
-    return done === null || setAside.has(step) ? [] : [{ step, done }];
+    return done === null ? [] : [{ step, done, setAside: !done && setAside.has(step) }];
   });
-  return shown.every((entry) => entry.done) ? [] : shown;
+}
+
+/** The steps still to do: neither done nor put aside. */
+export function openSteps(steps: readonly SetupState[]): readonly SetupState[] {
+  return steps.filter((entry) => !entry.done && !entry.setAside);
 }

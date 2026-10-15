@@ -461,6 +461,11 @@ export const labels = {
       install: 'התקנה',
     },
     notRelevant: 'לא רלוונטי',
+    allSet: 'הכול מוכן',
+    again: 'שוב',
+    bringBack: 'החזרה',
+    left: (count: number): string =>
+      count === 1 ? 'נשאר צעד אחד' : `נשארו ${String(count)} צעדים`,
     blocked: 'ההתראות חסומות בהגדרות הטלפון',
     pushPrompt: 'להפעיל התראות בטלפון הזה?',
     pushPromptHint: 'כדי שתזכורות יגיעו גם כשמשכן סגור',

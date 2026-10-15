@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { isAndroid, isInstalledApp } from '../lib/install';
 import { notificationPermission, pushSupported } from '../lib/push';
-import { setupState, setupSteps } from '../lib/setup';
+import { openSteps, setupState, setupSteps } from '../lib/setup';
 import type { SetupFacts, SetupState, SetupStep } from '../lib/setup';
 import type { EntityWithDomains } from '../types/domain';
 import { cachedEntities } from './useEntities';
@@ -81,8 +81,10 @@ function facts(
 export type UseSetupSteps = {
   readonly steps: readonly SetupState[];
   readonly push: UsePushNotifications;
-  /** "Not relevant": the step is not shown again on this device. */
+  /** "Not relevant": the step waits, folded away, on this device. */
   readonly setAside: (step: SetupStep) => void;
+  /** Brings a step put aside back among those to do. */
+  readonly bringBack: (step: SetupStep) => void;
 };
 
 /**
@@ -99,7 +101,10 @@ export function useSetupSteps(
   const putAside = useCallback((step: SetupStep): void => {
     write(setAsideKey, JSON.stringify([...setAside(), step]));
   }, []);
-  return { steps, push, setAside: putAside };
+  const bringBack = useCallback((step: SetupStep): void => {
+    write(setAsideKey, JSON.stringify([...setAside()].filter((other) => other !== step)));
+  }, []);
+  return { steps, push, setAside: putAside, bringBack };
 }
 
 /** Whether a first step is still open, for a dot on the settings button; loads nothing. */
@@ -107,8 +112,9 @@ export function useSetupPending(): boolean {
   const { member, members } = useHouseholdContext();
   useSyncExternalStore(subscribe, () => version);
   const on = pushSupported() && notificationPermission() === 'granted';
-  return setupState(facts(cachedEntities(member.id), members.length, on), setAside()).some(
-    (entry) => !entry.done,
+  return (
+    openSteps(setupState(facts(cachedEntities(member.id), members.length, on), setAside())).length >
+    0
   );
 }
 

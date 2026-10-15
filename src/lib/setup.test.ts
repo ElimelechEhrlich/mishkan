@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { setupState } from './setup';
+import { openSteps, setupState } from './setup';
 import type { SetupFacts } from './setup';
 
 const fresh: SetupFacts = {
@@ -13,30 +13,35 @@ const fresh: SetupFacts = {
 };
 
 describe('the first steps', () => {
-  it('lists every step for a new home', () => {
-    expect(setupState(fresh, new Set()).map((entry) => entry.step)).toEqual([
+  it('lists every step for a new home, all open', () => {
+    const steps = setupState(fresh, new Set());
+    expect(steps.map((entry) => entry.step)).toEqual([
       'tour',
       'children',
       'invite',
       'notifications',
       'install',
     ]);
+    expect(openSteps(steps)).toHaveLength(5);
   });
 
-  it('marks what is done, and leaves out what was set aside or can not be done here', () => {
+  it('marks what is done or put aside, and leaves out what can not be done here', () => {
     const state = setupState(
       { ...fresh, hasChildren: true, notificationsPossible: false, installPossible: false },
       new Set(['invite']),
     );
     expect(state).toEqual([
-      { step: 'tour', done: false },
-      { step: 'children', done: true },
+      { step: 'tour', done: false, setAside: false },
+      { step: 'children', done: true, setAside: false },
+      { step: 'invite', done: false, setAside: true },
     ]);
+    expect(openSteps(state).map((entry) => entry.step)).toEqual(['tour']);
   });
 
-  it('is empty once everything is done or set aside', () => {
+  it('keeps the steps once everything is done or put aside, with nothing open', () => {
     const done = { ...fresh, tourDone: true, hasChildren: true, bothParents: true };
-    expect(setupState({ ...done, notificationsOn: true, installed: true }, new Set())).toEqual([]);
-    expect(setupState(done, new Set(['notifications', 'install']))).toEqual([]);
+    const steps = setupState(done, new Set(['notifications', 'install']));
+    expect(steps).toHaveLength(5);
+    expect(openSteps(steps)).toEqual([]);
   });
 });
