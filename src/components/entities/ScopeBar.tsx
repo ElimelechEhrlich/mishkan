@@ -16,6 +16,7 @@ import {
 import { cubicBezier, everythingFlight, flyDownAndOn, flyWhile } from '../../lib/flight';
 import { useCarouselTouch } from '../../hooks/useCarouselTouch';
 import { setEverythingUp, useEverythingUp } from '../../hooks/useEverythingUp';
+import { usePageSwipe } from '../../hooks/usePageSwipe';
 import { resetScopeDock, setScopeDock } from '../../hooks/useScopeDock';
 import { dockedScale } from '../ui/EverythingButton';
 import type { EntityWithDomains } from '../../types/domain';
@@ -339,6 +340,14 @@ export function ScopeBar({
     },
   });
 
+  // Swiping the page itself sideways goes to the next entity or back, as the carousel does.
+  usePageSwipe({
+    canGo: (step) => index + step >= 0 && index + step < options.length,
+    onGo: (step) => {
+      go(index + step);
+    },
+  });
+
   // While the carousel turns, the name below follows the picture nearest the middle.
   const nearest =
     moving === null
@@ -351,6 +360,7 @@ export function ScopeBar({
     <div ref={root} className="flex flex-col items-center gap-1">
       <div
         ref={bar}
+        data-no-page-swipe
         className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
         {...touch.handlers}
       >
