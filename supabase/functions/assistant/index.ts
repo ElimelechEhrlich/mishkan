@@ -168,7 +168,52 @@ const tools = [
       required: ['item_id'],
     },
   },
+  {
+    name: 'complete_item',
+    description:
+      'Marks an item done (for a repeating item: this time). Before it, ask the user to confirm, naming the item; call with confirmed true only after they agreed in their last message.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        item_id: { type: 'STRING' },
+        confirmed: { type: 'BOOLEAN', description: 'True only after the user said yes.' },
+      },
+      required: ['item_id', 'confirmed'],
+    },
+  },
+  {
+    name: 'update_item',
+    description:
+      'Changes an item: its title, its day, its hour, or makes it urgent or with no date. Find its id with list_items first. Not for repeating items.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        item_id: { type: 'STRING' },
+        title: { type: 'STRING' },
+        date: { type: 'STRING', description: 'YYYY-MM-DD, the new day.' },
+        time: { type: 'STRING', description: 'HH:MM, the new hour.' },
+        urgent: { type: 'BOOLEAN', description: 'Make it urgent, with no date.' },
+        no_date: { type: 'BOOLEAN', description: 'Take its date away (no date).' },
+      },
+      required: ['item_id'],
+    },
+  },
+  {
+    name: 'list_done',
+    description:
+      'Lists what was marked done in the last days, for summaries ("what did we do this week").',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        days: { type: 'INTEGER', description: 'How many days back, 1 to 31.' },
+      },
+      required: ['days'],
+    },
+  },
 ];
+
+/** Kinds that repeat by occurrences, as the app counts them. */
+const repeatingKinds = new Set(['task', 'appointment', 'tracker', 'missing_item']);
 
 type Household = {
   readonly householdId: string;
@@ -387,6 +432,129 @@ async function addReminder(db: SupabaseClient, house: Household, input: Row): Pr
   return error === null ? 'added' : `error: ${error.message}`;
 }
 
+async function completeItem(db: SupabaseClient, input: Row): Promise<string> {
+  const itemId = text(input.item_id);
+  if (itemId === null) {
+    return 'error: which item?';
+  }
+  const { data, error } = await db
+    .from('items')
+    .select('id, title, kind, time_mode, due_date, status')
+    .eq('id', itemId)
+    .single();
+  if (error !== null) {
+    return `error: ${error.message}`;
+  }
+  const item = data as Row;
+  if (input.confirmed !== true) {
+    return `not done yet: ask the user to confirm marking "${String(item.title)}" done`;
+  }
+  if (item.status !== 'open') {
+    return 'it is already closed';
+  }
+  if (item.time_mode === 'recurring' && repeatingKinds.has(String(item.kind))) {
+    const { error: markError } =
+      item.due_date !== null
+        ? await db.rpc('mark_occurrence', { p_item_id: itemId, p_status: 'done' })
+        : await db.rpc('close_item', { p_item_id: itemId });
+    return markError === null ? `done: ${String(item.title)} (this time)` : `error: ${markError.message}`;
+  }
+  const { error: doneError } = await db.from('items').update({ status: 'done' }).eq('id', itemId);
+  return doneError === null ? `done: ${String(item.title)}` : `error: ${doneError.message}`;
+}
+
+async function updateItem(db: SupabaseClient, input: Row): Promise<string> {
+  const itemId = text(input.item_id);
+  if (itemId === null) {
+    return 'error: which item?';
+  }
+  const { data, error } = await db
+    .from('items')
+    .select('id, title, kind, time_mode, due_date, due_time, starts_at')
+    .eq('id', itemId)
+    .single();
+  if (error !== null) {
+    return `error: ${error.message}`;
+  }
+  const item = data as Row;
+  if (item.time_mode === 'recurring') {
+    return 'error: a repeating item is changed in the app, in its page';
+  }
+  const changes: Row = {};
+  const title = text(input.title);
+  if (title !== null) {
+    changes.title = title;
+  }
+  const date = text(input.date);
+  const time = text(input.time);
+  if (item.kind === 'appointment') {
+    if (date !== null || time !== null) {
+      const current =
+        typeof item.starts_at === 'string'
+          ? new Intl.DateTimeFormat('sv-SE', {
+              timeZone,
+              dateStyle: 'short',
+              timeStyle: 'short',
+            }).format(new Date(item.starts_at))
+          : '';
+      const [currentDate = '', currentTime = ''] = current.split(' ');
+      const day = date ?? currentDate;
+      const hour = time ?? currentTime;
+      if (day === '' || hour === '') {
+        return 'error: an appointment needs a day and an hour';
+      }
+      changes.starts_at = localToUtc(`${day}T${hour}`);
+    }
+  } else if (input.urgent === true) {
+    Object.assign(changes, { time_mode: 'urgent', due_date: null, due_time: null });
+  } else if (input.no_date === true) {
+    Object.assign(changes, { time_mode: 'anytime', due_date: null, due_time: null });
+  } else if (date !== null) {
+    Object.assign(changes, { time_mode: 'scheduled', due_date: date, due_time: time });
+  } else if (time !== null) {
+    if (item.due_date === null) {
+      return 'error: it has no day yet; ask which day';
+    }
+    changes.due_time = time;
+  }
+  if (Object.keys(changes).length === 0) {
+    return 'error: nothing to change';
+  }
+  const { error: updateError } = await db.from('items').update(changes).eq('id', itemId);
+  return updateError === null ? `changed: ${String(item.title)}` : `error: ${updateError.message}`;
+}
+
+async function listDone(db: SupabaseClient, house: Household, input: Row): Promise<string> {
+  const days = Math.min(31, Math.max(1, typeof input.days === 'number' ? input.days : 7));
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const { data, error } = await db
+    .from('items')
+    .select('title, kind, completed_at, domain_id')
+    .eq('status', 'done')
+    .neq('kind', 'question')
+    .neq('kind', 'shopping_run')
+    .gte('completed_at', since)
+    .order('completed_at', { ascending: false })
+    .limit(maxRows);
+  if (error !== null) {
+    return `error: ${error.message}`;
+  }
+  const rows = (data ?? []) as Row[];
+  if (rows.length === 0) {
+    return 'nothing';
+  }
+  return rows
+    .map((item) =>
+      [
+        String(item.completed_at).slice(0, 10),
+        item.kind,
+        item.title,
+        typeof item.domain_id === 'string' ? (house.places.get(item.domain_id) ?? '') : '',
+      ].join(' | '),
+    )
+    .join('\n');
+}
+
 async function runTool(
   db: SupabaseClient,
   house: Household,
@@ -408,6 +576,16 @@ async function runTool(
       const result = await addReminder(db, house, input);
       return { result, changed: result === 'added' };
     }
+    case 'complete_item': {
+      const result = await completeItem(db, input);
+      return { result, changed: result.startsWith('done') };
+    }
+    case 'update_item': {
+      const result = await updateItem(db, input);
+      return { result, changed: result.startsWith('changed') };
+    }
+    case 'list_done':
+      return { result: await listDone(db, house, input), changed: false };
     default:
       return { result: `error: no tool ${name}`, changed: false };
   }
@@ -422,7 +600,8 @@ Today is ${weekday}, ${today} (Israel time).
 Answer in Hebrew, short and warm, the way a helpful person would in a chat. Plain text only: no markdown at all (no **, no #, no tables); for a list, start each line with •.
 Use the tools to look things up and to add things; never guess what is in the app, and never invent ids.
 When you add something, say in one line what was added and where (and when). When a request is unclear (which child, which day, what time), ask one short question instead of guessing.
-You can list, search, add tasks, appointments, notes, shopping items and reminders. You cannot yet mark things done, delete, or change items: say so, and suggest doing it in the app.
+You can list, search, add tasks, appointments, notes, shopping items and reminders, move an item to another day or hour, rename it, and mark it done. Before marking anything done, ask "לסמן את X כבוצע?" and wait for a yes. You cannot delete items, or change repeating ones: say so, and suggest doing it in the app.
+For a summary of a week or a day, use list_done for what was done and list_items for what is left.
 Dates the user says ("מחר", "ביום שלישי", "בעוד שבוע") are relative to today.
 
 The household's entities and their regular domains (name [domain id]):

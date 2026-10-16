@@ -32,6 +32,7 @@
 
   --animate-sheet-up: sheet-up 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-typing: typing 1.1s ease-in-out infinite;
   /* Moving to the next entity slides in from the left (the reading direction is right to left). */
   --animate-entity-next: entity-next 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-entity-previous: entity-previous 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -71,6 +72,18 @@
       opacity: 0;
     }
     to {
+      opacity: 1;
+    }
+  }
+  @keyframes typing {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.45;
+    }
+    30% {
+      transform: translateY(-4px);
       opacity: 1;
     }
   }

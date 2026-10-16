@@ -41,7 +41,7 @@ export function AssistantChat({
 
   return (
     <div className="flex flex-col gap-3 pb-28">
-      {turns.length === 0 ? (
+      {turns.length === 0 && !sending ? (
         <div className="flex flex-col gap-3">
           <p className="rounded-2xl bg-surface p-3.5 text-[14px] text-muted shadow-card">
             {labels.assistant.intro}
@@ -77,13 +77,24 @@ export function AssistantChat({
             </li>
           ))}
           {sending && (
-            <li className="self-start rounded-2xl rounded-es-md bg-surface px-3.5 py-2.5 text-[15px] text-muted shadow-card">
-              {labels.assistant.thinking}
+            <li
+              role="status"
+              aria-label={labels.assistant.thinking}
+              className="flex items-center gap-1.5 self-start rounded-2xl rounded-es-md bg-surface px-4 py-3.5 shadow-card"
+            >
+              {/* Three dots rising one after another, as a chat shows the other side writing. */}
+              {[0, 160, 320].map((delay) => (
+                <span
+                  key={delay}
+                  style={{ animationDelay: `${String(delay)}ms` }}
+                  className="size-2 animate-typing rounded-full bg-primary/60"
+                />
+              ))}
             </li>
           )}
         </ul>
       )}
-      {turns.length > 0 && (
+      {turns.length > 0 && !sending && (
         <div className="self-center">
           <ConfirmButton
             label={labels.assistant.clear}
