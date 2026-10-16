@@ -22,11 +22,17 @@ export function CalendarCard(): ReactElement {
           </Button>
         ) : (
           <>
-            <ol className="flex list-decimal flex-col gap-1 ps-5 text-[14px] leading-6">
-              {labels.calendar.steps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
+            {calendar.addUrl !== null && (
+              <a
+                href={calendar.addUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-[15px] font-semibold text-white transition active:scale-[0.98]"
+              >
+                {labels.calendar.add}
+              </a>
+            )}
+            <p className="text-[13px] leading-5 text-muted">{labels.calendar.addHint}</p>
             <p
               dir="ltr"
               className="rounded-xl bg-paper px-3 py-2 font-mono text-[11px] break-all text-muted select-all"
@@ -34,6 +40,7 @@ export function CalendarCard(): ReactElement {
               {calendar.link}
             </p>
             <Button
+              variant="soft"
               onClick={() => {
                 if (calendar.link !== null) {
                   copy(calendar.link);
@@ -42,6 +49,7 @@ export function CalendarCard(): ReactElement {
             >
               {copied ? labels.calendar.copied : labels.calendar.copy}
             </Button>
+            <p className="text-[12px] leading-5 text-muted">{labels.calendar.manual}</p>
             <p className="text-[12px] leading-5 text-muted">{labels.calendar.private}</p>
             <div className="self-center">
               <ConfirmButton

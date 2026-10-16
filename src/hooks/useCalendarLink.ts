@@ -1,10 +1,16 @@
 import { useCallback, useState } from 'react';
 import { toMessage } from '../lib/errors';
-import { getCalendarLink, renewCalendarLink } from '../services/calendarService';
+import {
+  getCalendarLink,
+  googleCalendarAddUrl,
+  renewCalendarLink,
+} from '../services/calendarService';
 
 export type UseCalendarLink = {
   /** The private link, once asked for. */
   readonly link: string | null;
+  /** Google Calendar's page that adds the link's calendar, once there is a link. */
+  readonly addUrl: string | null;
   readonly busy: boolean;
   readonly error: string | null;
   readonly show: () => void;
@@ -37,5 +43,7 @@ export function useCalendarLink(): UseCalendarLink {
     load(renewCalendarLink);
   }, [load]);
 
-  return { link, busy, error, show, renew };
+  const addUrl = link === null ? null : googleCalendarAddUrl(link);
+
+  return { link, addUrl, busy, error, show, renew };
 }

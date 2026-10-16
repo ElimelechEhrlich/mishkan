@@ -41,3 +41,12 @@ export async function renewCalendarLink(): Promise<string> {
   }
   return feedUrl(data);
 }
+
+/**
+ * The page in Google Calendar that offers to add the calendar of a link, ready to confirm
+ * ("Add calendar?"). Google takes it as webcal, the address of a calendar to subscribe to.
+ */
+export function googleCalendarAddUrl(link: string): string {
+  const webcal = link.replace(/^https?:\/\//, 'webcal://');
+  return `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`;
+}
