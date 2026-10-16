@@ -1,16 +1,17 @@
-// Supabase Edge Function: the assistant. A parent writes a message in the app; Claude reads it
+// Supabase Edge Function: the assistant. A parent writes a message in the app; Gemini reads it
 // with the conversation so far, uses the tools below to look at and add to the household's
 // items, and answers in Hebrew. Every read and write goes through the parent's own sign-in,
 // so the database's rules apply as in the app: the parent sees and changes only what they may.
-// It needs one secret, ANTHROPIC_API_KEY, and should have ASSISTANT_HOUSEHOLDS: the household ids
+// It needs one secret, GEMINI_API_KEY (from Google AI Studio), and should have ASSISTANT_HOUSEHOLDS:
+// the household ids
 // (comma-separated) it serves, since its cost is the owner's; without it, it serves no one.
+// GEMINI_MODEL may name another model (for example, one the free tier offers).
 // SUPABASE_URL and SUPABASE_ANON_KEY are provided.
-import Anthropic from 'npm:@anthropic-ai/sdk@0.131.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 
-/** The low-cost model, as the owner chose. */
-const model = 'claude-haiku-5-5';
+/** The model, unless GEMINI_MODEL names another. */
+const defaultModel = 'gemini-3.5-flash';
 /** Earlier turns of the conversation sent along, so it follows what was said. */
 const historyTurns = 20;
 /** Tool rounds in one answer, at most. */
@@ -28,6 +29,17 @@ const corsHeaders = {
 };
 
 type Row = Record<string, unknown>;
+
+/** A piece of a Gemini message: text, a call the model makes, or the answer to one. */
+type GeminiPart = {
+  text?: string;
+  thought?: boolean;
+  thoughtSignature?: string;
+  functionCall?: { id?: string; name: string; args?: Row };
+  functionResponse?: { id?: string; name: string; response: Row };
+};
+
+type GeminiContent = { role: 'user' | 'model'; parts: GeminiPart[] };
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -63,16 +75,18 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
-const tools: Anthropic.Tool[] = [
+/** What the model may do, as Gemini function declarations. */
+const tools = [
   {
     name: 'list_items',
     description:
       'Lists open items of the household. Use it to answer what there is to do, what is late, what is on the shopping list, what waits to be completed, or to find an item before acting on it.',
-    input_schema: {
-      type: 'object',
+    parameters: {
+      type: 'OBJECT',
       properties: {
         section: {
-          type: 'string',
+          type: 'STRING',
+          format: 'enum',
           enum: [
             'overdue',
             'today',
@@ -89,71 +103,69 @@ const tools: Anthropic.Tool[] = [
             'overdue: date passed. today: due today or urgent. week: the next 7 days after today. upcoming: later. undated: no date. waiting / someday: put aside. incomplete: missing a domain or a time. shopping: the shopping list. all: everything open.',
         },
         kind: {
-          type: 'string',
+          type: 'STRING',
+          format: 'enum',
           enum: ['task', 'appointment', 'goal', 'issue', 'note', 'tracker', 'missing_item', 'debt'],
         },
-        entity_id: { type: 'string', description: 'Only the items of this entity.' },
-        search: { type: 'string', description: 'Words that must appear in the title.' },
+        entity_id: { type: 'STRING', description: 'Only the items of this entity.' },
+        search: { type: 'STRING', description: 'Words that must appear in the title.' },
       },
       required: ['section'],
-      additionalProperties: false,
     },
   },
   {
     name: 'add_item',
     description:
       'Adds a task, an appointment or a note. Give a domain_id when the right domain is clear from the household list; when it is not, ask, or leave it out and the item waits in "להשלמה" to be completed.',
-    input_schema: {
-      type: 'object',
+    parameters: {
+      type: 'OBJECT',
       properties: {
-        title: { type: 'string' },
-        kind: { type: 'string', enum: ['task', 'appointment', 'note'] },
-        domain_id: { type: 'string' },
+        title: { type: 'STRING' },
+        kind: { type: 'STRING', format: 'enum', enum: ['task', 'appointment', 'note'] },
+        domain_id: { type: 'STRING' },
         entity_id: {
-          type: 'string',
+          type: 'STRING',
           description: 'The entity, when known but its domain is not.',
         },
-        date: { type: 'string', description: 'YYYY-MM-DD. For a task: its day. Required for an appointment.' },
-        time: { type: 'string', description: 'HH:MM, 24-hour. Required for an appointment.' },
-        urgent: { type: 'boolean', description: 'A task to do as soon as possible, with no date.' },
-        place: { type: 'string', description: 'Where an appointment is.' },
-        notes: { type: 'string' },
+        date: { type: 'STRING', description: 'YYYY-MM-DD. For a task: its day. Required for an appointment.' },
+        time: { type: 'STRING', description: 'HH:MM, 24-hour. Required for an appointment.' },
+        urgent: { type: 'BOOLEAN', description: 'A task to do as soon as possible, with no date.' },
+        place: { type: 'STRING', description: 'Where an appointment is.' },
+        notes: { type: 'STRING' },
       },
       required: ['title', 'kind'],
-      additionalProperties: false,
     },
   },
   {
     name: 'add_to_shopping',
     description:
       'Adds things to buy to the household\'s shared shopping list, one title per thing.',
-    input_schema: {
-      type: 'object',
+    parameters: {
+      type: 'OBJECT',
       properties: {
-        titles: { type: 'array', items: { type: 'string' } },
+        titles: { type: 'ARRAY', items: { type: 'STRING' } },
         category: {
-          type: 'string',
+          type: 'STRING',
+          format: 'enum',
           enum: ['food', 'clothing', 'urgent', 'planned'],
           description: 'food is the supermarket ("סופר"), the usual one.',
         },
       },
       required: ['titles'],
-      additionalProperties: false,
     },
   },
   {
     name: 'add_reminder',
     description:
       'Adds a reminder to an item (find its id with list_items first). Either minutes before the item\'s own time, or at a given local date and time.',
-    input_schema: {
-      type: 'object',
+    parameters: {
+      type: 'OBJECT',
       properties: {
-        item_id: { type: 'string' },
-        minutes_before: { type: 'integer', minimum: 0 },
-        at: { type: 'string', description: 'YYYY-MM-DDTHH:MM, local time.' },
+        item_id: { type: 'STRING' },
+        minutes_before: { type: 'INTEGER' },
+        at: { type: 'STRING', description: 'YYYY-MM-DDTHH:MM, local time.' },
       },
       required: ['item_id'],
-      additionalProperties: false,
     },
   },
 ];
@@ -460,58 +472,74 @@ Deno.serve(async (request) => {
       .order('created_at', { ascending: false })
       .limit(historyTurns);
     // Earlier turns as plain text only, so nothing replayed depends on what came before it.
-    const history = ((past ?? []) as Row[])
+    const contents: GeminiContent[] = ((past ?? []) as Row[])
       .reverse()
-      .map((turn): Anthropic.MessageParam => ({
-        role: turn.role === 'assistant' ? 'assistant' : 'user',
-        content: String(turn.text),
+      .map((turn) => ({
+        role: turn.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: String(turn.text) }],
       }));
     // The conversation must open with the parent.
-    while (history.length > 0 && history[0]?.role !== 'user') {
-      history.shift();
+    while (contents.length > 0 && contents[0]?.role !== 'user') {
+      contents.shift();
     }
-    const messages: Anthropic.MessageParam[] = [...history, { role: 'user', content: message }];
+    contents.push({ role: 'user', parts: [{ text: message }] });
 
-    const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') ?? '' });
+    const modelName = Deno.env.get('GEMINI_MODEL') ?? defaultModel;
     let changed = false;
     let reply = '';
     for (let round = 0; round < maxRounds; round += 1) {
-      const response = await anthropic.messages.create({
-        model,
-        max_tokens: 4000,
-        output_config: { effort: 'low' },
-        system: systemPrompt(house),
-        tools,
-        messages,
-      });
-      if (response.stop_reason === 'refusal') {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '',
+          },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt(house) }] },
+            contents,
+            tools: [{ functionDeclarations: tools }],
+          }),
+        },
+      );
+      const answer = (await response.json()) as {
+        candidates?: { content?: GeminiContent; finishReason?: string }[];
+        error?: { message?: string; status?: string };
+      };
+      if (!response.ok) {
+        throw new Error(answer.error?.message ?? `model error ${String(response.status)}`);
+      }
+      const content = answer.candidates?.[0]?.content;
+      if (content === undefined) {
         reply = 'אני לא יכול לעזור בזה.';
         break;
       }
-      const uses = response.content.filter(
-        (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
-      );
-      reply = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('\n')
+      const parts = content.parts ?? [];
+      reply = parts
+        .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
+        .join('')
         .trim();
-      if (response.stop_reason !== 'tool_use' || uses.length === 0) {
+      const calls = parts.filter((part) => part.functionCall !== undefined);
+      if (calls.length === 0) {
         break;
       }
-      messages.push({ role: 'assistant', content: response.content });
-      const results: Anthropic.ToolResultBlockParam[] = [];
-      for (const use of uses) {
-        const outcome = await runTool(db, house, use.name, (use.input ?? {}) as Row);
+      // The model's turn goes back exactly as it came, with its thought signatures.
+      contents.push({ role: 'model', parts });
+      const results: GeminiPart[] = [];
+      for (const part of calls) {
+        const call = part.functionCall ?? { name: '' };
+        const outcome = await runTool(db, house, call.name, call.args ?? {});
         changed = changed || outcome.changed;
         results.push({
-          type: 'tool_result',
-          tool_use_id: use.id,
-          content: outcome.result,
-          is_error: outcome.result.startsWith('error'),
+          functionResponse: {
+            ...(call.id === undefined ? {} : { id: call.id }),
+            name: call.name,
+            response: { result: outcome.result },
+          },
         });
       }
-      messages.push({ role: 'user', content: results });
+      contents.push({ role: 'user', parts: results });
     }
     if (reply === '') {
       reply = 'לא הצלחתי להשלים את זה. אפשר לנסח שוב?';
