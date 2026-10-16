@@ -43,10 +43,10 @@
       "chosenIconUrl": "https://mishkan.vercel.app/icons/shortcut-today.png"
     },
     {
-      "name": "להשלמה",
-      "shortName": "להשלמה",
-      "url": "https://mishkan.vercel.app/incomplete",
-      "chosenIconUrl": "https://mishkan.vercel.app/icons/shortcut-incomplete.png"
+      "name": "שיחה",
+      "shortName": "שיחה",
+      "url": "https://mishkan.vercel.app/assistant",
+      "chosenIconUrl": "https://mishkan.vercel.app/icons/shortcut-chat.png"
     }
   ],
   "generatorApp": "bubblewrap-cli",

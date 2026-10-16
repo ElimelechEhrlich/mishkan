@@ -37,7 +37,7 @@ export default defineConfig({
         shortcuts: [
           { name: 'רשימת קניות', url: '/?new=shopping', icons: [{ src: 'icons/shortcut-shopping.png', sizes: '192x192', type: 'image/png' }] },
           { name: 'פריט חדש', url: '/?new=1', icons: [{ src: 'icons/shortcut-new.png', sizes: '192x192', type: 'image/png' }] },
-          { name: 'להשלמה', url: '/incomplete', icons: [{ src: 'icons/shortcut-incomplete.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'שיחה', url: '/assistant', icons: [{ src: 'icons/shortcut-chat.png', sizes: '192x192', type: 'image/png' }] },
           { name: 'היום', url: '/today', icons: [{ src: 'icons/shortcut-today.png', sizes: '192x192', type: 'image/png' }] },
         ],
         icons: [

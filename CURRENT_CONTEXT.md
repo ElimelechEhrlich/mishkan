@@ -278,7 +278,7 @@
 - **אנדרואיד (APK / TWA, `app.vercel.mishkan.twa`):**
   - נבנה ב־`.github/workflows/android.yml` מתוך `.github/twa-manifest.json`. המפתח בסודות הריפו. כל APK נפתח פעמיים באמולטור לפני פרסום. `android-test.yml` בודק וריאנטים בלי לפרסם. ה־workflow דוחף בעצמו ל־main, ולכן לא דוחפים במקביל אליו.
   - **חייב להישאר `enableSiteSettingsShortcut: true`** (בלעדיו קריסה, כך נפלה גרסה 8). את קיצור Site Settings מוחק `.github/scripts/remove-site-settings-shortcut.py`.
-  - ארבעה קיצורים לכל היותר: רשימת קניות, פריט חדש, היום, להשלמה. האייקונים ב־`public/icons/shortcut-*.png`, ונוצרים ב־`scripts/dev/shortcut-icons.cjs`. שינוי בהם מחייב APK חדש.
+  - ארבעה קיצורים לכל היותר: רשימת קניות, פריט חדש, היום, שיחה (מ־2026-10-16 במקום להשלמה, APK 12). האייקונים ב־`public/icons/shortcut-*.png`, ונוצרים ב־`scripts/dev/shortcut-icons.cjs`. שינוי בהם מחייב APK חדש.
   - עדכון מוכרז לבד: `?apk=N` בכל פתיחה, `public/apk-version.json`, `ApkUpdateCard` והנקודה. גרסה אחרונה: 11.
 
 ### מה נבדק ומה לא

@@ -62,7 +62,7 @@ jobs:
                 {name: "רשימת קניות", shortName: "רשימת קניות", url: "https://mishkan.vercel.app/?new=shopping", chosenIconUrl: "https://mishkan.vercel.app/icons/shortcut-shopping.png"},
                 {name: "פריט חדש", shortName: "פריט חדש", url: "https://mishkan.vercel.app/?new=1", chosenIconUrl: "https://mishkan.vercel.app/icons/shortcut-new.png"},
                 {name: "היום", shortName: "היום", url: "https://mishkan.vercel.app/today", chosenIconUrl: "https://mishkan.vercel.app/icons/shortcut-today.png"},
-                {name: "להשלמה", shortName: "להשלמה", url: "https://mishkan.vercel.app/incomplete", chosenIconUrl: "https://mishkan.vercel.app/icons/shortcut-incomplete.png"}
+                {name: "שיחה", shortName: "שיחה", url: "https://mishkan.vercel.app/assistant", chosenIconUrl: "https://mishkan.vercel.app/icons/shortcut-chat.png"}
               ] | .[0:$count])' \
             .github/twa-manifest.json > build/twa-manifest.json
 
