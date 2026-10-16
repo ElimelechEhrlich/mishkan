@@ -733,6 +733,9 @@ module.exports = {
     shopping_item_departments,
     shopping_staples,
     assistant_messages: [],
+    calendar_items: items
+      .filter((i) => ['בדיקה תקופתית', 'שיחת מעקב'].includes(i.title))
+      .map((i) => ({ item_id: i.id })),
     households,
     members,
     entities,

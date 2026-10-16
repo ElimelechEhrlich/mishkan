@@ -5,6 +5,7 @@ import { formatDueDate } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
 import { Icon } from '../ui/Icon';
+import { CalendarBadge } from './CalendarBadge';
 
 type SearchItemRowProps = {
   readonly item: Item;
@@ -35,6 +36,7 @@ export function SearchItemRow({ item, lookups }: SearchItemRowProps): ReactEleme
                 {labels.kind[item.kind]}
               </span>
             )}
+            <CalendarBadge itemId={item.id} />
             {details.join(labels.item.separator)}
           </span>
         </span>

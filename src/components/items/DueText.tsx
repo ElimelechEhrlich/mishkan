@@ -3,6 +3,7 @@ import { labels } from '../../constants/labels';
 import { timeText } from '../../lib/itemText';
 import { hasOwnTime, isOverdue } from '../../lib/itemRules';
 import type { Item } from '../../types/domain';
+import { CalendarBadge } from './CalendarBadge';
 
 type DueTextProps = {
   readonly item: Item;
@@ -14,7 +15,7 @@ type DueTextProps = {
 /**
  * When an item is due, at the end of its row: red when late, green for today.
  * Items without a date show nothing here, as their tab or section already says so; only
- * urgent ones are marked.
+ * urgent ones are marked. What is in the parent's Google Calendar has its mark before the time.
  */
 export function DueText({ item, today, dayTimes }: DueTextProps): ReactElement | null {
   // Urgent with no date: said outright, since it sits with today's.
@@ -37,7 +38,10 @@ export function DueText({ item, today, dayTimes }: DueTextProps): ReactElement |
   const later =
     dueToday && current !== undefined ? (dayTimes ?? []).filter((hour) => hour > current) : [];
   return (
-    <span className={`shrink-0 text-xs font-semibold whitespace-nowrap ${tone}`}>
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 text-xs font-semibold whitespace-nowrap ${tone}`}
+    >
+      <CalendarBadge itemId={item.id} />
       {time}
       {later.length > 0 && (
         <span className="font-normal text-muted">

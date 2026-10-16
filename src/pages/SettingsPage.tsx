@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router';
 import { EntitySettings } from '../components/settings/EntitySettings';
 import { ApkUpdateCard } from '../components/settings/ApkUpdateCard';
 import { AutoReminderCard } from '../components/settings/AutoReminderCard';
+import { CalendarCard } from '../components/settings/CalendarCard';
 import { InviteCard } from '../components/settings/InviteCard';
 import { NotificationsCard } from '../components/settings/NotificationsCard';
 import { ProfileCard } from '../components/settings/ProfileCard';
@@ -88,6 +89,7 @@ export function SettingsPage(): ReactElement {
       <InstallAppButton />
       <NotificationsCard push={setup.push} />
       <AutoReminderCard household={household} members={members} />
+      <CalendarCard />
       <div id="setup-invite" className="scroll-mt-20">
         <InviteCard inviteCode={household.invite_code} />
       </div>

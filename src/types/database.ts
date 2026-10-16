@@ -382,6 +382,34 @@ export type Database = {
         Update: Record<string, never>;
         Relationships: [];
       };
+      calendar_feeds: {
+        Row: {
+          member_id: string;
+          household_id: string;
+          /** The secret code of the parent's calendar link. */
+          token: string;
+          created_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      calendar_items: {
+        Row: {
+          member_id: string;
+          item_id: string;
+          household_id: string;
+          created_at: string;
+        };
+        Insert: {
+          member_id?: string;
+          item_id: string;
+          household_id?: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       shopping_staples: {
         Row: {
           id: string;
@@ -776,6 +804,14 @@ export type Database = {
       order_shopping_departments: {
         Args: { p_ids: string[] };
         Returns: undefined;
+      };
+      calendar_link: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      renew_calendar_link: {
+        Args: Record<string, never>;
+        Returns: string;
       };
       duplicate_item: {
         Args: { p_item_id: string };

@@ -38,6 +38,7 @@ import { PropertyRow } from '../ui/PropertyRow';
 import { SelectField } from '../ui/SelectField';
 import { AppointmentActions } from './AppointmentActions';
 import { AppointmentRows } from './AppointmentRows';
+import { CalendarRow } from './CalendarRow';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemTextForm } from './ItemTextForm';
@@ -667,6 +668,8 @@ export function ItemEditor({
             />
           </PropertyRow>
         )}
+
+        {(item.due_date !== null || repeating) && <CalendarRow itemId={item.id} />}
 
         {item.kind === 'task' && goals.length > 0 && (
           <PropertyRow

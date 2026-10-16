@@ -13,6 +13,11 @@
   --color-alert: #d0402b;
   --color-alert-soft: #fcebe8;
   --color-gold: #b08433;
+  /* The mark of what is in Google Calendar, in its colors. */
+  --color-gcal-blue: #4285f4;
+  --color-gcal-green: #34a853;
+  --color-gcal-yellow: #fbbc04;
+  --color-gcal-red: #ea4335;
 
   /* Entities are told apart by these, in display order. */
   --color-entity-1: #d97706;
