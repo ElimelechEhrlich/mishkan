@@ -362,6 +362,26 @@ export type Database = {
         };
         Relationships: [];
       };
+      assistant_messages: {
+        Row: {
+          id: string;
+          household_id: string;
+          member_id: string;
+          role: string;
+          text: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string;
+          member_id?: string;
+          role: string;
+          text: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       shopping_staples: {
         Row: {
           id: string;

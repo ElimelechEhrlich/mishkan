@@ -732,6 +732,7 @@ module.exports = {
     shopping_departments,
     shopping_item_departments,
     shopping_staples,
+    assistant_messages: [],
     households,
     members,
     entities,

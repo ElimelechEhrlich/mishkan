@@ -17,6 +17,7 @@ import { OpenItemsPage } from '../pages/OpenItemsPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ShoppingPage } from '../pages/ShoppingPage';
+import { AssistantPage } from '../pages/AssistantPage';
 import { ShoppingDepartmentsPage } from '../pages/ShoppingDepartmentsPage';
 import { ShoppingRunPage } from '../pages/ShoppingRunPage';
 import { ShoppingStaplesPage } from '../pages/ShoppingStaplesPage';
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
           { path: '/settings', element: <SettingsPage /> },
           { path: '/done', element: <DonePage /> },
           { path: '/search', element: <SearchPage /> },
+          { path: '/assistant', element: <AssistantPage /> },
         ],
       },
     ],

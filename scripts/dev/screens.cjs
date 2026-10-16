@@ -22,6 +22,7 @@ function filter(rows, params) {
   await ctx.route('https://mock.supabase.co/**', async (route) => {
     const req = route.request(); const url = new URL(req.url());
     const m = /\/rest\/v1\/([^/?]+)/.exec(url.pathname);
+    if (url.pathname.endsWith('/functions/v1/assistant')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: 'היום יש לך 3 דברים:\n• להעביר תשלום לגן (08:00)\n• בדיקה תקופתית לרחל (16:30)\n• לאסוף את אלי מהחוג (17:30)', changed: false }) });
     if (!m) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     if (req.method() !== 'GET' && req.method() !== 'HEAD') { if (process.env.LOGWRITE) console.log('WRITE', req.method(), m[1], (req.postData() || '').slice(0, 400)); if (process.env.HANGWRITE && m[1] === 'items') return; if (process.env.FAILWRITE) return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'write refused (test)' }) }); }
     let rows = filter(tables[m[1]] ?? [], url.searchParams);
