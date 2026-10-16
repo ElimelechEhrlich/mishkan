@@ -612,15 +612,41 @@ ${house.summary}`;
 
 type GeminiAnswer = {
   candidates?: { content?: GeminiContent; finishReason?: string }[];
-  error?: { message?: string; status?: string };
+  error?: { message?: string; status?: string; details?: Row[] };
 };
 
 /** Statuses of a model that is busy for a moment, worth asking again. */
-const busyStatuses = [429, 500, 503, 504];
+const busyStatuses = [500, 503, 504];
 /** Waits before asking a busy model again, in milliseconds. */
 const busyWaits = [1500, 4000];
+/** A quota that frees within this many seconds is waited for; a longer one is not. */
+const shortQuotaWait = 10;
 
-/** One round with the model; a busy model is asked again a couple of times. */
+/** The model's quota is used up for now; `seconds` until it frees, when it says. */
+class QuotaUsedUp extends Error {
+  constructor(readonly seconds: number | null) {
+    super('quota used up');
+  }
+}
+
+/** How long a 429 says to wait, in seconds (its RetryInfo, such as "82428.2s"). */
+function retryDelayOf(answer: GeminiAnswer): number | null {
+  for (const detail of answer.error?.details ?? []) {
+    const delay = detail.retryDelay;
+    if (typeof delay === 'string') {
+      const seconds = Number.parseFloat(delay);
+      if (Number.isFinite(seconds)) {
+        return seconds;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * One round with the model. A busy model is asked again a couple of times; a used-up quota
+ * is not (asking again would only use more of it), unless it frees within seconds.
+ */
 async function askModel(
   modelName: string,
   house: Household,
@@ -646,12 +672,40 @@ async function askModel(
     if (response.ok) {
       return answer;
     }
+    const retryable = attempt < busyWaits.length;
+    if (response.status === 429) {
+      const seconds = retryDelayOf(answer);
+      if (seconds === null || seconds > shortQuotaWait || !retryable) {
+        throw new QuotaUsedUp(seconds);
+      }
+      await new Promise((resolve) => setTimeout(resolve, Math.ceil(seconds * 1000)));
+      continue;
+    }
     const wait = busyWaits[attempt];
     if (!busyStatuses.includes(response.status) || wait === undefined) {
       throw new Error(answer.error?.message ?? `model error ${String(response.status)}`);
     }
     await new Promise((resolve) => setTimeout(resolve, wait));
   }
+}
+
+/** The answer when the quota is used up: when to write again, in the household's time. */
+function quotaReply(seconds: number | null): string {
+  if (seconds === null) {
+    return 'הגעתי למכסת השיחות שלי לעכשיו. אפשר לנסות שוב מאוחר יותר.';
+  }
+  if (seconds < 3600) {
+    const minutes = Math.max(1, Math.ceil(seconds / 60));
+    return `הגעתי למכסת השיחות לרגע. אפשר לנסות שוב בעוד ${minutes === 1 ? 'דקה' : `${String(minutes)} דקות`}.`;
+  }
+  const at = new Date(Date.now() + seconds * 1000);
+  const hour = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(at);
+  const day = localDate(at) === localDate() ? 'היום' : 'מחר';
+  return `הגעתי למכסת השיחות היומית. אפשר לחזור לכתוב ${day} בסביבות ${hour}.`;
 }
 
 Deno.serve(async (request) => {
@@ -732,6 +786,10 @@ Deno.serve(async (request) => {
         // What was already added stays added: the answer says so, rather than an error that
         // would have the parent send it again and add it twice.
         if (!changed) {
+          if (caught instanceof QuotaUsedUp) {
+            // Not kept in the conversation, so the model never reads it as its own answer.
+            return json({ reply: quotaReply(caught.seconds), changed: false });
+          }
           throw caught;
         }
         console.error(caught);
