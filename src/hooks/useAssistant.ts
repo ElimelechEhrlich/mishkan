@@ -18,6 +18,8 @@ export type UseAssistant = {
   readonly sending: boolean;
   /** Sends a message, and a photo to read (a `File` from the camera or the gallery). */
   readonly send: (message: string, photo?: File | null) => void;
+  /** Sends again the message that got no answer; null when there is none. */
+  readonly retry: (() => void) | null;
   readonly clear: () => void;
   readonly error: string | null;
 };
@@ -30,6 +32,12 @@ export function useAssistant(): UseAssistant {
   const [turns, setTurns] = useState<readonly AssistantTurn[] | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The message that got no answer, kept to send again. */
+  const [failed, setFailed] = useState<{
+    readonly message: string;
+    readonly photo: File | null;
+    readonly turnId: string;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -55,15 +63,13 @@ export function useAssistant(): UseAssistant {
     if (trimmed === '' && photo === null) {
       return;
     }
+    const turnId = `local-${String(Date.now())}`;
     setError(null);
+    setFailed(null);
     setSending(true);
     setTurns((current) => [
       ...(current ?? []),
-      {
-        id: `local-${String(Date.now())}`,
-        role: 'user',
-        text: photo === null ? trimmed : `📷 ${trimmed}`.trim(),
-      },
+      { id: turnId, role: 'user', text: photo === null ? trimmed : `📷 ${trimmed}`.trim() },
     ]);
     const asking = (photo === null ? Promise.resolve(null) : shrinkForReading(photo)).then(
       (image) => askAssistant(trimmed, image),
@@ -79,6 +85,9 @@ export function useAssistant(): UseAssistant {
         }
       })
       .catch((caught: unknown) => {
+        if (!(caught instanceof AssistantNotEnabled)) {
+          setFailed({ message: trimmed, photo, turnId });
+        }
         setError(
           caught instanceof AssistantNotEnabled
             ? labels.assistant.notEnabled
@@ -90,15 +99,27 @@ export function useAssistant(): UseAssistant {
       });
   }, []);
 
+  // The unanswered message leaves the conversation and goes again, as it was (the server
+  // keeps a message only with its answer, so nothing is doubled).
+  const retry =
+    failed === null || sending
+      ? null
+      : (): void => {
+          setTurns((current) => (current ?? []).filter((turn) => turn.id !== failed.turnId));
+          send(failed.message, failed.photo);
+        };
+
   const clear = useCallback((): void => {
     clearConversation()
       .then(() => {
         setTurns([]);
+        setFailed(null);
+        setError(null);
       })
       .catch((caught: unknown) => {
         setError(toMessage(caught));
       });
   }, []);
 
-  return { turns: turns ?? [], loaded: turns !== null, sending, send, clear, error };
+  return { turns: turns ?? [], loaded: turns !== null, sending, send, retry, clear, error };
 }

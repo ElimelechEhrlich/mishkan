@@ -610,6 +610,50 @@ The household's entities and their regular domains (name [domain id]):
 ${house.summary}`;
 }
 
+type GeminiAnswer = {
+  candidates?: { content?: GeminiContent; finishReason?: string }[];
+  error?: { message?: string; status?: string };
+};
+
+/** Statuses of a model that is busy for a moment, worth asking again. */
+const busyStatuses = [429, 500, 503, 504];
+/** Waits before asking a busy model again, in milliseconds. */
+const busyWaits = [1500, 4000];
+
+/** One round with the model; a busy model is asked again a couple of times. */
+async function askModel(
+  modelName: string,
+  house: Household,
+  contents: GeminiContent[],
+): Promise<GeminiAnswer> {
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '',
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt(house) }] },
+          contents,
+          tools: [{ functionDeclarations: tools }],
+        }),
+      },
+    );
+    const answer = (await response.json().catch(() => ({}))) as GeminiAnswer;
+    if (response.ok) {
+      return answer;
+    }
+    const wait = busyWaits[attempt];
+    if (!busyStatuses.includes(response.status) || wait === undefined) {
+      throw new Error(answer.error?.message ?? `model error ${String(response.status)}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, wait));
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -681,27 +725,18 @@ Deno.serve(async (request) => {
     let changed = false;
     let reply = '';
     for (let round = 0; round < maxRounds; round += 1) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '',
-          },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt(house) }] },
-            contents,
-            tools: [{ functionDeclarations: tools }],
-          }),
-        },
-      );
-      const answer = (await response.json()) as {
-        candidates?: { content?: GeminiContent; finishReason?: string }[];
-        error?: { message?: string; status?: string };
-      };
-      if (!response.ok) {
-        throw new Error(answer.error?.message ?? `model error ${String(response.status)}`);
+      let answer: GeminiAnswer;
+      try {
+        answer = await askModel(modelName, house, contents);
+      } catch (caught) {
+        // What was already added stays added: the answer says so, rather than an error that
+        // would have the parent send it again and add it twice.
+        if (!changed) {
+          throw caught;
+        }
+        console.error(caught);
+        reply = 'עשיתי חלק מזה, אבל לא הצלחתי לסיים. כדאי לבדוק באפליקציה מה נוסף.';
+        break;
       }
       const content = answer.candidates?.[0]?.content;
       if (content === undefined) {

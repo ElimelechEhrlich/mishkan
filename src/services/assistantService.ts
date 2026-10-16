@@ -36,6 +36,21 @@ export async function listConversation(): Promise<AssistantTurn[]> {
 
 export class AssistantNotEnabled extends Error {}
 
+/** What the function said went wrong, when its answer says (`{ error }`). */
+async function refusalOf(response: unknown): Promise<string | null> {
+  if (!(response instanceof Response)) {
+    return null;
+  }
+  try {
+    const body: unknown = await response.json();
+    const said: unknown =
+      typeof body === 'object' && body !== null ? Reflect.get(body, 'error') : null;
+    return typeof said === 'string' && said !== '' ? said : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Sends a message; the assistant answers, and may have added items on the way (`changed`).
  * The server keeps both turns in the conversation.
@@ -59,7 +74,7 @@ export async function askAssistant(
     if (status === 403) {
       throw new AssistantNotEnabled(errorText);
     }
-    throw new Error(errorText);
+    throw new Error((await refusalOf(context)) ?? errorText);
   }
   if (typeof data !== 'object' || data === null) {
     throw new Error('no answer');

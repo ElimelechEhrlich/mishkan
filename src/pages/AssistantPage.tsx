@@ -25,6 +25,7 @@ export function AssistantPage(): ReactElement {
           turns={assistant.turns}
           sending={assistant.sending}
           onSend={assistant.send}
+          onRetry={assistant.retry}
           onClear={assistant.clear}
         />
       ) : (

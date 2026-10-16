@@ -9,6 +9,8 @@ type AssistantChatProps = {
   readonly turns: readonly AssistantTurn[];
   readonly sending: boolean;
   readonly onSend: (message: string, photo?: File | null) => void;
+  /** Sends again the last message, which got no answer; null when there is none. */
+  readonly onRetry: (() => void) | null;
   readonly onClear: () => void;
 };
 
@@ -20,6 +22,7 @@ export function AssistantChat({
   turns,
   sending,
   onSend,
+  onRetry,
   onClear,
 }: AssistantChatProps): ReactElement {
   const [draft, setDraft] = useState('');
@@ -40,10 +43,11 @@ export function AssistantChat({
     };
   }, [photo]);
 
+  const canRetry = onRetry !== null;
   // The newest message in sight, as in any chat.
   useEffect(() => {
     end.current?.scrollIntoView({ block: 'end' });
-  }, [turns.length, sending]);
+  }, [turns.length, sending, canRetry]);
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -92,6 +96,18 @@ export function AssistantChat({
               {turn.text}
             </li>
           ))}
+          {onRetry !== null && (
+            <li className="flex items-center gap-2 self-end text-[13px] text-muted">
+              <span>{labels.assistant.notAnswered}</span>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="flex min-h-9 items-center gap-1 rounded-full bg-primary-soft px-3 font-semibold text-primary active:opacity-70"
+              >
+                {labels.assistant.retry}
+              </button>
+            </li>
+          )}
           {sending && (
             <li
               role="status"
