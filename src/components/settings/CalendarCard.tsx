@@ -59,6 +59,9 @@ export function CalendarCard(): ReactElement {
                 onConfirm={calendar.renew}
               />
             </div>
+            <p className="text-center text-[12px] leading-5 text-muted">
+              {labels.calendar.renewNote}
+            </p>
           </>
         )}
         <ErrorBanner message={calendar.error} />
