@@ -42,9 +42,13 @@ export class AssistantNotEnabled extends Error {}
  */
 export async function askAssistant(
   message: string,
+  /** A photo to read, as base64 JPEG. */
+  image: string | null = null,
 ): Promise<{ readonly reply: string; readonly changed: boolean }> {
   const answer: { readonly data: unknown; readonly error: unknown } =
-    await supabase.functions.invoke('assistant', { body: { message } });
+    await supabase.functions.invoke('assistant', {
+      body: image === null ? { message } : { message, image },
+    });
   const { data, error } = answer;
   if (error !== null) {
     const errorText = error instanceof Error ? error.message : 'request failed';

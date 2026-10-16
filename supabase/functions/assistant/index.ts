@@ -33,6 +33,7 @@ type Row = Record<string, unknown>;
 /** A piece of a Gemini message: text, a call the model makes, or the answer to one. */
 type GeminiPart = {
   text?: string;
+  inlineData?: { mimeType: string; data: string };
   thought?: boolean;
   thoughtSignature?: string;
   functionCall?: { id?: string; name: string; args?: Row };
@@ -602,6 +603,7 @@ Use the tools to look things up and to add things; never guess what is in the ap
 When you add something, say in one line what was added and where (and when). When a request is unclear (which child, which day, what time), ask one short question instead of guessing.
 You can list, search, add tasks, appointments, notes, shopping items and reminders, move an item to another day or hour, rename it, and mark it done. Before marking anything done, ask "לסמן את X כבוצע?" and wait for a yes. You cannot delete items, or change repeating ones: say so, and suggest doing it in the app.
 For a summary of a week or a day, use list_done for what was done and list_items for what is left.
+When a photo comes (an invitation, a letter, a schedule, a note from school), read it and add the matching item with all its details: an event at a set time is an appointment (title, date, time, place); put the rest (who invites, the address, what to bring, dress, RSVP) in notes, or in the place for an appointment. Choose the entity and domain that fit (for example "אירועים" of the right entity). If the day or hour is missing or unclear, ask before adding. Then say in one line what you added.
 Dates the user says ("מחר", "ביום שלישי", "בעוד שבוע") are relative to today.
 
 The household's entities and their regular domains (name [domain id]):
@@ -623,8 +625,14 @@ Deno.serve(async (request) => {
     if (auth.user === null) {
       return json({ error: 'not signed in' }, 401);
     }
-    const body = (await request.json()) as { message?: unknown };
-    const message = text(body.message);
+    const body = (await request.json()) as { message?: unknown; image?: unknown };
+    // A photo to read (an invitation, a note), sent as base64 JPEG; a few megabytes at most.
+    const image =
+      typeof body.image === 'string' && body.image.length > 0 && body.image.length < 6_000_000
+        ? body.image
+        : null;
+    const message =
+      text(body.message) ?? (image === null ? null : 'הוסף פריט מתאים מהתמונה, עם כל הפרטים.');
     if (message === null) {
       return json({ error: 'empty message' }, 400);
     }
@@ -661,7 +669,13 @@ Deno.serve(async (request) => {
     while (contents.length > 0 && contents[0]?.role !== 'user') {
       contents.shift();
     }
-    contents.push({ role: 'user', parts: [{ text: message }] });
+    contents.push({
+      role: 'user',
+      parts:
+        image === null
+          ? [{ text: message }]
+          : [{ inlineData: { mimeType: 'image/jpeg', data: image } }, { text: message }],
+    });
 
     const modelName = Deno.env.get('GEMINI_MODEL') ?? defaultModel;
     let changed = false;
@@ -725,7 +739,7 @@ Deno.serve(async (request) => {
     }
 
     await db.from('assistant_messages').insert([
-      { role: 'user', text: message },
+      { role: 'user', text: image === null ? message : `📷 ${message}` },
       { role: 'assistant', text: reply },
     ]);
     return json({ reply, changed });

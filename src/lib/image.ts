@@ -41,3 +41,22 @@ export async function shrinkToAvatar(file: Blob): Promise<Blob> {
     );
   });
 }
+
+/** The longest side a photo sent to be read is kept at, in pixels: enough for small print. */
+const readingSize = 1600;
+
+/** A photo made small enough to send to be read (an invitation, a note), as base64 JPEG. */
+export async function shrinkForReading(file: Blob): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, readingSize / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const context = canvas.getContext('2d');
+  if (context === null) {
+    throw new Error('canvas is not available');
+  }
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
+}

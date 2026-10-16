@@ -8,7 +8,7 @@ import { Icon } from '../ui/Icon';
 type AssistantChatProps = {
   readonly turns: readonly AssistantTurn[];
   readonly sending: boolean;
-  readonly onSend: (message: string) => void;
+  readonly onSend: (message: string, photo?: File | null) => void;
   readonly onClear: () => void;
 };
 
@@ -23,7 +23,22 @@ export function AssistantChat({
   onClear,
 }: AssistantChatProps): ReactElement {
   const [draft, setDraft] = useState('');
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+
+  // A small picture of the attached photo, let go once it is sent or removed.
+  useEffect(() => {
+    if (photo === null) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPreview(url);
+    return (): void => {
+      URL.revokeObjectURL(url);
+    };
+  }, [photo]);
 
   // The newest message in sight, as in any chat.
   useEffect(() => {
@@ -32,15 +47,16 @@ export function AssistantChat({
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
-    if (draft.trim() === '' || sending) {
+    if ((draft.trim() === '' && photo === null) || sending) {
       return;
     }
-    onSend(draft);
+    onSend(draft, photo);
     setDraft('');
+    setPhoto(null);
   }
 
   return (
-    <div className="flex flex-col gap-3 pb-28">
+    <div className="flex flex-col gap-3 pb-44">
       {turns.length === 0 && !sending ? (
         <div className="flex flex-col gap-3">
           <p className="rounded-2xl bg-surface p-3.5 text-[14px] text-muted shadow-card">
@@ -106,27 +122,60 @@ export function AssistantChat({
       <div ref={end} />
       <form
         onSubmit={handleSubmit}
-        className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-xl items-end gap-2 bg-paper/95 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md"
+        className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-xl flex-col gap-2 bg-paper/95 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md"
       >
-        <textarea
-          value={draft}
-          rows={1}
-          dir="auto"
-          aria-label={labels.assistant.placeholder}
-          placeholder={labels.assistant.placeholder}
-          onChange={(event) => {
-            setDraft(event.target.value);
-          }}
-          className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-[15px] outline-none field-sizing-content focus:border-primary"
-        />
-        <button
-          type="submit"
-          aria-label={labels.assistant.send}
-          disabled={draft.trim() === '' || sending}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-white transition active:scale-95 disabled:bg-line disabled:text-faint"
-        >
-          <Icon name="send" className="size-5" />
-        </button>
+        {preview !== null && (
+          <div className="flex items-center gap-2.5">
+            <img src={preview} alt="" className="size-14 rounded-xl object-cover shadow-card" />
+            <p className="flex-1 text-[13px] text-muted">{labels.assistant.photoReady}</p>
+            <button
+              type="button"
+              aria-label={labels.assistant.removePhoto}
+              onClick={() => {
+                setPhoto(null);
+              }}
+              className="flex size-9 items-center justify-center rounded-full text-muted active:bg-line"
+            >
+              <Icon name="close" className="size-4.5" />
+            </button>
+          </div>
+        )}
+        <div className="flex items-end gap-2">
+          <label
+            aria-label={labels.assistant.attach}
+            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-primary active:bg-primary-soft"
+          >
+            <Icon name="clip" className="size-5.5" />
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(event) => {
+                setPhoto(event.target.files?.[0] ?? null);
+                event.target.value = '';
+              }}
+            />
+          </label>
+          <textarea
+            value={draft}
+            rows={1}
+            dir="auto"
+            aria-label={labels.assistant.placeholder}
+            placeholder={labels.assistant.placeholder}
+            onChange={(event) => {
+              setDraft(event.target.value);
+            }}
+            className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-[15px] outline-none field-sizing-content focus:border-primary"
+          />
+          <button
+            type="submit"
+            aria-label={labels.assistant.send}
+            disabled={(draft.trim() === '' && photo === null) || sending}
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-white transition active:scale-95 disabled:bg-line disabled:text-faint"
+          >
+            <Icon name="send" className="size-5" />
+          </button>
+        </div>
       </form>
     </div>
   );

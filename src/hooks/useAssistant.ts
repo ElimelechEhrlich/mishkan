@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { labels } from '../constants/labels';
 import { toMessage, withTimeout } from '../lib/errors';
+import { shrinkForReading } from '../lib/image';
 import { announceItemsChanged } from '../lib/itemChanges';
 import {
   AssistantNotEnabled,
@@ -15,7 +16,8 @@ export type UseAssistant = {
   readonly loaded: boolean;
   /** Waiting for the answer. */
   readonly sending: boolean;
-  readonly send: (message: string) => void;
+  /** Sends a message, and a photo to read (a `File` from the camera or the gallery). */
+  readonly send: (message: string, photo?: File | null) => void;
   readonly clear: () => void;
   readonly error: string | null;
 };
@@ -48,18 +50,25 @@ export function useAssistant(): UseAssistant {
     };
   }, []);
 
-  const send = useCallback((message: string): void => {
+  const send = useCallback((message: string, photo: File | null = null): void => {
     const trimmed = message.trim();
-    if (trimmed === '') {
+    if (trimmed === '' && photo === null) {
       return;
     }
     setError(null);
     setSending(true);
     setTurns((current) => [
       ...(current ?? []),
-      { id: `local-${String(Date.now())}`, role: 'user', text: trimmed },
+      {
+        id: `local-${String(Date.now())}`,
+        role: 'user',
+        text: photo === null ? trimmed : `📷 ${trimmed}`.trim(),
+      },
     ]);
-    withTimeout(askAssistant(trimmed), answerMs)
+    const asking = (photo === null ? Promise.resolve(null) : shrinkForReading(photo)).then(
+      (image) => askAssistant(trimmed, image),
+    );
+    withTimeout(asking, answerMs)
       .then(({ reply, changed }) => {
         setTurns((current) => [
           ...(current ?? []),
