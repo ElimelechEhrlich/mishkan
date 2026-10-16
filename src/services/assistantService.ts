@@ -1,3 +1,4 @@
+import { plainAnswer } from '../lib/format';
 import { supabase } from '../lib/supabase';
 
 export type AssistantTurn = {
@@ -21,7 +22,15 @@ export async function listConversation(): Promise<AssistantTurn[]> {
     throw new Error(error.message);
   }
   return data.flatMap((row) =>
-    isRole(row.role) ? [{ id: row.id, role: row.role, text: row.text }] : [],
+    isRole(row.role)
+      ? [
+          {
+            id: row.id,
+            role: row.role,
+            text: row.role === 'assistant' ? plainAnswer(row.text) : row.text,
+          },
+        ]
+      : [],
   );
 }
 
@@ -56,7 +65,7 @@ export async function askAssistant(
   if (typeof reply !== 'string') {
     throw new Error('no answer');
   }
-  return { reply, changed: changed === true };
+  return { reply: plainAnswer(reply), changed: changed === true };
 }
 
 /** Starts the conversation over. */
