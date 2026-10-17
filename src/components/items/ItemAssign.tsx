@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import { missingFields } from '../../lib/itemRules';
+import { noteValue } from '../../lib/itemText';
 import type {
   EntityWithDomains,
   Item,
@@ -54,6 +55,11 @@ export function ItemAssign({
           </span>
         )}
       </Link>
+      {noteValue(item) !== null && (
+        <p className="-mt-2 self-start text-[15px] font-semibold break-words" dir="auto">
+          {noteValue(item)}
+        </p>
+      )}
       {item.previous_domain_label !== null && (
         <p className="text-sm text-muted">
           {labels.item.previouslyIn} {item.previous_domain_label}

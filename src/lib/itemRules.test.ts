@@ -14,7 +14,7 @@ import {
   splitBySection,
   toListEntries,
 } from './itemRules';
-import { timeText } from './itemText';
+import { noteValue, timeText } from './itemText';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-11';
@@ -336,5 +336,18 @@ describe('an hour on a task', () => {
       .sort(compareEntries)
       .map((entry) => entry.item.id);
     expect(sorted).toEqual(['early', 'appointment', 'late', 'plain']);
+  });
+});
+
+describe('noteValue', () => {
+  it('is the value of a note that is one value', () => {
+    expect(noteValue(item({ kind: 'note', is_value: true, answer: '1234#' }))).toBe('1234#');
+  });
+
+  it('is nothing for a plain note, an empty value or another kind', () => {
+    expect(noteValue(item({ kind: 'note', is_value: false, answer: 'x' }))).toBeNull();
+    expect(noteValue(item({ kind: 'note', is_value: true, answer: '  ' }))).toBeNull();
+    expect(noteValue(item({ kind: 'note', is_value: true, answer: null }))).toBeNull();
+    expect(noteValue(item({ kind: 'task', is_value: true, answer: 'x' }))).toBeNull();
   });
 });

@@ -55,3 +55,10 @@ export function timeGroupsSummary(counts: Readonly<Record<OpenSegment, number>>)
     .map((segment) => `${String(counts[segment])} ${labels.segment[segment]}`);
   return parts.length === 0 ? labels.overview.nothingOpen : parts.join(labels.item.separator);
 }
+
+/** The value of a note that is one value (the gate's code), shown wherever the item is; else null. */
+export function noteValue(item: Item): string | null {
+  return item.kind === 'note' && item.is_value && item.answer !== null && item.answer.trim() !== ''
+    ? item.answer
+    : null;
+}

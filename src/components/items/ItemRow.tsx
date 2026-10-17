@@ -8,6 +8,7 @@ import { CheckButton } from '../ui/CheckButton';
 import { Icon } from '../ui/Icon';
 import { CopyButton } from '../ui/CopyButton';
 import { DueText } from './DueText';
+import { noteValue } from '../../lib/itemText';
 import { trackerLine } from '../../lib/trackers';
 import { ItemMeta } from './ItemMeta';
 
@@ -40,7 +41,7 @@ export function ItemRow({
   const [completing, setCompleting] = useState(false);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
   // A note that is one value, such as the gate's code, shows it right in the list.
-  const value = item.kind === 'note' && item.is_value && item.answer !== null ? item.answer : '';
+  const value = noteValue(item) ?? '';
   // A tracker shows where it stands: its total or latest value, or how many entries it has.
   const trackerEntries =
     item.kind === 'tracker' ? (lookups.trackerEntries.get(item.id) ?? []) : null;
@@ -115,7 +116,7 @@ export function ItemRow({
             </span>
           )}
           {value !== '' && (
-            <span className="text-[15px] font-semibold break-words" dir="auto">
+            <span className="self-start text-[15px] font-semibold break-words" dir="auto">
               {value}
             </span>
           )}

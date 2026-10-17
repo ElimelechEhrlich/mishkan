@@ -2,8 +2,10 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import { formatDueDate } from '../../lib/itemRules';
+import { noteValue } from '../../lib/itemText';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
+import { CopyButton } from '../ui/CopyButton';
 import { Icon } from '../ui/Icon';
 import { CalendarBadge } from './CalendarBadge';
 
@@ -15,6 +17,7 @@ type SearchItemRowProps = {
 /** An item found by a search: its title, kind, domain and date; done ones crossed out. */
 export function SearchItemRow({ item, lookups }: SearchItemRowProps): ReactElement {
   const done = item.status !== 'open';
+  const value = noteValue(item);
   const domainLabel =
     item.domain_id === null ? labels.nav.incomplete : lookups.domainLabels.get(item.domain_id);
   const details = [
@@ -30,6 +33,11 @@ export function SearchItemRow({ item, lookups }: SearchItemRowProps): ReactEleme
           <span className={`text-[15px] break-words ${done ? 'text-muted line-through' : ''}`}>
             {item.title}
           </span>
+          {value !== null && (
+            <span className="self-start text-[15px] font-semibold break-words" dir="auto">
+              {value}
+            </span>
+          )}
           <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
             {item.kind !== 'task' && (
               <span className="rounded-[5px] bg-line/70 px-1.5 text-[11px] font-semibold">
@@ -40,7 +48,13 @@ export function SearchItemRow({ item, lookups }: SearchItemRowProps): ReactEleme
             {details.join(labels.item.separator)}
           </span>
         </span>
-        <Icon name="forward" className="me-3.5 size-4 text-faint" />
+        {value === null ? (
+          <Icon name="forward" className="me-3.5 size-4 text-faint" />
+        ) : (
+          <span className="me-3.5">
+            <CopyButton text={value} />
+          </span>
+        )}
       </Link>
     </li>
   );

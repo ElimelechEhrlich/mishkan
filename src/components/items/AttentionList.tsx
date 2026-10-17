@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
+import { noteValue } from '../../lib/itemText';
 import type { Item } from '../../types/domain';
 
 type AttentionListProps = {
@@ -24,6 +25,11 @@ export function AttentionList({ entries }: AttentionListProps): ReactElement | n
           <li key={item.id} className="border-t border-line first:border-t-0">
             <Link to={`/item/${item.id}`} className="flex min-w-0 flex-col px-3.5 py-2.5">
               <span className="text-[15px] font-medium break-words">{item.title}</span>
+              {noteValue(item) !== null && (
+                <span className="self-start text-[15px] font-semibold break-words" dir="auto">
+                  {noteValue(item)}
+                </span>
+              )}
               <span className="text-xs text-alert">
                 {labels.kind[item.kind]}
                 {labels.item.separator}
