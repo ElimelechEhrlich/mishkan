@@ -25,11 +25,11 @@ export function ScopeAvatar({
       className={`block rounded-full bg-surface p-1 ${raised ? 'shadow-raised' : 'shadow-card'} ${className}`}
     >
       {entity === undefined ? (
-        <span className="flex size-24 items-center justify-center rounded-full bg-primary text-white">
-          <Icon name="home" className="size-10" />
+        <span className="flex size-20 items-center justify-center rounded-full bg-primary text-white">
+          <Icon name="home" className="size-9" />
         </span>
       ) : (
-        <EntityAvatar entity={entity} tone={tone} size="hero" />
+        <EntityAvatar entity={entity} tone={tone} size="scope" />
       )}
     </span>
   );

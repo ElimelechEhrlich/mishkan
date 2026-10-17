@@ -36,13 +36,13 @@ export function OverviewCard({
         onClick={() => {
           setOpen(!open);
         }}
-        className="flex w-full items-center gap-3 px-3.5 py-3 text-start active:bg-paper"
+        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-start active:bg-paper"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
-          <Icon name={icon} className="size-5" />
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-primary-soft text-primary">
+          <Icon name={icon} className="size-4.5" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="font-display text-base font-semibold">{title}</span>
+          <span className="font-display text-[15px] leading-5 font-semibold">{title}</span>
           <span className="truncate text-xs text-muted">{summary}</span>
         </span>
         <Icon

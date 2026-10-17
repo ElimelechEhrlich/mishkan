@@ -12,8 +12,8 @@ type EverythingButtonProps = {
   readonly shortcut: EverythingShortcut;
 };
 
-/** How large the carousel's picture (104 pixels) is once docked in the header (44). */
-export const dockedScale = 44 / 104;
+/** How large the carousel's picture (88 pixels) is once docked in the header (44). */
+export const dockedScale = 44 / 88;
 
 /**
  * The place in the header next to the title. Once the carousel is past "everything", it

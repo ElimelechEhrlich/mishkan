@@ -96,11 +96,11 @@ describe('groupByTopic', () => {
 describe('carouselPlace', () => {
   it('keeps the places the carousel rests on', () => {
     expect(carouselPlace(0)).toEqual({ offset: 0, scale: 1, opacity: 1 });
-    expect(carouselPlace(1)).toEqual({ offset: 92, scale: 0.62, opacity: 0.85 });
+    expect(carouselPlace(1)).toEqual({ offset: 78, scale: 0.62, opacity: 0.85 });
   });
 
   it('is part way between two places while moving, and out of sight far away', () => {
-    expect(carouselPlace(0.5).offset).toBe(46);
+    expect(carouselPlace(0.5).offset).toBe(39);
     expect(carouselPlace(9).opacity).toBe(0);
   });
 });
@@ -108,7 +108,7 @@ describe('carouselPlace', () => {
 describe('awayAtOffset', () => {
   it('turns a carousel place back into places from the middle', () => {
     expect(awayAtOffset(0)).toBe(0);
-    expect(awayAtOffset(92)).toBe(1);
+    expect(awayAtOffset(78)).toBe(1);
     expect(awayAtOffset(carouselPlace(1.5).offset)).toBeCloseTo(1.5, 5);
     expect(awayAtOffset(-5)).toBe(0);
   });

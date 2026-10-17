@@ -144,7 +144,7 @@ export function PageShell({
         )}
       </header>
       <main
-        className={`flex flex-1 animate-fade-in flex-col gap-4 px-4 pt-1 ${hideNav ? 'pb-8' : 'pb-40'}`}
+        className={`flex flex-1 animate-fade-in flex-col gap-3 px-4 pt-1 ${hideNav ? 'pb-8' : 'pb-40'}`}
       >
         {children}
       </main>

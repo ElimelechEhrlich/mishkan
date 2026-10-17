@@ -361,7 +361,7 @@ export function ScopeBar({
       <div
         ref={bar}
         data-no-page-swipe
-        className="relative -mx-4 h-[116px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
+        className="relative -mx-4 h-[98px] w-[calc(100%+2rem)] touch-pan-y overflow-x-clip"
         {...touch.handlers}
       >
         {options.map((option, position) => {
@@ -435,7 +435,7 @@ export function ScopeBar({
               {position === index && moving === null && canOpenSheet && (
                 <span
                   data-dock-badge
-                  className="dock-fade absolute end-1 bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card"
+                  className="dock-fade absolute end-0.5 bottom-0.5 flex size-7 items-center justify-center rounded-full border-2 border-paper bg-surface text-muted shadow-card"
                 >
                   <Icon name="user" className="size-4" />
                 </span>
@@ -451,11 +451,11 @@ export function ScopeBar({
             onClick={() => {
               go(circle.id === scopeId ? 0 : options.indexOf(circle.id));
             }}
-            className={`dock-fade absolute top-0 left-3 z-20 flex size-9 items-center justify-center rounded-full shadow-card transition active:scale-90 ${
+            className={`dock-fade absolute -top-1 left-3 z-20 flex size-8 items-center justify-center rounded-full shadow-card transition active:scale-90 ${
               circle.id === scopeId ? 'bg-primary text-white' : 'bg-surface text-muted'
             }`}
           >
-            <Icon name="users" className="size-5" />
+            <Icon name="users" className="size-4.5" />
           </button>
         )}
         {index < options.length - 1 && (
@@ -465,9 +465,9 @@ export function ScopeBar({
             onClick={() => {
               go(index + 1);
             }}
-            className="dock-fade absolute top-1/2 left-3 z-20 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
+            className="dock-fade absolute top-1/2 left-3 z-20 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
           >
-            <Icon name="forward" className="size-6" />
+            <Icon name="forward" className="size-5" />
           </button>
         )}
         {index > 0 && (
@@ -477,9 +477,9 @@ export function ScopeBar({
             onClick={() => {
               go(index - 1);
             }}
-            className="dock-fade absolute top-1/2 right-3 z-20 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
+            className="dock-fade absolute top-1/2 right-3 z-20 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-paper/85 text-muted shadow-card active:bg-line"
           >
-            <Icon name="back" className="size-6" />
+            <Icon name="back" className="size-5" />
           </button>
         )}
       </div>
@@ -488,10 +488,10 @@ export function ScopeBar({
       <div className="dock-fade">
         <div key={scopeId ?? 'all'} className="flex animate-fade-in flex-col items-center gap-2">
           <div className="flex flex-col items-center">
-            <span className="font-display text-xl font-bold">
+            <span className="font-display text-lg leading-6 font-bold">
               {shown?.name ?? labels.entityPage.everything}
             </span>
-            <span className="text-[13px] text-muted">
+            <span className="text-xs text-muted">
               {shown === undefined
                 ? labels.scope.everythingHint
                 : `${labels.entityKind[shown.kind]}${

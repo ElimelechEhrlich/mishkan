@@ -15,7 +15,7 @@ const kindIcons: Partial<Record<Entity['kind'], IconName>> = {
 type EntityAvatarProps = {
   readonly entity: Entity & { readonly avatarUrl?: string | null };
   readonly tone: EntityTone;
-  readonly size: 'xs' | 'md' | 'list' | 'lg' | 'hero';
+  readonly size: 'xs' | 'md' | 'list' | 'lg' | 'scope' | 'hero';
 };
 
 const sizes = {
@@ -23,6 +23,7 @@ const sizes = {
   md: { box: 'size-9 rounded-full text-[15px]', icon: 'size-4.5', emoji: 'text-xl' },
   list: { box: 'size-11 rounded-full text-lg', icon: 'size-5', emoji: 'text-2xl' },
   lg: { box: 'size-14 rounded-[18px] text-[26px]', icon: 'size-7', emoji: 'text-3xl' },
+  scope: { box: 'size-20 rounded-full text-3xl', icon: 'size-9', emoji: 'text-[42px]' },
   hero: { box: 'size-24 rounded-full text-4xl', icon: 'size-10', emoji: 'text-5xl' },
 } as const;
 

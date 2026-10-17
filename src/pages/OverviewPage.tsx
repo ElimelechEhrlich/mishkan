@@ -91,7 +91,7 @@ export function OverviewPage(): ReactElement {
       />
       <div
         key={scopeId ?? 'all'}
-        className={`flex flex-col gap-4 ${
+        className={`flex flex-col gap-3 ${
           direction === 'next' ? 'animate-entity-next' : 'animate-entity-previous'
         }`}
       >

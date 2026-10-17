@@ -287,7 +287,7 @@ export function mainCircle<T extends { readonly kind: EntityKind; readonly creat
 }
 
 /** Where a picture sits, by how many places it is from the middle: 0, 1, 2 and out of sight. */
-const placeOffsets = [0, 92, 154, 196] as const;
+const placeOffsets = [0, 78, 130, 166] as const;
 const placeScales = [1, 0.62, 0.42, 0.3] as const;
 const placeOpacities = [1, 0.85, 0.35, 0] as const;
 
