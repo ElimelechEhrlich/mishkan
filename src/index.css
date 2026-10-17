@@ -131,6 +131,14 @@ body {
   [data-pressed] {
     background-image: linear-gradient(var(--color-press), var(--color-press));
   }
+  /* The carousel's middle picture moves away from its place (into the header): the press
+     shows on the picture itself, wherever it is. */
+  .dock-holder[data-pressed] {
+    background-image: none;
+  }
+  .dock-holder[data-pressed] .dock-picture {
+    filter: brightness(0.92);
+  }
 
   /* Amounts are typed, not stepped. */
   input[type='number'] {

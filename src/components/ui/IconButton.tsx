@@ -9,6 +9,8 @@ type IconButtonProps = {
   readonly tone?: 'muted' | 'alert' | 'primary';
   /** For toggles: shows the button as switched on. */
   readonly pressed?: boolean | undefined;
+  /** It opens another page, so its press is seen first (lib/press.ts). */
+  readonly leaves?: boolean;
 };
 
 const toneClasses = {
@@ -23,6 +25,7 @@ export function IconButton({
   onClick,
   tone = 'muted',
   pressed,
+  leaves = false,
 }: IconButtonProps): ReactElement {
   const look = pressed === true ? 'bg-primary-soft text-primary' : toneClasses[tone];
   return (
@@ -30,6 +33,7 @@ export function IconButton({
       type="button"
       aria-label={label}
       aria-pressed={pressed}
+      data-leaves={leaves ? '' : undefined}
       onClick={onClick}
       className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition active:bg-line ${look}`}
     >
