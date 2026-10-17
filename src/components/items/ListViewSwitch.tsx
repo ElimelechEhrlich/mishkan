@@ -25,5 +25,5 @@ export function ListViewSwitch({
     { value: 'time', label: timeLabel },
     { value: 'domain', label: topic === null ? labels.listView.domain : labels.listView.oneDomain },
   ] as const;
-  return <Segmented options={options} value={value} onChange={onChange} />;
+  return <Segmented options={options} value={value} onChange={onChange} compact />;
 }

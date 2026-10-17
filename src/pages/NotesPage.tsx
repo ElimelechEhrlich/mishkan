@@ -44,8 +44,13 @@ export function NotesPage(): ReactElement {
         scopeId={scopeId}
         onChange={setScope}
       />
-      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
-      <ListViewSwitch value={listView} onChange={setListView} timeLabel={labels.listView.latest} />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic}>
+        <ListViewSwitch
+          value={listView}
+          onChange={setListView}
+          timeLabel={labels.listView.latest}
+        />
+      </TopicBar>
       {noteFilter.options.length > 0 && (
         <NoteFilterChips
           options={noteFilter.options}

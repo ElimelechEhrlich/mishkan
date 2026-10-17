@@ -50,8 +50,9 @@ export function GoalsPage(): ReactElement {
         scopeId={scopeId}
         onChange={setScope}
       />
-      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
-      <ListViewSwitch value={listView} onChange={setListView} />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic}>
+        <ListViewSwitch value={listView} onChange={setListView} />
+      </TopicBar>
       <Tabs options={tabs.options} value={tabs.tab} onChange={tabs.setTab} />
       {onGoals && (
         <SegmentChips

@@ -83,12 +83,14 @@ export function OverviewPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
-      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={chooseTopic} />
-      <Segmented
-        options={homeViews(scoped.topic !== null)}
-        value={homeView}
-        onChange={setHomeView}
-      />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={chooseTopic}>
+        <Segmented
+          options={homeViews(scoped.topic !== null)}
+          value={homeView}
+          onChange={setHomeView}
+          compact
+        />
+      </TopicBar>
       <div
         key={scopeId ?? 'all'}
         className={`flex flex-col gap-3 ${

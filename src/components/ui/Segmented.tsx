@@ -10,6 +10,8 @@ type SegmentedProps<Value extends string> = {
   readonly options: readonly SegmentedOption<Value>[];
   readonly value: Value;
   readonly onChange: (value: Value) => void;
+  /** Smaller, to sit in one row with another control. */
+  readonly compact?: boolean;
 };
 
 /** A choice between a few options, the chosen one raised on a gray track. */
@@ -17,6 +19,7 @@ export function Segmented<Value extends string>({
   options,
   value,
   onChange,
+  compact = false,
 }: SegmentedProps<Value>): ReactElement {
   return (
     <div role="tablist" className="flex gap-0.5 rounded-xl bg-line/80 p-0.5">
@@ -31,7 +34,9 @@ export function Segmented<Value extends string>({
             onClick={() => {
               onChange(option.value);
             }}
-            className={`flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 text-[13px] transition ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 transition ${
+              compact ? 'min-h-8 text-xs' : 'min-h-9 text-[13px]'
+            } ${
               selected
                 ? 'bg-surface font-semibold text-ink shadow-raised'
                 : 'font-medium text-muted'

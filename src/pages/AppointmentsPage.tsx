@@ -42,8 +42,9 @@ export function AppointmentsPage(): ReactElement {
         scopeId={scopeId}
         onChange={setScope}
       />
-      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
-      <ListViewSwitch value={listView} onChange={setListView} />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic}>
+        <ListViewSwitch value={listView} onChange={setListView} />
+      </TopicBar>
       {listView === 'domain' ? (
         <TopicSectionList
           sections={domainGroups}

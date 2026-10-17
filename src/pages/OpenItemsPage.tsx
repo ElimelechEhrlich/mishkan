@@ -51,8 +51,9 @@ export function OpenItemsPage(): ReactElement {
         onChange={setScope}
         counts={entityCounts.counts}
       />
-      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic} />
-      <ListViewSwitch value={listView} onChange={setListView} />
+      <TopicBar topics={scoped.topics} value={scoped.topic} onChange={setTopic}>
+        <ListViewSwitch value={listView} onChange={setListView} />
+      </TopicBar>
       <Tabs
         options={view.options}
         value={view.segment}
