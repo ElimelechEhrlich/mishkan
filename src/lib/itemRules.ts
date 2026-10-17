@@ -2,6 +2,7 @@ import type {
   ActiveSection,
   AppointmentRepeat,
   Item,
+  ItemUpdate,
   MissingField,
   OpenSegment,
   QuickTime,
@@ -757,4 +758,21 @@ export function snoozeUntil(choice: SnoozeChoice, now: Date): string {
     return tomorrow.toISOString();
   }
   return new Date(now.getTime() + snoozeMinutes[choice] * 60_000).toISOString();
+}
+
+/**
+ * Items with the changes still being saved laid over them, so a change shows the moment it is
+ * made, and a list loaded meanwhile (from the server, before the save) does not undo it.
+ */
+export function withPending(
+  items: readonly Item[],
+  pending: ReadonlyMap<string, ItemUpdate>,
+): Item[] {
+  if (pending.size === 0) {
+    return [...items];
+  }
+  return items.map((item) => {
+    const changes = pending.get(item.id);
+    return changes === undefined ? item : { ...item, ...changes };
+  });
 }

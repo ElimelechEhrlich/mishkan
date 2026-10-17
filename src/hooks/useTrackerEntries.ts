@@ -53,15 +53,20 @@ export function useTrackerEntries(): UseTrackerEntries {
     });
   }, [load]);
 
-  const run = useCallback((change: () => Promise<void>): void => {
-    change()
-      .then(() => {
-        announceItemsChanged();
-      })
-      .catch((caught: unknown) => {
-        setError(toMessage(caught));
-      });
-  }, []);
+  const run = useCallback(
+    (change: () => Promise<void>): void => {
+      change()
+        .then(() => {
+          announceItemsChanged();
+        })
+        .catch((caught: unknown) => {
+          setError(toMessage(caught));
+          // What was shown at once goes back to what is saved.
+          void load();
+        });
+    },
+    [load],
+  );
 
   const byItem = useMemo(() => {
     const map = new Map<string, TrackerEntry[]>();
@@ -81,10 +86,15 @@ export function useTrackerEntries(): UseTrackerEntries {
     add: (itemId, onDate, value, note): void => {
       run(() => addTrackerEntry({ itemId, onDate, value, note }));
     },
+    // Shown at once; the save follows.
     update: (entryId, changes): void => {
+      setRows((current) =>
+        current.map((row) => (row.id === entryId ? { ...row, ...changes } : row)),
+      );
       run(() => updateTrackerEntry(entryId, changes));
     },
     remove: (entryId): void => {
+      setRows((current) => current.filter((row) => row.id !== entryId));
       run(() => deleteTrackerEntry(entryId));
     },
     error,

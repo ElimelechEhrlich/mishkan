@@ -3,7 +3,7 @@ import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { labels } from '../constants/labels';
 import { toMessage, withTimeout } from '../lib/errors';
 import { announceItemsChanged, onItemsChanged } from '../lib/itemChanges';
-import { agendaOf, todayIso } from '../lib/itemRules';
+import { agendaOf, todayIso, withPending } from '../lib/itemRules';
 import type { Agenda } from '../lib/itemRules';
 import {
   completeItem,
@@ -117,6 +117,8 @@ export function useItems(): UseItems {
   // Loads can overlap (a change, then a return to the app); only the latest one is shown, so
   // an older answer arriving last does not undo a newer one.
   const latestLoad = useRef(0);
+  // Changes still being saved, shown at once and kept over any list loaded meanwhile.
+  const pending = useRef(new Map<string, ItemUpdate>());
   const load = useCallback(async (): Promise<void> => {
     latestLoad.current += 1;
     const thisLoad = latestLoad.current;
@@ -130,7 +132,12 @@ export function useItems(): UseItems {
       if (thisLoad !== latestLoad.current) {
         return;
       }
-      setState({ items, steps, loading: false, error: null });
+      setState({
+        items: withPending(items, pending.current),
+        steps: withPending(steps, pending.current),
+        loading: false,
+        error: null,
+      });
       writeCache(cacheKey, { items, steps });
     } catch (error: unknown) {
       if (thisLoad === latestLoad.current) {
@@ -220,11 +227,36 @@ export function useItems(): UseItems {
     [run],
   );
 
+  // The change shows the moment it is made; if saving it fails, it is taken back and said so.
   const handleUpdate = useCallback(
     (itemId: string, changes: ItemUpdate): void => {
-      void run(() => updateItem(itemId, changes));
+      const merged = { ...pending.current.get(itemId), ...changes };
+      pending.current.set(itemId, merged);
+      setState((previous) => ({
+        ...previous,
+        items: withPending(previous.items, pending.current),
+        steps: withPending(previous.steps, pending.current),
+      }));
+      const settle = (): void => {
+        if (pending.current.get(itemId) === merged) {
+          pending.current.delete(itemId);
+        }
+      };
+      withTimeout(updateItem(itemId, changes))
+        .then(async () => {
+          settle();
+          await withTimeout(load());
+          announceItemsChanged(reloadOnChange.current);
+        })
+        .catch(async (error: unknown) => {
+          settle();
+          const message = toMessage(error);
+          // Back to what is saved, with the reason kept on screen.
+          await load().catch(() => undefined);
+          setState((previous) => ({ ...previous, error: message }));
+        });
     },
-    [run],
+    [load],
   );
 
   const handleUpdateDebt = useCallback(

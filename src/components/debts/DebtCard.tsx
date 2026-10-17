@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { entryNumber } from '../../lib/trackers';
@@ -18,14 +19,21 @@ const directions = [
 
 /** A debt on its page: which way it goes, and how much, both open to change. */
 export function DebtCard({ debt, onChange }: DebtCardProps): ReactElement {
+  // The way chosen shows at once, until the saved debt comes back (a new copy of it).
+  const [chosen, setChosen] = useState<{
+    readonly of: DebtDetails;
+    readonly direction: DebtDirection;
+  } | null>(null);
+  const direction = chosen !== null && chosen.of === debt ? chosen.direction : debt.direction;
   return (
     <Card title={labels.sections.debt}>
       <div className="flex flex-col gap-3">
         <Segmented
           options={directions}
-          value={debt.direction}
-          onChange={(direction) => {
-            onChange({ direction });
+          value={direction}
+          onChange={(next) => {
+            setChosen({ of: debt, direction: next });
+            onChange({ direction: next });
           }}
         />
         <div className="flex items-center gap-2">

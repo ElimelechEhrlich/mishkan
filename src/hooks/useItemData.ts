@@ -55,15 +55,20 @@ export function useItemData(): UseItemData {
   }, [load]);
 
   /** Runs a change, then has every list in the app, this one among them, reload. */
-  const run = useCallback((change: () => Promise<void>): void => {
-    change()
-      .then(() => {
-        announceItemsChanged();
-      })
-      .catch((caught: unknown) => {
-        setError(toMessage(caught));
-      });
-  }, []);
+  const run = useCallback(
+    (change: () => Promise<void>): void => {
+      change()
+        .then(() => {
+          announceItemsChanged();
+        })
+        .catch((caught: unknown) => {
+          setError(toMessage(caught));
+          // What was shown at once goes back to what is saved.
+          void load();
+        });
+    },
+    [load],
+  );
 
   const byItem = useMemo(() => {
     const map = new Map<string, ItemData[]>();
@@ -83,10 +88,15 @@ export function useItemData(): UseItemData {
     add: (itemId, label, value): void => {
       run(() => addItemData(itemId, label, value));
     },
+    // Shown at once; the save follows.
     update: (dataId, changes): void => {
+      setRows((current) =>
+        current.map((row) => (row.id === dataId ? { ...row, ...changes } : row)),
+      );
       run(() => updateItemData(dataId, changes));
     },
     remove: (dataId): void => {
+      setRows((current) => current.filter((row) => row.id !== dataId));
       run(() => deleteItemData(dataId));
     },
     move: (row, step): void => {

@@ -58,15 +58,20 @@ export function useItemReminders(): UseItemReminders {
   }, [load]);
 
   /** Runs a change, then has every list in the app, this one among them, reload. */
-  const run = useCallback((change: () => Promise<void>): void => {
-    change()
-      .then(() => {
-        announceItemsChanged();
-      })
-      .catch((caught: unknown) => {
-        setError(toMessage(caught));
-      });
-  }, []);
+  const run = useCallback(
+    (change: () => Promise<void>): void => {
+      change()
+        .then(() => {
+          announceItemsChanged();
+        })
+        .catch((caught: unknown) => {
+          setError(toMessage(caught));
+          // What was shown at once goes back to what is saved.
+          void load();
+        });
+    },
+    [load],
+  );
 
   const byItem = useMemo(() => {
     const map = new Map<string, ItemReminder[]>();
@@ -102,6 +107,7 @@ export function useItemReminders(): UseItemReminders {
       run(() => updateReminder(reminderId, draft));
     },
     remove: (reminderId): void => {
+      setRows((current) => current.filter((row) => row.id !== reminderId));
       run(() => deleteReminder(reminderId));
     },
     error,
