@@ -340,7 +340,7 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
     case 'more':
       return (
         <div className="flex gap-2 rounded-2xl bg-surface p-2 shadow-card">
-          {(['chat', 'search', 'done', 'settings'] as const).map((icon) => (
+          {(['search', 'done', 'settings'] as const).map((icon) => (
             <span
               key={icon}
               className="flex size-14 items-center justify-center rounded-xl text-muted"
