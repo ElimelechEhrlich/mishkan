@@ -47,6 +47,12 @@ export function GoalRow({
   const shown =
     shownHere ??
     (resting ? open.filter((step) => step.due_date === null && step.time_mode !== 'urgent') : open);
+  // Under a heading, when its steps here are due: the soonest of them, at the end of its line.
+  const firstShown = [...shown].sort(
+    (a, b) =>
+      (a.due_date ?? '9').localeCompare(b.due_date ?? '9') ||
+      (a.due_time ?? '99').localeCompare(b.due_time ?? '99'),
+  )[0];
   // Counted by occurrences: a repeating step counts each of its times.
   const counted = goalProgress(steps, lookups.repeats, lookups.occurrenceCounts);
   const percent = counted.total === 0 ? 0 : Math.round((counted.done / counted.total) * 100);
@@ -62,11 +68,18 @@ export function GoalRow({
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2 border-t border-line py-2 pe-3.5 group-first:border-t-0">
         {heading ? (
-          <Link
-            to={`/item/${goal.id}`}
-            className="flex min-w-0 items-center gap-1.5 text-[12px] font-semibold text-muted active:opacity-70"
-          >
-            <span className="truncate">{goal.title}</span>
+          <Link to={`/item/${goal.id}`} className="flex items-start gap-3 active:opacity-70">
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-[13px] leading-snug font-semibold break-words text-muted">
+                {goal.title}
+              </span>
+              <ItemMeta item={goal} lookups={lookups} today={today} hideDomain={hideDomain} />
+            </span>
+            {firstShown !== undefined && (
+              <span className="pt-0.5">
+                <DueText item={firstShown} today={today} />
+              </span>
+            )}
           </Link>
         ) : (
           <>
