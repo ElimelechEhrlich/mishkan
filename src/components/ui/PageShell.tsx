@@ -150,7 +150,7 @@ export function PageShell({
         <Link
           to="/assistant"
           aria-label={labels.assistant.open}
-          className="fixed end-[1.375rem] bottom-[calc(8.875rem+env(safe-area-inset-bottom))] z-10 flex size-11 items-center justify-center rounded-full bg-primary-soft text-primary shadow-float transition active:scale-95"
+          className="fixed end-[1.375rem] bottom-[calc(8.875rem+env(safe-area-inset-bottom))] z-10 flex size-11 items-center justify-center rounded-full bg-primary-soft text-primary shadow-halo transition active:scale-95"
         >
           <Icon name="chat" className="size-5.5" />
         </Link>

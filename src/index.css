@@ -33,6 +33,8 @@
   --shadow-card: 0 0 0 1px var(--color-line);
   --shadow-raised: 0 0 0 1px var(--color-line), 0 8px 20px -12px rgb(29 29 31 / 0.25);
   --shadow-float: 0 10px 24px -8px rgb(31 92 82 / 0.5);
+  /* All round, for a small floating button that sits over the lists. */
+  --shadow-halo: 0 0 0 1px rgb(31 92 82 / 0.14), 0 2px 20px rgb(29 29 31 / 0.3);
   --shadow-sheet: 0 -8px 32px rgb(29 29 31 / 0.16);
 
   --animate-sheet-up: sheet-up 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -119,6 +121,37 @@ body {
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  /* Everything that does something when tapped answers the touch at once: while the finger
+     is on it, it darkens a little (white turns light gray, a color a shade deeper), and lets
+     go as the finger lifts. Its own utilities, such as a scale, still apply beside it. */
+  :where(
+      button,
+      a[href],
+      summary,
+      [role='button'],
+      [role='tab'],
+      [role='option'],
+      [role='switch'],
+      [role='checkbox'],
+      label:has(> input[type='file'])
+    ) {
+    transition: filter 90ms ease-out;
+  }
+  :where(
+      button:not(:disabled),
+      a[href],
+      summary,
+      [role='button'],
+      [role='tab'],
+      [role='option'],
+      [role='switch'],
+      [role='checkbox'],
+      label:has(> input[type='file'])
+    ):active {
+    filter: brightness(0.94);
+    transition-duration: 0ms;
   }
 
   /* Amounts are typed, not stepped. */
