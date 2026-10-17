@@ -35,6 +35,9 @@ type PageShellProps = {
 const countBadgeClass =
   'absolute top-0.5 end-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-paper bg-alert px-1 text-[10px] font-bold text-white';
 
+/** How long a button that leaves the page shows its press first, in milliseconds. */
+const pressShowMs = 140;
+
 const headerLinkClass =
   'flex size-10 items-center justify-center rounded-xl text-muted transition active:bg-line';
 
@@ -147,13 +150,19 @@ export function PageShell({
       </main>
       {/* The conversation floats on its own above the add button, apart from the header's icons. */}
       {!inner && !hideNav && (
-        <Link
-          to="/assistant"
+        <button
+          type="button"
           aria-label={labels.assistant.open}
-          className="fixed end-[1.375rem] bottom-[calc(8.875rem+env(safe-area-inset-bottom))] z-10 flex size-11 items-center justify-center rounded-full bg-primary-soft text-primary shadow-halo transition active:scale-95"
+          onClick={() => {
+            // The press is seen before the conversation opens, not lost to the new page.
+            window.setTimeout(() => {
+              void navigate('/assistant');
+            }, pressShowMs);
+          }}
+          className="fixed end-[1.375rem] bottom-[calc(8.875rem+env(safe-area-inset-bottom))] z-10 flex size-11 items-center justify-center rounded-full bg-primary-soft text-primary shadow-halo transition active:scale-90"
         >
           <Icon name="chat" className="size-5.5" />
-        </Link>
+        </button>
       )}
       {!hideNav && <BottomNav />}
       <UndoToast />
