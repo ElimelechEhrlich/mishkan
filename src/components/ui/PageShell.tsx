@@ -111,14 +111,6 @@ export function PageShell({
               <Icon name="calendar" className="size-5.5" />
               {todayCount > 0 && <span className={countBadgeClass}>{String(todayCount)}</span>}
             </Link>
-            {/* The conversation stands apart from the plain icons: in the app's color, set off. */}
-            <Link
-              to="/assistant"
-              aria-label={labels.assistant.open}
-              className="mx-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary ring-1 ring-primary/15 transition active:scale-90"
-            >
-              <Icon name="chat" className="size-5" />
-            </Link>
             <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>
               <Icon name="search" className="size-5.5" />
             </Link>
@@ -153,6 +145,16 @@ export function PageShell({
       >
         {children}
       </main>
+      {/* The conversation floats on its own above the add button, apart from the header's icons. */}
+      {!inner && !hideNav && (
+        <Link
+          to="/assistant"
+          aria-label={labels.assistant.open}
+          className="fixed end-[1.375rem] bottom-[calc(8.875rem+env(safe-area-inset-bottom))] z-10 flex size-11 items-center justify-center rounded-full bg-surface text-primary shadow-float transition active:scale-95"
+        >
+          <Icon name="chat" className="size-5.5" />
+        </Link>
+      )}
       {!hideNav && <BottomNav />}
       <UndoToast />
     </div>
