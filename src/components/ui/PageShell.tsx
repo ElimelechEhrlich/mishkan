@@ -111,8 +111,13 @@ export function PageShell({
               <Icon name="calendar" className="size-5.5" />
               {todayCount > 0 && <span className={countBadgeClass}>{String(todayCount)}</span>}
             </Link>
-            <Link to="/assistant" aria-label={labels.assistant.open} className={headerLinkClass}>
-              <Icon name="chat" className="size-5.5" />
+            {/* The conversation stands apart from the plain icons: in the app's color, set off. */}
+            <Link
+              to="/assistant"
+              aria-label={labels.assistant.open}
+              className="mx-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary ring-1 ring-primary/15 transition active:scale-90"
+            >
+              <Icon name="chat" className="size-5" />
             </Link>
             <Link to="/search" aria-label={labels.pages.search} className={headerLinkClass}>
               <Icon name="search" className="size-5.5" />
