@@ -13,6 +13,8 @@
   --color-alert: #d0402b;
   --color-alert-soft: #fcebe8;
   --color-gold: #b08433;
+  /* The veil over whatever is being pressed. */
+  --color-press: rgb(29 29 31 / 0.08);
   /* The mark of what is in Google Calendar, in its colors. */
   --color-gcal-blue: #4285f4;
   --color-gcal-green: #34a853;
@@ -123,35 +125,11 @@ body {
     outline-offset: 2px;
   }
 
-  /* Everything that does something when tapped answers the touch at once: while the finger
-     is on it, it darkens a little (white turns light gray, a color a shade deeper), and lets
-     go as the finger lifts. Its own utilities, such as a scale, still apply beside it. */
-  :where(
-      button,
-      a[href],
-      summary,
-      [role='button'],
-      [role='tab'],
-      [role='option'],
-      [role='switch'],
-      [role='checkbox'],
-      label:has(> input[type='file'])
-    ) {
-    transition: filter 90ms ease-out;
-  }
-  :where(
-      button:not(:disabled),
-      a[href],
-      summary,
-      [role='button'],
-      [role='tab'],
-      [role='option'],
-      [role='switch'],
-      [role='checkbox'],
-      label:has(> input[type='file'])
-    ):active {
-    filter: brightness(0.94);
-    transition-duration: 0ms;
+  /* Everything that does something when tapped answers the touch at once (lib/press.ts marks
+     it): a light gray veil over it while the finger is on it, on white, on a color or on
+     nothing at all, keeping its own shape. Its own utilities, such as a scale, still apply. */
+  [data-pressed] {
+    background-image: linear-gradient(var(--color-press), var(--color-press));
   }
 
   /* Amounts are typed, not stepped. */

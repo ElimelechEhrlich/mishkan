@@ -29,7 +29,7 @@ export function BottomNav(): ReactElement {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
-            className="flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-[11px]"
+            className="m-1 flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px]"
           >
             {({ isActive }) => (
               <>

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { fetchLatestApk, installedApkVersion, rememberApkLaunch } from './lib/install';
 import { refreshOnReturnAndAtMidnight } from './lib/itemChanges';
+import { showPresses } from './lib/press';
 import { registerAppUpdates } from './lib/pwa';
 import './index.css';
 
@@ -23,6 +24,7 @@ if (installedApkVersion() !== null) {
 }
 registerAppUpdates();
 refreshOnReturnAndAtMidnight();
+showPresses();
 
 createRoot(container).render(
   <StrictMode>
