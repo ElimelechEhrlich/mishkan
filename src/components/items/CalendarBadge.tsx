@@ -4,15 +4,17 @@ import { useInCalendar } from '../../hooks/useCalendarItems';
 
 type CalendarBadgeProps = {
   readonly itemId: string;
+  /** Shown whatever is in the calendar, as in the tour's picture. */
+  readonly always?: boolean;
 };
 
 /**
  * A small calendar page in Google Calendar's colors beside an item that is in the parent's
  * Google Calendar; nothing for one that is not.
  */
-export function CalendarBadge({ itemId }: CalendarBadgeProps): ReactElement | null {
+export function CalendarBadge({ itemId, always = false }: CalendarBadgeProps): ReactElement | null {
   const inCalendar = useInCalendar(itemId);
-  if (!inCalendar) {
+  if (!inCalendar && !always) {
     return null;
   }
   return (

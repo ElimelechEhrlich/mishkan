@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
+import { CalendarBadge } from '../items/CalendarBadge';
 import { Icon } from '../ui/Icon';
 import type { IconName } from '../ui/Icon';
 
@@ -339,7 +340,7 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
     case 'more':
       return (
         <div className="flex gap-2 rounded-2xl bg-surface p-2 shadow-card">
-          {(['search', 'done', 'settings'] as const).map((icon) => (
+          {(['chat', 'search', 'done', 'settings'] as const).map((icon) => (
             <span
               key={icon}
               className="flex size-14 items-center justify-center rounded-xl text-muted"
@@ -471,6 +472,37 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
               {tab.label}
             </span>
           ))}
+        </div>
+      );
+    case 'assistant':
+      return (
+        <div className="flex w-72 flex-col gap-2">
+          <span className="self-end rounded-2xl rounded-ee-md bg-primary px-3.5 py-2 text-[14px] text-white">
+            {labels.tour.chatSample.ask}
+          </span>
+          <span className="flex flex-col self-start rounded-2xl rounded-es-md bg-surface px-3.5 py-2 text-[14px] leading-relaxed shadow-card">
+            {labels.tour.chatSample.reply.map((line) => (
+              <span key={line}>{line}</span>
+            ))}
+          </span>
+        </div>
+      );
+    case 'calendar':
+      return (
+        <div className={`${cardClass} gap-3 p-3.5`}>
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-[14px] font-medium">{labels.tour.calendarSample.title}</span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+              <CalendarBadge itemId="" always />
+              {labels.tour.calendarSample.time}
+            </span>
+          </span>
+          <span className="flex items-center justify-between gap-3 border-t border-line pt-3">
+            <span className="text-[14px]">{labels.calendar.row}</span>
+            <span className="relative h-6 w-10 rounded-full bg-primary">
+              <span className="absolute start-[1.125rem] top-0.5 size-5 rounded-full bg-surface shadow-card" />
+            </span>
+          </span>
         </div>
       );
     case 'notify':

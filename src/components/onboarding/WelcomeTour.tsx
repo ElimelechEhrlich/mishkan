@@ -43,6 +43,8 @@ const pages: readonly { readonly step: TourStep; readonly section: TourSection }
   { step: 'home', section: 'views' },
   { step: 'tabs', section: 'views' },
   { step: 'notify', section: 'tools' },
+  { step: 'assistant', section: 'tools' },
+  { step: 'calendar', section: 'tools' },
   { step: 'more', section: 'tools' },
   { step: 'begin', section: 'intro' },
 ];
