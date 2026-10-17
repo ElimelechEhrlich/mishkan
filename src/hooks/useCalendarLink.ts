@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toMessage } from '../lib/errors';
 import {
   getCalendarLink,
@@ -17,7 +17,7 @@ export type UseCalendarLink = {
   readonly renew: () => void;
 };
 
-/** The parent's private Google Calendar link: made when first asked for, and replaceable. */
+/** The parent's private Google Calendar link: made when the card first shows, and replaceable. */
 export function useCalendarLink(): UseCalendarLink {
   const [link, setLink] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,6 +39,10 @@ export function useCalendarLink(): UseCalendarLink {
   const show = useCallback((): void => {
     load(getCalendarLink);
   }, [load]);
+  // Ready when the card shows, so the button opens Google Calendar at once.
+  useEffect(() => {
+    show();
+  }, [show]);
   const renew = useCallback((): void => {
     load(renewCalendarLink);
   }, [load]);
