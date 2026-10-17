@@ -1289,6 +1289,7 @@ export const labels = {
       count === 0 ? 'בוחרים מה צריך' : `הוספה לרשימה (${String(count)})`,
     edit: 'עריכה',
     doneEditing: 'סיום',
+    departmentsOrder: 'שינוי סדר המחלקות ›',
     remove: 'הסרה מהרשימה הקבועה',
     confirmRemove: 'לחיצה נוספת להסרה',
     empty: 'הרשימה הקבועה מתמלאת לבד מכל פריט "סופר" שמוסיפים לרשימת הקניות.',

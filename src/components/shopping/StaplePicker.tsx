@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { byDepartment, titleKey } from '../../lib/departments';
+import { byDepartment, departmentFor, titleKey } from '../../lib/departments';
 import type { ShoppingDepartment, ShoppingStaple } from '../../types/domain';
 import { Button } from '../ui/Button';
+import { Chip } from '../ui/Chip';
 import { ConfirmIconButton } from '../ui/ConfirmIconButton';
 import { Icon } from '../ui/Icon';
 import { InlineEdit } from '../ui/InlineEdit';
@@ -20,6 +22,8 @@ type StaplePickerProps = {
   readonly onAdd: (titles: readonly string[]) => void;
   readonly onRename: (stapleId: string, title: string) => void;
   readonly onRemove: (stapleId: string) => void;
+  /** Puts a name in a department, or back to the built-in one (null). */
+  readonly onChooseDepartment: (title: string, departmentId: string | null) => void;
 };
 
 /**
@@ -36,9 +40,12 @@ export function StaplePicker({
   onAdd,
   onRename,
   onRemove,
+  onChooseDepartment,
 }: StaplePickerProps): ReactElement {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState(false);
+  // In editing, the one item whose departments are open to choose from.
+  const [choosing, setChoosing] = useState<string | null>(null);
   const toAdd = staples.filter((staple) => picked.has(staple.id));
 
   function toggle(stapleId: string): void {
@@ -54,11 +61,19 @@ export function StaplePicker({
   return (
     <div className="flex flex-col gap-3 pb-24">
       <div className="flex items-start justify-between gap-3 px-1">
-        <p className="text-[13px] text-muted">{labels.staples.hint}</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-[13px] text-muted">{labels.staples.hint}</p>
+          {editing && (
+            <Link to="/shopping/departments" className="text-[13px] font-semibold text-primary">
+              {labels.staples.departmentsOrder}
+            </Link>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => {
             setEditing(!editing);
+            setChoosing(null);
           }}
           className="min-h-9 shrink-0 px-1.5 text-[13px] font-semibold text-primary"
         >
@@ -75,6 +90,7 @@ export function StaplePicker({
           </li>,
           ...group.items.map((staple) => {
             const onList = listed.has(titleKey(staple.title));
+            const current = departmentFor(staple.title, departments, chosen);
             const ticked = onList || picked.has(staple.id);
             return (
               <li
@@ -82,22 +98,64 @@ export function StaplePicker({
                 className="flex min-h-12 items-center gap-3 border-t border-line px-3.5"
               >
                 {editing ? (
-                  <>
-                    <InlineEdit
-                      value={staple.title}
-                      onSave={(title) => {
-                        onRename(staple.id, title);
-                      }}
-                      textClass="text-[15px]"
-                    />
-                    <ConfirmIconButton
-                      label={labels.staples.remove}
-                      confirmLabel={labels.staples.confirmRemove}
-                      onConfirm={() => {
-                        onRemove(staple.id);
-                      }}
-                    />
-                  </>
+                  <div className="flex flex-1 flex-col">
+                    <div className="flex min-h-12 items-center gap-2">
+                      <InlineEdit
+                        value={staple.title}
+                        onSave={(title) => {
+                          onRename(staple.id, title);
+                        }}
+                        textClass="text-[15px]"
+                      />
+                      <button
+                        type="button"
+                        aria-expanded={choosing === staple.id}
+                        onClick={() => {
+                          setChoosing(choosing === staple.id ? null : staple.id);
+                        }}
+                        className="flex min-h-8 shrink-0 items-center gap-1 rounded-full border border-line bg-surface ps-2.5 pe-1.5 text-xs font-medium text-muted"
+                      >
+                        {current?.name ?? labels.departments.other}
+                        <Icon
+                          name="down"
+                          className={`size-3.5 transition-transform ${choosing === staple.id ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      <ConfirmIconButton
+                        label={labels.staples.remove}
+                        confirmLabel={labels.staples.confirmRemove}
+                        onConfirm={() => {
+                          onRemove(staple.id);
+                        }}
+                      />
+                    </div>
+                    {choosing === staple.id && (
+                      <div className="flex flex-wrap gap-1.5 pb-3">
+                        {departments.map((option) => (
+                          <Chip
+                            key={option.id}
+                            label={option.name}
+                            selected={option.id === current?.id}
+                            onClick={() => {
+                              onChooseDepartment(staple.title, option.id);
+                              setChoosing(null);
+                            }}
+                          />
+                        ))}
+                        {chosen.has(titleKey(staple.title)) && (
+                          <Chip
+                            label={labels.departments.automatic}
+                            selected={false}
+                            outline
+                            onClick={() => {
+                              onChooseDepartment(staple.title, null);
+                              setChoosing(null);
+                            }}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <button
                     type="button"

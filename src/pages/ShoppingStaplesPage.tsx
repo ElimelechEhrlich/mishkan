@@ -48,6 +48,7 @@ export function ShoppingStaplesPage(): ReactElement {
           onAdd={adding.add}
           onRename={staples.rename}
           onRemove={staples.remove}
+          onChooseDepartment={departments.choose}
         />
       )}
     </PageShell>
