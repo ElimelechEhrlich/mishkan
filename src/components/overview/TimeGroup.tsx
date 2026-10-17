@@ -62,7 +62,7 @@ export function TimeGroup({
         <ul className="animate-fade-in">
           {shown.map((entry) => (
             <EntryRow
-              key={`${entry.item.id}-${entry.item.due_date ?? ''}`}
+              key={`${entry.item.id}-${entry.item.due_date ?? ''}-${entry.dueDate ?? ''}`}
               entry={entry}
               lookups={lookups}
               today={today}

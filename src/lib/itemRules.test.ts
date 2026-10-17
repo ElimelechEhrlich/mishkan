@@ -15,6 +15,7 @@ import {
   toListEntries,
 } from './itemRules';
 import { noteValue, timeText } from './itemText';
+import type { ListEntry } from './itemRules';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-11';
@@ -215,11 +216,61 @@ describe('timelineOf', () => {
 });
 
 describe('steps of a goal that is not active', () => {
-  it('lists a step due today on its own when its goal is on the shelf', () => {
+  it('lists a step due today under its goal as a heading when its goal is on the shelf', () => {
     const goal = item({ id: 'shelf', kind: 'goal', due_date: null, time_mode: 'someday' });
     const step = item({ id: 'step', parent_id: 'shelf', due_date: today });
     const agenda = agendaOf([goal, step], [step], today);
-    expect(agenda.today.map((entry) => entry.item.id)).toEqual(['step']);
+    expect(agenda.today.map((entry) => entry.item.id)).toEqual(['shelf']);
+    expect(agenda.today[0]?.heading).toBe(true);
+    expect(agenda.today[0]?.shown?.map((shown) => shown.id)).toEqual(['step']);
+  });
+});
+
+describe('each step in the group of its own time', () => {
+  const goal = item({ id: 'g', kind: 'goal', due_date: null, time_mode: 'anytime' });
+  const step = (id: string, overrides: Partial<Item>): Item =>
+    item({ id, parent_id: 'g', ...overrides });
+  const shownIn = (entries: readonly ListEntry[]): string[] =>
+    entries.flatMap((entry) => (entry.shown ?? []).map((shown) => shown.id));
+
+  it('puts a step of today in today and an urgent one in urgent, each under its goal', () => {
+    const steps = [
+      step('today', { due_date: today }),
+      step('urgent', { due_date: null, time_mode: 'urgent' }),
+    ];
+    const timeline = timelineOf([goal, ...steps], steps, today);
+    expect(shownIn(timeline.today)).toEqual(['today']);
+    expect(shownIn(timeline.urgent)).toEqual(['urgent']);
+    expect(timeline.today[0]?.heading).toBe(true);
+    // Every step has its place, so the goal is not listed again with no date.
+    expect(timeline.undated).toEqual([]);
+  });
+
+  it('keeps a step with no date inside the goal, with no date', () => {
+    const steps = [
+      step('urgent', { due_date: null, time_mode: 'urgent' }),
+      step('later', { due_date: null, time_mode: 'anytime' }),
+    ];
+    const timeline = timelineOf([goal, ...steps], steps, today);
+    expect(shownIn(timeline.urgent)).toEqual(['urgent']);
+    expect(shownIn(timeline.undated)).toEqual(['later']);
+    expect(timeline.undated[0]?.heading).toBeUndefined();
+  });
+
+  it('holds two steps of the same day under one heading', () => {
+    const steps = [step('a', { due_date: today }), step('b', { due_date: today })];
+    const timeline = timelineOf([goal, ...steps], steps, today);
+    expect(timeline.today).toHaveLength(1);
+    expect(shownIn(timeline.today)).toEqual(['a', 'b']);
+  });
+
+  it('keeps a goal with a target by its target, with its progress', () => {
+    const withTarget = item({ id: 'g', kind: 'goal', due_date: '2026-10-30' });
+    const steps = [step('a', { due_date: today })];
+    const timeline = timelineOf([withTarget, ...steps], steps, today);
+    expect(shownIn(timeline.today)).toEqual(['a']);
+    expect(timeline.upcoming.map((entry) => entry.item.id)).toEqual(['g']);
+    expect(timeline.upcoming[0]?.shown).toEqual([]);
   });
 });
 

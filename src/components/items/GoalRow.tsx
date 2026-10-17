@@ -19,6 +19,10 @@ type GoalRowProps = {
   readonly onComplete: (item: Item) => void;
   /** Leaves out the domain, on a page that already groups by it. */
   readonly hideDomain?: boolean;
+  /** The steps to show inside, in a list by time: those of this group. Else every open one. */
+  readonly shown?: readonly Item[] | undefined;
+  /** Only a small heading over some of its steps, without the progress. */
+  readonly heading?: boolean;
 };
 
 /**
@@ -32,15 +36,17 @@ export function GoalRow({
   today,
   onComplete,
   hideDomain = false,
+  shown: shownHere,
+  heading = false,
 }: GoalRowProps): ReactElement {
   const tone = goal.domain_id === null ? undefined : lookups.domainTones.get(goal.domain_id);
   const open = steps.filter((step) => step.status === 'open');
   // A goal that waits or is on the shelf keeps only its undated steps inside it; a step with a
   // date, or urgent, stands on its own among the active, so it is not shown twice.
   const resting = segmentOf(goal) === 'waiting' || segmentOf(goal) === 'someday';
-  const shown = resting
-    ? open.filter((step) => step.due_date === null && step.time_mode !== 'urgent')
-    : open;
+  const shown =
+    shownHere ??
+    (resting ? open.filter((step) => step.due_date === null && step.time_mode !== 'urgent') : open);
   // Counted by occurrences: a repeating step counts each of its times.
   const counted = goalProgress(steps, lookups.repeats, lookups.occurrenceCounts);
   const percent = counted.total === 0 ? 0 : Math.round((counted.done / counted.total) * 100);
@@ -48,31 +54,47 @@ export function GoalRow({
 
   return (
     <li className="group flex gap-3 ps-3.5">
-      <span className="w-5.5 shrink-0 pt-2.5">
-        <Icon name="target" className={`size-5.5 ${tone?.text ?? 'text-muted'}`} />
+      <span className={`w-5.5 shrink-0 ${heading ? 'pt-2' : 'pt-2.5'}`}>
+        <Icon
+          name={goal.kind === 'issue' ? 'alert' : 'target'}
+          className={`${heading ? 'size-4' : 'size-5.5'} ${tone?.text ?? 'text-muted'}`}
+        />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2 border-t border-line py-2 pe-3.5 group-first:border-t-0">
-        <Link to={`/item/${goal.id}`} className="flex items-start gap-3 active:opacity-70">
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-[14px] leading-snug font-semibold break-words">{goal.title}</span>
-            <ItemMeta
-              item={goal}
-              lookups={lookups}
-              today={today}
-              hideDomain={hideDomain}
-              extra={progress}
-            />
-          </span>
-          <span className="pt-0.5">
-            <DueText item={goal} today={today} />
-          </span>
-        </Link>
-        <span className="h-1 overflow-hidden rounded-full bg-line">
-          <span
-            className="block h-full rounded-full bg-primary transition-all"
-            style={{ width: `${String(percent)}%` }}
-          />
-        </span>
+        {heading ? (
+          <Link
+            to={`/item/${goal.id}`}
+            className="flex min-w-0 items-center gap-1.5 text-[12px] font-semibold text-muted active:opacity-70"
+          >
+            <span className="truncate">{goal.title}</span>
+          </Link>
+        ) : (
+          <>
+            <Link to={`/item/${goal.id}`} className="flex items-start gap-3 active:opacity-70">
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-[14px] leading-snug font-semibold break-words">
+                  {goal.title}
+                </span>
+                <ItemMeta
+                  item={goal}
+                  lookups={lookups}
+                  today={today}
+                  hideDomain={hideDomain}
+                  extra={progress}
+                />
+              </span>
+              <span className="pt-0.5">
+                <DueText item={goal} today={today} />
+              </span>
+            </Link>
+            <span className="h-1 overflow-hidden rounded-full bg-line">
+              <span
+                className="block h-full rounded-full bg-primary transition-all"
+                style={{ width: `${String(percent)}%` }}
+              />
+            </span>
+          </>
+        )}
         {shown.length > 0 && (
           <ul className="flex flex-col gap-2 pt-0.5">
             {shown.map((step) => (

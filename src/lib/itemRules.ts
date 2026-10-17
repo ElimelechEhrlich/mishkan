@@ -322,6 +322,13 @@ export type ListEntry = {
   readonly target: string | null;
   /** The goal or issue of a step that stands as a row of its own, so the row can say so. */
   readonly parent: Item | null;
+  /**
+   * In a list by time, the steps shown inside this goal or issue here: those of this group
+   * only, each step in the group of its own time. Undefined shows every open step.
+   */
+  readonly shown?: readonly Item[];
+  /** The goal or issue stands here only as the heading of some of its steps. */
+  readonly heading?: boolean;
 };
 
 function earliest(dates: readonly (string | null)[]): string | null {
@@ -329,6 +336,78 @@ function earliest(dates: readonly (string | null)[]): string | null {
     (first, date) => (date !== null && (first === null || date < first) ? date : first),
     null,
   );
+}
+
+/** Where a step stands by its own time: its group, and its day in the groups that span days. */
+function stepPlace(
+  step: Item,
+  today: string,
+): { readonly section: ActiveSection; readonly key: string } {
+  const section = sectionOfEntry(
+    { item: step, dueDate: step.due_date, urgent: step.time_mode === 'urgent', target: null },
+    today,
+  );
+  const spansDays = section === 'thisWeek' || section === 'upcoming' || section === 'passed';
+  return { section, key: spansDays ? `${section}:${step.due_date ?? ''}` : section };
+}
+
+/**
+ * For a list by time: each step in the group of its own time, under its goal or issue as a
+ * heading, and steps of the same group under one heading. What has no date of its own stays
+ * inside the goal, which stands by its target date (or with no date). A step that stands on
+ * its own, of a goal that waits or is on the shelf, gets its goal as a heading too.
+ */
+export function byStepPlace(entries: readonly ListEntry[], today: string): ListEntry[] {
+  const result: ListEntry[] = [];
+  const headings = new Map<string, { goal: Item; steps: Item[] }>();
+  const addToHeading = (goal: Item, step: Item): void => {
+    const key = `${goal.id}|${stepPlace(step, today).key}`;
+    const heading = headings.get(key);
+    if (heading === undefined) {
+      headings.set(key, { goal, steps: [step] });
+    } else {
+      heading.steps.push(step);
+    }
+  };
+  for (const entry of entries) {
+    if (entry.parent !== null) {
+      addToHeading(entry.parent, entry.item);
+      continue;
+    }
+    const open = entry.steps.filter((step) => step.status === 'open');
+    if (!isContainer(entry.item) || open.length === 0) {
+      result.push(entry);
+      continue;
+    }
+    const resting = open.filter((step) => stepPlace(step, today).section === 'undated');
+    for (const step of open) {
+      if (stepPlace(step, today).section !== 'undated') {
+        addToHeading(entry.item, step);
+      }
+    }
+    // The goal itself, with what has no date, by its target; left out when its steps say it all.
+    if (resting.length > 0 || entry.target !== null) {
+      result.push({
+        ...entry,
+        shown: resting,
+        dueDate: entry.target,
+        urgent: false,
+      });
+    }
+  }
+  for (const { goal, steps } of headings.values()) {
+    result.push({
+      item: goal,
+      steps: [],
+      shown: steps,
+      dueDate: earliest(steps.map((step) => step.due_date)),
+      urgent: steps.some((step) => step.time_mode === 'urgent'),
+      target: null,
+      parent: null,
+      heading: true,
+    });
+  }
+  return result;
 }
 
 /**
@@ -597,10 +676,12 @@ function entriesOf(
   assigned: readonly Item[],
   steps: readonly Item[],
   segment: OpenSegment,
+  today: string,
 ): ListEntry[] {
   // A step goes inside its goal only when the goal itself is listed; the step of a goal
   // that waits or is on the shelf is listed on its own, so nothing due is missed.
-  return toListEntries(rowsOfSegment(assigned, segment, runsOnTime), steps, assigned);
+  const entries = toListEntries(rowsOfSegment(assigned, segment, runsOnTime), steps, assigned);
+  return segment === 'active' ? byStepPlace(entries, today) : entries;
 }
 
 function inOrder(entries: readonly ListEntry[]): ListEntry[] {
@@ -613,7 +694,7 @@ function inOrder(entries: readonly ListEntry[]): ListEntry[] {
  * group is in time order, the ones with an hour first.
  */
 export function agendaOf(assigned: readonly Item[], steps: readonly Item[], today: string): Agenda {
-  const sections = splitBySection(entriesOf(assigned, steps, 'active'), today);
+  const sections = splitBySection(entriesOf(assigned, steps, 'active', today), today);
   return {
     overdue: inOrder(sections.overdue),
     urgent: inOrder(sections.urgent),
@@ -643,7 +724,7 @@ export function timelineOf(
   steps: readonly Item[],
   today: string,
 ): Timeline {
-  const sections = splitBySection(entriesOf(assigned, steps, 'active'), today);
+  const sections = splitBySection(entriesOf(assigned, steps, 'active', today), today);
   const tomorrow = addDays(today, 1);
   return {
     ...agendaOf(assigned, steps, today),
@@ -651,8 +732,8 @@ export function timelineOf(
     thisWeek: inOrder(sections.thisWeek.filter((entry) => entry.dueDate !== tomorrow)),
     upcoming: inOrder(sections.upcoming),
     undated: inOrder(sections.undated),
-    waiting: inOrder(entriesOf(assigned, steps, 'waiting')),
-    someday: inOrder(entriesOf(assigned, steps, 'someday')),
+    waiting: inOrder(entriesOf(assigned, steps, 'waiting', today)),
+    someday: inOrder(entriesOf(assigned, steps, 'someday', today)),
   };
 }
 

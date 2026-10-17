@@ -72,6 +72,7 @@ export function OpenItemsPage(): ReactElement {
           entries={view.visible}
           lookups={lookups}
           grouped={view.segment === 'active'}
+          stepsInPlace
           loading={items.loading}
           onComplete={items.completeItem}
         />

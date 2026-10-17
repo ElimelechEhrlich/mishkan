@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { formatMoney } from '../../lib/format';
-import { activeSections, splitBySection, todayIso } from '../../lib/itemRules';
+import { activeSections, byStepPlace, splitBySection, todayIso } from '../../lib/itemRules';
 import { timeGroupsSummary } from '../../lib/itemText';
 import type { ListEntry } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
@@ -43,8 +43,12 @@ export function OverviewCards({
 }: OverviewCardsProps): ReactElement {
   const today = todayIso();
   /** Active items split by how soon they are due; the near groups open on the tasks card. */
-  const sectionGroups = (entries: readonly ListEntry[], openNear: boolean): ReactElement => {
-    const sections = splitBySection(entries, today);
+  const sectionGroups = (
+    entries: readonly ListEntry[],
+    openNear: boolean,
+    stepsInPlace = false,
+  ): ReactElement => {
+    const sections = splitBySection(stepsInPlace ? byStepPlace(entries, today) : entries, today);
     return (
       <>
         {activeSections.map((section) => (
@@ -68,10 +72,10 @@ export function OverviewCards({
     );
   };
 
-  const timeCard = (groups: TimeGroups, openNear: boolean): ReactElement => {
+  const timeCard = (groups: TimeGroups, openNear: boolean, stepsInPlace = false): ReactElement => {
     return (
       <>
-        {sectionGroups(groups.active, openNear)}
+        {sectionGroups(groups.active, openNear, stepsInPlace)}
         <TimeGroup
           label={labels.segment.waiting}
           entries={groups.waiting}
@@ -124,7 +128,7 @@ export function OverviewCards({
           to="/tasks"
           linkLabel={labels.overview.allTasks}
         >
-          {timeCard(overview.tasks, true)}
+          {timeCard(overview.tasks, true, true)}
         </OverviewCard>
       )}
 

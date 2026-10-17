@@ -22,11 +22,13 @@ export function EntryRow({
   onComplete,
   hideDomain,
 }: EntryRowProps): ReactElement {
-  if (entry.steps.length > 0) {
+  if (entry.steps.length > 0 || entry.heading === true) {
     return (
       <GoalRow
         goal={entry.item}
         steps={entry.steps}
+        shown={entry.shown}
+        heading={entry.heading === true}
         lookups={lookups}
         today={today}
         onComplete={onComplete}

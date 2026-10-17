@@ -1,6 +1,12 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { activeSections, compareEntries, sectionOfEntry, todayIso } from '../../lib/itemRules';
+import {
+  activeSections,
+  byStepPlace,
+  compareEntries,
+  sectionOfEntry,
+  todayIso,
+} from '../../lib/itemRules';
 import type { ListEntry } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import type { Item } from '../../types/domain';
@@ -19,6 +25,8 @@ type ItemListProps = {
   readonly hideDomain?: boolean;
   /** Shown when there is nothing to list. */
   readonly emptyText?: string;
+  /** In the groups by time, each step in the group of its own time, under its goal. */
+  readonly stepsInPlace?: boolean;
 };
 
 const sections = activeSections;
@@ -34,6 +42,7 @@ export function ItemList({
   onComplete,
   hideDomain = false,
   emptyText = labels.status.emptySegment,
+  stepsInPlace = false,
 }: ItemListProps): ReactElement {
   const today = todayIso();
 
@@ -41,14 +50,16 @@ export function ItemList({
     return loading ? <SkeletonList /> : <EmptyState text={emptyText} />;
   }
 
-  const sorted = [...entries].sort(compareEntries);
+  const sorted = [...(grouped && stepsInPlace ? byStepPlace(entries, today) : entries)].sort(
+    compareEntries,
+  );
 
   function rows(list: readonly ListEntry[]): ReactElement {
     return (
       <ul className={cardClass}>
         {list.map((entry) => (
           <EntryRow
-            key={`${entry.item.id}-${entry.item.due_date ?? ''}`}
+            key={`${entry.item.id}-${entry.item.due_date ?? ''}-${entry.dueDate ?? ''}`}
             entry={entry}
             lookups={lookups}
             today={today}

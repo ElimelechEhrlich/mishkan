@@ -186,6 +186,19 @@ item({
   due_date: day(0),
 });
 item({
+  title: 'לפנות את הפינה',
+  parent_id: g.id,
+  domain_id: g.domain_id,
+  time_mode: 'scheduled',
+  due_date: day(0),
+});
+item({
+  title: 'לבדוק זמני משלוח',
+  parent_id: g.id,
+  domain_id: g.domain_id,
+  time_mode: 'urgent',
+});
+item({
   title: 'להשוות מחירים בשלוש חנויות',
   parent_id: g.id,
   domain_id: g.domain_id,

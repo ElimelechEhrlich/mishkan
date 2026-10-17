@@ -18,7 +18,7 @@ function filter(rows, params) {
 (async () => {
   const b = await chromium.launch({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: '<-loopback>,127.0.0.1,localhost' } : undefined });
   const ctx = await b.newContext({ viewport: { width: 390, height: Number(process.env.HEIGHT || 844) }, deviceScaleFactor: 2, hasTouch: Boolean(process.env.TOUCH), ignoreHTTPSErrors: true, locale: 'he-IL' });
-  await ctx.addInitScript((s) => { localStorage.setItem('sb-mock-auth-token', JSON.stringify(s.session)); if (s.scope) localStorage.setItem('mishkan.scope', s.scope); if (s.tourSeen) localStorage.setItem('mishkan.tourSeen.v5', 'yes'); }, { session, scope: process.env.SCOPE, tourSeen: process.env.TOUR !== '1' });
+  await ctx.addInitScript((s) => { localStorage.setItem('sb-mock-auth-token', JSON.stringify(s.session)); if (s.scope) localStorage.setItem('mishkan.scope', s.scope); if (s.tourSeen) localStorage.setItem('mishkan.tourSeen.v6', 'yes'); }, { session, scope: process.env.SCOPE, tourSeen: process.env.TOUR !== '1' });
   await ctx.route('https://mock.supabase.co/**', async (route) => {
     const req = route.request(); const url = new URL(req.url());
     const m = /\/rest\/v1\/([^/?]+)/.exec(url.pathname);
