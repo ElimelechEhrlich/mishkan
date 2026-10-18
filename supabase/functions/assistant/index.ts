@@ -117,18 +117,46 @@ const tools = [
   {
     name: 'add_item',
     description:
-      'Adds a task, an appointment or a note. Give a domain_id when the right domain is clear from the household list; when it is not, ask, or leave it out and the item waits in "להשלמה" to be completed.',
+      'Adds an item of any kind but a debt or a shopping item: a task (or a step of a goal or an issue, with parent_id), an appointment, a goal, an issue, a note, a value ("נתון": a name and one value), or a tracker. Give a domain_id when the right domain is clear from the household list; when it is not, ask, or leave it out and the item waits in "להשלמה" to be completed.',
     parameters: {
       type: 'OBJECT',
       properties: {
         title: { type: 'STRING' },
-        kind: { type: 'STRING', format: 'enum', enum: ['task', 'appointment', 'note'] },
+        kind: {
+          type: 'STRING',
+          format: 'enum',
+          enum: ['task', 'appointment', 'goal', 'issue', 'note', 'value', 'tracker'],
+        },
+        parent_id: {
+          type: 'STRING',
+          description:
+            'For a step: the id of its goal or issue (find it with list_items). The kind is then task.',
+        },
+        value: {
+          type: 'STRING',
+          description: 'For a value ("נתון"): the value itself, such as the code.',
+        },
+        target_date: {
+          type: 'STRING',
+          description: 'For a goal: YYYY-MM-DD, by when all its steps are to be done.',
+        },
+        unit: { type: 'STRING', description: 'For a tracker: its unit, such as ₪ or ק"ג.' },
+        summary: {
+          type: 'STRING',
+          format: 'enum',
+          enum: ['sum', 'latest', 'none'],
+          description:
+            'For a tracker: sum adds up the entries (expenses), latest shows the last one (weight).',
+        },
         domain_id: { type: 'STRING' },
         entity_id: {
           type: 'STRING',
           description: 'The entity, when known but its domain is not.',
         },
-        date: { type: 'STRING', description: 'YYYY-MM-DD. For a task: its day. Required for an appointment.' },
+        date: {
+          type: 'STRING',
+          description: 'YYYY-MM-DD. For a task: its day. Required for an appointment.',
+        },
         time: { type: 'STRING', description: 'HH:MM, 24-hour. Required for an appointment.' },
         urgent: { type: 'BOOLEAN', description: 'A task to do as soon as possible, with no date.' },
         place: { type: 'STRING', description: 'Where an appointment is.' },
@@ -138,9 +166,24 @@ const tools = [
     },
   },
   {
-    name: 'add_to_shopping',
+    name: 'add_debt',
     description:
-      'Adds things to buy to the household\'s shared shopping list, one title per thing.',
+      'Records a debt: who, how much, and which way ("owed_to_us": they owe us; "we_owe": we owe them). If the way is not clear, ask.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        counterparty: { type: 'STRING', description: 'Who: a person or a place.' },
+        amount: { type: 'NUMBER', description: 'In shekels.' },
+        direction: { type: 'STRING', format: 'enum', enum: ['owed_to_us', 'we_owe'] },
+        domain_id: { type: 'STRING' },
+        entity_id: { type: 'STRING' },
+      },
+      required: ['counterparty', 'amount', 'direction'],
+    },
+  },
+  {
+    name: 'add_to_shopping',
+    description: "Adds things to buy to the household's shared shopping list, one title per thing.",
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -158,7 +201,7 @@ const tools = [
   {
     name: 'add_reminder',
     description:
-      'Adds a reminder to an item (find its id with list_items first). Either minutes before the item\'s own time, or at a given local date and time.',
+      "Adds a reminder to an item (find its id with list_items first). Either minutes before the item's own time, or at a given local date and time.",
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -273,7 +316,7 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
   const { data, error } = await db
     .from('items')
     .select(
-      'id, title, kind, time_mode, due_date, due_time, starts_at, is_complete, domain_id, entity_id, run_id, parent_id, shopping_category, place',
+      'id, title, kind, time_mode, due_date, due_time, starts_at, is_complete, domain_id, entity_id, run_id, parent_id, shopping_category, place, is_value, answer',
     )
     .eq('status', 'open')
     .neq('kind', 'question')
@@ -291,7 +334,9 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
     if (search !== null && !String(item.title).toLowerCase().includes(search)) return false;
     switch (section) {
       case 'overdue':
-        return item.is_complete === true && due !== null && due < today && item.kind !== 'appointment';
+        return (
+          item.is_complete === true && due !== null && due < today && item.kind !== 'appointment'
+        );
       case 'today':
         return item.is_complete === true && (due === today || item.time_mode === 'urgent');
       case 'week':
@@ -314,6 +359,21 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
   if (rows.length === 0) {
     return 'nothing';
   }
+  // A debt says how much and which way; a value, its value.
+  const debtIds = rows.filter((item) => item.kind === 'debt').map((item) => String(item.id));
+  const debts = new Map<string, string>();
+  if (debtIds.length > 0) {
+    const { data: details } = await db
+      .from('debt_details')
+      .select('item_id, amount, direction')
+      .in('item_id', debtIds);
+    for (const detail of (details ?? []) as Row[]) {
+      debts.set(
+        String(detail.item_id),
+        `${String(detail.amount)} ₪ ${detail.direction === 'we_owe' ? 'we owe them' : 'they owe us'}`,
+      );
+    }
+  }
   return rows
     .slice(0, maxRows)
     .map((item) => {
@@ -331,8 +391,18 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
               timeStyle: 'short',
               hourCycle: 'h23',
             }).format(new Date(item.starts_at))
-          : [item.due_date, item.due_time, item.time_mode].filter((part) => part !== null).join(' ');
-      return [item.id, item.kind, item.title, where, when, item.place ?? '']
+          : [item.due_date, item.due_time, item.time_mode]
+              .filter((part) => part !== null)
+              .join(' ');
+      const extra =
+        item.kind === 'debt'
+          ? (debts.get(String(item.id)) ?? '')
+          : item.is_value === true && typeof item.answer === 'string'
+            ? `value: ${item.answer}`
+            : '';
+      const kind = item.is_value === true ? 'value' : item.kind;
+      const step = typeof item.parent_id === 'string' ? `step of ${item.parent_id}` : '';
+      return [item.id, kind, item.title, extra, where, when, item.place ?? '', step]
         .filter((part) => part !== '')
         .join(' | ');
     })
@@ -365,33 +435,115 @@ async function addItem(db: SupabaseClient, input: Row): Promise<string> {
     });
     return error === null ? 'added' : `error: ${error.message}`;
   }
-  const timeFields =
-    input.kind === 'note'
-      ? {}
-      : input.urgent === true
-        ? { time_mode: 'urgent', due_date: null }
-        : date !== null
-          ? { time_mode: 'scheduled', due_date: date, due_time: time }
-          : { time_mode: 'anytime', due_date: null };
-  const { data, error } = await db
-    .from('items')
-    .insert({
+  const parentId = text(input.parent_id);
+  const kind = parentId !== null ? 'task' : String(input.kind);
+  if (kind === 'value') {
+    const value = text(input.value);
+    if (value === null) {
+      return 'error: a value needs the value itself; ask for it';
+    }
+    return insertItem(db, {
       title,
-      kind: input.kind,
+      kind: 'note',
+      is_value: true,
+      answer: value,
       domain_id: domainId,
       entity_id: domainId === null ? entityId : null,
       notes: text(input.notes),
-      ...timeFields,
+    });
+  }
+  if (kind === 'goal') {
+    const target = text(input.target_date);
+    return insertItem(db, {
+      title,
+      kind: 'goal',
+      domain_id: domainId,
+      entity_id: domainId === null ? entityId : null,
+      notes: text(input.notes),
+      ...(target === null
+        ? { time_mode: 'anytime', due_date: null }
+        : { time_mode: 'scheduled', due_date: target }),
+    });
+  }
+  if (kind === 'issue' || kind === 'tracker' || kind === 'note') {
+    return insertItem(db, {
+      title,
+      kind,
+      domain_id: domainId,
+      entity_id: domainId === null ? entityId : null,
+      notes: text(input.notes),
+      ...(kind === 'tracker'
+        ? { tracker_unit: text(input.unit), tracker_summary: text(input.summary) ?? 'sum' }
+        : {}),
+    });
+  }
+  const timeFields =
+    input.urgent === true
+      ? { time_mode: 'urgent', due_date: null }
+      : date !== null
+        ? { time_mode: 'scheduled', due_date: date, due_time: time }
+        : { time_mode: 'anytime', due_date: null };
+  return insertItem(db, {
+    title,
+    kind: 'task',
+    domain_id: domainId,
+    entity_id: domainId === null ? entityId : null,
+    parent_id: parentId,
+    notes: text(input.notes),
+    ...timeFields,
+  });
+}
+
+/** Adds one item row and says where it stands. */
+async function insertItem(db: SupabaseClient, row: Row): Promise<string> {
+  const { data, error } = await db.from('items').insert(row).select('id, is_complete').single();
+  if (error !== null) {
+    return `error: ${error.message}`;
+  }
+  const added = data as Row;
+  return added.is_complete === true
+    ? `added, id ${String(added.id)}`
+    : `added, id ${String(added.id)}; it waits in "להשלמה" to be completed`;
+}
+
+/** A debt: its item, and the row of its details; the item goes if the details fail. */
+async function addDebt(db: SupabaseClient, input: Row): Promise<string> {
+  const counterparty = text(input.counterparty);
+  const amount = typeof input.amount === 'number' ? input.amount : Number(input.amount);
+  const direction =
+    input.direction === 'we_owe'
+      ? 'we_owe'
+      : input.direction === 'owed_to_us'
+        ? 'owed_to_us'
+        : null;
+  if (counterparty === null || !Number.isFinite(amount) || amount <= 0 || direction === null) {
+    return 'error: a debt needs who, a positive amount and which way; ask for what is missing';
+  }
+  const domainId = text(input.domain_id);
+  const { data, error } = await db
+    .from('items')
+    .insert({
+      title: counterparty,
+      kind: 'debt',
+      domain_id: domainId,
+      entity_id: domainId === null ? text(input.entity_id) : null,
     })
     .select('id, is_complete')
     .single();
   if (error !== null) {
     return `error: ${error.message}`;
   }
-  const row = data as Row;
-  return row.is_complete === true
-    ? `added, id ${String(row.id)}`
-    : `added, id ${String(row.id)}; it waits in "להשלמה" for a domain`;
+  const item = data as Row;
+  const { error: detailsError } = await db
+    .from('debt_details')
+    .insert({ item_id: item.id, amount, counterparty, direction });
+  if (detailsError !== null) {
+    await db.from('items').delete().eq('id', item.id);
+    return `error: ${detailsError.message}`;
+  }
+  return item.is_complete === true
+    ? `added, id ${String(item.id)}`
+    : `added, id ${String(item.id)}; it waits in "להשלמה" for a domain`;
 }
 
 async function addToShopping(db: SupabaseClient, house: Household, input: Row): Promise<string> {
@@ -458,7 +610,9 @@ async function completeItem(db: SupabaseClient, input: Row): Promise<string> {
       item.due_date !== null
         ? await db.rpc('mark_occurrence', { p_item_id: itemId, p_status: 'done' })
         : await db.rpc('close_item', { p_item_id: itemId });
-    return markError === null ? `done: ${String(item.title)} (this time)` : `error: ${markError.message}`;
+    return markError === null
+      ? `done: ${String(item.title)} (this time)`
+      : `error: ${markError.message}`;
   }
   const { error: doneError } = await db.from('items').update({ status: 'done' }).eq('id', itemId);
   return doneError === null ? `done: ${String(item.title)}` : `error: ${doneError.message}`;
@@ -569,6 +723,10 @@ async function runTool(
       const result = await addItem(db, input);
       return { result, changed: result.startsWith('added') };
     }
+    case 'add_debt': {
+      const result = await addDebt(db, input);
+      return { result, changed: result.startsWith('added') };
+    }
     case 'add_to_shopping': {
       const result = await addToShopping(db, house, input);
       return { result, changed: result.startsWith('added') };
@@ -594,16 +752,31 @@ async function runTool(
 
 function systemPrompt(house: Household): string {
   const today = localDate();
-  const weekday = new Intl.DateTimeFormat('he-IL', { timeZone, weekday: 'long' }).format(new Date());
+  const weekday = new Intl.DateTimeFormat('he-IL', { timeZone, weekday: 'long' }).format(
+    new Date(),
+  );
   return `You are the assistant of משכן, a home-management app shared by two parents. You are talking with ${house.memberName}.
 Today is ${weekday}, ${today} (Israel time).
 
-Answer in Hebrew, short and warm, the way a helpful person would in a chat. Plain text only: no markdown at all (no **, no #, no tables); for a list, start each line with •.
+Talk like a good friend who knows the app well: natural, warm and easy, in Hebrew, never stiff or robotic. Keep answers short unless asked for more; a light touch of humor is fine. You may also simply chat, think things through with the parent, and help them decide; not every message needs a tool.
+Plain text only: no markdown at all (no **, no #, no tables); for a list, start each line with •.
 Use the tools to look things up and to add things; never guess what is in the app, and never invent ids.
-When you add something, say in one line what was added and where (and when). When a request is unclear (which child, which day, what time), ask one short question instead of guessing.
-You can list, search, add tasks, appointments, notes, shopping items and reminders, move an item to another day or hour, rename it, and mark it done. Before marking anything done, ask "לסמן את X כבוצע?" and wait for a yes. You cannot delete items, or change repeating ones: say so, and suggest doing it in the app.
+When you add something, say in one line what was added and where (and when). When a request is unclear (which child, which day, what time, which way a debt goes), ask one short question instead of guessing.
+You can list and search everything, add every kind of item (task, step, appointment, goal, issue, note, value, tracker, debt, shopping), add reminders, move an item to another day or hour, rename it, and mark it done (a debt: paid). Before marking anything done, ask "לסמן את X כבוצע?" and wait for a yes. You cannot delete items, change repeating ones, or add tracker entries, data rows or questions: say so, and suggest doing it in the app.
 For a summary of a week or a day, use list_done for what was done and list_items for what is left.
 When a photo comes (an invitation, a letter, a schedule, a note from school), read it and add the matching item with all its details: an event at a set time is an appointment (title, date, time, place); put the rest (who invites, the address, what to bring, dress, RSVP) in notes, or in the place for an appointment. Choose the entity and domain that fit (for example "אירועים" of the right entity). If the day or hour is missing or unclear, ask before adding. Then say in one line what you added.
+
+Advising which kind of item to open is a main part of your job. When the parent asks (or seems unsure), recommend the best kind in a sentence or two, say why, and offer to open it. The kinds of משכן:
+• משימה (task): one thing to do. Its time: on a date (with an hour if wanted), repeating, urgent ("דחוף", no date but shown with today's), with no date, waiting (for something else), or on the shelf (for later). A reminder can ring at any time.
+• תור/פגישה (appointment): a meeting at a set day and hour, with a place and "with whom". Reminders a day and an hour before come by themselves. A class every Tuesday is a repeating appointment.
+• יעד (goal): something bigger to achieve, split into steps (each step a task with its own time), with an optional target date by which all steps are done, and a progress bar. "לשפץ את המרפסת", "להכין את הבר מצווה".
+• סוגיה (issue): something to work out or decide: it gathers information, open questions with their answers, data rows and steps. "בחירת בית ספר", "בעיה עם הביטוח". It has no time of its own; its steps do.
+• פתק (note): information to keep, text with optional rows (a line of text, or a name and a value). A recipe, a list of sizes, instructions.
+• נתון (value): one name and one value, shown right in the lists with a copy button: "קוד השער: 4512", "מספר תעודת זהות", "מספר פוליסה". Several separate facts, each looked up on its own, are best as several values; facts that belong together (all the car's details) are best as one note with rows.
+• מעקב (tracker): something recorded again and again over time, each entry a date, a value and a note, with a summary: the running total ("סכום מצטבר", expenses of a renovation) or the latest value ("ערך אחרון", weight, height). It can repeat (weigh every week), and can sit inside an issue.
+• חוב (debt): who owes whom and how much, with the totals at the top of the debts tab; closed when paid.
+• פריט חסר (shopping): something to buy, on the shared list; the usual is the supermarket ("סופר"), sorted by its departments.
+Every item belongs to an entity (the home, the couple, each parent, each child, "אישי" that only its owner sees, family and friends) and a domain in it (health, education, events...). Something not yet fully placed waits in "להשלמה".
 Dates the user says ("מחר", "ביום שלישי", "בעוד שבוע") are relative to today.
 
 The household's entities and their regular domains (name [domain id]):
@@ -757,12 +930,10 @@ Deno.serve(async (request) => {
       .order('created_at', { ascending: false })
       .limit(historyTurns);
     // Earlier turns as plain text only, so nothing replayed depends on what came before it.
-    const contents: GeminiContent[] = ((past ?? []) as Row[])
-      .reverse()
-      .map((turn) => ({
-        role: turn.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: String(turn.text) }],
-      }));
+    const contents: GeminiContent[] = ((past ?? []) as Row[]).reverse().map((turn) => ({
+      role: turn.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: String(turn.text) }],
+    }));
     // The conversation must open with the parent.
     while (contents.length > 0 && contents[0]?.role !== 'user') {
       contents.shift();
