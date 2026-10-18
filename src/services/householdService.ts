@@ -19,6 +19,17 @@ export async function listMembers(): Promise<Member[]> {
   return data;
 }
 
+/** When the parent's morning and evening summaries come (HH:MM); null turns one off. */
+export async function setSummaryTimes(
+  memberId: string,
+  times: { readonly morning_at?: string | null; readonly evening_at?: string | null },
+): Promise<void> {
+  const { error } = await supabase.from('members').update(times).eq('id', memberId);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
+
 export async function createHousehold(householdName: string, parentName: string): Promise<void> {
   const { error } = await supabase.rpc('create_household', {
     p_household_name: householdName,

@@ -1,6 +1,7 @@
 // Supabase Edge Function: sends the reminders that are due as web push notifications, and
-// twice a day a nudge to parents whose "needs completion" list is not empty, and every
-// morning a look at what is late or due today.
+// twice a day a nudge to parents whose "needs completion" list is not empty, and at the
+// hours each parent picks a morning summary (what is late or due today) and an evening one
+// (what is set for tomorrow, and what is still open from today).
 // A cron job calls it every few minutes. It needs three secrets: VAPID_PUBLIC_KEY,
 // VAPID_PRIVATE_KEY and VAPID_SUBJECT (a mailto: address). SUPABASE_URL and
 // SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
@@ -25,19 +26,52 @@ type DueNudge = Device & {
 type DueToday = Device & {
   overdue: number;
   due_today: number;
+  /** The first things of the day by their hour, such as "09:00 רופא שיניים". */
+  titles: string[] | null;
 };
 
-/** The morning look's title and line, by how many items are due today and late. */
-function todayMessage(dueToday: number, overdue: number): { title: string; body: string } {
+type DueEvening = Device & {
+  tomorrow: number;
+  /** The first things of tomorrow by their hour. */
+  titles: string[] | null;
+  /** What is still open from today: late, today's and urgent. */
+  still_open: number;
+};
+
+/** The first few things, and how many more there are. */
+function thingsLine(titles: readonly string[], total: number): string {
+  const more = total - titles.length;
+  return [...titles, ...(more > 0 ? [`ועוד ${String(more)}`] : [])].join(' · ');
+}
+
+/** The morning summary: how much is for today, its first things, and how much is late. */
+function todayMessage(
+  dueToday: number,
+  overdue: number,
+  titles: readonly string[],
+): { title: string; body: string } {
   const total = dueToday + overdue;
+  const late = overdue === 0 ? '' : overdue === 1 ? 'אחד באיחור' : `${String(overdue)} באיחור`;
+  const things = thingsLine(titles, dueToday);
   return {
     title: total === 1 ? 'דבר אחד להיום' : `${String(total)} דברים להיום`,
-    body:
-      overdue === 0
-        ? 'לחיצה פותחת את מסך היום'
-        : overdue === 1
-          ? 'מתוכם אחד באיחור'
-          : `מתוכם ${String(overdue)} באיחור`,
+    body: [things, late].filter((part) => part !== '').join(' · ') || 'לחיצה פותחת את מסך היום',
+  };
+}
+
+/** The evening summary: what is set for tomorrow, and what is still open from today. */
+function eveningMessage(
+  tomorrow: number,
+  titles: readonly string[],
+  stillOpen: number,
+): { title: string; body: string } {
+  const open = stillOpen === 0 ? '' : `נשאר פתוח מהיום: ${String(stillOpen)}`;
+  if (tomorrow === 0) {
+    return { title: 'מחר פנוי', body: open || 'לחיצה פותחת את מסך היום' };
+  }
+  return {
+    title: tomorrow === 1 ? 'דבר אחד למחר' : `${String(tomorrow)} דברים למחר`,
+    body: [thingsLine(titles, tomorrow), open].filter((part) => part !== '').join(' · '),
   };
 }
 
@@ -121,7 +155,7 @@ Deno.serve(async () => {
     const supabase = createClient(secret('SUPABASE_URL'), secret('SUPABASE_SERVICE_ROLE_KEY'));
     const outcome: Outcome = { sent: 0, gone: [], retry: new Set() };
     const errors: string[] = [];
-    const counts = { due: 0, snoozed: 0, nudges: 0, mornings: 0 };
+    const counts = { due: 0, snoozed: 0, nudges: 0, mornings: 0, evenings: 0 };
 
     // Each kind is claimed and sent before the next is claimed, so a failure in one kind
     // never loses what another already claimed (claiming marks it as sent).
@@ -198,9 +232,28 @@ Deno.serve(async () => {
         mornings.map((morning) => ({
           device: morning,
           payload: {
-            ...todayMessage(morning.due_today, morning.overdue),
+            ...todayMessage(morning.due_today, morning.overdue, morning.titles ?? []),
             url: '/today',
             tag: 'today',
+          },
+        })),
+        outcome,
+      );
+    }
+
+    const summed = await supabase.rpc('claim_evening_summaries');
+    if (summed.error !== null) {
+      errors.push(summed.error.message);
+    } else {
+      const evenings: DueEvening[] = summed.data ?? [];
+      counts.evenings = evenings.length;
+      await sendAll(
+        evenings.map((evening) => ({
+          device: evening,
+          payload: {
+            ...eveningMessage(evening.tomorrow, evening.titles ?? [], evening.still_open),
+            url: '/today',
+            tag: 'evening',
           },
         })),
         outcome,

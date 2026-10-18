@@ -7,6 +7,8 @@ import { AutoReminderCard } from '../components/settings/AutoReminderCard';
 import { CalendarCard } from '../components/settings/CalendarCard';
 import { InviteCard } from '../components/settings/InviteCard';
 import { NotificationsCard } from '../components/settings/NotificationsCard';
+import { SummaryCard } from '../components/settings/SummaryCard';
+import { useSummaryTimes } from '../hooks/useSummaryTimes';
 import { ProfileCard } from '../components/settings/ProfileCard';
 import { SetupCard } from '../components/settings/SetupCard';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
@@ -27,6 +29,7 @@ export function SettingsPage(): ReactElement {
   const items = useItems();
   const settings = useEntitySettings(member, entities.entities, entities.reload);
   const setup = useSetupSteps(entities.entities, members.length);
+  const summaries = useSummaryTimes();
   const { hash } = useLocation();
 
   // Arriving for a step (from the tour's end), the page opens at the place it is done.
@@ -88,6 +91,7 @@ export function SettingsPage(): ReactElement {
       </div>
       <InstallAppButton />
       <NotificationsCard push={setup.push} />
+      <SummaryCard summaries={summaries} pushOn={setup.push.status === 'on'} />
       <AutoReminderCard household={household} members={members} />
       <CalendarCard />
       <div id="setup-invite" className="scroll-mt-20">

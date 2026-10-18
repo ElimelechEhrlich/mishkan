@@ -68,6 +68,12 @@ export type Database = {
           completion_nudged_at: string | null;
           /** When the parent was last sent the morning look at today. */
           today_nudged_at: string | null;
+          /** When the morning summary comes (HH:MM:SS); null turns it off. */
+          morning_at: string | null;
+          /** When the evening summary comes (HH:MM:SS); null turns it off. */
+          evening_at: string | null;
+          /** When the parent was last sent the evening summary. */
+          evening_nudged_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -79,6 +85,9 @@ export type Database = {
           user_id?: string | null;
           completion_nudged_at?: string | null;
           today_nudged_at?: string | null;
+          morning_at?: string | null;
+          evening_at?: string | null;
+          evening_nudged_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -90,6 +99,9 @@ export type Database = {
           user_id?: string | null;
           completion_nudged_at?: string | null;
           today_nudged_at?: string | null;
+          morning_at?: string | null;
+          evening_at?: string | null;
+          evening_nudged_at?: string | null;
           created_at?: string;
         };
         Relationships: [];
