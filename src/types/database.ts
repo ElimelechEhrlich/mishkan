@@ -229,6 +229,8 @@ export type Database = {
           tracker_unit: string | null;
           /** How a tracker sums up its entries. */
           tracker_summary: TrackerSummary;
+          /** A step made urgent by its goal; it goes back to no time when the goal stops being urgent. */
+          urgent_from_parent: boolean;
           created_at: string;
           completed_at: string | null;
           is_complete: boolean;
@@ -268,6 +270,7 @@ export type Database = {
           entity_id?: string | null;
           tracker_unit?: string | null;
           tracker_summary?: TrackerSummary;
+          urgent_from_parent?: boolean;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -298,6 +301,7 @@ export type Database = {
           entity_id?: string | null;
           tracker_unit?: string | null;
           tracker_summary?: TrackerSummary;
+          urgent_from_parent?: boolean;
         };
         Relationships: [];
       };

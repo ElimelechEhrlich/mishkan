@@ -7,6 +7,10 @@
 -- settings, or turns either off (no hour). A day with nothing sends nothing.
 -- What counts is what the today screen lists, as before: agenda_rows() holds
 -- it now, for any day, so both summaries count the same way.
+-- Also: a goal made urgent makes urgent its steps that have no time of their own (a step
+-- with a date or an hour keeps it), and new ones added while it is urgent; when the goal
+-- stops being urgent, the steps it made urgent go back to no time. A step changed by hand
+-- is its own from then on.
 -- Run once in the Supabase SQL editor, after 0043.
 -- =====================================================================
 
@@ -212,3 +216,60 @@ $$;
 
 revoke execute on function public.claim_evening_summaries() from public, anon, authenticated;
 grant execute on function public.claim_evening_summaries() to service_role;
+
+-- ---------- Steps follow an urgent goal -----------------------------
+alter table public.items add column urgent_from_parent boolean not null default false;
+
+comment on column public.items.urgent_from_parent is
+  'A step made urgent by its goal, which goes back to no time when the goal stops being urgent.';
+
+create function public.items_goal_urgency() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.time_mode = 'urgent' and old.time_mode is distinct from 'urgent' then
+    update public.items
+    set time_mode = 'urgent', urgent_from_parent = true
+    where parent_id = new.id
+      and kind = 'task'
+      and status = 'open'
+      and due_date is null
+      and (time_mode is null or time_mode = 'anytime');
+  elsif old.time_mode = 'urgent' and new.time_mode is distinct from 'urgent' then
+    update public.items
+    set time_mode = 'anytime', urgent_from_parent = false
+    where parent_id = new.id and urgent_from_parent and time_mode = 'urgent';
+  end if;
+  return null;
+end $$;
+
+create trigger items_goal_urgency
+  after update of time_mode on public.items
+  for each row when (new.kind = 'goal')
+  execute function public.items_goal_urgency();
+
+-- A new step of an urgent goal, with no time of its own, is urgent too; a step whose time is
+-- changed by hand is its own from then on.
+create function public.items_step_urgency() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'INSERT' then
+    if new.parent_id is not null
+       and new.kind = 'task'
+       and new.due_date is null
+       and (new.time_mode is null or new.time_mode = 'anytime')
+       and exists (select 1 from public.items g
+                   where g.id = new.parent_id and g.kind = 'goal' and g.time_mode = 'urgent') then
+      new.time_mode := 'urgent';
+      new.urgent_from_parent := true;
+    end if;
+  elsif pg_trigger_depth() = 1
+        and (new.time_mode is distinct from old.time_mode
+             or new.due_date is distinct from old.due_date) then
+    new.urgent_from_parent := false;
+  end if;
+  return new;
+end $$;
+
+create trigger items_step_urgency
+  before insert or update of time_mode, due_date on public.items
+  for each row execute function public.items_step_urgency();

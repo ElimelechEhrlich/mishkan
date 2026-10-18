@@ -61,6 +61,7 @@ function item(overrides: Partial<Item>): Item {
     entity_id: null,
     tracker_unit: null,
     tracker_summary: 'sum',
+    urgent_from_parent: false,
     ...overrides,
   };
 }
@@ -400,5 +401,26 @@ describe('noteValue', () => {
     expect(noteValue(item({ kind: 'note', is_value: true, answer: '  ' }))).toBeNull();
     expect(noteValue(item({ kind: 'note', is_value: true, answer: null }))).toBeNull();
     expect(noteValue(item({ kind: 'task', is_value: true, answer: 'x' }))).toBeNull();
+  });
+});
+
+describe('an urgent goal', () => {
+  const goal = item({ id: 'ug', kind: 'goal', time_mode: 'urgent', due_date: null });
+
+  it('stands among the urgent today, holding its steps with no time of their own', () => {
+    const steps = [
+      item({ id: 'u1', parent_id: 'ug', time_mode: 'anytime', due_date: null }),
+      item({ id: 'u2', parent_id: 'ug', time_mode: 'urgent', due_date: null }),
+    ];
+    const agenda = agendaOf([goal], steps, today);
+    expect(agenda.urgent.map((entry) => entry.item.id)).toEqual(['ug']);
+    expect(agenda.urgent[0]?.shown?.map((step) => step.id)).toEqual(['u1', 'u2']);
+  });
+
+  it('stays urgent when its steps all have dates, which keep their own place', () => {
+    const later = item({ id: 'u3', parent_id: 'ug', due_date: addDays(today, 3) });
+    const agenda = agendaOf([goal], [later], today);
+    expect(agenda.urgent.map((entry) => entry.item.id)).toEqual(['ug']);
+    expect(agenda.urgent[0]?.shown).toEqual([]);
   });
 });

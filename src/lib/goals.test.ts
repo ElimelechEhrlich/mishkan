@@ -45,6 +45,7 @@ function item(overrides: Partial<Item>): Item {
     entity_id: null,
     tracker_unit: null,
     tracker_summary: 'sum',
+    urgent_from_parent: false,
     ...overrides,
   };
 }

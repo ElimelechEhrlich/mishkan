@@ -380,19 +380,25 @@ export function byStepPlace(entries: readonly ListEntry[], today: string): ListE
       result.push(entry);
       continue;
     }
-    const resting = open.filter((step) => stepPlace(step, today).section === 'undated');
+    // An urgent goal stands among the urgent, holding its urgent steps (made so with it).
+    const goalUrgent = entry.item.kind === 'goal' && entry.item.time_mode === 'urgent';
+    const staysInside = (step: Item): boolean => {
+      const section = stepPlace(step, today).section;
+      return section === 'undated' || (goalUrgent && section === 'urgent');
+    };
+    const resting = open.filter(staysInside);
     for (const step of open) {
-      if (stepPlace(step, today).section !== 'undated') {
+      if (!staysInside(step)) {
         addToHeading(entry.item, step);
       }
     }
     // The goal itself, with what has no date, by its target; left out when its steps say it all.
-    if (resting.length > 0 || entry.target !== null) {
+    if (resting.length > 0 || entry.target !== null || goalUrgent) {
       result.push({
         ...entry,
         shown: resting,
         dueDate: entry.target,
-        urgent: false,
+        urgent: goalUrgent,
       });
     }
   }
