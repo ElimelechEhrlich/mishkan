@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
+import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import type { AssistantTurn } from '../../services/assistantService';
 import { ConfirmButton } from '../ui/ConfirmButton';
@@ -87,13 +88,32 @@ export function AssistantChat({
           {turns.map((turn) => (
             <li
               key={turn.id}
-              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
-                turn.role === 'user'
-                  ? 'self-end rounded-ee-md bg-primary text-white'
-                  : 'self-start rounded-es-md bg-surface shadow-card'
-              }`}
+              className={`flex max-w-[85%] flex-col gap-2 ${turn.role === 'user' ? 'self-end' : 'self-start'}`}
             >
-              {turn.text}
+              <span
+                className={`rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
+                  turn.role === 'user'
+                    ? 'rounded-ee-md bg-primary text-white'
+                    : 'rounded-es-md bg-surface shadow-card'
+                }`}
+              >
+                {turn.text}
+              </span>
+              {/* What it just did, a tap away: to check it, or add to it. */}
+              {turn.links.length > 0 && (
+                <span className="flex flex-wrap gap-1.5">
+                  {turn.links.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className="inline-flex min-h-8 max-w-full items-center gap-1 rounded-full bg-primary-soft ps-3 pe-2 text-[13px] font-medium text-primary"
+                    >
+                      <span className="truncate">{link.title}</span>
+                      <Icon name="forward" className="size-3.5 shrink-0" />
+                    </Link>
+                  ))}
+                </span>
+              )}
             </li>
           ))}
           {onRetry !== null && (

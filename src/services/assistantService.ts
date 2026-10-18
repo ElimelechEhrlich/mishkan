@@ -1,10 +1,13 @@
-import { plainAnswer } from '../lib/format';
+import { splitAnswer } from '../lib/format';
+import type { AnswerLink } from '../lib/format';
 import { supabase } from '../lib/supabase';
 
 export type AssistantTurn = {
   readonly id: string;
   readonly role: 'user' | 'assistant';
   readonly text: string;
+  /** Buttons to what the assistant did in this answer. */
+  readonly links: readonly AnswerLink[];
 };
 
 function isRole(value: unknown): value is AssistantTurn['role'] {
@@ -24,11 +27,9 @@ export async function listConversation(): Promise<AssistantTurn[]> {
   return data.flatMap((row) =>
     isRole(row.role)
       ? [
-          {
-            id: row.id,
-            role: row.role,
-            text: row.role === 'assistant' ? plainAnswer(row.text) : row.text,
-          },
+          row.role === 'assistant'
+            ? { id: row.id, role: row.role, ...splitAnswer(row.text) }
+            : { id: row.id, role: row.role, text: row.text, links: [] },
         ]
       : [],
   );
@@ -59,7 +60,11 @@ export async function askAssistant(
   message: string,
   /** A photo to read, as base64 JPEG. */
   image: string | null = null,
-): Promise<{ readonly reply: string; readonly changed: boolean }> {
+): Promise<{
+  readonly reply: string;
+  readonly links: readonly AnswerLink[];
+  readonly changed: boolean;
+}> {
   const answer: { readonly data: unknown; readonly error: unknown } =
     await supabase.functions.invoke('assistant', {
       body: image === null ? { message } : { message, image },
@@ -84,7 +89,8 @@ export async function askAssistant(
   if (typeof reply !== 'string') {
     throw new Error('no answer');
   }
-  return { reply: plainAnswer(reply), changed: changed === true };
+  const parsed = splitAnswer(reply);
+  return { reply: parsed.text, links: parsed.links, changed: changed === true };
 }
 
 /** Starts the conversation over. */

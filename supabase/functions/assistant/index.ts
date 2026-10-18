@@ -243,6 +243,51 @@ const tools = [
     },
   },
   {
+    name: 'add_entry',
+    description:
+      'Records an entry in a tracker (find the tracker id with list_items, kind tracker): a value, on a day (today if not said), with an optional note.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        item_id: { type: 'STRING' },
+        value: { type: 'STRING', description: 'The number or value, such as 77.5 or 350.' },
+        date: { type: 'STRING', description: 'YYYY-MM-DD; today if not given.' },
+        note: { type: 'STRING' },
+      },
+      required: ['item_id', 'value'],
+    },
+  },
+  {
+    name: 'add_data',
+    description:
+      'Adds a row to a note or an issue (find its id with list_items): a line of text, or a name and a value ("מספר רישוי: 12-345-67").',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        item_id: { type: 'STRING' },
+        label: {
+          type: 'STRING',
+          description: 'The name, for a name and a value; leave out for a line of text.',
+        },
+        value: { type: 'STRING' },
+      },
+      required: ['item_id', 'value'],
+    },
+  },
+  {
+    name: 'add_question',
+    description:
+      'Adds an open question to an issue (find the issue id with list_items, kind issue).',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        issue_id: { type: 'STRING' },
+        question: { type: 'STRING' },
+      },
+      required: ['issue_id', 'question'],
+    },
+  },
+  {
     name: 'list_done',
     description:
       'Lists what was marked done in the last days, for summaries ("what did we do this week").',
@@ -710,44 +755,145 @@ async function listDone(db: SupabaseClient, house: Household, input: Row): Promi
     .join('\n');
 }
 
+async function addEntry(db: SupabaseClient, input: Row): Promise<string> {
+  const itemId = text(input.item_id);
+  const value = text(input.value);
+  if (itemId === null || value === null) {
+    return 'error: which tracker, and what value?';
+  }
+  const { error } = await db.from('tracker_entries').insert({
+    item_id: itemId,
+    on_date: text(input.date) ?? localDate(),
+    value,
+    note: text(input.note),
+  });
+  return error === null ? 'added' : `error: ${error.message}`;
+}
+
+async function addData(db: SupabaseClient, input: Row): Promise<string> {
+  const itemId = text(input.item_id);
+  const value = text(input.value);
+  if (itemId === null || value === null) {
+    return 'error: to which item, and what?';
+  }
+  const { error } = await db
+    .from('item_data')
+    .insert({ item_id: itemId, label: text(input.label), value });
+  return error === null ? 'added' : `error: ${error.message}`;
+}
+
+async function addQuestion(db: SupabaseClient, input: Row): Promise<string> {
+  const issueId = text(input.issue_id);
+  const question = text(input.question);
+  if (issueId === null || question === null) {
+    return 'error: which issue, and what question?';
+  }
+  const { error } = await db
+    .from('items')
+    .insert({ title: question, kind: 'question', parent_id: issueId });
+  return error === null ? 'added' : `error: ${error.message}`;
+}
+
+/** The id an "added, id …" result names. */
+function addedId(result: string): string | null {
+  return /^added, id ([0-9a-f-]{36})/.exec(result)?.[1] ?? null;
+}
+
+/** What a tool touched: the items to open from the answer, or the shopping list. */
+type Touched = { readonly itemIds: readonly string[]; readonly shopping: boolean };
+const untouched: Touched = { itemIds: [], shopping: false };
+
+function touchedItem(itemId: string | null): Touched {
+  return itemId === null ? untouched : { itemIds: [itemId], shopping: false };
+}
+
 async function runTool(
   db: SupabaseClient,
   house: Household,
   name: string,
   input: Row,
-): Promise<{ readonly result: string; readonly changed: boolean }> {
+): Promise<{ readonly result: string; readonly changed: boolean; readonly touched: Touched }> {
+  const target = text(input.item_id);
   switch (name) {
     case 'list_items':
-      return { result: await listItems(db, house, input), changed: false };
-    case 'add_item': {
-      const result = await addItem(db, input);
-      return { result, changed: result.startsWith('added') };
-    }
+      return { result: await listItems(db, house, input), changed: false, touched: untouched };
+    case 'add_item':
     case 'add_debt': {
-      const result = await addDebt(db, input);
-      return { result, changed: result.startsWith('added') };
+      const result = name === 'add_item' ? await addItem(db, input) : await addDebt(db, input);
+      const ok = result.startsWith('added');
+      return { result, changed: ok, touched: ok ? touchedItem(addedId(result)) : untouched };
     }
     case 'add_to_shopping': {
       const result = await addToShopping(db, house, input);
-      return { result, changed: result.startsWith('added') };
+      const ok = result.startsWith('added');
+      return { result, changed: ok, touched: ok ? { itemIds: [], shopping: true } : untouched };
     }
-    case 'add_reminder': {
-      const result = await addReminder(db, house, input);
-      return { result, changed: result === 'added' };
+    case 'add_reminder':
+    case 'add_entry':
+    case 'add_data': {
+      const result =
+        name === 'add_reminder'
+          ? await addReminder(db, house, input)
+          : name === 'add_entry'
+            ? await addEntry(db, input)
+            : await addData(db, input);
+      const ok = result === 'added';
+      return { result, changed: ok, touched: ok ? touchedItem(target) : untouched };
+    }
+    case 'add_question': {
+      const result = await addQuestion(db, input);
+      const ok = result === 'added';
+      return { result, changed: ok, touched: ok ? touchedItem(text(input.issue_id)) : untouched };
     }
     case 'complete_item': {
       const result = await completeItem(db, input);
-      return { result, changed: result.startsWith('done') };
+      const ok = result.startsWith('done');
+      return { result, changed: ok, touched: ok ? touchedItem(target) : untouched };
     }
     case 'update_item': {
       const result = await updateItem(db, input);
-      return { result, changed: result.startsWith('changed') };
+      const ok = result.startsWith('changed');
+      return { result, changed: ok, touched: ok ? touchedItem(target) : untouched };
     }
     case 'list_done':
-      return { result: await listDone(db, house, input), changed: false };
+      return { result: await listDone(db, house, input), changed: false, touched: untouched };
     default:
-      return { result: `error: no tool ${name}`, changed: false };
+      return { result: `error: no tool ${name}`, changed: false, touched: untouched };
   }
+}
+
+/**
+ * Lines at the end of an answer that the app shows as buttons to what was just done:
+ * "[[link:/item/<id>|<title>]]". Kept with the answer, and left out of what the model reads.
+ */
+async function linkLines(
+  db: SupabaseClient,
+  itemIds: readonly string[],
+  shopping: boolean,
+): Promise<string> {
+  const lines: string[] = [];
+  const unique = [...new Set(itemIds)].slice(0, 8);
+  if (unique.length > 0) {
+    const { data } = await db.from('items').select('id, title').in('id', unique);
+    const titles = new Map(
+      ((data ?? []) as Row[]).map((row) => [String(row.id), String(row.title)]),
+    );
+    for (const id of unique) {
+      const title = titles.get(id);
+      if (title !== undefined) {
+        lines.push(`[[link:/item/${id}|${title.replace(/[|\]\]]/g, ' ')}]]`);
+      }
+    }
+  }
+  if (shopping) {
+    lines.push('[[link:/shopping|רשימת הקניות]]');
+  }
+  return lines.join('\n');
+}
+
+/** An answer as the model should read it again: without the lines of buttons. */
+function withoutLinks(answer: string): string {
+  return answer.replace(/\n*\[\[link:[^\]]*\]\]/g, '').trim();
 }
 
 function systemPrompt(house: Household): string {
@@ -762,7 +908,7 @@ Talk like a good friend who knows the app well: natural, warm and easy, in Hebre
 Plain text only: no markdown at all (no **, no #, no tables); for a list, start each line with •.
 Use the tools to look things up and to add things; never guess what is in the app, and never invent ids.
 When you add something, say in one line what was added and where (and when). When a request is unclear (which child, which day, what time, which way a debt goes), ask one short question instead of guessing.
-You can list and search everything, add every kind of item (task, step, appointment, goal, issue, note, value, tracker, debt, shopping), add reminders, move an item to another day or hour, rename it, and mark it done (a debt: paid). Before marking anything done, ask "לסמן את X כבוצע?" and wait for a yes. You cannot delete items, change repeating ones, or add tracker entries, data rows or questions: say so, and suggest doing it in the app.
+You can list and search everything, add every kind of item (task, step, appointment, goal, issue, note, value, tracker, debt, shopping), add reminders, move an item to another day or hour, rename it, and mark it done (a debt: paid). Before marking anything done, ask "לסמן את X כבוצע?" and wait for a yes. You can also record a tracker entry, add a row to a note or an issue, and add a question to an issue. You cannot delete items or change repeating ones: say so, and suggest doing it in the app. The app shows a button to each item you added or changed under your answer, so do not write links or ids yourself.
 For a summary of a week or a day, use list_done for what was done and list_items for what is left.
 When a photo comes (an invitation, a letter, a schedule, a note from school), read it and add the matching item with all its details: an event at a set time is an appointment (title, date, time, place); put the rest (who invites, the address, what to bring, dress, RSVP) in notes, or in the place for an appointment. Choose the entity and domain that fit (for example "אירועים" of the right entity). If the day or hour is missing or unclear, ask before adding. Then say in one line what you added.
 
@@ -932,7 +1078,7 @@ Deno.serve(async (request) => {
     // Earlier turns as plain text only, so nothing replayed depends on what came before it.
     const contents: GeminiContent[] = ((past ?? []) as Row[]).reverse().map((turn) => ({
       role: turn.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: String(turn.text) }],
+      parts: [{ text: withoutLinks(String(turn.text)) }],
     }));
     // The conversation must open with the parent.
     while (contents.length > 0 && contents[0]?.role !== 'user') {
@@ -948,6 +1094,8 @@ Deno.serve(async (request) => {
 
     const modelName = Deno.env.get('GEMINI_MODEL') ?? defaultModel;
     let changed = false;
+    const touchedIds: string[] = [];
+    let touchedShopping = false;
     let reply = '';
     for (let round = 0; round < maxRounds; round += 1) {
       let answer: GeminiAnswer;
@@ -988,6 +1136,8 @@ Deno.serve(async (request) => {
         const call = part.functionCall ?? { name: '' };
         const outcome = await runTool(db, house, call.name, call.args ?? {});
         changed = changed || outcome.changed;
+        touchedIds.push(...outcome.touched.itemIds);
+        touchedShopping = touchedShopping || outcome.touched.shopping;
         results.push({
           functionResponse: {
             ...(call.id === undefined ? {} : { id: call.id }),
@@ -1000,6 +1150,11 @@ Deno.serve(async (request) => {
     }
     if (reply === '') {
       reply = 'לא הצלחתי להשלים את זה. אפשר לנסח שוב?';
+    }
+    // Buttons to what was just done, to check it or add to it in the app.
+    const links = await linkLines(db, touchedIds, touchedShopping);
+    if (links !== '') {
+      reply = `${reply}\n\n${links}`;
     }
 
     await db.from('assistant_messages').insert([

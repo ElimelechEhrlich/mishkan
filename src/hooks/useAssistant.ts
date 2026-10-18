@@ -69,16 +69,21 @@ export function useAssistant(): UseAssistant {
     setSending(true);
     setTurns((current) => [
       ...(current ?? []),
-      { id: turnId, role: 'user', text: photo === null ? trimmed : `📷 ${trimmed}`.trim() },
+      {
+        id: turnId,
+        role: 'user',
+        text: photo === null ? trimmed : `📷 ${trimmed}`.trim(),
+        links: [],
+      },
     ]);
     const asking = (photo === null ? Promise.resolve(null) : shrinkForReading(photo)).then(
       (image) => askAssistant(trimmed, image),
     );
     withTimeout(asking, answerMs)
-      .then(({ reply, changed }) => {
+      .then(({ reply, links, changed }) => {
         setTurns((current) => [
           ...(current ?? []),
-          { id: `local-${String(Date.now())}-reply`, role: 'assistant', text: reply },
+          { id: `local-${String(Date.now())}-reply`, role: 'assistant', text: reply, links },
         ]);
         if (changed) {
           announceItemsChanged();
