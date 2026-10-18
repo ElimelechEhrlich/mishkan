@@ -165,7 +165,16 @@ const tools = [
           description: 'YYYY-MM-DD. For a task: its day. Required for an appointment.',
         },
         time: { type: 'STRING', description: 'HH:MM, 24-hour. Required for an appointment.' },
-        urgent: { type: 'BOOLEAN', description: 'A task to do as soon as possible, with no date.' },
+        urgent: {
+          type: 'BOOLEAN',
+          description:
+            'A task to do as soon as possible, with no date. A task with no date is urgent anyway.',
+        },
+        no_date: {
+          type: 'BOOLEAN',
+          description:
+            'A task with no date and not urgent ("ללא מועד"): only when the parent says so, such as "מתי שיהיה" or "בלי לחץ".',
+        },
         place: { type: 'STRING', description: 'Where an appointment is.' },
         notes: { type: 'STRING' },
       },
@@ -512,7 +521,7 @@ async function addItem(db: SupabaseClient, input: Row): Promise<string> {
       p_with_whom: null,
       p_entity_id: domainId === null ? entityId : null,
     });
-    return error === null ? 'added' : `error: ${error.message}`;
+    return error === null ? `added; time: ${date} ${time}` : `error: ${error.message}`;
   }
   const parentId = text(input.parent_id);
   const kind = parentId !== null ? 'task' : String(input.kind);
@@ -533,16 +542,20 @@ async function addItem(db: SupabaseClient, input: Row): Promise<string> {
   }
   if (kind === 'goal') {
     const target = text(input.target_date);
-    return insertItem(db, {
-      title,
-      kind: 'goal',
-      domain_id: domainId,
-      entity_id: domainId === null ? entityId : null,
-      notes: text(input.notes),
-      ...(target === null
-        ? { time_mode: 'anytime', due_date: null }
-        : { time_mode: 'scheduled', due_date: target }),
-    });
+    return insertItem(
+      db,
+      {
+        title,
+        kind: 'goal',
+        domain_id: domainId,
+        entity_id: domainId === null ? entityId : null,
+        notes: text(input.notes),
+        ...(target === null
+          ? { time_mode: 'anytime', due_date: null }
+          : { time_mode: 'scheduled', due_date: target }),
+      },
+      target === null ? 'no target date' : `target date ${target}`,
+    );
   }
   if (kind === 'issue' || kind === 'tracker' || kind === 'note') {
     return insertItem(db, {
@@ -556,33 +569,54 @@ async function addItem(db: SupabaseClient, input: Row): Promise<string> {
         : {}),
     });
   }
+  // A task with no date is urgent, unless the parent said it has no date; a step with no
+  // date follows its goal (urgent when the goal is).
   const timeFields =
-    input.urgent === true
-      ? { time_mode: 'urgent', due_date: null }
-      : date !== null
-        ? { time_mode: 'scheduled', due_date: date, due_time: time }
+    date !== null
+      ? { time_mode: 'scheduled', due_date: date, due_time: time }
+      : input.urgent === true || (input.no_date !== true && parentId === null)
+        ? { time_mode: 'urgent', due_date: null }
         : { time_mode: 'anytime', due_date: null };
-  return insertItem(db, {
-    title,
-    kind: 'task',
-    domain_id: domainId,
-    entity_id: domainId === null ? entityId : null,
-    parent_id: parentId,
-    notes: text(input.notes),
-    ...timeFields,
-  });
+  const timeSaid =
+    timeFields.time_mode === 'scheduled'
+      ? `${date ?? ''}${time === null ? '' : ` ${time}`}`
+      : timeFields.time_mode === 'urgent'
+        ? 'urgent (דחוף)'
+        : 'no date (ללא מועד)';
+  return insertItem(
+    db,
+    {
+      title,
+      kind: 'task',
+      domain_id: domainId,
+      entity_id: domainId === null ? entityId : null,
+      parent_id: parentId,
+      notes: text(input.notes),
+      ...timeFields,
+    },
+    timeSaid,
+  );
 }
 
 /** Adds one item row and says where it stands. */
-async function insertItem(db: SupabaseClient, row: Row): Promise<string> {
-  const { data, error } = await db.from('items').insert(row).select('id, is_complete').single();
+async function insertItem(db: SupabaseClient, row: Row, timeSaid?: string): Promise<string> {
+  const { data, error } = await db
+    .from('items')
+    .insert(row)
+    .select('id, is_complete, time_mode')
+    .single();
   if (error !== null) {
     return `error: ${error.message}`;
   }
   const added = data as Row;
+  // A step of an urgent goal turns urgent with it, so what was saved is what is told.
+  const time =
+    timeSaid === undefined
+      ? ''
+      : `; time: ${added.time_mode === 'urgent' ? 'urgent (דחוף)' : timeSaid}`;
   return added.is_complete === true
-    ? `added, id ${String(added.id)}`
-    : `added, id ${String(added.id)}; it waits in "להשלמה" to be completed`;
+    ? `added, id ${String(added.id)}${time}`
+    : `added, id ${String(added.id)}${time}; it waits in "להשלמה" to be completed`;
 }
 
 /** A debt: its item, and the row of its details; the item goes if the details fail. */
@@ -1083,7 +1117,7 @@ Advising which kind of item to open is a main part of your job. When the parent 
 • מעקב (tracker): something recorded again and again over time, each entry a date, a value and a note, with a summary: the running total ("סכום מצטבר", expenses of a renovation) or the latest value ("ערך אחרון", weight, height). It can repeat (weigh every week), and can sit inside an issue.
 • חוב (debt): who owes whom and how much, with the totals at the top of the debts tab; closed when paid.
 • פריט חסר (shopping): something to buy, on the shared list; the usual is the supermarket ("סופר"), sorted by its departments.
-Choosing the kind when the parent asks to add something: take it from their words when it is clear ("תזכיר לי", "צריך ל..." is a task; a meeting or a class at a set hour is an appointment; "הקוד של", "מספר ה..." with one value is a value; "חייב לנו" is a debt; "לקנות" is shopping; something to work out with questions is an issue; a project in stages is a goal; something weighed or spent again and again is a tracker). When two kinds could fit and the difference matters (a value or a note, a task or a goal, a task or an appointment), do not guess: ask one short question that offers the two, in a sentence, and say what each would give them. Every time you add something, name the kind you chose in your answer ("פתחתי נתון...", "רשמתי חוב..."), so a wrong choice is seen at once; it can be converted in the app.
+Choosing the kind when the parent asks to add something: take it from their words when it is clear ("תזכיר לי", "צריך ל..." is a task; a meeting or a class at a set hour is an appointment; "הקוד של", "מספר ה..." with one value is a value; "חייב לנו" is a debt; "לקנות" is shopping; something to work out with questions is an issue; a project in stages is a goal; something weighed or spent again and again is a tracker). When two kinds could fit and the difference matters (a value or a note, a task or a goal, a task or an appointment), do not guess: ask one short question that offers the two, in a sentence, and say what each would give them. Every time you add something, name the kind you chose in your answer ("פתחתי נתון...", "רשמתי חוב..."), so a wrong choice is seen at once; it can be converted in the app. For anything with a time, say its time too, as the tool result gives it: "דחוף", "ללא מועד", or the day and hour ("משימה 'להתקשר לחשמלאי', דחוף"). A task with no date is added as urgent unless the parent says there is no rush; then give no_date.
 Every item belongs to an entity (the home, the couple, each parent, each child, "אישי" that only its owner sees, family and friends) and a domain in it (health, education, events...). Something not yet fully placed waits in "להשלמה".
 Dates the user says ("מחר", "ביום שלישי", "בעוד שבוע") are relative to today.
 
