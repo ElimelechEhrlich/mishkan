@@ -173,7 +173,7 @@ const tools = [
         no_date: {
           type: 'BOOLEAN',
           description:
-            'A task with no date and not urgent ("ללא מועד"): only when the parent says so, such as "מתי שיהיה" or "בלי לחץ".',
+            'A task or goal with no date and not urgent ("ללא מועד"): only when the parent says so, such as "מתי שיהיה" or "בלי לחץ".',
         },
         place: { type: 'STRING', description: 'Where an appointment is.' },
         notes: { type: 'STRING' },
@@ -550,11 +550,18 @@ async function addItem(db: SupabaseClient, input: Row): Promise<string> {
         domain_id: domainId,
         entity_id: domainId === null ? entityId : null,
         notes: text(input.notes),
-        ...(target === null
-          ? { time_mode: 'anytime', due_date: null }
-          : { time_mode: 'scheduled', due_date: target }),
+        // Urgent unless it has a target date, or the parent said there is no rush.
+        ...(target !== null
+          ? { time_mode: 'scheduled', due_date: target }
+          : input.no_date === true
+            ? { time_mode: 'anytime', due_date: null }
+            : { time_mode: 'urgent', due_date: null }),
       },
-      target === null ? 'no target date' : `target date ${target}`,
+      target !== null
+        ? `target date ${target}`
+        : input.no_date === true
+          ? 'no date (ללא מועד)'
+          : 'urgent (דחוף)',
     );
   }
   if (kind === 'issue' || kind === 'tracker' || kind === 'note') {
@@ -1117,7 +1124,7 @@ Advising which kind of item to open is a main part of your job. When the parent 
 • מעקב (tracker): something recorded again and again over time, each entry a date, a value and a note, with a summary: the running total ("סכום מצטבר", expenses of a renovation) or the latest value ("ערך אחרון", weight, height). It can repeat (weigh every week), and can sit inside an issue.
 • חוב (debt): who owes whom and how much, with the totals at the top of the debts tab; closed when paid.
 • פריט חסר (shopping): something to buy, on the shared list; the usual is the supermarket ("סופר"), sorted by its departments.
-Choosing the kind when the parent asks to add something: take it from their words when it is clear ("תזכיר לי", "צריך ל..." is a task; a meeting or a class at a set hour is an appointment; "הקוד של", "מספר ה..." with one value is a value; "חייב לנו" is a debt; "לקנות" is shopping; something to work out with questions is an issue; a project in stages is a goal; something weighed or spent again and again is a tracker). When two kinds could fit and the difference matters (a value or a note, a task or a goal, a task or an appointment), do not guess: ask one short question that offers the two, in a sentence, and say what each would give them. Every time you add something, name the kind you chose in your answer ("פתחתי נתון...", "רשמתי חוב..."), so a wrong choice is seen at once; it can be converted in the app. For anything with a time, say its time too, as the tool result gives it: "דחוף", "ללא מועד", or the day and hour ("משימה 'להתקשר לחשמלאי', דחוף"). A task with no date is added as urgent unless the parent says there is no rush; then give no_date.
+Choosing the kind when the parent asks to add something: take it from their words when it is clear ("תזכיר לי", "צריך ל..." is a task; a meeting or a class at a set hour is an appointment; "הקוד של", "מספר ה..." with one value is a value; "חייב לנו" is a debt; "לקנות" is shopping; something to work out with questions is an issue; a project in stages is a goal; something weighed or spent again and again is a tracker). When two kinds could fit and the difference matters (a value or a note, a task or a goal, a task or an appointment), do not guess: ask one short question that offers the two, in a sentence, and say what each would give them. Every time you add something, name the kind you chose in your answer ("פתחתי נתון...", "רשמתי חוב..."), so a wrong choice is seen at once; it can be converted in the app. For anything with a time, say its time too, as the tool result gives it: "דחוף", "ללא מועד", or the day and hour ("משימה 'להתקשר לחשמלאי', דחוף"). A task or a goal with no date is added as urgent unless the parent says there is no rush; then give no_date. A step with no date follows its goal.
 Every item belongs to an entity (the home, the couple, each parent, each child, "אישי" that only its owner sees, family and friends) and a domain in it (health, education, events...). Something not yet fully placed waits in "להשלמה".
 Dates the user says ("מחר", "ביום שלישי", "בעוד שבוע") are relative to today.
 

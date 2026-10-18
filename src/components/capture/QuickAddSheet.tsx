@@ -103,7 +103,8 @@ export function QuickAddSheet({
   const [domainId, setDomainId] = useState<string | null>(
     initialIsShopping ? null : (initialDomainId ?? null),
   );
-  const [quickTime, setQuickTime] = useState<QuickTime | null>(null);
+  // A new task or goal is urgent unless another time is picked (the owner's choice).
+  const [quickTime, setQuickTime] = useState<QuickTime | null>('urgent');
   const [quickHour, setQuickHour] = useState('');
   /** A note can be one value ("נתון"): a name, which is its title, and a value. */
   const [noteKind, setNoteKind] = useState<'note' | 'value'>('note');
@@ -256,7 +257,7 @@ export function QuickAddSheet({
       }
       setTitle('');
       setDomainId(null);
-      setQuickTime(null);
+      setQuickTime('urgent');
       setQuickHour('');
       setAmountText('');
       setValueText('');
