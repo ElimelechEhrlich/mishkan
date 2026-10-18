@@ -30,10 +30,15 @@ export function GoalsPage(): ReactElement {
   const resolved = useDoneItems('issue');
   const tabs = useGoalTabs(scoped.goals, scoped.steps);
   const onGoals = tabs.tab === 'goals';
-  const entries = onGoals ? tabs.goals.visible : tabs.issues;
+  const onIssues = tabs.tab === 'issues';
+  const entries = onGoals ? tabs.goals.visible : onIssues ? tabs.issues : tabs.all;
   const domainGroups = useDomainGroups(entries, entities.entities, scoped.scope);
   const toEverything = useEverythingShortcut(entities.entities);
-  const emptyText = onGoals ? labels.goals.noGoals : labels.goals.noIssues;
+  const emptyText = onGoals
+    ? labels.goals.noGoals
+    : onIssues
+      ? labels.goals.noIssues
+      : labels.goals.noOpen;
 
   return (
     <PageShell
@@ -79,7 +84,7 @@ export function GoalsPage(): ReactElement {
           emptyText={emptyText}
         />
       )}
-      {!onGoals && (
+      {onIssues && (
         <ResolvedIssues
           issues={resolved.items.filter(scoped.inScope)}
           lookups={lookups}
@@ -94,7 +99,7 @@ export function GoalsPage(): ReactElement {
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
         onAddAppointments={items.addAppointments}
-        defaultKind={onGoals ? 'goal' : 'issue'}
+        defaultKind={onIssues ? 'issue' : 'goal'}
         entityId={scoped.scope?.id}
       />
     </PageShell>
