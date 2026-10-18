@@ -235,7 +235,7 @@ const tools = [
   {
     name: 'update_item',
     description:
-      'Changes an item: its title, its day, its hour, makes it urgent or with no date, or moves it to another domain or entity. Find its id with list_items first. The time of a repeating item is changed in the app; its title and place can be changed here.',
+      'Changes an item: its title, its day, its hour, makes it urgent or with no date, or moves it to another domain or entity. Find its id with list_items first. For the time of a repeating item give scope: this_time moves only the current time (a day and/or hour), from_now changes the hour or the weekdays of every time from now. When it is not clear which, ask the parent "רק הפעם, או מעכשיו בכל פעם?" before calling.',
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -245,6 +245,17 @@ const tools = [
         time: { type: 'STRING', description: 'HH:MM, the new hour.' },
         urgent: { type: 'BOOLEAN', description: 'Make it urgent, with no date.' },
         no_date: { type: 'BOOLEAN', description: 'Take its date away (no date).' },
+        scope: {
+          type: 'STRING',
+          enum: ['this_time', 'from_now'],
+          description: 'For a repeating item: only this time, or every time from now.',
+        },
+        weekdays: {
+          type: 'ARRAY',
+          items: { type: 'INTEGER' },
+          description:
+            'With scope from_now, for a weekly item: its new days, 0 = Sunday to 6 = Saturday.',
+        },
         domain_id: {
           type: 'STRING',
           description: 'Move it to this domain (from the household list); the entity follows it.',
@@ -686,6 +697,97 @@ async function completeItem(db: SupabaseClient, input: Row): Promise<string> {
   return doneError === null ? `done: ${String(item.title)}` : `error: ${doneError.message}`;
 }
 
+/** The local day and hour an item is at now: an appointment's start, or its date and hour. */
+function currentTimeOf(item: Row): { day: string | null; hour: string | null } {
+  if (item.kind === 'appointment' && typeof item.starts_at === 'string') {
+    const [day = '', hour = ''] = new Intl.DateTimeFormat('sv-SE', {
+      timeZone,
+      dateStyle: 'short',
+      timeStyle: 'short',
+    })
+      .format(new Date(item.starts_at))
+      .split(' ');
+    return { day, hour };
+  }
+  return {
+    day: typeof item.due_date === 'string' ? item.due_date : null,
+    hour: typeof item.due_time === 'string' ? item.due_time.slice(0, 5) : null,
+  };
+}
+
+/**
+ * Changes the time of a repeating item: only the current time (as "move this time" in the app),
+ * or the hour or weekdays of every time from now (the rest of its settings stay). Returns an
+ * error to tell the model, or null when done.
+ */
+async function changeRepeatingTime(
+  db: SupabaseClient,
+  item: Row,
+  input: Row,
+): Promise<string | null> {
+  if (input.urgent === true || input.no_date === true) {
+    return 'error: a repeating item cannot be made urgent or undated here; its repeat is stopped in the app';
+  }
+  const scope = text(input.scope);
+  if (scope !== 'this_time' && scope !== 'from_now') {
+    return 'error: ask the parent "רק הפעם, או מעכשיו בכל פעם?", then call again with scope';
+  }
+  const date = text(input.date);
+  const time = text(input.time);
+  if (scope === 'this_time') {
+    const now = currentTimeOf(item);
+    const day = date ?? now.day;
+    if (day === null) {
+      return 'error: no time is waiting now to move';
+    }
+    const { error } = await db.rpc('move_occurrence', {
+      p_item_id: item.id,
+      p_date: day,
+      p_time: time ?? now.hour,
+    });
+    return error === null ? null : `error: ${error.message}`;
+  }
+  if (date !== null) {
+    return 'error: from now on changes the hour or the weekdays; to move one time use scope this_time';
+  }
+  const { data, error } = await db.from('item_repeats').select('*').eq('item_id', item.id).single();
+  if (error !== null) {
+    return `error: ${error.message}`;
+  }
+  const repeat = data as Row;
+  if (repeat.hebrew === true || (Array.isArray(repeat.dates) && repeat.dates.length > 0)) {
+    return 'error: this one follows its own dates (such as a Hebrew date); it is changed in the app';
+  }
+  const times: unknown[] = Array.isArray(repeat.times) ? repeat.times : [];
+  const ownTimes = times.length > 0 ? times : repeat.at_time === null ? [] : [repeat.at_time];
+  if (time !== null && ownTimes.length > 1) {
+    return 'error: it repeats at several hours a day; those are changed in the app';
+  }
+  const weekdays = Array.isArray(input.weekdays)
+    ? input.weekdays.filter(
+        (day): day is number =>
+          typeof day === 'number' && Number.isInteger(day) && day >= 0 && day <= 6,
+      )
+    : null;
+  if (weekdays !== null && (repeat.unit !== 'week' || weekdays.length === 0)) {
+    return 'error: days of the week are for an item that repeats weekly';
+  }
+  const { error: saveError } = await db.rpc('save_repeat', {
+    p_item_id: item.id,
+    p_every: repeat.every,
+    p_unit: repeat.unit,
+    p_starts_on: repeat.starts_on,
+    p_times: time === null ? ownTimes : [time],
+    p_weekdays: repeat.unit === 'week' ? (weekdays ?? repeat.weekdays ?? []) : [],
+    p_from_kind: repeat.from_kind,
+    p_end_kind: repeat.end_kind,
+    p_end_count: repeat.end_count,
+    p_end_until: repeat.end_until,
+    p_tracker_closes: repeat.tracker_closes,
+  });
+  return saveError === null ? null : `error: ${saveError.message}`;
+}
+
 async function updateItem(db: SupabaseClient, house: Household, input: Row): Promise<string> {
   const itemId = text(input.item_id);
   if (itemId === null) {
@@ -730,9 +832,21 @@ async function updateItem(db: SupabaseClient, house: Household, input: Row): Pro
   const date = text(input.date);
   const time = text(input.time);
   const changesTime =
-    date !== null || time !== null || input.urgent === true || input.no_date === true;
+    date !== null ||
+    time !== null ||
+    input.urgent === true ||
+    input.no_date === true ||
+    Array.isArray(input.weekdays);
   if (changesTime && item.time_mode === 'recurring') {
-    return 'error: the time of a repeating item is changed in the app, in its page';
+    // Its other changes first, then the time, which goes by the series' own rules.
+    if (Object.keys(changes).length > 0) {
+      const { error: otherError } = await db.from('items').update(changes).eq('id', itemId);
+      if (otherError !== null) {
+        return `error: ${otherError.message}`;
+      }
+    }
+    const timeError = await changeRepeatingTime(db, item, input);
+    return timeError ?? `changed: ${String(item.title)}`;
   }
   if (item.kind === 'appointment') {
     if (date !== null || time !== null) {
