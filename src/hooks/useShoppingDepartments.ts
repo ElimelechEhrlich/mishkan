@@ -21,6 +21,8 @@ export type UseShoppingDepartments = {
   readonly chosen: ReadonlyMap<string, string>;
   readonly loaded: boolean;
   readonly add: (name: string) => void;
+  /** Adds a department and puts a name in it at once; resolves when both are saved. */
+  readonly addAndChoose: (name: string, title: string) => Promise<void>;
   readonly rename: (departmentId: string, name: string) => void;
   readonly remove: (departmentId: string) => void;
   /** Every department, in the new order; shown at once, saved for every run after. */
@@ -147,7 +149,18 @@ export function useShoppingDepartments(): UseShoppingDepartments {
     chosen,
     loaded: snapshot !== null,
     add: (name): void => {
-      run(() => addDepartment(name));
+      run(async () => {
+        await addDepartment(name);
+      });
+    },
+    addAndChoose: async (name, title): Promise<void> => {
+      try {
+        const departmentId = await addDepartment(name);
+        await chooseItemDepartment(titleKey(title), departmentId);
+      } catch (caught: unknown) {
+        setError(toMessage(caught));
+      }
+      await load();
     },
     rename: (departmentId, name): void => {
       run(() => renameDepartment(departmentId, name));

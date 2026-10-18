@@ -24,11 +24,17 @@ export async function listItemDepartments(): Promise<ItemDepartment[]> {
 }
 
 /** `household_id` is filled in by the database; a new department goes last. */
-export async function addDepartment(name: string): Promise<void> {
-  const { error } = await supabase.from('shopping_departments').insert({ name });
+/** Adds a department at the end of the walk through the shop; returns its id. */
+export async function addDepartment(name: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('shopping_departments')
+    .insert({ name })
+    .select('id')
+    .single();
   if (error !== null) {
     throw new Error(error.message);
   }
+  return data.id;
 }
 
 export async function renameDepartment(departmentId: string, name: string): Promise<void> {

@@ -33,6 +33,7 @@ import { CopyButton } from '../ui/CopyButton';
 import { InlineEdit } from '../ui/InlineEdit';
 import { DebtCard } from '../debts/DebtCard';
 import { Chip } from '../ui/Chip';
+import { InlineAddChip } from '../ui/InlineAddChip';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { PropertyRow } from '../ui/PropertyRow';
 import { SelectField } from '../ui/SelectField';
@@ -132,6 +133,8 @@ type ItemEditorProps = {
         /** Whether it was put there by hand, and not by the built-in list. */
         readonly chosen: boolean;
         readonly onChoose: (departmentId: string | null) => void;
+        /** Adds a department and puts the item's name in it. */
+        readonly onAdd: (name: string) => Promise<void>;
       }
     | undefined;
 };
@@ -530,6 +533,11 @@ export function ItemEditor({
                       }}
                     />
                   )}
+                  <InlineAddChip
+                    label={labels.departments.newDepartment}
+                    placeholder={labels.departments.newDepartment}
+                    onAdd={department.onAdd}
+                  />
                 </div>
                 {department.chosen && (
                   <p className="text-[13px] text-muted">{labels.departments.chosenHint}</p>

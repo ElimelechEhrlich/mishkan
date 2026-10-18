@@ -114,6 +114,7 @@ export function ItemPage(): ReactElement {
                   onChoose: (departmentId): void => {
                     departments.choose(item.title, departmentId);
                   },
+                  onAdd: (name): Promise<void> => departments.addAndChoose(name, item.title),
                 }
               : undefined
           }

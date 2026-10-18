@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { ConfirmIconButton } from '../ui/ConfirmIconButton';
 import { Icon } from '../ui/Icon';
+import { InlineAddChip } from '../ui/InlineAddChip';
 import { InlineEdit } from '../ui/InlineEdit';
 
 type StaplePickerProps = {
@@ -24,6 +25,8 @@ type StaplePickerProps = {
   readonly onRemove: (stapleId: string) => void;
   /** Puts a name in a department, or back to the built-in one (null). */
   readonly onChooseDepartment: (title: string, departmentId: string | null) => void;
+  /** Adds a department and puts the name in it. */
+  readonly onAddDepartment: (name: string, title: string) => Promise<void>;
 };
 
 /**
@@ -41,6 +44,7 @@ export function StaplePicker({
   onRename,
   onRemove,
   onChooseDepartment,
+  onAddDepartment,
 }: StaplePickerProps): ReactElement {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState(false);
@@ -153,6 +157,14 @@ export function StaplePicker({
                             }}
                           />
                         )}
+                        <InlineAddChip
+                          label={labels.departments.newDepartment}
+                          placeholder={labels.departments.newDepartment}
+                          onAdd={async (name) => {
+                            await onAddDepartment(name, staple.title);
+                            setChoosing(null);
+                          }}
+                        />
                       </div>
                     )}
                   </div>
