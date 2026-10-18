@@ -5,13 +5,20 @@
 // It needs one secret, GEMINI_API_KEY (from Google AI Studio), and should have ASSISTANT_HOUSEHOLDS:
 // the household ids
 // (comma-separated) it serves, since its cost is the owner's; without it, it serves no one.
-// GEMINI_MODEL may name another model (for example, one the free tier offers).
+// GEMINI_MODEL may name another model (for example, one the free tier offers), and
+// GEMINI_FALLBACK_MODEL the one asked when its daily quota is used up (a lighter model with a
+// larger free quota; "none" turns this off).
 // SUPABASE_URL and SUPABASE_ANON_KEY are provided.
 import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 
 /** The model, unless GEMINI_MODEL names another. */
 const defaultModel = 'gemini-3.5-flash';
+/**
+ * Asked once the model's quota is used up, unless GEMINI_FALLBACK_MODEL names another: lighter,
+ * with 500 requests a day on the free tier instead of 20.
+ */
+const defaultFallbackModel = 'gemini-3.5-flash-lite';
 /** Earlier turns of the conversation sent along, so it follows what was said. */
 const historyTurns = 20;
 /** Tool rounds in one answer, at most. */
@@ -1093,7 +1100,15 @@ Deno.serve(async (request) => {
           : [{ inlineData: { mimeType: 'image/jpeg', data: image } }, { text: message }],
     });
 
-    const modelName = Deno.env.get('GEMINI_MODEL') ?? defaultModel;
+    const fallback = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? defaultFallbackModel;
+    const models = [
+      Deno.env.get('GEMINI_MODEL') ?? defaultModel,
+      ...(fallback === 'none' ? [] : [fallback]),
+    ];
+    let modelIndex = 0;
+    // Where this turn starts, to start it over on the other model.
+    const turnStart = contents.length;
+    let firstQuota: QuotaUsedUp | null = null;
     let changed = false;
     const touchedIds: string[] = [];
     let touchedShopping = false;
@@ -1101,14 +1116,30 @@ Deno.serve(async (request) => {
     for (let round = 0; round < maxRounds; round += 1) {
       let answer: GeminiAnswer;
       try {
-        answer = await askModel(modelName, house, contents);
+        answer = await askModel(models[modelIndex] ?? defaultModel, house, contents);
       } catch (caught) {
         // What was already added stays added: the answer says so, rather than an error that
         // would have the parent send it again and add it twice.
         if (!changed) {
-          if (caught instanceof QuotaUsedUp) {
+          // Quota used up: the turn starts over on the next model, since nothing was added
+          // yet (what was read is read again; the other model's turns are not mixed in).
+          if (caught instanceof QuotaUsedUp && modelIndex + 1 < models.length) {
+            firstQuota ??= caught;
+            modelIndex += 1;
+            contents.length = turnStart;
+            touchedIds.length = 0;
+            touchedShopping = false;
+            round = -1;
+            continue;
+          }
+          if (caught instanceof QuotaUsedUp || firstQuota !== null) {
+            if (!(caught instanceof QuotaUsedUp)) {
+              // The other model failed for another reason, such as a name it does not know.
+              console.error(caught);
+            }
             // Not kept in the conversation, so the model never reads it as its own answer.
-            return json({ reply: quotaReply(caught.seconds), changed: false });
+            const quota = caught instanceof QuotaUsedUp ? caught : firstQuota;
+            return json({ reply: quotaReply(quota?.seconds ?? null), changed: false });
           }
           throw caught;
         }
