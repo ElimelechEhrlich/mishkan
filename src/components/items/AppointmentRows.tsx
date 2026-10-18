@@ -67,6 +67,7 @@ export function AppointmentRows({ item, health, onUpdate }: AppointmentRowsProps
     <>
       <PropertyRow
         label={labels.appointment.when}
+        icon="clock"
         value={whenText}
         open={openRow === 'when'}
         onToggle={() => {
@@ -95,6 +96,7 @@ export function AppointmentRows({ item, health, onUpdate }: AppointmentRowsProps
 
       <PropertyRow
         label={labels.appointment.where}
+        icon="pin"
         value={placeText(item)}
         open={openRow === 'where'}
         onToggle={() => {
@@ -135,6 +137,7 @@ export function AppointmentRows({ item, health, onUpdate }: AppointmentRowsProps
 
       <PropertyRow
         label={labels.appointment.withWhom}
+        icon="user"
         value={item.with_whom ?? labels.status.notSet}
         open={openRow === 'withWhom'}
         onToggle={() => {

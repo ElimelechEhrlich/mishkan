@@ -397,6 +397,7 @@ export const labels = {
   },
   item: {
     separator: ' · ',
+    addNote: 'הוספת הערה',
     today: 'היום',
     tomorrow: 'מחר',
     noDomain: 'בלי תחום',

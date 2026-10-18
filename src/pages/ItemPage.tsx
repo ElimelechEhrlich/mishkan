@@ -39,6 +39,11 @@ export function ItemPage(): ReactElement {
       incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
       inner
+      heading={
+        <p className="text-[13px] font-medium text-muted">
+          {item === null ? labels.pages.item : labels.kind[item.kind]}
+        </p>
+      }
     >
       <ErrorBanner
         message={

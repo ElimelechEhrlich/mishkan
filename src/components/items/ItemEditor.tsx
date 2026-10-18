@@ -26,7 +26,6 @@ import type {
   TrackerEntry,
 } from '../../types/domain';
 import { DomainPicker } from '../capture/DomainPicker';
-import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Card } from '../ui/Card';
 import { CopyButton } from '../ui/CopyButton';
@@ -34,7 +33,8 @@ import { InlineEdit } from '../ui/InlineEdit';
 import { DebtCard } from '../debts/DebtCard';
 import { Chip } from '../ui/Chip';
 import { InlineAddChip } from '../ui/InlineAddChip';
-import { ConfirmButton } from '../ui/ConfirmButton';
+import { ConfirmChip } from '../ui/ConfirmChip';
+import { PropertyChips } from '../ui/PropertyChips';
 import { PropertyRow } from '../ui/PropertyRow';
 import { SelectField } from '../ui/SelectField';
 import { AppointmentActions } from './AppointmentActions';
@@ -42,7 +42,7 @@ import { AppointmentRows } from './AppointmentRows';
 import { CalendarRow } from './CalendarRow';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
-import { ItemTextForm } from './ItemTextForm';
+import { ItemHeading } from './ItemHeading';
 import { OccurrencesCard } from './OccurrencesCard';
 import { RepeatChoice } from './RepeatChoice';
 import type { ReminderPerson } from '../../hooks/useReminderPeople';
@@ -192,7 +192,10 @@ function doneLabel(kind: ItemKind, done: boolean): string {
   return done ? labels.actions.markOpen : labels.actions.markDone;
 }
 
-/** Everything about one item: text, a list of its properties, and what hangs on it. */
+/**
+ * Everything about one item: its title and notes, its properties as a line of chips, then what
+ * it holds (steps, rows, questions, entries), and last the files and actions.
+ */
 export function ItemEditor({
   item,
   items,
@@ -326,47 +329,40 @@ export function ItemEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      <Card>
-        <ItemTextForm key={item.id} item={item} onUpdate={onUpdate} />
-        {item.kind !== 'note' && item.kind !== 'tracker' && !isQuestion && (
-          <Button
-            variant={done ? 'ghost' : 'soft'}
-            onClick={() => {
-              if (done) {
-                onReopen(item.id);
-              } else if (repeating && item.due_date === null) {
-                onCloseItem(item.id);
-              } else {
-                onComplete(item);
+      <ItemHeading
+        key={`heading-${item.id}`}
+        item={item}
+        onUpdate={onUpdate}
+        check={
+          item.kind !== 'note' && item.kind !== 'tracker' && !isQuestion
+            ? {
+                checked: done,
+                label:
+                  repeating && !done
+                    ? item.due_date === null
+                      ? labels.occurrence.closeItem
+                      : labels.occurrence.markCurrentDone
+                    : doneLabel(item.kind, done),
+                onClick: (): void => {
+                  if (done) {
+                    onReopen(item.id);
+                  } else if (repeating && item.due_date === null) {
+                    onCloseItem(item.id);
+                  } else {
+                    onComplete(item);
+                  }
+                },
               }
-            }}
-          >
-            {repeating && !done
-              ? item.due_date === null
-                ? labels.occurrence.closeItem
-                : labels.occurrence.markCurrentDone
-              : doneLabel(item.kind, done)}
-          </Button>
-        )}
-        {isAppointment && <AppointmentActions item={item} />}
-        {/* Every step done: the goal may be reached, but it is closed only when asked. */}
-        {item.kind === 'goal' && !done && progress.allDone && (
-          <p className="text-center text-sm font-semibold text-primary">
-            {labels.goals.allStepsDone}
-          </p>
-        )}
-      </Card>
-
-      {debt !== null && (
-        <DebtCard
-          debt={debt}
-          onChange={(changes) => {
-            onUpdateDebt(item.id, changes);
-          }}
-        />
+            : undefined
+        }
+      />
+      {isAppointment && <AppointmentActions item={item} />}
+      {/* Every step done: the goal may be reached, but it is closed only when asked. */}
+      {item.kind === 'goal' && !done && progress.allDone && (
+        <p className="text-sm font-semibold text-primary">{labels.goals.allStepsDone}</p>
       )}
 
-      <section className="flex flex-col divide-y divide-line rounded-2xl bg-surface px-4 shadow-card">
+      <PropertyChips>
         {convertible !== null && (
           <PropertyRow
             label={labels.sections.kind}
@@ -573,6 +569,7 @@ export function ItemEditor({
         {!isStep && (isAppointment || item.kind === 'tracker' || item.kind === 'missing_item') && (
           <PropertyRow
             label={labels.repeat.repeats}
+            icon="repeat"
             value={repeating ? (timeLabel ?? labels.repeat.repeats) : labels.repeat.noRepeat}
             open={openRow === 'repeat'}
             onToggle={() => {
@@ -600,6 +597,7 @@ export function ItemEditor({
         {hasSchedule && (
           <PropertyRow
             label={labels.sections.time}
+            icon="clock"
             value={timeLabel ?? labels.status.notSet}
             missing={timeLabel === null && needsTime(item)}
             open={openRow === 'time'}
@@ -650,6 +648,7 @@ export function ItemEditor({
         {item.status === 'open' && (item.kind !== 'missing_item' || repeating) && (
           <PropertyRow
             label={labels.reminders.title}
+            icon="bell"
             value={remindersText(reminders)}
             missing={reminders.some(isWaiting)}
             open={openRow === 'reminder'}
@@ -682,6 +681,7 @@ export function ItemEditor({
         {item.kind === 'task' && goals.length > 0 && (
           <PropertyRow
             label={labels.sections.parent}
+            icon="target"
             value={parentTitle ?? labels.fields.noParent}
             open={openRow === 'parent'}
             onToggle={() => {
@@ -699,7 +699,16 @@ export function ItemEditor({
             />
           </PropertyRow>
         )}
-      </section>
+      </PropertyChips>
+
+      {debt !== null && (
+        <DebtCard
+          debt={debt}
+          onChange={(changes) => {
+            onUpdateDebt(item.id, changes);
+          }}
+        />
+      )}
 
       {repeating && !done && (
         <OccurrencesCard
@@ -825,29 +834,29 @@ export function ItemEditor({
         </Card>
       )}
 
-      <Card title={labels.sections.attachments}>
-        <AttachmentList key={item.id} item={item} />
-      </Card>
+      <AttachmentList key={`files-${item.id}`} item={item} />
 
-      {item.kind !== 'shopping_run' && item.kind !== 'question' && (
-        <Button
-          variant="soft"
-          onClick={() => {
-            onDuplicate(item.id);
+      <div className="flex items-center justify-center gap-2">
+        {item.kind !== 'shopping_run' && item.kind !== 'question' && (
+          <button
+            type="button"
+            onClick={() => {
+              onDuplicate(item.id);
+            }}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-muted transition active:scale-[0.97]"
+          >
+            <Icon name="copy" className="size-4" />
+            {labels.duplicate.action}
+          </button>
+        )}
+        <ConfirmChip
+          label={labels.actions.delete}
+          confirmLabel={labels.actions.confirmDelete}
+          onConfirm={() => {
+            onDelete(item.id);
           }}
-        >
-          <Icon name="copy" className="size-5" />
-          {labels.duplicate.action}
-        </Button>
-      )}
-
-      <ConfirmButton
-        label={labels.actions.delete}
-        confirmLabel={labels.actions.confirmDelete}
-        onConfirm={() => {
-          onDelete(item.id);
-        }}
-      />
+        />
+      </div>
     </div>
   );
 }

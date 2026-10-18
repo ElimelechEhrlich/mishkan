@@ -11,15 +11,27 @@ type AttachmentListProps = {
   readonly item: Item;
 };
 
-/** Files attached to one item. Files exist only as part of an item. */
+/**
+ * Files attached to one item, and a small button to attach one. Files exist only as part of an
+ * item.
+ */
 export function AttachmentList({ item }: AttachmentListProps): ReactElement {
   const { attachments, busy, error, upload, remove } = useAttachments(item);
   const inputId = useId();
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <ErrorBanner message={error} />
-      <ul className="flex flex-col gap-1">
+      {attachments.length > 0 && (
+        <p className="px-1 text-[13px] font-semibold text-muted">{labels.sections.attachments}</p>
+      )}
+      <ul
+        className={
+          attachments.length > 0
+            ? 'flex flex-col gap-1 rounded-2xl bg-surface px-4 py-2 shadow-card'
+            : 'hidden'
+        }
+      >
         {attachments.map((attachment) => (
           <li key={attachment.id} className="flex items-center gap-2">
             <Icon name="clip" className="size-4 text-muted" />
@@ -48,9 +60,9 @@ export function AttachmentList({ item }: AttachmentListProps): ReactElement {
       </ul>
       <label
         htmlFor={inputId}
-        className={`inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary-soft px-4 font-medium text-primary ${busy ? 'opacity-40' : ''}`}
+        className={`inline-flex min-h-9 cursor-pointer items-center gap-1.5 self-start rounded-full bg-primary-soft px-3.5 text-[13px] font-medium text-primary transition active:scale-[0.97] ${busy ? 'opacity-40' : ''}`}
       >
-        <Icon name="clip" />
+        <Icon name="clip" className="size-4" />
         {busy ? labels.status.loading : labels.actions.attachFile}
       </label>
       <input
