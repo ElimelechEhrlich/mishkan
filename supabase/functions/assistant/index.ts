@@ -235,7 +235,7 @@ const tools = [
   {
     name: 'update_item',
     description:
-      'Changes an item: its title, its day, its hour, or makes it urgent or with no date. Find its id with list_items first. Not for repeating items.',
+      'Changes an item: its title, its day, its hour, makes it urgent or with no date, or moves it to another domain or entity. Find its id with list_items first. The time of a repeating item is changed in the app; its title and place can be changed here.',
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -245,6 +245,15 @@ const tools = [
         time: { type: 'STRING', description: 'HH:MM, the new hour.' },
         urgent: { type: 'BOOLEAN', description: 'Make it urgent, with no date.' },
         no_date: { type: 'BOOLEAN', description: 'Take its date away (no date).' },
+        domain_id: {
+          type: 'STRING',
+          description: 'Move it to this domain (from the household list); the entity follows it.',
+        },
+        entity_id: {
+          type: 'STRING',
+          description:
+            'Move it to this entity when no domain of it fits; it then waits in "להשלמה" for a domain. Prefer domain_id.',
+        },
       },
       required: ['item_id'],
     },
@@ -320,6 +329,8 @@ type Household = {
   readonly entityNames: Map<string, string>;
   /** The home's shopping domain. */
   readonly homeShopping: string | null;
+  /** Every shopping domain, which holds missing items only. */
+  readonly shoppingDomains: Set<string>;
   /** The household's entities and domains, as the model reads them. */
   readonly summary: string;
 };
@@ -333,12 +344,16 @@ async function loadHousehold(db: SupabaseClient, userId: string): Promise<Househ
   const places = new Map<string, string>();
   const entityNames = new Map<string, string>();
   let homeShopping: string | null = null;
+  const shoppingDomains = new Set<string>();
   const lines: string[] = [];
   for (const entity of (entities ?? []) as Row[]) {
     entityNames.set(String(entity.id), String(entity.name));
     const own = ((domains ?? []) as Row[]).filter((domain) => domain.entity_id === entity.id);
     for (const domain of own) {
       places.set(String(domain.id), `${String(entity.name)} · ${String(domain.name)}`);
+      if (domain.role === 'shopping') {
+        shoppingDomains.add(String(domain.id));
+      }
       if (entity.kind === 'home' && domain.role === 'shopping') {
         homeShopping = String(domain.id);
       }
@@ -358,6 +373,7 @@ async function loadHousehold(db: SupabaseClient, userId: string): Promise<Househ
     places,
     entityNames,
     homeShopping,
+    shoppingDomains,
     summary: lines.join('\n'),
   };
 }
@@ -670,30 +686,54 @@ async function completeItem(db: SupabaseClient, input: Row): Promise<string> {
   return doneError === null ? `done: ${String(item.title)}` : `error: ${doneError.message}`;
 }
 
-async function updateItem(db: SupabaseClient, input: Row): Promise<string> {
+async function updateItem(db: SupabaseClient, house: Household, input: Row): Promise<string> {
   const itemId = text(input.item_id);
   if (itemId === null) {
     return 'error: which item?';
   }
   const { data, error } = await db
     .from('items')
-    .select('id, title, kind, time_mode, due_date, due_time, starts_at')
+    .select('id, title, kind, time_mode, due_date, due_time, starts_at, parent_id')
     .eq('id', itemId)
     .single();
   if (error !== null) {
     return `error: ${error.message}`;
   }
   const item = data as Row;
-  if (item.time_mode === 'recurring') {
-    return 'error: a repeating item is changed in the app, in its page';
-  }
   const changes: Row = {};
   const title = text(input.title);
   if (title !== null) {
     changes.title = title;
   }
+  // Where it is: a domain decides its entity; an entity alone leaves it waiting for a domain.
+  const domainId = text(input.domain_id);
+  const entityId = text(input.entity_id);
+  if (domainId !== null || entityId !== null) {
+    if (item.parent_id !== null) {
+      return 'error: a step takes its domain from its goal or issue; move that instead';
+    }
+    if (domainId !== null) {
+      if (!house.places.has(domainId)) {
+        return 'error: no such domain; take one from the household list';
+      }
+      if (house.shoppingDomains.has(domainId) !== (item.kind === 'missing_item')) {
+        return 'error: a shopping domain holds shopping items only, and a shopping item stays in one';
+      }
+      Object.assign(changes, { domain_id: domainId, entity_id: null });
+    } else if (entityId !== null) {
+      if (!house.entityNames.has(entityId)) {
+        return 'error: no such entity; take one from the household list';
+      }
+      Object.assign(changes, { domain_id: null, entity_id: entityId });
+    }
+  }
   const date = text(input.date);
   const time = text(input.time);
+  const changesTime =
+    date !== null || time !== null || input.urgent === true || input.no_date === true;
+  if (changesTime && item.time_mode === 'recurring') {
+    return 'error: the time of a repeating item is changed in the app, in its page';
+  }
   if (item.kind === 'appointment') {
     if (date !== null || time !== null) {
       const current =
@@ -858,7 +898,7 @@ async function runTool(
       return { result, changed: ok, touched: ok ? touchedItem(target) : untouched };
     }
     case 'update_item': {
-      const result = await updateItem(db, input);
+      const result = await updateItem(db, house, input);
       const ok = result.startsWith('changed');
       return { result, changed: ok, touched: ok ? touchedItem(target) : untouched };
     }
