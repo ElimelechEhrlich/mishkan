@@ -8,8 +8,10 @@ import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
 import { useTimeline } from '../hooks/useTimeline';
 import { useLookups } from '../hooks/useLookups';
+import { useTodayBrief } from '../hooks/useTodayBrief';
 import { useHouseholdContext } from '../hooks/useRouteContext';
-import { formatToday } from '../lib/itemRules';
+import { formatHebrewDate } from '../lib/hebrewDate';
+import { formatToday, todayIso } from '../lib/itemRules';
 
 /** Today across the whole home, like needs-completion: no entity or domain narrows it. */
 export function TodayPage(): ReactElement {
@@ -18,6 +20,7 @@ export function TodayPage(): ReactElement {
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
   const timeline = useTimeline(items.assigned, items.steps);
+  const brief = useTodayBrief(items.items, items.steps, lookups, timeline);
 
   return (
     <PageShell
@@ -27,12 +30,19 @@ export function TodayPage(): ReactElement {
       todayCount={items.todayCount}
     >
       <ErrorBanner message={items.error ?? entities.error} />
+      <p className="-mt-2 text-[13px] font-medium text-muted">
+        {formatHebrewDate(todayIso(), true)}
+      </p>
       <TodayViews
         agenda={items.agenda}
         timeline={timeline}
         lookups={lookups}
         loading={items.loading}
         onComplete={items.completeItem}
+        waiting={brief.waiting}
+        items={items.items}
+        incompleteCount={items.incompleteCount}
+        week={brief.week}
       />
       <QuickAddSheet
         entities={entities.entities}
