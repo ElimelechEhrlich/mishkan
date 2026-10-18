@@ -153,6 +153,9 @@ function remindersText(reminders: readonly ItemReminder[]): string {
     : text;
 }
 
+/** The parts that hold rows of the item; an empty one shows as a small "+" until opened. */
+type Section = 'data' | 'questions' | 'steps' | 'trackers';
+
 type Row =
   | 'kind'
   | 'domain'
@@ -244,6 +247,7 @@ export function ItemEditor({
   department,
 }: ItemEditorProps): ReactElement {
   const [openRow, setOpenRow] = useState<Row | null>(null);
+  const [openedSections, setOpenedSections] = useState<ReadonlySet<Section>>(new Set());
 
   function toggle(row: Row): void {
     setOpenRow(openRow === row ? null : row);
@@ -326,6 +330,35 @@ export function ItemEditor({
   const parent = goals.find((goal) => goal.id === item.parent_id);
   const parentTitle = parent?.title;
   const progress = goalProgress(steps, lookups.repeats, lookups.occurrenceCounts);
+
+  // Each part the item has, and whether it holds anything yet.
+  const sections: readonly { key: Section; title: string; has: boolean; empty: boolean }[] = [
+    {
+      key: 'data',
+      title: item.kind === 'issue' ? labels.data.title : labels.data.noteTitle,
+      has: (item.kind === 'note' && !item.is_value) || item.kind === 'issue' || data.length > 0,
+      empty: data.length === 0,
+    },
+    {
+      key: 'questions',
+      title: labels.sections.questions,
+      has: item.kind === 'issue',
+      empty: questions.length === 0,
+    },
+    { key: 'steps', title: labels.sections.steps, has: isContainer, empty: steps.length === 0 },
+    {
+      key: 'trackers',
+      title: labels.tracker.title,
+      has: item.kind === 'issue',
+      empty: trackers.length === 0,
+    },
+  ];
+  const shown = new Set(
+    sections
+      .filter((section) => section.has && (!section.empty || openedSections.has(section.key)))
+      .map((section) => section.key),
+  );
+  const toOpen = sections.filter((section) => section.has && !shown.has(section.key));
 
   return (
     <div className="flex flex-col gap-4">
@@ -781,7 +814,7 @@ export function ItemEditor({
       )}
 
       {/* Notes and issues hold rows; any other item shows those it kept. */}
-      {((item.kind === 'note' && !item.is_value) || item.kind === 'issue' || data.length > 0) && (
+      {shown.has('data') && (
         <Card title={item.kind === 'issue' ? labels.data.title : labels.data.noteTitle}>
           <DataSection
             rows={data}
@@ -795,7 +828,7 @@ export function ItemEditor({
         </Card>
       )}
 
-      {item.kind === 'issue' && (
+      {shown.has('questions') && (
         <Card title={labels.sections.questions}>
           <QuestionList
             questions={questions}
@@ -807,7 +840,7 @@ export function ItemEditor({
         </Card>
       )}
 
-      {isContainer && (
+      {shown.has('steps') && (
         <Card title={labels.sections.steps}>
           <StepList
             parent={item}
@@ -822,7 +855,7 @@ export function ItemEditor({
         </Card>
       )}
 
-      {item.kind === 'issue' && (
+      {shown.has('trackers') && (
         <Card title={labels.tracker.title}>
           <IssueTrackers
             trackers={trackers}
@@ -832,6 +865,24 @@ export function ItemEditor({
             }}
           />
         </Card>
+      )}
+
+      {toOpen.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {toOpen.map((section) => (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => {
+                setOpenedSections(new Set([...openedSections, section.key]));
+              }}
+              className="inline-flex min-h-9 items-center gap-1 rounded-full bg-surface px-3.5 text-[13px] font-medium text-primary shadow-card transition active:scale-[0.97]"
+            >
+              <Icon name="plus" className="size-3.5" />
+              {section.title}
+            </button>
+          ))}
+        </div>
       )}
 
       <AttachmentList key={`files-${item.id}`} item={item} />

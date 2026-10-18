@@ -64,6 +64,7 @@ export function ItemPage(): ReactElement {
         <EmptyState text={items.loading ? labels.status.loading : labels.status.itemNotFound} />
       ) : (
         <ItemEditor
+          key={item.id}
           item={item}
           items={items.items}
           steps={page.steps}
