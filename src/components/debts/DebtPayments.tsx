@@ -2,14 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { useDebtPayments } from '../../hooks/useDebtPayments';
-import {
-  monthLabel,
-  monthNeeds,
-  owedOf,
-  planMonths,
-  planStartFrom,
-  remainingOf,
-} from '../../lib/debts';
+import { monthLabel, monthNeeds, owedOf, planMonths, remainingOf } from '../../lib/debts';
 import { formatMoney } from '../../lib/format';
 import { formatTimestampDate, todayIso } from '../../lib/itemRules';
 import type { DebtChanges, DebtDetails, Item } from '../../types/domain';
@@ -165,16 +158,12 @@ export function DebtPayments({ item, debt, onChange, onClose }: DebtPaymentsProp
         <DebtPlanForm
           debt={debt}
           paid={payments.paid}
-          onSave={(plan, day) => {
-            // A new day starts the plan over from the next time that day comes.
+          onSave={(plan, starts) => {
             onChange({
               monthly_amount: plan.monthly,
               repay_total: plan.repayTotal,
-              monthly_day: day,
-              plan_starts:
-                hasPlan && day === debt.monthly_day && debt.plan_starts !== null
-                  ? debt.plan_starts
-                  : planStartFrom(day, today),
+              monthly_day: Number(starts.slice(8, 10)),
+              plan_starts: starts,
             });
             setForm(null);
           }}

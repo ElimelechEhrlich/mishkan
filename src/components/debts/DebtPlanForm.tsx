@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
-import { planResult, remainingOf } from '../../lib/debts';
+import { planResult, planStartFrom, remainingOf } from '../../lib/debts';
 import type { PlanDraft, PlanResult } from '../../lib/debts';
+import { todayIso } from '../../lib/itemRules';
 import { entryNumber } from '../../lib/trackers';
 import type { DebtDetails } from '../../types/domain';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
+import { DateField } from '../ui/DateField';
 import { Segmented } from '../ui/Segmented';
-import { Stepper } from '../ui/Stepper';
 import { TextField } from '../ui/TextField';
 import { PlanSummary } from './PlanSummary';
 
@@ -16,7 +17,8 @@ type DebtPlanFormProps = {
   readonly debt: DebtDetails;
   /** How much was paid so far. */
   readonly paid: number;
-  readonly onSave: (plan: PlanResult, day: number) => void;
+  /** The plan, and its first payment day, whose day of the month every payment falls on. */
+  readonly onSave: (plan: PlanResult, starts: string) => void;
   readonly onCancel: () => void;
 };
 
@@ -26,7 +28,8 @@ function numberOf(text: string): number {
 
 /**
  * A monthly plan: a sum each month, or a number of payments (with interest, from the bank's
- * monthly payment or from the yearly rate), and its day (1 to 28, so every month has it).
+ * monthly payment or from the yearly rate), and its first payment day, which may have passed;
+ * every payment falls on that day of the month (1 to 28, so every month has it).
  */
 export function DebtPlanForm({ debt, paid, onSave, onCancel }: DebtPlanFormProps): ReactElement {
   const [by, setBy] = useState<'month' | 'count'>('month');
@@ -36,7 +39,9 @@ export function DebtPlanForm({ debt, paid, onSave, onCancel }: DebtPlanFormProps
   const [countText, setCountText] = useState('');
   const [interest, setInterest] = useState(debt.repay_total !== null);
   const [rateText, setRateText] = useState('');
-  const [planDay, setPlanDay] = useState(debt.monthly_day ?? 10);
+  const [starts, setStarts] = useState(debt.plan_starts ?? planStartFrom(10, todayIso()));
+  const day = Number(starts.slice(8, 10));
+  const dayFits = day >= 1 && day <= 28;
   const rate = numberOf(rateText);
   const draft: PlanDraft =
     by === 'month'
@@ -55,8 +60,8 @@ export function DebtPlanForm({ debt, paid, onSave, onCancel }: DebtPlanFormProps
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
-    if (plan !== null) {
-      onSave(plan, planDay);
+    if (plan !== null && dayFits) {
+      onSave(plan, starts);
     }
   }
 
@@ -126,9 +131,12 @@ export function DebtPlanForm({ debt, paid, onSave, onCancel }: DebtPlanFormProps
         </>
       )}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] text-muted">{labels.debts.planDay}</span>
-        <Stepper value={planDay} min={1} max={28} onChange={setPlanDay} />
+        <span className="text-[14px] text-muted">{labels.debts.firstPayment}</span>
+        <DateField label={labels.debts.firstPayment} value={starts} onChange={setStarts} />
       </div>
+      <span className={`text-[13px] ${dayFits ? 'text-muted' : 'text-alert'}`}>
+        {dayFits ? labels.debts.everyMonthOn(day) : labels.debts.dayTooLate}
+      </span>
       {plan !== null && owed !== null && owed > 0 && (
         <PlanSummary
           monthly={plan.monthly}
@@ -138,7 +146,7 @@ export function DebtPlanForm({ debt, paid, onSave, onCancel }: DebtPlanFormProps
         />
       )}
       <div className="flex gap-2">
-        <Button type="submit" disabled={plan === null}>
+        <Button type="submit" disabled={plan === null || !dayFits}>
           {labels.actions.save}
         </Button>
         <Button variant="ghost" onClick={onCancel}>
