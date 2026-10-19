@@ -378,12 +378,18 @@ async function loadHousehold(db: SupabaseClient, userId: string): Promise<Househ
         homeShopping = String(domain.id);
       }
     }
+    // Every domain, with what the debts and shopping ones are for.
+    const roleNote: Record<string, string> = { debts: ' (debts)', shopping: ' (shopping list)' };
     lines.push(
       `- ${String(entity.name)} (${String(entity.kind)}, id ${String(entity.id)}): ` +
-        own
-          .filter((domain) => domain.role === 'regular')
-          .map((domain) => `${String(domain.name)} [${String(domain.id)}]`)
-          .join(', '),
+        (own.length === 0
+          ? '(no domains yet)'
+          : own
+              .map(
+                (domain) =>
+                  `${String(domain.name)}${roleNote[String(domain.role)] ?? ''} [${String(domain.id)}]`,
+              )
+              .join(', ')),
     );
   }
   return {
@@ -1128,7 +1134,7 @@ Choosing the kind when the parent asks to add something: take it from their word
 Every item belongs to an entity (the home, the couple, each parent, each child, "אישי" that only its owner sees, family and friends) and a domain in it (health, education, events...). Something not yet fully placed waits in "להשלמה".
 Dates the user says ("מחר", "ביום שלישי", "בעוד שבוע") are relative to today.
 
-The household's entities and their regular domains (name [domain id]):
+The household's entities and all their domains (name [domain id]), read fresh for this message, so it is complete and up to date, including what the parents set up lately. Never say an entity or a domain does not exist when it is here; match what the parent says to it loosely (a different spelling, with or without ה, a short form). Entity kinds: home (the household), couple (the two parents), parent (one of the parents), child, personal (the parent's own, that only they see), circle (family and friends, apart from the home). A debt goes in a domain marked (debts) when there is one; a domain marked (shopping list) holds only things to buy.
 ${house.summary}`;
 }
 
