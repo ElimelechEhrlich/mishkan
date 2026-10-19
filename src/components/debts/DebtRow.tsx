@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
-import { remainingOf } from '../../lib/debts';
+import { owedOf, remainingOf } from '../../lib/debts';
 import { formatMoney } from '../../lib/format';
 import type { Debt, Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
@@ -58,7 +58,7 @@ export function DebtRow({ debt, onClose }: DebtRowProps): ReactElement {
             </span>
             {paid > 0 && (
               <span className="shrink-0 tabular-nums">
-                {labels.debts.of(formatMoney(details.amount))}
+                {labels.debts.of(formatMoney(owedOf(details)))}
               </span>
             )}
           </span>
@@ -67,7 +67,7 @@ export function DebtRow({ debt, onClose }: DebtRowProps): ReactElement {
           <span className="h-1 overflow-hidden rounded-full bg-line">
             <span
               className="block h-full rounded-full bg-primary"
-              style={{ width: `${String(Math.min(100, (paid / details.amount) * 100))}%` }}
+              style={{ width: `${String(Math.min(100, (paid / owedOf(details)) * 100))}%` }}
             />
           </span>
         )}

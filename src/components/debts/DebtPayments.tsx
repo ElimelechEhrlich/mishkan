@@ -2,7 +2,14 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { useDebtPayments } from '../../hooks/useDebtPayments';
-import { monthLabel, planMonths, planStartFrom, remainingOf } from '../../lib/debts';
+import {
+  monthLabel,
+  monthNeeds,
+  owedOf,
+  planMonths,
+  planStartFrom,
+  remainingOf,
+} from '../../lib/debts';
 import { formatMoney } from '../../lib/format';
 import { formatTimestampDate, todayIso } from '../../lib/itemRules';
 import type { DebtChanges, DebtDetails, Item } from '../../types/domain';
@@ -13,6 +20,7 @@ import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
 import { DebtPaymentForm } from './DebtPaymentForm';
 import { DebtPlanForm } from './DebtPlanForm';
+import { PlanSummary } from './PlanSummary';
 
 type DebtPaymentsProps = {
   readonly item: Item;
@@ -30,10 +38,18 @@ export function DebtPayments({ item, debt, onChange, onClose }: DebtPaymentsProp
   const payments = useDebtPayments(item.id);
   const [form, setForm] = useState<'payment' | 'plan' | null>(null);
   const today = todayIso();
+  const owed = owedOf(debt);
   const left = remainingOf(debt, payments.paid);
   const hasPlan = debt.monthly_amount !== null && debt.monthly_day !== null;
   const months = planMonths(debt, payments.payments, today, item.due_date);
   const dueMonth = item.due_date === null ? null : `${item.due_date.slice(0, 8)}01`;
+  const dueNeeds =
+    dueMonth === null || debt.monthly_amount === null
+      ? 0
+      : monthNeeds(debt.monthly_amount, payments.payments, dueMonth, left);
+  const openMonths = months
+    .filter((month) => month.state === 'open')
+    .map((month) => ({ month: month.month, label: monthLabel(month.month, today) }));
 
   return (
     <Card title={labels.debts.payments}>
@@ -49,12 +65,12 @@ export function DebtPayments({ item, debt, onChange, onClose }: DebtPaymentsProp
               <span
                 className="block h-full rounded-full bg-primary"
                 style={{
-                  width: `${String(Math.min(100, (payments.paid / debt.amount) * 100))}%`,
+                  width: `${String(Math.min(100, (payments.paid / owed) * 100))}%`,
                 }}
               />
             </span>
             <span className="text-[13px] text-muted">
-              {labels.debts.paidOf(formatMoney(payments.paid), formatMoney(debt.amount))}
+              {labels.debts.paidOf(formatMoney(payments.paid), formatMoney(owed))}
             </span>
           </>
         )}
@@ -85,46 +101,75 @@ export function DebtPayments({ item, debt, onChange, onClose }: DebtPaymentsProp
               }}
             />
           </div>
+          {left > 0 && (
+            <PlanSummary
+              monthly={debt.monthly_amount ?? 1}
+              left={left}
+              amount={debt.amount}
+              repayTotal={debt.repay_total}
+            />
+          )}
           {months.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {months.map((month) => (
                 <span
                   key={month.month}
                   className={`inline-flex min-h-7 items-center gap-1 rounded-full px-2.5 text-[12px] font-medium ${
-                    month.paid
+                    month.state === 'paid'
                       ? 'bg-primary-soft text-primary'
-                      : month.late
-                        ? 'bg-alert-soft text-alert'
-                        : 'bg-paper text-muted'
+                      : month.state === 'skipped'
+                        ? 'bg-paper text-muted line-through decoration-muted/50'
+                        : month.late
+                          ? 'bg-alert-soft text-alert'
+                          : 'bg-paper text-muted'
                   }`}
                 >
-                  {month.paid && <Icon name="check" className="size-3" />}
+                  {month.state === 'paid' && <Icon name="check" className="size-3" />}
                   {monthLabel(month.month, today)}
-                  {!month.paid && (
-                    <span className="opacity-70">
-                      {month.late ? labels.debts.monthLate : labels.debts.monthDue}
-                    </span>
-                  )}
+                  <span className="opacity-70">
+                    {month.state === 'skipped'
+                      ? labels.debts.monthSkipped
+                      : month.state === 'open' && month.paid > 0
+                        ? labels.debts.monthPart(
+                            formatMoney((debt.monthly_amount ?? 0) - month.paid),
+                          )
+                        : month.state === 'open'
+                          ? month.late
+                            ? labels.debts.monthLate
+                            : labels.debts.monthDue
+                          : ''}
+                  </span>
                 </span>
               ))}
             </div>
           )}
-          {dueMonth !== null && left > 0 && (
-            <Button variant="soft" disabled={payments.busy} onClick={payments.payMonth}>
-              <Icon name="check" className="size-4.5" />
-              {labels.debts.payMonth(monthLabel(dueMonth, today))}
-            </Button>
+          {dueMonth !== null && dueNeeds > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="soft" disabled={payments.busy} onClick={payments.payMonth}>
+                <Icon name="check" className="size-4.5" />
+                {labels.debts.payMonth(monthLabel(dueMonth, today), formatMoney(dueNeeds))}
+              </Button>
+              <button
+                type="button"
+                disabled={payments.busy}
+                onClick={payments.skipMonth}
+                className="min-h-9 rounded-full px-3 text-[13px] font-medium text-muted transition active:scale-[0.97]"
+              >
+                {labels.debts.skipMonth}
+              </button>
+            </div>
           )}
         </div>
       )}
       {form === 'plan' && (
         <DebtPlanForm
-          amount={debt.monthly_amount}
-          day={debt.monthly_day}
-          onSave={(amount, day) => {
+          debt={debt}
+          paid={payments.paid}
+          onSave={(plan, day) => {
             // A new day starts the plan over from the next time that day comes.
             onChange({
-              monthly_amount: amount,
+              monthly_amount: plan.monthly,
+              repay_total: plan.repayTotal,
               monthly_day: day,
               plan_starts:
                 hasPlan && day === debt.monthly_day && debt.plan_starts !== null
@@ -142,7 +187,12 @@ export function DebtPayments({ item, debt, onChange, onClose }: DebtPaymentsProp
         <button
           type="button"
           onClick={() => {
-            onChange({ monthly_amount: null, monthly_day: null, plan_starts: null });
+            onChange({
+              monthly_amount: null,
+              monthly_day: null,
+              plan_starts: null,
+              repay_total: null,
+            });
             setForm(null);
           }}
           className="self-start text-[13px] font-medium text-alert"
@@ -153,8 +203,10 @@ export function DebtPayments({ item, debt, onChange, onClose }: DebtPaymentsProp
 
       {form === 'payment' ? (
         <DebtPaymentForm
-          onAdd={(amount, paidOn, note) => {
-            payments.add(amount, paidOn, note);
+          months={openMonths}
+          dueMonth={dueMonth}
+          onAdd={(amount, paidOn, note, forMonth) => {
+            payments.add(amount, paidOn, note, forMonth);
             setForm(null);
           }}
           onCancel={() => {
@@ -200,9 +252,13 @@ export function DebtPayments({ item, debt, onChange, onClose }: DebtPaymentsProp
               <span className="min-w-0 flex-1 truncate text-[13px] text-muted">
                 {payment.for_month === null
                   ? (payment.note ?? '')
-                  : labels.debts.forMonth(monthLabel(payment.for_month, today))}
+                  : payment.skipped
+                    ? labels.debts.skippedMonth(monthLabel(payment.for_month, today))
+                    : labels.debts.forMonth(monthLabel(payment.for_month, today))}
               </span>
-              <span className="font-semibold tabular-nums">{formatMoney(payment.amount)}</span>
+              {!payment.skipped && (
+                <span className="font-semibold tabular-nums">{formatMoney(payment.amount)}</span>
+              )}
               <IconButton
                 icon="close"
                 label={labels.actions.delete}

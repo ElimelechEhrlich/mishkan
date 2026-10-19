@@ -593,7 +593,7 @@ export type Database = {
       debt_details: {
         Row: {
           item_id: string;
-          /** The whole amount; what is left is this less what was paid. */
+          /** The whole amount; what is left is what is owed less what was paid. */
           amount: number;
           counterparty: string;
           direction: DebtDirection;
@@ -604,6 +604,8 @@ export type Database = {
           monthly_day: number | null;
           /** The plan's first payment day. */
           plan_starts: string | null;
+          /** The whole sum to repay, interest included; null when it is the amount. */
+          repay_total: number | null;
         };
         Insert: {
           item_id: string;
@@ -614,6 +616,7 @@ export type Database = {
           monthly_amount?: number | null;
           monthly_day?: number | null;
           plan_starts?: string | null;
+          repay_total?: number | null;
         };
         Update: {
           amount?: number;
@@ -623,6 +626,7 @@ export type Database = {
           monthly_amount?: number | null;
           monthly_day?: number | null;
           plan_starts?: string | null;
+          repay_total?: number | null;
         };
         Relationships: [];
       };
@@ -633,8 +637,10 @@ export type Database = {
           household_id: string;
           amount: number;
           paid_on: string;
-          /** The month of the plan it pays (its first day); null outside the plan. */
+          /** The month of the plan it is for (its first day); null outside the plan. */
           for_month: string | null;
+          /** A month let go without paying: its amount is 0 and it lowers nothing. */
+          skipped: boolean;
           note: string | null;
           created_by: string | null;
           created_at: string;
@@ -646,6 +652,7 @@ export type Database = {
           amount: number;
           paid_on?: string;
           for_month?: string | null;
+          skipped?: boolean;
           note?: string | null;
           created_by?: string | null;
           created_at?: string;
@@ -830,6 +837,11 @@ export type Database = {
       pay_debt_month: {
         Args: { p_item_id: string };
         /** The payment's id. */
+        Returns: string;
+      };
+      skip_debt_month: {
+        Args: { p_item_id: string };
+        /** The skip's id. */
         Returns: string;
       };
       move_occurrence: {

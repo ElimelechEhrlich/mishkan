@@ -246,7 +246,13 @@ export type DebtPayment = Tables['debt_payments']['Row'];
 /** What a debt's page changes: how much, which way, whether important, and its monthly plan. */
 export type DebtChanges = Pick<
   Database['public']['Tables']['debt_details']['Update'],
-  'amount' | 'direction' | 'important' | 'monthly_amount' | 'monthly_day' | 'plan_starts'
+  | 'amount'
+  | 'direction'
+  | 'important'
+  | 'monthly_amount'
+  | 'monthly_day'
+  | 'plan_starts'
+  | 'repay_total'
 >;
 
 export type AttachmentWithUrl = Attachment & { readonly url: string | null };

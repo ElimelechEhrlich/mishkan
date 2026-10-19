@@ -26,13 +26,20 @@ export async function listDebtPayments(itemId: string): Promise<DebtPayment[]> {
 
 export async function addDebtPayment(
   itemId: string,
-  payment: { readonly amount: number; readonly paidOn: string; readonly note: string | null },
+  payment: {
+    readonly amount: number;
+    readonly paidOn: string;
+    readonly note: string | null;
+    /** The month of the plan it is for; null outside the plan. */
+    readonly forMonth: string | null;
+  },
 ): Promise<void> {
   const { error } = await supabase.from('debt_payments').insert({
     item_id: itemId,
     amount: payment.amount,
     paid_on: payment.paidOn,
     note: payment.note,
+    for_month: payment.forMonth,
   });
   if (error !== null) {
     throw new Error(error.message);
@@ -53,4 +60,12 @@ export async function payDebtMonth(itemId: string): Promise<string> {
     throw new Error(error.message);
   }
   return data;
+}
+
+/** Lets the month of the plan now due go without paying. Lowers nothing. */
+export async function skipDebtMonth(itemId: string): Promise<void> {
+  const { error } = await supabase.rpc('skip_debt_month', { p_item_id: itemId });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
 }

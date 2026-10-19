@@ -2,11 +2,16 @@
 -- 0045 - Debts: importance, payments and a monthly plan
 -- A debt is marked important ("חשוב") or not ("יכול לחכות", the default).
 -- Payments are recorded against it (an amount, a day, a note), and what is
--- left is its amount less what was paid. A monthly plan ("הסדר תשלומים") is a
--- sum due on a day of each month: the debt then stands on that day in the
--- lists, like a task, and ticking it records that month's payment. The day it
--- stands on is the first month of the plan not paid yet, kept by the database;
--- once nothing is left, it stands on no day, and its page asks to close it.
+-- left is what is owed less what was paid. What is owed is its amount, or,
+-- for a loan with interest, the whole sum to repay. Only a payment lowers
+-- what is left: a month gone by, skipped, or a payment taken back does not.
+-- A monthly plan ("הסדר תשלומים") is a sum due on a day of each month: the
+-- debt then stands on that day in the lists, like a task, and ticking it
+-- records what that month still needs (the last one, only what is left). A
+-- payment may be made for a month: the month is done once its payments come
+-- to the monthly sum, or once it is skipped. The day the debt stands on is
+-- the first month not done, kept by the database; once nothing is left, it
+-- stands on no day, and its page asks to close it.
 -- Run once in the Supabase SQL editor, after 0044.
 -- =====================================================================
 
@@ -15,6 +20,8 @@ alter table public.debt_details
   add column monthly_amount numeric(12,2) check (monthly_amount > 0),
   add column monthly_day    smallint check (monthly_day between 1 and 28),
   add column plan_starts    date,
+  -- The whole sum to repay, interest included; null when it is the amount.
+  add column repay_total    numeric(12,2) check (repay_total > 0),
   add constraint debt_plan_whole check (
     (monthly_amount is null) = (monthly_day is null)
     and (monthly_amount is null) = (plan_starts is null)
@@ -25,20 +32,25 @@ create table public.debt_payments (
   item_id      uuid not null references public.items(id) on delete cascade,
   household_id uuid not null default public.current_household_id()
                references public.households(id) on delete cascade,
-  amount       numeric(12,2) not null check (amount > 0),
+  amount       numeric(12,2) not null,
   paid_on      date not null default public.today_in_israel(),
-  -- The month of the plan it pays (its first day); null for a payment outside the plan.
+  -- The month of the plan it is for (its first day); null for a payment outside the plan.
   for_month    date,
+  -- A month of the plan let go without paying: it moves the plan on and lowers nothing.
+  skipped      boolean not null default false,
   note         text,
   created_by   uuid default public.current_member_id()
                references public.members(id) on delete set null,
-  created_at   timestamptz not null default now()
+  created_at   timestamptz not null default now(),
+  constraint debt_payment_shape check (
+    (skipped and amount = 0 and for_month is not null) or (not skipped and amount > 0)
+  )
 );
 
 create index debt_payments_item_idx on public.debt_payments (item_id, paid_on);
--- A month of the plan is paid once.
-create unique index debt_payments_month_idx on public.debt_payments (item_id, for_month)
-  where for_month is not null;
+-- A month is skipped once.
+create unique index debt_payments_skip_idx on public.debt_payments (item_id, for_month)
+  where skipped;
 
 alter table public.debt_payments enable row level security;
 
@@ -67,7 +79,16 @@ language sql immutable set search_path = '' as $$
   select (date_trunc('month', p_month)::date + (p_day - 1))
 $$;
 
--- Where a debt stands: on the first month of its plan not paid yet, or on no day once
+-- Whether a month of the plan is done: skipped, or paid up to the monthly sum.
+create function public.debt_month_done(p_item_id uuid, p_month date, p_monthly numeric)
+returns boolean
+language sql stable set search_path = '' as $$
+  select coalesce(bool_or(p.skipped), false) or coalesce(sum(p.amount), 0) >= p_monthly
+  from public.debt_payments p
+  where p.item_id = p_item_id and p.for_month = p_month
+$$;
+
+-- Where a debt stands: on the first month of its plan not done yet, or on no day once
 -- there is no plan or nothing is left.
 create function public.sync_debt_due(p_item_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
@@ -78,14 +99,14 @@ declare
 begin
   select * into v_debt from public.debt_details where item_id = p_item_id;
   select coalesce(sum(amount), 0) into v_paid from public.debt_payments where item_id = p_item_id;
-  if v_debt.item_id is null or v_debt.monthly_amount is null or v_paid >= v_debt.amount then
+  if v_debt.item_id is null or v_debt.monthly_amount is null
+     or v_paid >= coalesce(v_debt.repay_total, v_debt.amount) then
     update public.items set due_date = null, time_mode = null
     where id = p_item_id and kind = 'debt' and due_date is not null;
     return;
   end if;
   v_month := date_trunc('month', v_debt.plan_starts)::date;
-  while exists (select 1 from public.debt_payments
-                where item_id = p_item_id and for_month = v_month) loop
+  while public.debt_month_done(p_item_id, v_month, v_debt.monthly_amount) loop
     v_month := (v_month + interval '1 month')::date;
   end loop;
   update public.items
@@ -113,31 +134,65 @@ begin
 end $$;
 
 create trigger debt_details_sync
-  after insert or update of amount, monthly_amount, monthly_day, plan_starts
+  after insert or update of amount, repay_total, monthly_amount, monthly_day, plan_starts
   on public.debt_details
   for each row execute function public.debt_details_sync();
 
--- Ticks this month of the plan: its payment, of the plan's sum, on the day it is ticked.
--- Returns the payment's id, so it can be taken back.
+-- Ticks the month of the plan now due: what it still needs, never more than is left, on
+-- the day it is ticked. Returns the payment's id, so it can be taken back.
 create function public.pay_debt_month(p_item_id uuid) returns uuid
 language plpgsql set search_path = '' as $$
 declare
-  v_debt public.debt_details%rowtype;
-  v_due  date;
-  v_id   uuid;
+  v_debt   public.debt_details%rowtype;
+  v_due    date;
+  v_month  date;
+  v_paid   numeric;
+  v_month_paid numeric;
+  v_amount numeric;
+  v_id     uuid;
 begin
   select d.* into v_debt from public.debt_details d where d.item_id = p_item_id;
   select due_date into v_due from public.items where id = p_item_id;
   if v_debt.monthly_amount is null or v_due is null then
     raise exception 'no monthly payment is due';
   end if;
+  v_month := date_trunc('month', v_due)::date;
+  select coalesce(sum(amount), 0),
+         coalesce(sum(amount) filter (where for_month = v_month), 0)
+    into v_paid, v_month_paid
+  from public.debt_payments where item_id = p_item_id;
+  v_amount := least(v_debt.monthly_amount - v_month_paid,
+                    coalesce(v_debt.repay_total, v_debt.amount) - v_paid);
+  if v_amount <= 0 then
+    raise exception 'nothing is due this month';
+  end if;
   insert into public.debt_payments (item_id, amount, for_month)
-  values (p_item_id, v_debt.monthly_amount, date_trunc('month', v_due)::date)
+  values (p_item_id, v_amount, v_month)
+  returning id into v_id;
+  return v_id;
+end $$;
+
+-- Lets the month now due go without paying: the plan moves on, and nothing is lowered.
+create function public.skip_debt_month(p_item_id uuid) returns uuid
+language plpgsql set search_path = '' as $$
+declare
+  v_due date;
+  v_id  uuid;
+begin
+  select i.due_date into v_due
+  from public.items i join public.debt_details d on d.item_id = i.id
+  where i.id = p_item_id and d.monthly_amount is not null;
+  if v_due is null then
+    raise exception 'no monthly payment is due';
+  end if;
+  insert into public.debt_payments (item_id, amount, for_month, skipped)
+  values (p_item_id, 0, date_trunc('month', v_due)::date, true)
   returning id into v_id;
   return v_id;
 end $$;
 
 grant execute on function public.pay_debt_month(uuid) to authenticated;
+grant execute on function public.skip_debt_month(uuid) to authenticated;
 revoke all on function public.sync_debt_due(uuid) from public, anon, authenticated;
 
 -- ---------- The summaries count a debt on the day of its payment -----

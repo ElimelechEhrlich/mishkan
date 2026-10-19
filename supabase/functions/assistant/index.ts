@@ -204,13 +204,18 @@ const tools = [
   {
     name: 'pay_debt',
     description:
-      "Records a payment of a debt (find its id with list_items, kind debt): an amount paid, or, for a debt with a monthly plan, this month's payment (month true). What is left is worked out from the payments.",
+      "Records a payment of a debt (find its id with list_items, kind debt): an amount paid, or, for a debt with a monthly plan, what the month now due still needs (month true), or letting that month go without paying (skip true, lowers nothing). An amount paid toward the month now due counts for it (toward_month true). Only payments lower what is left.",
     parameters: {
       type: 'OBJECT',
       properties: {
         item_id: { type: 'STRING' },
         amount: { type: 'NUMBER', description: 'In shekels; not needed with month.' },
-        month: { type: 'BOOLEAN', description: "This month's payment of the plan." },
+        month: { type: 'BOOLEAN', description: 'What the month now due still needs.' },
+        skip: { type: 'BOOLEAN', description: 'Let the month now due go without paying.' },
+        toward_month: {
+          type: 'BOOLEAN',
+          description: 'The amount is for the month now due of the plan.',
+        },
         date: { type: 'STRING', description: 'YYYY-MM-DD; today if not given.' },
         note: { type: 'STRING' },
       },
@@ -479,7 +484,7 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
   if (debtIds.length > 0) {
     const { data: details } = await db
       .from('debt_details')
-      .select('item_id, amount, direction, important, monthly_amount, monthly_day')
+      .select('item_id, amount, repay_total, direction, important, monthly_amount, monthly_day')
       .in('item_id', debtIds);
     const { data: paidRows } = await db
       .from('debt_paid')
@@ -490,11 +495,13 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
     );
     for (const detail of (details ?? []) as Row[]) {
       const amount = Number(detail.amount);
-      const left = Math.max(0, amount - (paid.get(String(detail.item_id)) ?? 0));
+      const owed = detail.repay_total === null ? amount : Number(detail.repay_total);
+      const left = Math.max(0, owed - (paid.get(String(detail.item_id)) ?? 0));
       debts.set(
         String(detail.item_id),
         [
-          `${String(left)} ₪ left of ${String(amount)} ₪`,
+          `${String(left)} ₪ left of ${String(owed)} ₪`,
+          owed > amount ? `with ${String(owed - amount)} ₪ interest` : '',
           detail.direction === 'we_owe' ? 'we owe them' : 'they owe us',
           detail.important === true ? 'important' : 'can wait',
           detail.monthly_amount === null
@@ -1052,6 +1059,10 @@ async function payDebt(db: SupabaseClient, input: Row): Promise<string> {
   if (itemId === null) {
     return 'error: which debt?';
   }
+  if (input.skip === true) {
+    const { error } = await db.rpc('skip_debt_month', { p_item_id: itemId });
+    return error === null ? 'month skipped, nothing lowered' : `error: ${error.message}`;
+  }
   if (input.month === true) {
     const { error } = await db.rpc('pay_debt_month', { p_item_id: itemId });
     return error === null ? 'paid this month' : `error: ${error.message}`;
@@ -1060,11 +1071,18 @@ async function payDebt(db: SupabaseClient, input: Row): Promise<string> {
   if (!Number.isFinite(amount) || amount <= 0) {
     return 'error: how much was paid?';
   }
+  let forMonth: string | null = null;
+  if (input.toward_month === true) {
+    const { data: due } = await db.from('items').select('due_date').eq('id', itemId).single();
+    const dueDate = text((due as Row | null)?.due_date);
+    forMonth = dueDate === null ? null : `${dueDate.slice(0, 8)}01`;
+  }
   const { error } = await db.from('debt_payments').insert({
     item_id: itemId,
     amount,
     paid_on: text(input.date) ?? localDate(),
     note: text(input.note),
+    for_month: forMonth,
   });
   return error === null ? `paid ${String(amount)} ₪` : `error: ${error.message}`;
 }
@@ -1200,7 +1218,7 @@ Advising which kind of item to open is a main part of your job. When the parent 
 • פתק (note): information to keep, text with optional rows (a line of text, or a name and a value). A recipe, a list of sizes, instructions.
 • נתון (value): one name and one value, shown right in the lists with a copy button: "קוד השער: 4512", "מספר תעודת זהות", "מספר פוליסה". Several separate facts, each looked up on its own, are best as several values; facts that belong together (all the car's details) are best as one note with rows.
 • מעקב (tracker): something recorded again and again over time, each entry a date, a value and a note, with a summary: the running total ("סכום מצטבר", expenses of a renovation) or the latest value ("ערך אחרון", weight, height). It can repeat (weigh every week), and can sit inside an issue.
-• חוב (debt): who owes whom and how much, important ("חשוב") or one that can wait ("יכול לחכות"). Payments are recorded on it, in parts, and what is left is shown; a monthly plan ("הסדר תשלומים", set on its page) puts it on its payment day each month, and paying marks that month. It is closed once paid.
+• חוב (debt): who owes whom and how much, important ("חשוב") or one that can wait ("יכול לחכות"). Payments are recorded on it, in parts, and what is left is shown; a monthly plan ("הסדר תשלומים", set on its page, by a sum each month or a number of payments, with interest if there is) puts it on its payment day each month, and paying marks that month (the last payment only what is left). A month can be skipped, which lowers nothing; only payments lower what is left. It is closed once paid.
 • פריט חסר (shopping): something to buy, on the shared list; the usual is the supermarket ("סופר"), sorted by its departments.
 Choosing the kind when the parent asks to add something: take it from their words when it is clear ("תזכיר לי", "צריך ל..." is a task; a meeting or a class at a set hour is an appointment; "הקוד של", "מספר ה..." with one value is a value; "חייב לנו" is a debt; "לקנות" is shopping; something to work out with questions is an issue; a project in stages is a goal; something weighed or spent again and again is a tracker). When two kinds could fit and the difference matters (a value or a note, a task or a goal, a task or an appointment), do not guess: ask one short question that offers the two, in a sentence, and say what each would give them. Every time you add something, name the kind you chose in your answer ("פתחתי נתון...", "רשמתי חוב..."), so a wrong choice is seen at once; it can be converted in the app. For anything with a time, say its time too, as the tool result gives it: "דחוף", "ללא מועד", or the day and hour ("משימה 'להתקשר לחשמלאי', דחוף"). A task or a goal with no date is added as urgent unless the parent says there is no rush; then give no_date. A step with no date follows its goal.
 Every item belongs to an entity (the home, the couple, each parent, each child, "אישי" that only its owner sees, family and friends) and a domain in it (health, education, events...). Something not yet fully placed waits in "להשלמה".
