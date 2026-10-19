@@ -212,3 +212,9 @@ export function dayChip(isoDate: string): { readonly weekday: string; readonly d
     day: String(Number(isoDate.slice(8, 10))),
   };
 }
+
+/** The days of this week, Sunday to Saturday, as the strip of days shows them. */
+export function thisWeek(today: string): string[] {
+  const weekday = new Date(`${today}T12:00:00`).getDay();
+  return Array.from({ length: 7 }, (_, index) => addDays(today, index - weekday));
+}

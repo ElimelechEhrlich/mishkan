@@ -3,20 +3,25 @@ import { labels } from '../../constants/labels';
 import { dayChip } from '../../lib/todayBrief';
 
 type DayStripProps = {
-  /** Today and the six days after it, each with how many things it holds. */
-  readonly days: readonly { readonly date: string; readonly count: number }[];
+  /** This week's days, Sunday to Saturday, each with how many things it holds; the days
+   * already gone are shown, faint, and cannot be chosen. */
+  readonly days: readonly {
+    readonly date: string;
+    readonly count: number;
+    readonly past: boolean;
+  }[];
   readonly selected: string;
   readonly onSelect: (date: string) => void;
 };
 
 /**
- * The coming week as a row of days, like a calendar's: the chosen one filled, a dot for each
+ * This week as a row of days, Sunday to Saturday, like a calendar's: the chosen one filled, a dot for each
  * day that holds something (up to three). A tap shows that day below.
  */
 export function DayStrip({ days, selected, onSelect }: DayStripProps): ReactElement {
   return (
     <div role="tablist" aria-label={labels.today.days} className="flex justify-between gap-1">
-      {days.map(({ date, count }) => {
+      {days.map(({ date, count, past }) => {
         const chip = dayChip(date);
         const chosen = date === selected;
         return (
@@ -25,11 +30,16 @@ export function DayStrip({ days, selected, onSelect }: DayStripProps): ReactElem
             type="button"
             role="tab"
             aria-selected={chosen}
+            disabled={past}
             onClick={() => {
               onSelect(date);
             }}
             className={`flex w-10 flex-col items-center gap-0.5 rounded-2xl py-1.5 transition active:scale-95 ${
-              chosen ? 'bg-primary text-white shadow-card' : 'bg-surface/70 text-ink'
+              chosen
+                ? 'bg-primary text-white shadow-card'
+                : past
+                  ? 'bg-surface/30 text-faint'
+                  : 'bg-surface/70 text-ink'
             }`}
           >
             <span className={`text-[11px] font-medium ${chosen ? 'text-white/80' : 'text-muted'}`}>

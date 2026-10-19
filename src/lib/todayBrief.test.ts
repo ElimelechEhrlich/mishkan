@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { agendaOf, timelineOf } from './itemRules';
-import { dayPartOf, firstFocus, focusGroups, nextUp, waitingOnYou, weekAhead } from './todayBrief';
+import {
+  dayPartOf,
+  thisWeek,
+  firstFocus,
+  focusGroups,
+  nextUp,
+  waitingOnYou,
+  weekAhead,
+} from './todayBrief';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-14';
@@ -159,5 +167,20 @@ describe('the groups of the first page', () => {
     expect(groups.overdue.map((row) => row.item.id)).toEqual(['l']);
     expect(groups.today).toEqual([]);
     expect(firstFocus(groups)).toBe('urgent');
+  });
+});
+
+describe('this week', () => {
+  it('runs from Sunday to Saturday around today', () => {
+    // 2026-10-14 is a Wednesday.
+    expect(thisWeek(today)).toEqual([
+      '2026-10-11',
+      '2026-10-12',
+      '2026-10-13',
+      '2026-10-14',
+      '2026-10-15',
+      '2026-10-16',
+      '2026-10-17',
+    ]);
   });
 });

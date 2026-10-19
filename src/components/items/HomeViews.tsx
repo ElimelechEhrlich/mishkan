@@ -4,6 +4,7 @@ import { labels } from '../../constants/labels';
 import { todayIso } from '../../lib/itemRules';
 import type { Timeline } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
+import { thisWeek } from '../../lib/todayBrief';
 import type { FocusGroup, FocusRow, NextUp, WaitingOnYou, WeekDay } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
 import { Icon } from '../ui/Icon';
@@ -83,10 +84,14 @@ export function HomeViews({
     <>
       <TodayHero greeting={greeting} name={name} date={date} hebrewDate={hebrewDate} next={next}>
         <DayStrip
-          days={[
-            { date: today, count: groups.today.length + groups.urgent.length },
-            ...week.map((entry) => ({ date: entry.date, count: entry.things.length })),
-          ]}
+          days={thisWeek(today).map((date) => ({
+            date,
+            past: date < today,
+            count:
+              date === today
+                ? groups.today.length + groups.urgent.length
+                : (week.find((entry) => entry.date === date)?.things.length ?? 0),
+          }))}
           selected={chosenDay === undefined ? today : day}
           onSelect={setDay}
         />
