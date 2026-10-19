@@ -3,7 +3,6 @@ import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import type { NextUp } from '../../lib/todayBrief';
 import { Icon } from '../ui/Icon';
-import { HeroCount } from './HeroCount';
 
 type TodayHeroProps = {
   readonly greeting: string;
@@ -12,14 +11,11 @@ type TodayHeroProps = {
   readonly date: string;
   readonly hebrewDate: string;
   readonly next: NextUp | null;
-  readonly overdue: number;
-  readonly urgent: number;
-  readonly today: number;
 };
 
 /**
  * The top of the app's first page: a greeting by the hour, the day in both calendars, the next
- * thing with an hour and how long until it, and how much is late, urgent and for today.
+ * thing with an hour and how long until it.
  */
 export function TodayHero({
   greeting,
@@ -27,9 +23,6 @@ export function TodayHero({
   date,
   hebrewDate,
   next,
-  overdue,
-  urgent,
-  today,
 }: TodayHeroProps): ReactElement {
   return (
     <section className="flex flex-col gap-3.5 rounded-3xl bg-gradient-to-br from-primary-soft via-primary-soft/60 to-surface p-4 shadow-card">
@@ -66,11 +59,6 @@ export function TodayHero({
           <Icon name="forward" className="size-4 shrink-0 text-faint" />
         </Link>
       )}
-      <div className="flex gap-2">
-        <HeroCount value={overdue} label={labels.summary.overdue} alert />
-        <HeroCount value={urgent} label={labels.summary.urgent} alert />
-        <HeroCount value={today} label={labels.summary.today} />
-      </div>
     </section>
   );
 }

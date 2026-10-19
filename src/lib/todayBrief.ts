@@ -46,7 +46,8 @@ export type WeekDay = {
   readonly things: readonly WeekThing[];
 };
 
-function hourOf(item: Item): string | null {
+/** An item's hour today: an appointment's start, or its own hour. */
+export function hourOf(item: Item): string | null {
   if (item.kind === 'appointment' && item.starts_at !== null) {
     return formatClock(item.starts_at);
   }
@@ -144,4 +145,60 @@ export function nextUp(agenda: Agenda, now: Date): NextUp | null {
     }
   }
   return best;
+}
+
+/** One short line on the first page: an item, and the goal or issue it is a step of. */
+export type FocusRow = {
+  readonly item: Item;
+  readonly parentTitle: string | null;
+};
+
+/**
+ * A group of today's page as short lines: a step under its goal's name rather than inside it,
+ * and a goal or issue on its own only when no step of it is listed.
+ */
+export function focusRows(entries: readonly ListEntry[]): FocusRow[] {
+  return entries.flatMap((entry): FocusRow[] => {
+    const shown = entry.shown ?? [];
+    if (
+      shown.length > 0 &&
+      (entry.heading === true || entry.item.kind === 'goal' || entry.item.kind === 'issue')
+    ) {
+      return shown.map((step) => ({ item: step, parentTitle: entry.item.title }));
+    }
+    if (entry.heading === true) {
+      return [];
+    }
+    return [{ item: entry.item, parentTitle: entry.parent?.title ?? null }];
+  });
+}
+
+/** The groups the first page chooses between. */
+export type FocusGroup = 'overdue' | 'urgent' | 'today';
+
+/** Each group's rows: late (and appointments to ask about), urgent, and today's. */
+export function focusGroups(agenda: Agenda): Record<FocusGroup, FocusRow[]> {
+  return {
+    overdue: focusRows([...agenda.overdue, ...agenda.passed]),
+    urgent: focusRows(agenda.urgent),
+    today: focusRows([...agenda.today, ...agenda.ended]),
+  };
+}
+
+/** The group shown first: today's, or else the first that holds anything. */
+export function firstFocus(groups: Record<FocusGroup, readonly FocusRow[]>): FocusGroup {
+  const order: readonly FocusGroup[] = ['today', 'urgent', 'overdue'];
+  return order.find((group) => groups[group].length > 0) ?? 'today';
+}
+
+/** What a short line shows at its end: its hour, or for what is late the day it was due. */
+export function focusMeta(item: Item, group: FocusGroup): string | null {
+  const hour = hourOf(item);
+  if (hour !== null) {
+    return hour;
+  }
+  if (group === 'overdue' && item.due_date !== null) {
+    return `${String(Number(item.due_date.slice(8, 10)))}.${String(Number(item.due_date.slice(5, 7)))}`;
+  }
+  return null;
 }

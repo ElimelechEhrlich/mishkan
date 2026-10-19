@@ -38,18 +38,14 @@ export function TodayPage(): ReactElement {
         date={formatToday()}
         hebrewDate={formatHebrewDate(todayIso(), true)}
         next={brief.next}
-        overdue={items.agenda.overdue.length}
-        urgent={items.agenda.urgent.length}
-        today={items.agenda.today.length}
       />
       <TodayViews
-        agenda={items.agenda}
+        groups={brief.groups}
         timeline={timeline}
         lookups={lookups}
         loading={items.loading}
         onComplete={items.completeItem}
         waiting={brief.waiting}
-        items={items.items}
         incompleteCount={items.incompleteCount}
         week={brief.week}
       />

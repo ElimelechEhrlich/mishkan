@@ -249,16 +249,9 @@ export const labels = {
   },
   today: {
     empty: 'אין היום דברים פתוחים, וגם לא באיחור',
-    views: { today: 'היום', all: 'כל פריטי הזמן' },
     emptyAll: 'אין פריטים עם זמן',
     tomorrow: 'מחר',
     waiting: 'מחכה לך',
-    questionOf: (issue: string): string => `שאלה ב${issue}`,
-    reached: 'כל הצעדים בוצעו. הגעתם ליעד?',
-    incomplete: (count: number): string =>
-      count === 1 ? 'פריט אחד להשלמה' : `${String(count)} פריטים להשלמה`,
-    moreQuestions: (count: number): string =>
-      count === 1 ? 'ועוד שאלה אחת' : `ועוד ${String(count)} שאלות`,
     week: 'השבוע',
     greeting: {
       morning: 'בוקר טוב',
@@ -278,6 +271,20 @@ export const labels = {
       return hours === 1 ? 'בעוד שעה' : hours === 2 ? 'בעוד שעתיים' : `בעוד ${String(hours)} שעות`;
     },
     nothingNext: 'אין עוד משהו עם שעה היום',
+    showMore: (count: number): string => `עוד ${String(count)}`,
+    showLess: 'פחות',
+    allTimes: 'כל פריטי הזמן',
+    backToToday: 'חזרה להיום',
+    emptyGroup: {
+      overdue: 'שום דבר לא באיחור',
+      urgent: 'אין משהו דחוף',
+      today: 'אין עוד משהו להיום',
+    },
+    questions: (count: number): string =>
+      count === 1 ? 'שאלה פתוחה' : `${String(count)} שאלות פתוחות`,
+    reachedShort: (count: number): string =>
+      count === 1 ? 'יעד שהושלם?' : `${String(count)} יעדים שהושלמו?`,
+    incompleteShort: (count: number): string => `${String(count)} להשלמה`,
     free: 'פנוי',
     more: (count: number): string => `ועוד ${String(count)}`,
   },
@@ -716,7 +723,8 @@ export const labels = {
           'שלוש קבוצות: באיחור, דחוף, והיום לפי השעות',
           'למעלה "מחכה לך": שאלות בלי תשובה, יעד שכל הצעדים שלו בוצעו, ומה שיש להשלים',
           'למטה "השבוע": שורה לכל יום ממחר, עם השעות; לחיצה פותחת את הפריט',
-          'האפליקציה נפתחת כאן: ברכה, התאריך בשני הלוחות, מה הבא בתור ובעוד כמה זמן, וכמה באיחור, דחוף ולהיום',
+          'האפליקציה נפתחת כאן: ברכה, התאריך בשני הלוחות, ומה הבא בתור ובעוד כמה זמן',
+          'באיחור, דחוף, להיום: לחיצה על מספר מראה את השורות שלו, ארבע ראשונות ו"עוד" לשאר',
           'בתחתית שורה לכתוב למשכן: התשובה נפתחת מעל השורה ונסגרת ב־×, וכפתור השיחה פותח את השיחה המלאה',
           'בלי סינון של ישות או תחום, כולל משפחה וחברים',
           'צעד שהיעד שלו לא מוצג כאן מופיע לבד, עם שם היעד',

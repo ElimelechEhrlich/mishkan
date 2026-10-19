@@ -2,8 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { todayIso } from '../lib/itemRules';
 import type { Agenda, Timeline } from '../lib/itemRules';
 import type { Lookups } from '../lib/lookups';
-import { dayPartOf, nextUp, waitingOnYou, weekAhead } from '../lib/todayBrief';
-import type { DayPart, NextUp, WaitingOnYou, WeekDay } from '../lib/todayBrief';
+import { dayPartOf, focusGroups, nextUp, waitingOnYou, weekAhead } from '../lib/todayBrief';
+import type {
+  DayPart,
+  FocusGroup,
+  FocusRow,
+  NextUp,
+  WaitingOnYou,
+  WeekDay,
+} from '../lib/todayBrief';
 import type { Item } from '../types/domain';
 
 export type TodayBrief = {
@@ -13,6 +20,8 @@ export type TodayBrief = {
   readonly dayPart: DayPart;
   /** The next thing with an hour today. */
   readonly next: NextUp | null;
+  /** Late, urgent and today, as short lines. */
+  readonly groups: Record<FocusGroup, readonly FocusRow[]>;
 };
 
 /** How often the page looks at the clock again, for the greeting and the next thing. */
@@ -45,5 +54,6 @@ export function useTodayBrief(
   );
   const week = useMemo(() => weekAhead(timeline, todayIso()), [timeline]);
   const next = useMemo(() => nextUp(agenda, now), [agenda, now]);
-  return { waiting, week, dayPart: dayPartOf(now.getHours()), next };
+  const groups = useMemo(() => focusGroups(agenda), [agenda]);
+  return { waiting, week, dayPart: dayPartOf(now.getHours()), next, groups };
 }

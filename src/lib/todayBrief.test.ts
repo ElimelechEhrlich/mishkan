@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { agendaOf, timelineOf } from './itemRules';
-import { dayPartOf, nextUp, waitingOnYou, weekAhead } from './todayBrief';
+import { dayPartOf, firstFocus, focusGroups, nextUp, waitingOnYou, weekAhead } from './todayBrief';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-14';
@@ -138,5 +138,26 @@ describe('the top of today', () => {
     expect(nextUp(agenda, at(10, 30))).toMatchObject({ id: 'now', minutes: -5 });
     expect(nextUp(agenda, at(11, 0))).toMatchObject({ id: 'later', time: '16:30', minutes: 330 });
     expect(nextUp(agenda, at(17, 0))).toBeNull();
+  });
+});
+
+describe('the groups of the first page', () => {
+  it('lists steps under their goal, and opens on the first group that holds anything', () => {
+    const goal = item({
+      id: 'g',
+      kind: 'goal',
+      title: 'שיפוץ',
+      time_mode: 'anytime',
+      due_date: null,
+    });
+    const steps = [
+      item({ id: 's', title: 'צבע', parent_id: 'g', time_mode: 'urgent', due_date: null }),
+    ];
+    const late = item({ id: 'l', title: 'מאחר', due_date: '2026-10-10' });
+    const groups = focusGroups(agendaOf([goal, late], steps, today));
+    expect(groups.urgent.map((row) => [row.item.id, row.parentTitle])).toEqual([['s', 'שיפוץ']]);
+    expect(groups.overdue.map((row) => row.item.id)).toEqual(['l']);
+    expect(groups.today).toEqual([]);
+    expect(firstFocus(groups)).toBe('urgent');
   });
 });
