@@ -13,6 +13,8 @@ type AssistantChatProps = {
   /** Sends again the last message, which got no answer; null when there is none. */
   readonly onRetry: (() => void) | null;
   readonly onClear: () => void;
+  /** A photo brought from another screen, attached and waiting to be sent. */
+  readonly initialPhoto?: File | null;
 };
 
 /**
@@ -25,11 +27,19 @@ export function AssistantChat({
   onSend,
   onRetry,
   onClear,
+  initialPhoto = null,
 }: AssistantChatProps): ReactElement {
   const [draft, setDraft] = useState('');
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photo, setPhoto] = useState<File | null>(initialPhoto);
   const [preview, setPreview] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+
+  // A photo brought from another screen arrives once the conversation is open.
+  useEffect(() => {
+    if (initialPhoto !== null) {
+      setPhoto(initialPhoto);
+    }
+  }, [initialPhoto]);
 
   // A small picture of the attached photo, let go once it is sent or removed.
   useEffect(() => {

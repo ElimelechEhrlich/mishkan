@@ -46,6 +46,8 @@ type QuickAddSheetProps = {
   readonly entityId?: string | undefined;
   /** Opens on this domain; a shopping domain opens as a missing item for its entity. */
   readonly initialDomainId?: string | undefined;
+  /** Its button stands higher, above a line fixed at the bottom of the screen. */
+  readonly raised?: boolean;
 };
 
 const noteKinds = [
@@ -87,6 +89,7 @@ export function QuickAddSheet({
   initiallyOpen = false,
   entityId,
   initialDomainId,
+  raised = false,
 }: QuickAddSheetProps): ReactElement {
   const initialIsShopping = entities.some((entity) =>
     entity.domains.some((domain) => domain.id === initialDomainId && domain.role === 'shopping'),
@@ -278,7 +281,7 @@ export function QuickAddSheet({
           setPickedEntityId(entityId ?? null);
           setOpen(true);
         }}
-        className="fixed end-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 flex size-14 items-center justify-center rounded-2xl bg-primary text-white shadow-float transition active:scale-95"
+        className={`fixed end-4 ${raised ? 'bottom-[calc(8.5rem+env(safe-area-inset-bottom))]' : 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))]'} z-10 flex size-14 items-center justify-center rounded-2xl bg-primary text-white shadow-float transition active:scale-95`}
       >
         <Icon name="plus" className="size-7" />
       </button>

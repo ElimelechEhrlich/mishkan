@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { ChatBar } from '../components/capture/ChatBar';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { TodayViews } from '../components/items/TodayViews';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
@@ -28,6 +29,7 @@ export function TodayPage(): ReactElement {
       subtitle={formatToday()}
       incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
+      bottomBar={<ChatBar />}
     >
       <ErrorBanner message={items.error ?? entities.error} />
       <p className="-mt-2 text-[13px] font-medium text-muted">
@@ -51,6 +53,7 @@ export function TodayPage(): ReactElement {
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
         onAddAppointments={items.addAppointments}
+        raised
       />
     </PageShell>
   );

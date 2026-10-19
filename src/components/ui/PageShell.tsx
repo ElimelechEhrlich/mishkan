@@ -29,6 +29,9 @@ type PageShellProps = {
   readonly hideNav?: boolean;
   /** When given, a button in the header goes straight back to everything, once it is away. */
   readonly toEverything?: EverythingShortcut | undefined;
+  /** A line fixed above the bottom tabs, such as one to write to the assistant; it takes the
+   * place of the floating conversation button. */
+  readonly bottomBar?: ReactNode;
 };
 
 /** The red count on a header link, such as what waits for today. */
@@ -49,6 +52,7 @@ export function PageShell({
   heading,
   hideNav = false,
   toEverything,
+  bottomBar,
 }: PageShellProps): ReactElement {
   const navigate = useNavigate();
   // Once the entity's picture sits in the header there is less room: the title takes its
@@ -142,12 +146,19 @@ export function PageShell({
         )}
       </header>
       <main
-        className={`flex flex-1 animate-fade-in flex-col gap-3 px-4 pt-1 ${hideNav ? 'pb-8' : 'pb-40'}`}
+        className={`flex flex-1 animate-fade-in flex-col gap-3 px-4 pt-1 ${
+          hideNav ? 'pb-8' : bottomBar === undefined ? 'pb-40' : 'pb-56'
+        }`}
       >
         {children}
       </main>
       {/* The conversation floats on its own above the add button, apart from the header's icons. */}
-      {!inner && !hideNav && (
+      {bottomBar !== undefined && !hideNav && (
+        <div className="fixed inset-x-0 bottom-[calc(3.85rem+env(safe-area-inset-bottom))] z-10 mx-auto max-w-xl bg-paper/90 px-4 py-2 backdrop-blur-md">
+          {bottomBar}
+        </div>
+      )}
+      {!inner && !hideNav && bottomBar === undefined && (
         <Link
           to="/assistant"
           aria-label={labels.assistant.open}
