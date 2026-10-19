@@ -161,7 +161,9 @@ export function hasOwnTime(item: Item): boolean {
     item.kind === 'goal' ||
     item.kind === 'appointment' ||
     // A tracker or a missing item has a time only while it repeats.
-    ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring')
+    ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring') ||
+    // A debt has one while a monthly plan runs: the day of its next payment.
+    (item.kind === 'debt' && item.due_date !== null)
   );
 }
 
@@ -169,6 +171,10 @@ export function hasOwnTime(item: Item): boolean {
 export function segmentOf(item: Item): OpenSegment | null {
   // A repeating tracker or missing item is listed by its occurrences, like a task.
   if ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring') {
+    return 'active';
+  }
+  // A debt with a monthly plan stands on the day of its next payment.
+  if (item.kind === 'debt' && item.due_date !== null) {
     return 'active';
   }
   if (
@@ -674,7 +680,9 @@ function runsOnTime(item: Item): boolean {
     item.kind === 'task' ||
     item.kind === 'goal' ||
     // A repeating tracker or missing item shows on the days of its occurrences.
-    ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring')
+    ((item.kind === 'tracker' || item.kind === 'missing_item') && item.time_mode === 'recurring') ||
+    // A debt with a monthly plan, on the day of its next payment.
+    (item.kind === 'debt' && item.due_date !== null)
   );
 }
 

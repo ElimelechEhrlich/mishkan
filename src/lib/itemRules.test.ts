@@ -424,3 +424,12 @@ describe('an urgent goal', () => {
     expect(agenda.urgent[0]?.shown).toEqual([]);
   });
 });
+
+describe('a debt with a monthly plan', () => {
+  it('stands on the day of its next payment, and a debt with no plan does not', () => {
+    const planned = item({ id: 'd1', kind: 'debt', time_mode: 'scheduled', due_date: today });
+    const plain = item({ id: 'd2', kind: 'debt', time_mode: null, due_date: null });
+    const agenda = agendaOf([planned, plain], [], today);
+    expect(agenda.today.map((entry) => entry.item.id)).toEqual(['d1']);
+  });
+});

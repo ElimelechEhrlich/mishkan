@@ -734,6 +734,30 @@ const occurrence_counts = Object.values(
     return counts;
   }, {}),
 );
+// Debts: one important with a monthly plan and payments, two that can wait, one owed to us.
+const debtRows = [];
+const debtPayments = [];
+const debt = (title, amount, direction, extra = {}, itemExtra = {}) => {
+  const it = item({ title, kind: 'debt', domain_id: dom('הבית', 'כספים וחובות'), time_mode: null, due_date: null, ...itemExtra });
+  debtRows.push({ item_id: it.id, amount, counterparty: title, direction, important: false, monthly_amount: null, monthly_day: null, plan_starts: null, ...extra });
+  return it;
+};
+const bank = debt('הלוואה מהבנק', 12000, 'we_owe', { important: true, monthly_amount: 1000, monthly_day: 10, plan_starts: day(-70) }, { time_mode: 'scheduled', due_date: day(0) });
+debt('דני – ארוחה', 150, 'we_owe');
+const moshe = debt('משה – מקדחה', 400, 'we_owe');
+debt('יוסי השכן', 250, 'owed_to_us', { important: true });
+const monthOf = (d) => `${d.slice(0, 8)}01`;
+debtPayments.push(
+  { id: 'p1', item_id: bank.id, household_id: H, amount: 1000, paid_on: day(-70), for_month: monthOf(day(-70)), note: null, created_by: null, created_at: now },
+  { id: 'p2', item_id: bank.id, household_id: H, amount: 1000, paid_on: day(-40), for_month: monthOf(day(-40)), note: null, created_by: null, created_at: now },
+  { id: 'p3', item_id: moshe.id, household_id: H, amount: 100, paid_on: day(-5), for_month: null, note: 'מזומן', created_by: null, created_at: now },
+);
+const debt_paid = Object.values(debtPayments.reduce((sum, p) => {
+  const row = (sum[p.item_id] ??= { item_id: p.item_id, paid: 0 });
+  row.paid += p.amount;
+  return sum;
+}, {}));
+
 module.exports = {
   tables: {
     item_repeats,
@@ -756,7 +780,9 @@ module.exports = {
     items,
     entity_lists,
     entity_list_values,
-    debt_details: [],
+    debt_details: debtRows,
+    debt_payments: debtPayments,
+    debt_paid,
     prerequisites: [],
     attachments: [],
     completions: [],

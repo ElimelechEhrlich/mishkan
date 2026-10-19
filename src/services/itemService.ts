@@ -1,5 +1,6 @@
 import { appointmentRhythm, fromLocalDateTime, seriesStarts } from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
+import { payDebtMonth, removeDebtPayment } from './debtPaymentService';
 import { allPages, inGroups } from './pages';
 import { closeItem, listOccurrences, markOccurrence, unmarkOccurrence } from './repeatService';
 import type {
@@ -265,6 +266,10 @@ const repeatingKinds: ReadonlySet<Item['kind']> = new Set([
  * whose occurrences have run out is closed. Returns the occurrence marked, to take it back.
  */
 export async function completeItem(item: Item): Promise<string | null> {
+  // A debt on the day of its monthly payment: ticking it records that month's payment.
+  if (item.kind === 'debt' && item.due_date !== null) {
+    return payDebtMonth(item.id);
+  }
   if (item.time_mode === 'recurring' && repeatingKinds.has(item.kind)) {
     if (item.due_date !== null) {
       return markOccurrence(item.id, 'done');
@@ -281,6 +286,11 @@ export async function completeItem(item: Item): Promise<string | null> {
  * anything else is open again.
  */
 export async function undoComplete(item: Item, occurrenceId: string | null): Promise<void> {
+  // For a debt's monthly payment, the id is the payment's.
+  if (item.kind === 'debt' && occurrenceId !== null) {
+    await removeDebtPayment(occurrenceId);
+    return;
+  }
   if (occurrenceId !== null) {
     await unmarkOccurrence(occurrenceId);
     return;

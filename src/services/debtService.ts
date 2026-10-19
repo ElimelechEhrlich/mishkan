@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { allPages } from './pages';
-import type { DebtDetails, DebtDirection, NewDebt } from '../types/domain';
+import type { DebtChanges, DebtDetails, NewDebt } from '../types/domain';
 import { deleteItem } from './itemService';
 
 export async function listDebtDetails(): Promise<DebtDetails[]> {
@@ -40,11 +40,8 @@ export async function createDebt(newDebt: NewDebt): Promise<void> {
   }
 }
 
-/** Changes how much a debt is, or which way it goes. */
-export async function updateDebtDetails(
-  itemId: string,
-  changes: { readonly amount?: number; readonly direction?: DebtDirection },
-): Promise<void> {
+/** Changes a debt's details. */
+export async function updateDebtDetails(itemId: string, changes: DebtChanges): Promise<void> {
   const { error } = await supabase.from('debt_details').update(changes).eq('item_id', itemId);
   if (error !== null) {
     throw new Error(error.message);

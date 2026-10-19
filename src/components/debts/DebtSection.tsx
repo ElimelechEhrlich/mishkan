@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
+import { remainingOf } from '../../lib/debts';
 import { formatMoney } from '../../lib/format';
 import type { Debt, Item } from '../../types/domain';
 import { DebtRow } from './DebtRow';
@@ -11,7 +12,7 @@ type DebtSectionProps = {
   readonly onClose: (item: Item) => void;
 };
 
-/** The open debts in one direction, with their total. */
+/** A group of open debts (important, or those that can wait), with what is left of them. */
 export function DebtSection({
   title,
   debts,
@@ -21,7 +22,7 @@ export function DebtSection({
   if (debts.length === 0) {
     return null;
   }
-  const total = debts.reduce((sum, debt) => sum + debt.details.amount, 0);
+  const total = debts.reduce((sum, debt) => sum + remainingOf(debt.details, debt.paid), 0);
 
   return (
     <section className="flex flex-col gap-1.5">

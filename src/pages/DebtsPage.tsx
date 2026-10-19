@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { DebtSection } from '../components/debts/DebtSection';
-import { DebtSummary } from '../components/debts/DebtSummary';
+import { DebtTabs } from '../components/debts/DebtTabs';
 import { ScopeBar } from '../components/entities/ScopeBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
@@ -20,7 +20,8 @@ export function DebtsPage(): ReactElement {
   const items = useItems();
   const scoped = useScopedItems(items, entities.entities);
   const debts = useDebts(scoped.items);
-  const isEmpty = debts.owedToUs.length === 0 && debts.weOwe.length === 0;
+  const shown = debts.direction === 'we_owe' ? debts.weOwe : debts.owedToUs;
+  const tone = debts.direction === 'we_owe' ? 'alert' : 'primary';
   const toEverything = useEverythingShortcut(entities.entities);
 
   return (
@@ -37,20 +38,20 @@ export function DebtsPage(): ReactElement {
         scopeId={scopeId}
         onChange={setScope}
       />
-      <DebtSummary owedToUs={debts.owedToUs} weOwe={debts.weOwe} />
+      <DebtTabs totals={debts.totals} selected={debts.direction} onSelect={debts.setDirection} />
       <DebtSection
-        title={labels.debtDirection.owed_to_us}
-        debts={debts.owedToUs}
-        tone="primary"
+        title={labels.debts.important}
+        debts={shown.filter((debt) => debt.details.important)}
+        tone={tone}
         onClose={items.completeItem}
       />
       <DebtSection
-        title={labels.debtDirection.we_owe}
-        debts={debts.weOwe}
-        tone="alert"
+        title={labels.debts.canWait}
+        debts={shown.filter((debt) => !debt.details.important)}
+        tone={tone}
         onClose={items.completeItem}
       />
-      {isEmpty && !items.loading && <EmptyState text={labels.status.noDebts} />}
+      {shown.length === 0 && !items.loading && <EmptyState text={labels.debts.noneHere} />}
       <QuickAddSheet
         entities={entities.entities}
         onStructureChanged={entities.reload}

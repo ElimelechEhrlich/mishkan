@@ -11,7 +11,7 @@ import type {
   Conversion,
   ConvertibleKind,
   DebtDetails,
-  DebtDirection,
+  DebtChanges,
   EntityWithDomains,
   Item,
   ItemData,
@@ -31,6 +31,7 @@ import { Card } from '../ui/Card';
 import { CopyButton } from '../ui/CopyButton';
 import { InlineEdit } from '../ui/InlineEdit';
 import { DebtCard } from '../debts/DebtCard';
+import { DebtPayments } from '../debts/DebtPayments';
 import { Chip } from '../ui/Chip';
 import { InlineAddChip } from '../ui/InlineAddChip';
 import { ConfirmChip } from '../ui/ConfirmChip';
@@ -88,10 +89,7 @@ type ItemEditorProps = {
   readonly entities: readonly EntityWithDomains[];
   readonly lookups: Lookups;
   readonly onUpdate: (itemId: string, changes: ItemUpdate) => void;
-  readonly onUpdateDebt: (
-    itemId: string,
-    changes: { amount?: number; direction?: DebtDirection },
-  ) => void;
+  readonly onUpdateDebt: (itemId: string, changes: DebtChanges) => void;
   /** The parents a reminder can go to. */
   readonly reminderPeople: readonly ReminderPerson[];
   readonly reminders: readonly ItemReminder[];
@@ -367,7 +365,11 @@ export function ItemEditor({
         item={item}
         onUpdate={onUpdate}
         check={
-          item.kind !== 'note' && item.kind !== 'tracker' && !isQuestion
+          // A debt with a monthly plan is paid month by month in its card, and closed there.
+          item.kind !== 'note' &&
+          item.kind !== 'tracker' &&
+          !isQuestion &&
+          !(item.kind === 'debt' && item.due_date !== null)
             ? {
                 checked: done,
                 label:
@@ -739,6 +741,18 @@ export function ItemEditor({
           debt={debt}
           onChange={(changes) => {
             onUpdateDebt(item.id, changes);
+          }}
+        />
+      )}
+      {debt !== null && item.kind === 'debt' && (
+        <DebtPayments
+          item={item}
+          debt={debt}
+          onChange={(changes) => {
+            onUpdateDebt(item.id, changes);
+          }}
+          onClose={() => {
+            onComplete(item);
           }}
         />
       )}

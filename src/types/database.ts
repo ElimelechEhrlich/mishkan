@@ -593,20 +593,67 @@ export type Database = {
       debt_details: {
         Row: {
           item_id: string;
+          /** The whole amount; what is left is this less what was paid. */
           amount: number;
           counterparty: string;
           direction: DebtDirection;
+          /** Important ("חשוב"); otherwise it can wait ("יכול לחכות"). */
+          important: boolean;
+          /** A monthly plan: the sum due each month, on a day of the month (1 to 28). */
+          monthly_amount: number | null;
+          monthly_day: number | null;
+          /** The plan's first payment day. */
+          plan_starts: string | null;
         };
         Insert: {
           item_id: string;
           amount: number;
           counterparty: string;
           direction: DebtDirection;
+          important?: boolean;
+          monthly_amount?: number | null;
+          monthly_day?: number | null;
+          plan_starts?: string | null;
         };
         Update: {
           amount?: number;
           counterparty?: string;
           direction?: DebtDirection;
+          important?: boolean;
+          monthly_amount?: number | null;
+          monthly_day?: number | null;
+          plan_starts?: string | null;
+        };
+        Relationships: [];
+      };
+      debt_payments: {
+        Row: {
+          id: string;
+          item_id: string;
+          household_id: string;
+          amount: number;
+          paid_on: string;
+          /** The month of the plan it pays (its first day); null outside the plan. */
+          for_month: string | null;
+          note: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          household_id?: string;
+          amount: number;
+          paid_on?: string;
+          for_month?: string | null;
+          note?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          amount?: number;
+          paid_on?: string;
+          note?: string | null;
         };
         Relationships: [];
       };
@@ -727,6 +774,14 @@ export type Database = {
       };
     };
     Views: {
+      debt_paid: {
+        Row: {
+          item_id: string;
+          /** How much was paid of the debt. */
+          paid: number;
+        };
+        Relationships: [];
+      };
       occurrence_counts: {
         Row: {
           item_id: string;
@@ -771,6 +826,11 @@ export type Database = {
       sync_occasion: {
         Args: { p_prefix: string; p_title: string; p_domain_id: string | null; p_dates: string[] };
         Returns: undefined;
+      };
+      pay_debt_month: {
+        Args: { p_item_id: string };
+        /** The payment's id. */
+        Returns: string;
       };
       move_occurrence: {
         Args: { p_item_id: string; p_date: string; p_time: string | null };

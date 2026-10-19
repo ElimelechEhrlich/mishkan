@@ -237,7 +237,17 @@ export type ShoppingRun = {
 export type Debt = {
   readonly item: Item;
   readonly details: DebtDetails;
+  /** How much of it was paid. */
+  readonly paid: number;
 };
+
+export type DebtPayment = Tables['debt_payments']['Row'];
+
+/** What a debt's page changes: how much, which way, whether important, and its monthly plan. */
+export type DebtChanges = Pick<
+  Database['public']['Tables']['debt_details']['Update'],
+  'amount' | 'direction' | 'important' | 'monthly_amount' | 'monthly_day' | 'plan_starts'
+>;
 
 export type AttachmentWithUrl = Attachment & { readonly url: string | null };
 
