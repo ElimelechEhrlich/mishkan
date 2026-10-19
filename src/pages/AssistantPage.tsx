@@ -5,14 +5,11 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { useAssistant } from '../hooks/useAssistant';
-import { useChatHandoff } from '../hooks/useChatHandoff';
 import { useItems } from '../hooks/useItems';
 
 export function AssistantPage(): ReactElement {
   const items = useItems();
   const assistant = useAssistant();
-  // A message or a photo written on another screen's chat line.
-  const handedPhoto = useChatHandoff(assistant.loaded, assistant.send);
 
   return (
     <PageShell
@@ -30,7 +27,6 @@ export function AssistantPage(): ReactElement {
           onSend={assistant.send}
           onRetry={assistant.retry}
           onClear={assistant.clear}
-          initialPhoto={handedPhoto}
         />
       ) : (
         <EmptyState text={labels.status.loading} />

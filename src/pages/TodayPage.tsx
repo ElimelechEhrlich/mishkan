@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { ChatBar } from '../components/capture/ChatBar';
 import { QuickAddSheet } from '../components/capture/QuickAddSheet';
+import { TodayHero } from '../components/items/TodayHero';
 import { TodayViews } from '../components/items/TodayViews';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
@@ -16,25 +17,31 @@ import { formatToday, todayIso } from '../lib/itemRules';
 
 /** Today across the whole home, like needs-completion: no entity or domain narrows it. */
 export function TodayPage(): ReactElement {
-  const { members } = useHouseholdContext();
+  const { members, member } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
   const lookups = useLookups(entities.entities, members);
   const timeline = useTimeline(items.assigned, items.steps);
-  const brief = useTodayBrief(items.items, items.steps, lookups, timeline);
+  const brief = useTodayBrief(items.items, items.steps, lookups, timeline, items.agenda);
 
   return (
     <PageShell
       title={labels.pages.today}
-      subtitle={formatToday()}
       incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
       bottomBar={<ChatBar />}
     >
       <ErrorBanner message={items.error ?? entities.error} />
-      <p className="-mt-2 text-[13px] font-medium text-muted">
-        {formatHebrewDate(todayIso(), true)}
-      </p>
+      <TodayHero
+        greeting={labels.today.greeting[brief.dayPart]}
+        name={member.name}
+        date={formatToday()}
+        hebrewDate={formatHebrewDate(todayIso(), true)}
+        next={brief.next}
+        overdue={items.agenda.overdue.length}
+        urgent={items.agenda.urgent.length}
+        today={items.agenda.today.length}
+      />
       <TodayViews
         agenda={items.agenda}
         timeline={timeline}

@@ -1,6 +1,6 @@
 import { goalProgress } from './goals';
 import { addDays, formatClock } from './itemRules';
-import type { ListEntry, Timeline } from './itemRules';
+import type { Agenda, ListEntry, Timeline } from './itemRules';
 import type { Item, ItemRepeat, OccurrenceCount } from '../types/domain';
 
 /** What waits on the parents rather than on a date. */
@@ -66,8 +66,8 @@ function thingsOf(entry: ListEntry, date: string): WeekThing[] {
 }
 
 /**
- * The six days after today, each with what is due on it, in the timeline's order (by hour).
- * Days with nothing are left out.
+ * The six days after today, each with what is due on it, by hour; a day with nothing has an
+ * empty list.
  */
 export function weekAhead(timeline: Timeline, today: string): WeekDay[] {
   const entries = [...timeline.tomorrow, ...timeline.thisWeek];
@@ -77,12 +77,10 @@ export function weekAhead(timeline: Timeline, today: string): WeekDay[] {
     const things = entries
       .filter((entry) => entry.dueDate === date)
       .flatMap((entry) => thingsOf(entry, date));
-    if (things.length > 0) {
-      days.push({
-        date,
-        things: [...things].sort((a, b) => (a.time ?? '99').localeCompare(b.time ?? '99')),
-      });
-    }
+    days.push({
+      date,
+      things: [...things].sort((a, b) => (a.time ?? '99').localeCompare(b.time ?? '99')),
+    });
   }
   return days;
 }
@@ -96,4 +94,54 @@ const weekdayFormat = new Intl.DateTimeFormat('he-IL', {
 /** A day of the coming week as a short label, such as "יום ה׳, 15.10". */
 export function weekdayLabel(isoDate: string): string {
   return weekdayFormat.format(new Date(`${isoDate}T12:00:00`));
+}
+
+/** Which part of the day it is, for the greeting. */
+export type DayPart = 'morning' | 'noon' | 'evening' | 'night';
+
+export function dayPartOf(hour: number): DayPart {
+  if (hour >= 5 && hour < 12) {
+    return 'morning';
+  }
+  if (hour >= 12 && hour < 17) {
+    return 'noon';
+  }
+  if (hour >= 17 && hour < 21) {
+    return 'evening';
+  }
+  return 'night';
+}
+
+/** The next thing today that has an hour, and how many minutes until it. */
+export type NextUp = {
+  readonly id: string;
+  readonly title: string;
+  readonly time: string;
+  readonly minutes: number;
+};
+
+/** What has begun this many minutes ago still counts as now. */
+const stillNow = 10;
+
+/** Of what is due today (and urgent), the next thing with an hour, from a little before now. */
+export function nextUp(agenda: Agenda, now: Date): NextUp | null {
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  let best: NextUp | null = null;
+  for (const entry of [...agenda.urgent, ...agenda.today]) {
+    const things =
+      entry.heading === true && entry.shown !== undefined
+        ? entry.shown.map((step) => ({ id: step.id, title: step.title, time: hourOf(step) }))
+        : [{ id: entry.item.id, title: entry.item.title, time: hourOf(entry.item) }];
+    for (const thing of things) {
+      if (thing.time === null) {
+        continue;
+      }
+      const [hours = 0, minutes = 0] = thing.time.split(':').map(Number);
+      const until = hours * 60 + minutes - nowMinutes;
+      if (until >= -stillNow && (best === null || until < best.minutes)) {
+        best = { id: thing.id, title: thing.title, time: thing.time, minutes: until };
+      }
+    }
+  }
+  return best;
 }

@@ -14,7 +14,6 @@ import { SignUpPage } from '../pages/SignUpPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
 import { NotesPage } from '../pages/NotesPage';
 import { OpenItemsPage } from '../pages/OpenItemsPage';
-import { OverviewPage } from '../pages/OverviewPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ShoppingPage } from '../pages/ShoppingPage';
 import { AssistantPage } from '../pages/AssistantPage';
@@ -23,6 +22,7 @@ import { ShoppingRunPage } from '../pages/ShoppingRunPage';
 import { ShoppingStaplesPage } from '../pages/ShoppingStaplesPage';
 import { RequireAuth } from './RequireAuth';
 import { RequireHousehold } from './RequireHousehold';
+import { StartRoute } from './StartRoute';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -34,7 +34,7 @@ export const router = createBrowserRouter([
       {
         element: <RequireHousehold />,
         children: [
-          { path: '/', element: <OverviewPage /> },
+          { path: '/', element: <StartRoute /> },
           { path: '/tasks', element: <OpenItemsPage /> },
           { path: '/appointments', element: <AppointmentsPage /> },
           { path: '/goals', element: <GoalsPage /> },

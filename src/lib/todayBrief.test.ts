@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { timelineOf } from './itemRules';
-import { waitingOnYou, weekAhead } from './todayBrief';
+import { agendaOf, timelineOf } from './itemRules';
+import { dayPartOf, nextUp, waitingOnYou, weekAhead } from './todayBrief';
 import type { Item } from '../types/domain';
 
 const today = '2026-10-14';
@@ -94,12 +94,49 @@ describe('weekAhead', () => {
       item({ id: 'f', title: 'בעוד שבוע וחצי', due_date: '2026-10-25' }),
     ];
     const week = weekAhead(timelineOf(assigned, [], today), today);
-    expect(week.map((day) => day.date)).toEqual(['2026-10-15', '2026-10-17']);
+    expect(week.map((day) => day.date)).toEqual([
+      '2026-10-15',
+      '2026-10-16',
+      '2026-10-17',
+      '2026-10-18',
+      '2026-10-19',
+      '2026-10-20',
+    ]);
+    expect(week[1]?.things).toEqual([]);
     expect(week[0]?.things.map((thing) => thing.title)).toEqual([
       'בבוקר',
       'אחר הצהריים',
       'בלי שעה',
     ]);
     expect(week[0]?.things[0]?.time).toBe('08:00');
+  });
+});
+
+describe('the top of today', () => {
+  it('greets by the part of the day', () => {
+    expect([6, 13, 18, 23, 3].map(dayPartOf)).toEqual([
+      'morning',
+      'noon',
+      'evening',
+      'night',
+      'night',
+    ]);
+  });
+
+  it('finds the next thing with an hour, and what began a few minutes ago', () => {
+    const agenda = agendaOf(
+      [
+        item({ id: 'past', title: 'מוקדם', due_time: '08:00:00' }),
+        item({ id: 'now', title: 'עכשיו', due_time: '10:25:00' }),
+        item({ id: 'later', title: 'אחר כך', due_time: '16:30:00' }),
+        item({ id: 'none', title: 'בלי שעה' }),
+      ],
+      [],
+      today,
+    );
+    const at = (hour: number, minute: number): Date => new Date(2026, 9, 14, hour, minute);
+    expect(nextUp(agenda, at(10, 30))).toMatchObject({ id: 'now', minutes: -5 });
+    expect(nextUp(agenda, at(11, 0))).toMatchObject({ id: 'later', time: '16:30', minutes: 330 });
+    expect(nextUp(agenda, at(17, 0))).toBeNull();
   });
 });
