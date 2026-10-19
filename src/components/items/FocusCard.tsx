@@ -22,9 +22,9 @@ type FocusCardProps = {
 const firstLines = 4;
 
 const tiles = [
-  { group: 'overdue', label: labels.summary.overdue, alert: true },
-  { group: 'urgent', label: labels.summary.urgent, alert: true },
-  { group: 'today', label: labels.summary.today, alert: false },
+  { group: 'overdue', label: labels.summary.overdue, tone: 'alert' },
+  { group: 'urgent', label: labels.summary.urgent, tone: 'gold' },
+  { group: 'today', label: labels.summary.today, tone: 'primary' },
 ] as const;
 
 /**
@@ -46,14 +46,14 @@ export function FocusCard({
   const hidden = rows.length - shown.length;
 
   return (
-    <section className="flex flex-col gap-2 rounded-3xl bg-primary-soft/50 p-2">
+    <section className="flex flex-col gap-2">
       <div role="tablist" className="flex gap-2">
         {tiles.map((tile) => (
           <FocusTile
             key={tile.group}
             label={tile.label}
             count={groups[tile.group].length}
-            alert={tile.alert}
+            tone={tile.tone}
             selected={tile.group === group}
             onSelect={() => {
               setChosen(tile.group);

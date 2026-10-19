@@ -39,6 +39,7 @@ const pages: readonly { readonly step: TourStep; readonly section: TourSection }
   { step: 'domains', section: 'places' },
   { step: 'circle', section: 'places' },
   { step: 'profile', section: 'places' },
+  { step: 'start', section: 'views' },
   { step: 'today', section: 'views' },
   { step: 'home', section: 'views' },
   { step: 'tabs', section: 'views' },

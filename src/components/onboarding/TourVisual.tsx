@@ -37,7 +37,8 @@ const cardClass = 'flex w-72 flex-col rounded-2xl bg-surface text-start shadow-c
 const purposeIcons: readonly IconName[] = ['plus', 'grid', 'calendar'];
 
 const tabs: readonly { readonly icon: IconName; readonly label: string }[] = [
-  { icon: 'home', label: labels.nav.home },
+  { icon: 'home', label: labels.nav.start },
+  { icon: 'grid', label: labels.nav.home },
   { icon: 'list', label: labels.nav.open },
   { icon: 'calendar', label: labels.nav.appointments },
   { icon: 'target', label: labels.nav.goals },
@@ -45,6 +46,13 @@ const tabs: readonly { readonly icon: IconName; readonly label: string }[] = [
   { icon: 'cart', label: labels.nav.shopping },
   { icon: 'wallet', label: labels.nav.debts },
 ];
+
+/** The three numbers of the first page, as the tour draws them. */
+const tourCounts = [
+  { label: labels.summary.overdue, value: 1, alert: true },
+  { label: labels.summary.urgent, value: 2, alert: true },
+  { label: labels.summary.today, value: 5, alert: false },
+] as const;
 
 /** A small picture of the part of the app a tour step talks about, drawn like the real thing. */
 export function TourVisual({ step }: TourVisualProps): ReactElement {
@@ -108,6 +116,34 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
             ))}
           </div>
         </div>
+      );
+    case 'start':
+      return (
+        <span className="flex w-72 flex-col gap-2.5 rounded-3xl bg-primary-soft p-3.5 text-start">
+          <span className="font-display text-lg leading-6 font-bold">
+            {labels.today.greeting.morning}
+          </span>
+          <span className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2 shadow-card">
+            <span className="flex flex-col items-center">
+              <span className="text-[10px] font-semibold text-primary">{labels.today.nextUp}</span>
+              <span className="text-sm font-bold">16:30</span>
+            </span>
+            <span className="text-[13px] font-medium">{labels.tour.startSample}</span>
+          </span>
+          <span className="flex gap-1.5">
+            {tourCounts.map((count) => (
+              <span
+                key={count.label}
+                className="flex flex-1 flex-col items-center rounded-xl bg-surface/80 py-1"
+              >
+                <span className={`text-base font-bold ${count.alert ? 'text-alert' : ''}`}>
+                  {String(count.value)}
+                </span>
+                <span className="text-[10px] text-muted">{count.label}</span>
+              </span>
+            ))}
+          </span>
+        </span>
       );
     case 'today':
       return (
@@ -462,7 +498,7 @@ export function TourVisual({ step }: TourVisualProps): ReactElement {
       );
     case 'tabs':
       return (
-        <div className="grid w-full max-w-80 grid-cols-7 rounded-2xl bg-surface py-2 shadow-card">
+        <div className="grid w-full max-w-80 grid-cols-8 rounded-2xl bg-surface py-2 shadow-card">
           {tabs.map((tab, index) => (
             <span
               key={tab.label}

@@ -202,3 +202,13 @@ export function focusMeta(item: Item, group: FocusGroup): string | null {
   }
   return null;
 }
+
+const narrowWeekday = new Intl.DateTimeFormat('he-IL', { weekday: 'narrow' });
+
+/** A day as the strip of days shows it: its weekday letter and its day of the month. */
+export function dayChip(isoDate: string): { readonly weekday: string; readonly day: string } {
+  return {
+    weekday: narrowWeekday.format(new Date(`${isoDate}T12:00:00`)),
+    day: String(Number(isoDate.slice(8, 10))),
+  };
+}

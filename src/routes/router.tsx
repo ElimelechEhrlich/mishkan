@@ -6,6 +6,7 @@ import { DonePage } from '../pages/DonePage';
 import { EntityPage } from '../pages/EntityPage';
 import { GoalsPage } from '../pages/GoalsPage';
 import { TodayPage } from '../pages/TodayPage';
+import { HomePage } from '../pages/HomePage';
 import { IncompletePage } from '../pages/IncompletePage';
 import { ItemPage } from '../pages/ItemPage';
 import { LoginPage } from '../pages/LoginPage';
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
           { path: '/debts', element: <DebtsPage /> },
           { path: '/incomplete', element: <IncompletePage /> },
           { path: '/today', element: <TodayPage /> },
+          { path: '/home', element: <HomePage /> },
           { path: '/item/:itemId', element: <ItemPage /> },
           { path: '/entity/:entityId', element: <EntityPage /> },
           { path: '/domains', element: <DomainsPage /> },

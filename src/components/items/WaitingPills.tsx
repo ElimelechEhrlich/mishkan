@@ -17,7 +17,7 @@ type WaitingPillsProps = {
 export function WaitingPills({ waiting, incompleteCount }: WaitingPillsProps): ReactElement | null {
   const [question] = waiting.questions;
   const [goal] = waiting.reachedGoals;
-  const pills: { key: string; to: string; icon: IconName; text: string }[] = [
+  const pills: { key: string; to: string; icon: IconName; text: string; color: string }[] = [
     ...(question === undefined
       ? []
       : [
@@ -29,6 +29,7 @@ export function WaitingPills({ waiting, incompleteCount }: WaitingPillsProps): R
                 ? `/item/${question.parent_id}`
                 : '/goals?tab=issues',
             icon: 'help' as const,
+            color: 'bg-gold/15 text-gold',
             text: labels.today.questions(waiting.questions.length),
           },
         ]),
@@ -39,6 +40,7 @@ export function WaitingPills({ waiting, incompleteCount }: WaitingPillsProps): R
             key: 'goals',
             to: waiting.reachedGoals.length === 1 ? `/item/${goal.id}` : '/goals',
             icon: 'target' as const,
+            color: 'bg-entity-2/15 text-entity-2',
             text: labels.today.reachedShort(waiting.reachedGoals.length),
           },
         ]),
@@ -49,6 +51,7 @@ export function WaitingPills({ waiting, incompleteCount }: WaitingPillsProps): R
             key: 'incomplete',
             to: '/incomplete',
             icon: 'alert' as const,
+            color: 'bg-alert-soft text-alert',
             text: labels.today.incompleteShort(incompleteCount),
           },
         ]),
@@ -64,9 +67,13 @@ export function WaitingPills({ waiting, incompleteCount }: WaitingPillsProps): R
           <Link
             key={pill.key}
             to={pill.to}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[13px] font-medium shadow-card transition active:scale-[0.97]"
+            className="inline-flex min-h-9 items-center gap-2 rounded-full bg-surface ps-1.5 pe-3.5 text-[13px] font-medium shadow-card transition active:scale-[0.97]"
           >
-            <Icon name={pill.icon} className="size-4 text-primary" />
+            <span
+              className={`flex size-6.5 items-center justify-center rounded-full ${pill.color}`}
+            >
+              <Icon name={pill.icon} className="size-4" />
+            </span>
             {pill.text}
           </Link>
         ))}
