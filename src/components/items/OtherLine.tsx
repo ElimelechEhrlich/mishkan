@@ -22,7 +22,7 @@ export function OtherLine({ item, icon, meta, lookups }: OtherLineProps): ReactE
     <li>
       <Link
         to={`/item/${item.id}`}
-        className="flex min-h-12 items-center gap-3 py-2 active:opacity-60"
+        className="flex min-h-11 items-center gap-3 py-1.5 active:opacity-60"
       >
         <Icon name={icon} className={`size-5 shrink-0 ${tone?.text ?? 'text-muted'}`} />
         <span className="min-w-0 flex-1 truncate text-[15px]">{item.title}</span>

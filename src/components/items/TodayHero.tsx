@@ -31,7 +31,7 @@ export function TodayHero({
   footer,
 }: TodayHeroProps): ReactElement {
   return (
-    <section className="flex flex-col gap-3 rounded-3xl bg-gradient-to-bl from-primary-soft via-primary-soft/70 to-cream p-3.5 shadow-card">
+    <section className="flex flex-col gap-2.5 rounded-3xl bg-gradient-to-bl from-primary-soft via-primary-soft/70 to-cream p-3 shadow-card">
       <div className="flex flex-col gap-0.5">
         <h2 className="font-display text-[22px] leading-7 font-bold">
           {greeting}, {name}
@@ -46,7 +46,7 @@ export function TodayHero({
       {next !== null && (
         <Link
           to={`/item/${next.id}`}
-          className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2 shadow-card transition active:scale-[0.98]"
+          className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-1.5 shadow-card transition active:scale-[0.98]"
         >
           <span className="flex flex-col items-center rounded-xl bg-primary-soft px-2.5 py-0.5 text-primary">
             <span className="text-[11px] leading-4 font-semibold">{labels.today.nextUp}</span>

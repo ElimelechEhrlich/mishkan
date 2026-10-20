@@ -22,7 +22,7 @@ type LooseCardProps = {
 };
 
 /** Lines shown before "more". */
-const firstLines = 4;
+const firstLines = 3;
 
 const groupOrder = ['undated', 'waiting', 'someday'] as const;
 
@@ -92,7 +92,7 @@ export function LooseCard({
               })}
             </ul>
           )}
-          <div className="flex items-center justify-between border-t border-line py-1.5">
+          <div className="flex items-center justify-between border-t border-line py-0.5">
             {rows.length > firstLines ? (
               <button
                 type="button"

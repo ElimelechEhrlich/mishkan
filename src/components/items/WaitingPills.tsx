@@ -87,7 +87,7 @@ export function WaitingPills({
     return null;
   }
   return (
-    <section className="flex items-center gap-2 overflow-x-auto rounded-2xl bg-surface/70 py-1.5 ps-3 pe-1.5 shadow-card ring-1 ring-line [scrollbar-width:none]">
+    <section className="flex items-center gap-2 overflow-x-auto rounded-2xl bg-surface/70 py-1 ps-3 pe-1 shadow-card ring-1 ring-line [scrollbar-width:none]">
       <h2 className="flex shrink-0 items-center gap-1 text-[13px] font-bold text-ink">
         <Icon name="bell" className="size-4 text-primary" />
         {labels.today.waiting}

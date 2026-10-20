@@ -83,7 +83,7 @@ export function FocusCard({
             ))}
           </ul>
         )}
-        <div className="flex items-center justify-between border-t border-line py-1.5">
+        <div className="flex items-center justify-between border-t border-line py-0.5">
           {rows.length > firstLines ? (
             <button
               type="button"

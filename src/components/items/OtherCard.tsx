@@ -73,7 +73,7 @@ export function OtherCard({
                   onChoose(selected ? null : kind.group);
                   setExpanded(false);
                 }}
-                className={`flex flex-col items-center gap-0.5 rounded-xl py-2 transition active:scale-[0.97] ${
+                className={`flex flex-col items-center rounded-xl py-1.5 transition active:scale-[0.97] ${
                   selected ? 'bg-primary-soft text-primary' : 'text-muted'
                 }`}
               >

@@ -34,7 +34,7 @@ export function DayStrip({ days, selected, onSelect }: DayStripProps): ReactElem
             onClick={() => {
               onSelect(date);
             }}
-            className={`flex w-10 flex-col items-center gap-0.5 rounded-2xl py-1.5 transition active:scale-95 ${
+            className={`flex w-10 flex-col items-center rounded-xl py-1 transition active:scale-95 ${
               chosen
                 ? 'bg-primary text-white shadow-card'
                 : past

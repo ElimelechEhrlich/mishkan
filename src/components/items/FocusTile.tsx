@@ -30,18 +30,18 @@ export function FocusTile({
       role="tab"
       aria-selected={selected}
       onClick={onSelect}
-      className={`flex flex-1 flex-col items-center rounded-2xl py-2 transition active:scale-[0.97] ${
+      className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl px-1 transition active:scale-[0.97] ${
         selected ? `bg-surface shadow-card ring-2 ${tones[tone].ring}` : tones[tone].soft
       }`}
     >
       <span
-        className={`font-display text-2xl leading-7 font-bold ${
+        className={`font-display text-xl leading-6 font-bold ${
           count === 0 ? 'text-faint' : tones[tone].text
         }`}
       >
         {String(count)}
       </span>
-      <span className={`text-[12px] font-medium ${selected ? 'text-ink' : 'text-muted'}`}>
+      <span className={`text-[13px] font-medium ${selected ? 'text-ink' : 'text-muted'}`}>
         {label}
       </span>
     </button>

@@ -34,7 +34,7 @@ export function FocusLine({
   const container = item.kind === 'goal' || item.kind === 'issue';
   return (
     <li
-      className={`flex min-h-12 items-center gap-3 transition-opacity duration-300 ${ticked ? 'opacity-40' : ''}`}
+      className={`flex min-h-11 items-center gap-3 transition-opacity duration-300 ${ticked ? 'opacity-40' : ''}`}
     >
       {container ? (
         <Icon
@@ -56,7 +56,7 @@ export function FocusLine({
       )}
       <Link
         to={`/item/${item.id}`}
-        className="flex min-w-0 flex-1 items-baseline gap-2 py-2 active:opacity-60"
+        className="flex min-w-0 flex-1 items-baseline gap-2 py-1.5 active:opacity-60"
       >
         <span className="min-w-0 flex-1 truncate text-[15px]">
           {item.title}
