@@ -8,13 +8,20 @@ import type { IconName } from '../ui/Icon';
 type WaitingPillsProps = {
   readonly waiting: WaitingOnYou;
   readonly incompleteCount: number;
+  /** An item waits for "עוד רלוונטי?" in the tab with no date. */
+  readonly toReview: boolean;
 };
 
 /**
  * What waits on the parents, in a line of small pills: open questions, goals that may be
- * reached, and what is left to complete. Nothing shows when nothing waits.
+ * reached, what is left to complete, and an item to look at again. Nothing shows when nothing
+ * waits.
  */
-export function WaitingPills({ waiting, incompleteCount }: WaitingPillsProps): ReactElement | null {
+export function WaitingPills({
+  waiting,
+  incompleteCount,
+  toReview,
+}: WaitingPillsProps): ReactElement | null {
   const [question] = waiting.questions;
   const [goal] = waiting.reachedGoals;
   const pills: { key: string; to: string; icon: IconName; text: string; color: string }[] = [
@@ -55,6 +62,17 @@ export function WaitingPills({ waiting, incompleteCount }: WaitingPillsProps): R
             text: labels.today.incompleteShort(incompleteCount),
           },
         ]),
+    ...(toReview
+      ? [
+          {
+            key: 'review',
+            to: '/home?tab=loose',
+            icon: 'repeat' as const,
+            color: 'bg-primary-soft text-primary',
+            text: labels.today.toReview,
+          },
+        ]
+      : []),
   ];
   if (pills.length === 0) {
     return null;

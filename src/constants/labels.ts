@@ -190,6 +190,7 @@ export const labels = {
     shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
+    more: 'עוד',
   },
   data: {
     title: 'נתונים',
@@ -333,6 +334,7 @@ export const labels = {
               : `${String(Math.floor(days / 365))} שנ׳`,
     waitingFor: (what: string): string => `מחכה ל${what}`,
     stillRelevant: 'עוד רלוונטי?',
+    toReview: 'לבדוק מחדש',
     onShelfSince: (age: string): string => `על המדף ${age}`,
     noDateSince: (age: string): string => `בלי מועד ${age}`,
     review: {

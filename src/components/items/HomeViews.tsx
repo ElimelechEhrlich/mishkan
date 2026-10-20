@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { UseLooseItems } from '../../hooks/useLooseItems';
@@ -69,7 +70,12 @@ export function HomeViews({
 }: HomeViewsProps): ReactElement {
   const today = todayIso();
   const [view, setView] = useState<'today' | 'all'>('today');
-  const [tab, setTab] = useState<'today' | 'loose'>('today');
+  // The tab is kept in the address, so "לבדוק מחדש" can open it and back returns.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'loose' ? 'loose' : 'today';
+  const setTab = (next: 'today' | 'loose'): void => {
+    setSearchParams(next === 'loose' ? { tab: next } : {}, { replace: true });
+  };
   const todayCount = groups.overdue.length + groups.urgent.length + groups.today.length;
   const looseCount = [...Object.values(loose.groups), ...Object.values(other.groups)].reduce(
     (sum, rows) => sum + rows.length,
@@ -170,7 +176,11 @@ export function HomeViews({
           }}
         />
       )}
-      <WaitingPills waiting={waiting} incompleteCount={incompleteCount} />
+      <WaitingPills
+        waiting={waiting}
+        incompleteCount={incompleteCount}
+        toReview={loose.relevant !== null}
+      />
     </>
   );
 }
