@@ -9,6 +9,7 @@ import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
 import { useTimeline } from '../hooks/useTimeline';
 import { useLookups } from '../hooks/useLookups';
+import { useLooseItems } from '../hooks/useLooseItems';
 import { useTodayBrief } from '../hooks/useTodayBrief';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { formatHebrewDate } from '../lib/hebrewDate';
@@ -25,6 +26,7 @@ export function HomePage(): ReactElement {
   const lookups = useLookups(entities.entities, members);
   const timeline = useTimeline(items.assigned, items.steps);
   const brief = useTodayBrief(items.items, items.steps, lookups, timeline, items.agenda);
+  const loose = useLooseItems(timeline, items.items, items.updateItem, items.completeItem);
 
   return (
     <PageShell
@@ -33,7 +35,7 @@ export function HomePage(): ReactElement {
       todayCount={items.todayCount}
       bottomBar={<ChatBar />}
     >
-      <ErrorBanner message={items.error ?? entities.error} />
+      <ErrorBanner message={items.error ?? entities.error ?? loose.error} />
       <HomeViews
         greeting={labels.today.greeting[brief.dayPart]}
         name={member.name}
@@ -48,6 +50,7 @@ export function HomePage(): ReactElement {
         waiting={brief.waiting}
         incompleteCount={items.incompleteCount}
         week={brief.week}
+        loose={loose}
       />
       <QuickAddSheet
         entities={entities.entities}

@@ -4,8 +4,8 @@ type FocusTileProps = {
   readonly label: string;
   readonly count: number;
   readonly selected: boolean;
-  /** Its color: red for late, gold for urgent, green for today. */
-  readonly tone: 'alert' | 'gold' | 'primary';
+  /** Its color: red for late, gold for urgent, green for today; calm for what has no date. */
+  readonly tone: 'alert' | 'gold' | 'primary' | 'calm';
   readonly onSelect: () => void;
 };
 
@@ -13,6 +13,7 @@ const tones = {
   alert: { soft: 'bg-alert-soft/80', ring: 'ring-alert/30', text: 'text-alert' },
   gold: { soft: 'bg-gold/10', ring: 'ring-gold/35', text: 'text-gold' },
   primary: { soft: 'bg-primary-soft', ring: 'ring-primary/30', text: 'text-primary' },
+  calm: { soft: 'bg-cream', ring: 'ring-gold/25', text: 'text-ink' },
 } as const;
 
 /** One of the first page's groups, as a number to tap; the chosen one stands out. */

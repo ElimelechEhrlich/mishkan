@@ -5,6 +5,8 @@ import {
   thisWeek,
   firstFocus,
   focusGroups,
+  looseGroups,
+  stillRelevant,
   nextUp,
   waitingOnYou,
   weekAhead,
@@ -40,6 +42,7 @@ function item(overrides: Partial<Item>): Item {
     completed_at: null,
     is_complete: true,
     closed_with_parent: false,
+    reviewed_at: null,
     auto_key: null,
     reminder_sent_at: null,
     remind_member_ids: null,
@@ -182,5 +185,33 @@ describe('this week', () => {
       '2026-10-16',
       '2026-10-17',
     ]);
+  });
+});
+
+describe('loose groups and still relevant', () => {
+  const now = new Date('2026-10-20T09:00:00Z');
+  const old = (title: string, overrides: Partial<Item>): Item =>
+    item({ id: title, title, due_date: null, ...overrides });
+
+  it('lists the longest untouched first, and asks about the oldest a week old', () => {
+    const items = [
+      old('fresh', { time_mode: 'anytime', created_at: '2026-10-18T10:00:00Z' }),
+      old('august', { time_mode: 'anytime', created_at: '2026-08-01T10:00:00Z' }),
+      old('looked at', {
+        time_mode: 'someday',
+        created_at: '2026-07-01T10:00:00Z',
+        reviewed_at: '2026-10-19T10:00:00Z',
+      }),
+      old('shelf', { time_mode: 'someday', created_at: '2026-09-10T10:00:00Z' }),
+    ];
+    const groups = looseGroups(timelineOf(items, [], '2026-10-20'));
+    expect(groups.undated.map((row) => row.item.title)).toEqual(['august', 'fresh']);
+    expect(groups.someday.map((row) => row.item.title)).toEqual(['shelf', 'looked at']);
+    expect(stillRelevant(groups, now, new Set())?.row.item.title).toBe('august');
+    const august = items[1]?.id ?? '';
+    expect(stillRelevant(groups, now, new Set([august]))).toMatchObject({
+      group: 'someday',
+      row: { item: { title: 'shelf' } },
+    });
   });
 });

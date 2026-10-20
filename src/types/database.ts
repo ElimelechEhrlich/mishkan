@@ -236,6 +236,8 @@ export type Database = {
           is_complete: boolean;
           /** Closed because its goal or issue was closed, not done; opens again with it. */
           closed_with_parent: boolean;
+          /** When it was last looked at by "עוד רלוונטי?" on the home page. */
+          reviewed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -302,6 +304,7 @@ export type Database = {
           tracker_unit?: string | null;
           tracker_summary?: TrackerSummary;
           urgent_from_parent?: boolean;
+          reviewed_at?: string | null;
         };
         Relationships: [];
       };

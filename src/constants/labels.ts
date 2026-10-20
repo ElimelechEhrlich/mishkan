@@ -292,6 +292,41 @@ export const labels = {
     incompleteShort: (count: number): string => `${String(count)} להשלמה`,
     free: 'פנוי',
     more: (count: number): string => `ועוד ${String(count)}`,
+    looseTitle: 'בלי תאריך',
+    loose: {
+      undated: 'ללא מועד',
+      waiting: 'ממתינות',
+      someday: 'על המדף',
+    },
+    emptyLoose: {
+      undated: 'אין פריטים בלי מועד',
+      waiting: 'שום דבר לא ממתין',
+      someday: 'המדף ריק',
+    },
+    /** How long since it was added, short. */
+    age: (days: number): string =>
+      days < 1
+        ? 'היום'
+        : days < 14
+          ? `${String(days)} ימ׳`
+          : days < 60
+            ? `${String(Math.floor(days / 7))} שב׳`
+            : days < 365
+              ? `${String(Math.floor(days / 30))} ח׳`
+              : `${String(Math.floor(days / 365))} שנ׳`,
+    waitingFor: (what: string): string => `מחכה ל${what}`,
+    stillRelevant: 'עוד רלוונטי?',
+    onShelfSince: (age: string): string => `על המדף ${age}`,
+    noDateSince: (age: string): string => `בלי מועד ${age}`,
+    review: {
+      today: 'להיום',
+      date: 'לקבוע תאריך',
+      keep: 'להשאיר',
+      shelf: 'למדף',
+      back: 'להחזיר',
+      close: 'לסגור',
+    },
+    notNow: 'לא עכשיו',
   },
   status: {
     offline: 'אין חיבור לשרת כרגע. כדאי לבדוק את האינטרנט ולנסות שוב.',
@@ -731,6 +766,8 @@ export const labels = {
           'באיחור, דחוף, להיום: לחיצה על מספר מראה את השורות שלו, ארבע ראשונות ו"עוד" לשאר',
           '"מחכה לך": שאלות בלי תשובה, יעד שכל הצעדים שלו בוצעו, ומה שיש להשלים',
           'השבוע מראשון עד שבת בראש הדף: נקודה לכל דבר, ולחיצה על יום מראה מה יש בו',
+          '"בלי תאריך": ללא מועד, ממתינות ועל המדף, הוותיקים קודם, כדי ששום דבר לא ייבלע',
+          '"עוד רלוונטי?": כל יום פריט אחד שלא נגעו בו הכי הרבה זמן. כל תשובה מעבירה לבא; "לא עכשיו" משאיר אותו למחר',
           'בתחתית שורה לכתוב למשכן: התשובה נפתחת מעל השורה ונסגרת ב־×, וכפתור השיחה פותח את השיחה המלאה',
         ],
       },

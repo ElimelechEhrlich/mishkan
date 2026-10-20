@@ -151,6 +151,7 @@ const item = (o) => {
     series_id: null,
     in_main: false,
     closed_with_parent: false,
+    reviewed_at: null,
     created_at: now,
     completed_at: null,
     ...o,
@@ -278,7 +279,7 @@ item({
   time_mode: 'scheduled',
   due_date: day(9),
 });
-item({ title: 'לקבוע שיעור פרטי במתמטיקה', domain_id: dom('זאבי', 'חינוך'), time_mode: 'anytime' });
+item({ title: 'לקבוע שיעור פרטי במתמטיקה', domain_id: dom('זאבי', 'חינוך'), time_mode: 'anytime' , created_at: `${day(-50)}T09:00:00Z` });
 item({ title: 'מוגנות לילדים', kind: 'issue', domain_id: dom('זוגי', 'התפתחות זוגית') });
 item({ title: 'קוד השער: 4512', kind: 'note', domain_id: dom('הבית', 'מסמכים') });
 item({
@@ -379,8 +380,8 @@ item({
   time_mode: 'scheduled',
   due_date: day(-1),
 });
-item({ title: 'צביעת חדר ילדים', domain_id: dom('הבית', 'טכני ותיקונים'), time_mode: 'someday' });
-item({ title: 'לקנות סוללות', domain_id: dom('אלי', 'קניות'), time_mode: 'anytime' });
+item({ title: 'צביעת חדר ילדים', domain_id: dom('הבית', 'טכני ותיקונים'), time_mode: 'someday' , created_at: `${day(-120)}T09:00:00Z` });
+item({ title: 'לקנות סוללות', domain_id: dom('אלי', 'קניות'), time_mode: 'anytime' , created_at: `${day(-9)}T09:00:00Z` });
 // done-week
 for (const [t, by] of [
   ['לשלם חשמל', ME],

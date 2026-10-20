@@ -218,3 +218,59 @@ export function thisWeek(today: string): string[] {
   const weekday = new Date(`${today}T12:00:00`).getDay();
   return Array.from({ length: 7 }, (_, index) => addDays(today, index - weekday));
 }
+
+/** The groups of the home page's second card: with no date, waiting, and on the shelf. */
+export type LooseGroup = 'undated' | 'waiting' | 'someday';
+
+/** When an item was last looked at: by "עוד רלוונטי?", or else when it was added. */
+function lookedAt(item: Item): string {
+  return item.reviewed_at ?? item.created_at;
+}
+
+/** Items with no date, waiting, and on the shelf, as short lines, the longest untouched first. */
+export function looseGroups(timeline: Pick<Timeline, LooseGroup>): Record<LooseGroup, FocusRow[]> {
+  const sorted = (entries: readonly ListEntry[]): FocusRow[] =>
+    focusRows(entries).sort((a, b) => lookedAt(a.item).localeCompare(lookedAt(b.item)));
+  return {
+    undated: sorted(timeline.undated),
+    waiting: sorted(timeline.waiting),
+    someday: sorted(timeline.someday),
+  };
+}
+
+/** Whole days from a timestamp to now. */
+export function daysSince(timestamp: string, now: Date): number {
+  return Math.max(0, Math.floor((now.getTime() - new Date(timestamp).getTime()) / 86_400_000));
+}
+
+/** How long an item must rest, from when it was added or last looked at, before it is asked about. */
+export const reviewAfterDays = 7;
+
+/** The item "עוד רלוונטי?" asks about, and where it stands. */
+export type StillRelevant = { readonly row: FocusRow; readonly group: 'undated' | 'someday' };
+
+/**
+ * The one item to ask "עוד רלוונטי?" about: of the tasks and goals with no date or on the shelf,
+ * the one longest not looked at, once a week has passed since. Those put aside for today are
+ * left out.
+ */
+export function stillRelevant(
+  groups: Pick<Record<LooseGroup, readonly FocusRow[]>, 'undated' | 'someday'>,
+  now: Date,
+  putAside: ReadonlySet<string>,
+): StillRelevant | null {
+  const candidates = (['undated', 'someday'] as const).flatMap((group) =>
+    groups[group]
+      .filter(
+        (row) =>
+          (row.item.kind === 'task' || row.item.kind === 'goal') &&
+          !putAside.has(row.item.id) &&
+          daysSince(lookedAt(row.item), now) >= reviewAfterDays,
+      )
+      .map((row) => ({ row, group })),
+  );
+  const [first] = candidates.sort((a, b) =>
+    lookedAt(a.row.item).localeCompare(lookedAt(b.row.item)),
+  );
+  return first ?? null;
+}

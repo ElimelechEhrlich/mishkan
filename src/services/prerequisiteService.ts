@@ -47,3 +47,20 @@ export async function removePrerequisite(prerequisiteId: string): Promise<void> 
     throw new Error(error.message);
   }
 }
+
+/** The conditions of these items not met yet, oldest first: free text, or an item to wait for. */
+export async function listOpenPrerequisites(itemIds: readonly string[]): Promise<Prerequisite[]> {
+  if (itemIds.length === 0) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from('prerequisites')
+    .select('*')
+    .in('item_id', itemIds)
+    .eq('is_met', false)
+    .order('created_at');
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return data;
+}

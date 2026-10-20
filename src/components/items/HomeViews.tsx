@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
+import type { UseLooseItems } from '../../hooks/useLooseItems';
 import { todayIso } from '../../lib/itemRules';
 import type { Timeline } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
@@ -11,6 +12,8 @@ import { Icon } from '../ui/Icon';
 import { DayList } from './DayList';
 import { DayStrip } from './DayStrip';
 import { FocusCard } from './FocusCard';
+import { LooseCard } from './LooseCard';
+import { StillRelevantCard } from './StillRelevantCard';
 import { TimelineList } from './TimelineList';
 import { TodayHero } from './TodayHero';
 import { WaitingPills } from './WaitingPills';
@@ -31,12 +34,15 @@ type HomeViewsProps = {
   readonly incompleteCount: number;
   /** The six days after today. */
   readonly week: readonly WeekDay[];
+  /** What has no date, waits or is on the shelf, and the item asked about today. */
+  readonly loose: UseLooseItems;
 };
 
 /**
  * The home page: its greeting card with the strip of the coming days, then the chosen day (today:
  * late, urgent and today to choose between; another day: what it holds), and what waits on the
- * parents; or every item that runs on time, and back.
+ * parents, then "עוד רלוונטי?" and what has no date, waits or is on the shelf; or every item
+ * that runs on time, and back.
  */
 export function HomeViews({
   greeting,
@@ -52,6 +58,7 @@ export function HomeViews({
   waiting,
   incompleteCount,
   week,
+  loose,
 }: HomeViewsProps): ReactElement {
   const today = todayIso();
   const [view, setView] = useState<'today' | 'all'>('today');
@@ -115,6 +122,23 @@ export function HomeViews({
         />
       )}
       <WaitingPills waiting={waiting} incompleteCount={incompleteCount} />
+      {loose.relevant !== null && (
+        <StillRelevantCard
+          key={loose.relevant.row.item.id}
+          relevant={loose.relevant}
+          onAnswer={loose.answer}
+          onPutAside={loose.putAside}
+        />
+      )}
+      <LooseCard
+        groups={loose.groups}
+        reasons={loose.reasons}
+        lookups={lookups}
+        onComplete={onComplete}
+        onShowAll={() => {
+          setView('all');
+        }}
+      />
     </>
   );
 }

@@ -13,12 +13,21 @@ type FocusLineProps = {
   /** Its hour, or the day it was due. */
   readonly meta: string | null;
   readonly alert: boolean;
+  /** Its end in gray, for how long it has waited rather than when it is due. */
+  readonly quiet?: boolean;
   readonly lookups: Lookups;
   readonly onComplete: (item: Item) => void;
 };
 
 /** One short line of the first page: tick it off, or tap it to open it. */
-export function FocusLine({ row, meta, alert, lookups, onComplete }: FocusLineProps): ReactElement {
+export function FocusLine({
+  row,
+  meta,
+  alert,
+  quiet = false,
+  lookups,
+  onComplete,
+}: FocusLineProps): ReactElement {
   const { item } = row;
   const [ticked, setTicked] = useState(false);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
@@ -60,7 +69,7 @@ export function FocusLine({ row, meta, alert, lookups, onComplete }: FocusLinePr
         </span>
         {meta !== null && (
           <span
-            className={`shrink-0 text-[13px] tabular-nums ${alert ? 'text-alert' : 'text-primary'}`}
+            className={`shrink-0 text-[13px] tabular-nums ${alert ? 'text-alert' : quiet ? 'text-faint' : 'text-primary'}`}
           >
             {meta}
           </span>
