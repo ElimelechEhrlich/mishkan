@@ -24,8 +24,8 @@ const firstLines = 4;
 const groupOrder = ['undated', 'waiting', 'someday'] as const;
 
 /**
- * What has no date, waits, or is on the shelf, so nothing is lost behind what is due: three
- * numbers, closed at first, and the chosen group's lines, the longest untouched first, each
+ * Tasks and goals with no date, waiting, or on the shelf, so nothing is lost behind what is due:
+ * three numbers, closed at first so the other kinds show too, and the chosen group's lines, the longest untouched first, each
  * with how long it has been there (and a waiting one, what it waits for).
  */
 export function LooseCard({

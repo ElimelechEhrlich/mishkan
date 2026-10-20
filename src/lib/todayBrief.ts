@@ -279,3 +279,28 @@ export function stillRelevant(
   );
   return first ?? null;
 }
+
+/** The groups of the home page's items with no time of their own, beside tasks and goals. */
+export type OtherGroup = 'issues' | 'notes' | 'debts' | 'shopping' | 'trackers';
+
+/**
+ * Every open item that has no time of its own, by kind, the newest first: issues (kept as a
+ * record or with steps), notes and values, debts, what is missing for shopping, and trackers
+ * that do not repeat. A repeating tracker or missing item stands on its days instead.
+ */
+export function otherGroups(assigned: readonly Item[], today: string): Record<OtherGroup, Item[]> {
+  const newest = (kept: (item: Item) => boolean): Item[] =>
+    assigned.filter(kept).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return {
+    issues: newest((item) => item.kind === 'issue'),
+    notes: newest((item) => item.kind === 'note'),
+    debts: newest((item) => item.kind === 'debt'),
+    shopping: newest(
+      (item) =>
+        item.kind === 'missing_item' &&
+        item.run_id === null &&
+        !(item.time_mode === 'recurring' && (item.due_date === null || item.due_date > today)),
+    ),
+    trackers: newest((item) => item.kind === 'tracker' && item.time_mode !== 'recurring'),
+  };
+}

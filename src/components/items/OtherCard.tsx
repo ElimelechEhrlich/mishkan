@@ -1,0 +1,112 @@
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { labels } from '../../constants/labels';
+import type { OtherMeta } from '../../hooks/useOtherItems';
+import type { Lookups } from '../../lib/lookups';
+import type { OtherGroup } from '../../lib/todayBrief';
+import type { Item } from '../../types/domain';
+import { Icon } from '../ui/Icon';
+import { OtherLine } from './OtherLine';
+
+type OtherCardProps = {
+  readonly groups: Record<OtherGroup, readonly Item[]>;
+  readonly meta: ReadonlyMap<string, OtherMeta>;
+  readonly lookups: Lookups;
+};
+
+/** Lines shown before "more". */
+const firstLines = 6;
+
+const kinds = [
+  { group: 'issues', icon: 'alert' },
+  { group: 'notes', icon: 'note' },
+  { group: 'debts', icon: 'wallet' },
+  { group: 'shopping', icon: 'cart' },
+  { group: 'trackers', icon: 'chart' },
+] as const;
+
+/**
+ * The items with no time of their own, apart from tasks and goals: one white card with a small
+ * sign for each kind and its count, and the chosen kind's items under them.
+ */
+export function OtherCard({ groups, meta, lookups }: OtherCardProps): ReactElement {
+  const [chosen, setChosen] = useState<OtherGroup | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const items = chosen === null ? [] : groups[chosen];
+  const shown = expanded ? items : items.slice(0, firstLines);
+  const hidden = items.length - shown.length;
+  const icon = kinds.find((kind) => kind.group === chosen)?.icon ?? 'note';
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 text-[13px] font-semibold text-muted">{labels.today.otherTitle}</h2>
+      <div className="rounded-2xl bg-surface p-1.5 shadow-card">
+        <div role="tablist" className="grid grid-cols-5 gap-1">
+          {kinds.map((kind) => {
+            const selected = kind.group === chosen;
+            const count = groups[kind.group].length;
+            return (
+              <button
+                key={kind.group}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => {
+                  setChosen(selected ? null : kind.group);
+                  setExpanded(false);
+                }}
+                className={`flex flex-col items-center gap-0.5 rounded-xl py-2 transition active:scale-[0.97] ${
+                  selected ? 'bg-primary-soft text-primary' : 'text-muted'
+                }`}
+              >
+                <span className="flex items-center gap-1">
+                  <Icon name={kind.icon} className="size-4" />
+                  <span
+                    className={`text-[15px] font-bold tabular-nums ${
+                      count === 0 ? 'text-faint' : selected ? 'text-primary' : 'text-ink'
+                    }`}
+                  >
+                    {String(count)}
+                  </span>
+                </span>
+                <span className="text-[11px] font-medium">{labels.today.other[kind.group]}</span>
+              </button>
+            );
+          })}
+        </div>
+        {chosen !== null && (
+          <div className="mt-1 border-t border-line px-2">
+            {items.length === 0 ? (
+              <p className="py-3 text-center text-[14px] text-muted">
+                {labels.today.emptyOther[chosen]}
+              </p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-line">
+                {shown.map((item) => (
+                  <OtherLine
+                    key={item.id}
+                    item={item}
+                    icon={icon}
+                    meta={meta.get(item.id)}
+                    lookups={lookups}
+                  />
+                ))}
+              </ul>
+            )}
+            {items.length > firstLines && (
+              <button
+                type="button"
+                onClick={() => {
+                  setExpanded(!expanded);
+                }}
+                className="mb-1 min-h-9 rounded-full px-2 text-[13px] font-semibold text-primary transition active:scale-[0.97]"
+              >
+                {hidden > 0 ? labels.today.showMore(hidden) : labels.today.showLess}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

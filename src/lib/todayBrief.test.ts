@@ -6,6 +6,7 @@ import {
   firstFocus,
   focusGroups,
   looseGroups,
+  otherGroups,
   stillRelevant,
   nextUp,
   waitingOnYou,
@@ -214,5 +215,31 @@ describe('loose groups and still relevant', () => {
       group: 'someday',
       row: { item: { title: 'shelf' } },
     });
+  });
+});
+
+describe('other groups', () => {
+  it('lists each kind with no time of its own, newest first, leaving out what repeats', () => {
+    const at = (day: string): string => `2026-10-${day}T10:00:00Z`;
+    const groups = otherGroups(
+      [
+        item({ id: 'n1', kind: 'note', created_at: at('01') }),
+        item({ id: 'n2', kind: 'note', created_at: at('05') }),
+        item({ id: 'i', kind: 'issue' }),
+        item({ id: 'd', kind: 'debt' }),
+        item({ id: 'm', kind: 'missing_item', time_mode: null }),
+        item({ id: 'mr', kind: 'missing_item', time_mode: 'recurring', due_date: '2026-10-30' }),
+        item({ id: 'r', kind: 'missing_item', run_id: 'run' }),
+        item({ id: 't', kind: 'tracker', time_mode: null }),
+        item({ id: 'tr', kind: 'tracker', time_mode: 'recurring' }),
+        item({ id: 'task', kind: 'task' }),
+      ],
+      '2026-10-20',
+    );
+    expect(groups.notes.map((entry) => entry.id)).toEqual(['n2', 'n1']);
+    expect(groups.issues.map((entry) => entry.id)).toEqual(['i']);
+    expect(groups.debts.map((entry) => entry.id)).toEqual(['d']);
+    expect(groups.shopping.map((entry) => entry.id)).toEqual(['m']);
+    expect(groups.trackers.map((entry) => entry.id)).toEqual(['t']);
   });
 });
