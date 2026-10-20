@@ -203,6 +203,7 @@ describe('loose groups and still relevant', () => {
         reviewed_at: '2026-10-19T10:00:00Z',
       }),
       old('shelf', { time_mode: 'someday', created_at: '2026-09-10T10:00:00Z' }),
+      old('issue', { kind: 'issue', time_mode: null, created_at: '2026-06-01T10:00:00Z' }),
     ];
     const groups = looseGroups(timelineOf(items, [], '2026-10-20'));
     expect(groups.undated.map((row) => row.item.title)).toEqual(['august', 'fresh']);

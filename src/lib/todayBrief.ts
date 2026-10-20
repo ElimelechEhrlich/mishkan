@@ -227,10 +227,15 @@ function lookedAt(item: Item): string {
   return item.reviewed_at ?? item.created_at;
 }
 
-/** Items with no date, waiting, and on the shelf, as short lines, the longest untouched first. */
+/**
+ * Items with no date, waiting, and on the shelf, as short lines, the longest untouched first.
+ * An issue is not listed itself, only its steps: it may be kept as a record, like a note.
+ */
 export function looseGroups(timeline: Pick<Timeline, LooseGroup>): Record<LooseGroup, FocusRow[]> {
   const sorted = (entries: readonly ListEntry[]): FocusRow[] =>
-    focusRows(entries).sort((a, b) => lookedAt(a.item).localeCompare(lookedAt(b.item)));
+    focusRows(entries)
+      .filter((row) => row.item.kind !== 'issue')
+      .sort((a, b) => lookedAt(a.item).localeCompare(lookedAt(b.item)));
   return {
     undated: sorted(timeline.undated),
     waiting: sorted(timeline.waiting),
