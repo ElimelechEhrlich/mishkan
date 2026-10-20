@@ -194,20 +194,19 @@ export function HomeViews({
             toReview={loose.relevant !== null}
           />
         }
-      >
-        <DayStrip
-          days={thisWeek(today).map((date) => ({
-            date,
-            past: date < today,
-            count:
-              date === today
-                ? groups.today.length + groups.urgent.length
-                : (week.find((entry) => entry.date === date)?.things.length ?? 0),
-          }))}
-          selected={chosenDay === undefined ? today : day}
-          onSelect={setDay}
-        />
-      </TodayHero>
+      />
+      <DayStrip
+        days={thisWeek(today).map((date) => ({
+          date,
+          past: date < today,
+          count:
+            date === today
+              ? groups.today.length + groups.urgent.length
+              : (week.find((entry) => entry.date === date)?.things.length ?? 0),
+        }))}
+        selected={chosenDay === undefined ? today : day}
+        onSelect={setDay}
+      />
       {chosenDay === undefined ? (
         <FocusCard
           groups={groups}

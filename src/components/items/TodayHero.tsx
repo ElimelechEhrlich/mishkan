@@ -11,8 +11,6 @@ type TodayHeroProps = {
   readonly date: string;
   readonly hebrewDate: string;
   readonly next: NextUp | null;
-  /** Under the date: the strip of the coming days. */
-  readonly children?: ReactNode;
   /** At the bottom of the card: what waits on the parents. */
   readonly footer?: ReactNode;
 };
@@ -27,7 +25,6 @@ export function TodayHero({
   date,
   hebrewDate,
   next,
-  children,
   footer,
 }: TodayHeroProps): ReactElement {
   return (
@@ -42,7 +39,6 @@ export function TodayHero({
           {hebrewDate}
         </p>
       </div>
-      {children}
       {next !== null && (
         <Link
           to={`/item/${next.id}`}

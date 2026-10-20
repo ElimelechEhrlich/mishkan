@@ -38,8 +38,8 @@ export function DayStrip({ days, selected, onSelect }: DayStripProps): ReactElem
               chosen
                 ? 'bg-primary text-white shadow-card'
                 : past
-                  ? 'bg-surface/30 text-faint'
-                  : 'bg-surface/70 text-ink'
+                  ? 'text-faint'
+                  : 'bg-surface text-ink shadow-card'
             }`}
           >
             <span className={`text-[11px] font-medium ${chosen ? 'text-white/80' : 'text-muted'}`}>
