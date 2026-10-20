@@ -87,16 +87,18 @@ export function WaitingPills({
     return null;
   }
   return (
-    <section className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none]">
-      <h2 className="shrink-0 text-xs font-bold tracking-wide text-muted">
+    <section className="flex items-center gap-2 overflow-x-auto rounded-2xl bg-surface/70 py-1.5 ps-3 pe-1.5 shadow-card ring-1 ring-line [scrollbar-width:none]">
+      <h2 className="flex shrink-0 items-center gap-1 text-[13px] font-bold text-ink">
+        <Icon name="bell" className="size-4 text-primary" />
         {labels.today.waiting}
       </h2>
-      <div className="flex gap-2">
+      <span className="h-5 w-px shrink-0 bg-line" />
+      <div className="flex gap-1.5">
         {pills.map((pill) => (
           <Link
             key={pill.key}
             to={pill.to}
-            className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full bg-surface ps-1 pe-3 text-[13px] font-medium whitespace-nowrap shadow-card transition active:scale-[0.97]"
+            className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full bg-paper ps-1 pe-3 text-[13px] font-medium whitespace-nowrap transition active:scale-[0.97]"
           >
             <span className={`flex size-6 items-center justify-center rounded-full ${pill.color}`}>
               <Icon name={pill.icon} className="size-4" />
