@@ -248,16 +248,14 @@ export function daysSince(timestamp: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - new Date(timestamp).getTime()) / 86_400_000));
 }
 
-/** How many of the longest untouched take turns, one each day, at "עוד רלוונטי?". */
-export const reviewPool = 7;
-
 /** The item "עוד רלוונטי?" asks about, and where it stands. */
 export type StillRelevant = { readonly row: FocusRow; readonly group: 'undated' | 'someday' };
 
 /**
  * The one item to ask "עוד רלוונטי?" about, there as long as any task or goal has no date or is
- * on the shelf. The few longest not looked at take turns, a different one each day; an answer
- * sends the item to the back, so another comes up. Those put aside for today are left out.
+ * on the shelf. All of them take turns, a different one each day, the longest not looked at
+ * first in line; an answer sends the item to the back, so another comes up. Those put aside for
+ * today are left out.
  */
 export function stillRelevant(
   groups: Pick<Record<LooseGroup, readonly FocusRow[]>, 'undated' | 'someday'>,
@@ -273,8 +271,7 @@ export function stillRelevant(
         )
         .map((row) => ({ row, group })),
     )
-    .sort((a, b) => lookedAt(a.row.item).localeCompare(lookedAt(b.row.item)))
-    .slice(0, reviewPool);
+    .sort((a, b) => lookedAt(a.row.item).localeCompare(lookedAt(b.row.item)));
   const day = Math.floor(Date.parse(`${today}T12:00:00Z`) / 86_400_000);
   return pool[day % Math.max(1, pool.length)] ?? null;
 }
