@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 
 const paths = {
-  more: ['M5.5 12h.01', 'M12 12h.01', 'M18.5 12h.01'],
   grip: ['M9 6h.01', 'M15 6h.01', 'M9 12h.01', 'M15 12h.01', 'M9 18h.01', 'M15 18h.01'],
   list: ['M9 6h11', 'M9 12h11', 'M9 18h11', 'M4.5 6h.01', 'M4.5 12h.01', 'M4.5 18h.01'],
   target: [

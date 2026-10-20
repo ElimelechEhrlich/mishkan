@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { OtherMeta } from '../../hooks/useOtherItems';
@@ -25,6 +26,14 @@ const kinds = [
   { group: 'trackers', icon: 'chart' },
 ] as const;
 
+/** The page of each kind that has one, to go on to from here. */
+const pages: Partial<Record<OtherGroup, { readonly to: string; readonly label: string }>> = {
+  issues: { to: '/goals?tab=issues', label: labels.today.otherPage.issues },
+  notes: { to: '/notes', label: labels.today.otherPage.notes },
+  debts: { to: '/debts', label: labels.today.otherPage.debts },
+  shopping: { to: '/shopping', label: labels.today.otherPage.shopping },
+};
+
 /**
  * The items with no time of their own, apart from tasks and goals: one white card with a small
  * sign for each kind and its count, and the chosen kind's items under them.
@@ -35,6 +44,7 @@ export function OtherCard({ groups, meta, lookups }: OtherCardProps): ReactEleme
   const items = chosen === null ? [] : groups[chosen];
   const shown = expanded ? items : items.slice(0, firstLines);
   const hidden = items.length - shown.length;
+  const page = chosen === null ? undefined : pages[chosen];
   const icon = kinds.find((kind) => kind.group === chosen)?.icon ?? 'note';
 
   return (
@@ -93,17 +103,30 @@ export function OtherCard({ groups, meta, lookups }: OtherCardProps): ReactEleme
                 ))}
               </ul>
             )}
-            {items.length > firstLines && (
-              <button
-                type="button"
-                onClick={() => {
-                  setExpanded(!expanded);
-                }}
-                className="mb-1 min-h-9 rounded-full px-2 text-[13px] font-semibold text-primary transition active:scale-[0.97]"
-              >
-                {hidden > 0 ? labels.today.showMore(hidden) : labels.today.showLess}
-              </button>
-            )}
+            <div className="flex items-center justify-between border-t border-line py-1">
+              {items.length > firstLines ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpanded(!expanded);
+                  }}
+                  className="min-h-9 rounded-full px-2 text-[13px] font-semibold text-primary transition active:scale-[0.97]"
+                >
+                  {hidden > 0 ? labels.today.showMore(hidden) : labels.today.showLess}
+                </button>
+              ) : (
+                <span />
+              )}
+              {page !== undefined && (
+                <Link
+                  to={page.to}
+                  className="inline-flex min-h-9 items-center gap-1 rounded-full px-2 text-[13px] font-medium text-muted transition active:scale-[0.97]"
+                >
+                  {page.label}
+                  <Icon name="forward" className="size-3.5" />
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </div>

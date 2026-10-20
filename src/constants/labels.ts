@@ -190,7 +190,6 @@ export const labels = {
     shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
-    more: 'עוד',
   },
   data: {
     title: 'נתונים',
@@ -309,6 +308,13 @@ export const labels = {
       debts: 'אין חובות פתוחים',
       shopping: 'לא חסר כלום',
       trackers: 'אין מעקבים',
+    },
+    /** Where each kind has its own page, organized by entity. */
+    otherPage: {
+      issues: 'לכל הסוגיות',
+      notes: 'לדף הפתקים',
+      debts: 'לדף החובות',
+      shopping: 'לרשימת הקניות',
     },
     openSteps: (count: number): string => (count === 1 ? 'צעד פתוח' : `${String(count)} צעדים`),
     loose: {
