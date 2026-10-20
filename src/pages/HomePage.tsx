@@ -5,6 +5,7 @@ import { HomeViews } from '../components/items/HomeViews';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
+import { useAddOpener } from '../hooks/useAddRequest';
 import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
 import { useTimeline } from '../hooks/useTimeline';
@@ -29,13 +30,14 @@ export function HomePage(): ReactElement {
   const brief = useTodayBrief(items.items, items.steps, lookups, timeline, items.agenda);
   const loose = useLooseItems(timeline, items.items, items.updateItem, items.completeItem);
   const other = useOtherItems(items.assigned, items.steps);
+  const adder = useAddOpener();
 
   return (
     <PageShell
       title={labels.pages.start}
       incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
-      bottomBar={<ChatBar />}
+      bottomBar={<ChatBar onNewItem={adder.open} />}
     >
       <ErrorBanner message={items.error ?? entities.error ?? loose.error ?? other.error} />
       <HomeViews
@@ -56,13 +58,15 @@ export function HomePage(): ReactElement {
         other={other}
       />
       <QuickAddSheet
+        key={adder.key}
+        initiallyOpen={adder.key > 0}
+        buttonless
         entities={entities.entities}
         onStructureChanged={entities.reload}
         onAdd={items.addItem}
         onAddMissingItem={items.addMissingItem}
         onAddDebt={items.addDebt}
         onAddAppointments={items.addAppointments}
-        raised
       />
     </PageShell>
   );

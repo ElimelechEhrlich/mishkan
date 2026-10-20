@@ -32,9 +32,11 @@ export function StillRelevantCard({
     group === 'someday' ? ['back', 'keep', 'close'] : ['today', 'keep', 'shelf'];
 
   return (
-    <section className="flex flex-col gap-1.5 rounded-2xl bg-surface p-3 shadow-card ring-1 ring-primary/15">
+    <section className="flex flex-col gap-1.5 rounded-2xl bg-gradient-to-bl from-primary-soft via-primary-soft/60 to-surface p-3 shadow-card">
       <div className="flex items-center gap-1.5 text-[12px]">
-        <Icon name="repeat" className="size-3.5 text-primary" />
+        <span className="flex size-5.5 items-center justify-center rounded-full bg-primary text-white">
+          <Icon name="repeat" className="size-3.5" />
+        </span>
         <span className="font-semibold text-primary">{labels.today.stillRelevant}</span>
         <span className="min-w-0 flex-1 truncate text-muted">
           {labels.item.separator}
@@ -71,14 +73,14 @@ export function StillRelevantCard({
               onAnswer(item, choice);
             }}
             className={`${chip} ${
-              choice === answers[0] ? 'bg-primary-soft text-primary' : 'bg-paper text-ink'
+              choice === answers[0] ? 'bg-primary text-white' : 'bg-surface text-ink shadow-card'
             }`}
           >
             {labels.today.review[choice]}
           </button>
         ))}
         {group === 'undated' && (
-          <Link to={`/item/${item.id}`} className={`${chip} bg-paper text-ink`}>
+          <Link to={`/item/${item.id}`} className={`${chip} bg-surface text-ink shadow-card`}>
             {labels.today.review.date}
           </Link>
         )}

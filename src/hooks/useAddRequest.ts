@@ -16,3 +16,18 @@ export function useAddRequest(): UseAddRequest {
   }, []);
   return { request, requestAdd };
 }
+
+export type UseAddOpener = {
+  /** A new number each time the sheet is asked for; 0 until then. */
+  readonly key: number;
+  readonly open: () => void;
+};
+
+/** Opening the add sheet from a button of the page's own, such as in the bar at the bottom. */
+export function useAddOpener(): UseAddOpener {
+  const [key, setKey] = useState(0);
+  const open = useCallback((): void => {
+    setKey((previous) => previous + 1);
+  }, []);
+  return { key, open };
+}

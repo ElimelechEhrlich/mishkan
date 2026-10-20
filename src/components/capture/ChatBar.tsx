@@ -10,7 +10,12 @@ import { Icon } from '../ui/Icon';
  * opens right above the line, with its buttons to what was done, and closes with ×. The
  * conversation keeps it, to go on there.
  */
-export function ChatBar(): ReactElement {
+type ChatBarProps = {
+  /** Shows a "+" at the start of the bar that opens the add sheet. */
+  readonly onNewItem?: () => void;
+};
+
+export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
   const quick = useQuickAsk();
   const [draft, setDraft] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
@@ -115,6 +120,16 @@ export function ChatBar(): ReactElement {
         </div>
       )}
       <form onSubmit={handleSubmit} className="flex items-center gap-1.5">
+        {onNewItem !== undefined && (
+          <button
+            type="button"
+            aria-label={labels.actions.newItem}
+            onClick={onNewItem}
+            className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-float transition active:scale-90"
+          >
+            <Icon name="plus" className="size-6" />
+          </button>
+        )}
         <Link
           to="/assistant"
           aria-label={labels.assistant.open}
