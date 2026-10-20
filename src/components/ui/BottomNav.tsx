@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { NavLink } from 'react-router';
 import { labels } from '../../constants/labels';
 import { useNavMode } from '../../hooks/useNavMode';
+import { Icon } from './Icon';
 import type { IconName } from './Icon';
 import { NavCell } from './NavCell';
 
@@ -31,13 +32,36 @@ const mainItems: readonly NavItem[] = [
  */
 export function BottomNav(): ReactElement {
   const mode = useNavMode();
-  const items = mode === 'home' ? [home, main] : mainItems;
+  if (mode === 'home') {
+    // Home's bar is low: one rounded switch between home and main, its sign beside its name.
+    return (
+      <nav className="fixed inset-x-0 bottom-0 z-10 flex justify-center border-t border-line bg-surface/95 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-md">
+        <div className="flex gap-1 rounded-full bg-paper p-1 shadow-inner">
+          {[home, main].map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                `flex min-h-9 items-center gap-1.5 rounded-full px-5 text-[13px] transition active:scale-[0.97] ${
+                  isActive
+                    ? 'bg-surface font-semibold text-primary shadow-card'
+                    : 'font-medium text-muted'
+                }`
+              }
+            >
+              <Icon name={item.icon} className="size-4.5" />
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    );
+  }
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
-      <div
-        className={`mx-auto grid ${mode === 'home' ? 'max-w-sm grid-cols-2' : 'max-w-xl grid-cols-8'}`}
-      >
-        {items.map((item) => (
+      <div className="mx-auto grid max-w-xl grid-cols-8">
+        {mainItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

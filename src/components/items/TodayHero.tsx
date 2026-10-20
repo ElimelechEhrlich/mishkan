@@ -13,11 +13,13 @@ type TodayHeroProps = {
   readonly next: NextUp | null;
   /** Under the date: the strip of the coming days. */
   readonly children?: ReactNode;
+  /** At the bottom of the card: what waits on the parents. */
+  readonly footer?: ReactNode;
 };
 
 /**
  * The top of the app's first page: a greeting by the hour, the day in both calendars, the next
- * thing with an hour and how long until it.
+ * thing with an hour and how long until it (nothing, when there is none), and what waits.
  */
 export function TodayHero({
   greeting,
@@ -26,6 +28,7 @@ export function TodayHero({
   hebrewDate,
   next,
   children,
+  footer,
 }: TodayHeroProps): ReactElement {
   return (
     <section className="flex flex-col gap-3 rounded-3xl bg-gradient-to-bl from-primary-soft via-primary-soft/70 to-cream p-3.5 shadow-card">
@@ -40,12 +43,7 @@ export function TodayHero({
         </p>
       </div>
       {children}
-      {next === null ? (
-        <p className="flex items-center gap-2 text-[14px] text-muted">
-          <Icon name="clock" className="size-4.5 shrink-0" />
-          {labels.today.nothingNext}
-        </p>
-      ) : (
+      {next !== null && (
         <Link
           to={`/item/${next.id}`}
           className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2 shadow-card transition active:scale-[0.98]"
@@ -63,6 +61,7 @@ export function TodayHero({
           <Icon name="forward" className="size-4 shrink-0 text-faint" />
         </Link>
       )}
+      {footer}
     </section>
   );
 }

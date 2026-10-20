@@ -273,7 +273,6 @@ export const labels = {
       const hours = Math.round(minutes / 60);
       return hours === 1 ? 'בעוד שעה' : hours === 2 ? 'בעוד שעתיים' : `בעוד ${String(hours)} שעות`;
     },
-    nothingNext: 'אין עוד משהו עם שעה היום',
     showMore: (count: number): string => `עוד ${String(count)}`,
     showLess: 'פחות',
     allTimes: 'כל פריטי הזמן',
@@ -442,6 +441,9 @@ export const labels = {
     wrongAccount: 'כבר הצטרפת לבית? כנראה שזו כתובת אחרת: צא/י והיכנס/י עם הכתובת שאיתה הצטרפת.',
   },
   capture: {
+    shoppingModes: { item: 'פריט חסר', trip: 'לצאת לקניות' },
+    tripTitle: (list: string): string => `לצאת לקניות · ${list}`,
+    tripHint: 'משימה לכל דבר: מופיעה בזמן שלה, ובדף שלה כפתור לרשימה.',
     addShort: 'הוספה',
     entity: 'ישות',
     domain: 'תחום',
@@ -1350,6 +1352,16 @@ export const labels = {
     newQuestion: 'שאלה חדשה',
   },
   shopping: {
+    toList: (list: string): string => `לרשימת הקניות · ${list}`,
+    toListHint: 'שם מתחילים את הסבב',
+    planTrip: 'לתזמן',
+    planTripRow: 'לתזמן יציאה לקניות',
+    tripChip: (when: string): string => `יציאה: ${when}`,
+    tripWhen: { urgent: 'דחוף', today: 'היום', tomorrow: 'מחר', none: 'ללא מועד' },
+    tripDoneTitle: 'הסבב הסתיים',
+    tripDoneQuestion: (title: string): string => `לסגור את "${title}"?`,
+    tripClose: 'לסגור',
+    tripKeep: 'עוד לא',
     shared: 'משותף',
     private: 'פרטי',
     openRuns: 'סבבים פתוחים',

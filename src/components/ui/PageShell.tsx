@@ -147,14 +147,14 @@ export function PageShell({
       </header>
       <main
         className={`flex flex-1 animate-fade-in flex-col gap-3 px-4 pt-1 ${
-          hideNav ? 'pb-8' : bottomBar === undefined ? 'pb-40' : 'pb-56'
+          hideNav ? 'pb-8' : bottomBar === undefined ? 'pb-40' : 'pb-44'
         }`}
       >
         {children}
       </main>
-      {/* The conversation floats on its own above the add button, apart from the header's icons. */}
+      {/* The line at the bottom (home's), over home's low bar. */}
       {bottomBar !== undefined && !hideNav && (
-        <div className="fixed inset-x-0 bottom-[calc(3.85rem+env(safe-area-inset-bottom))] z-10 mx-auto max-w-xl bg-paper/90 px-4 py-2 backdrop-blur-md">
+        <div className="fixed inset-x-0 bottom-[calc(3.25rem+env(safe-area-inset-bottom))] z-10 mx-auto max-w-xl bg-paper/90 px-4 py-2 backdrop-blur-md">
           {bottomBar}
         </div>
       )}

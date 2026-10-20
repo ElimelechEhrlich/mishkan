@@ -52,16 +52,10 @@ export function StillRelevantCard({
           {labels.today.notNow}
         </button>
       </div>
-      <Link
-        to={`/item/${item.id}`}
-        className="truncate text-[15px] font-semibold active:opacity-60"
-      >
-        {item.title}
+      <Link to={`/item/${item.id}`} className="flex flex-col active:opacity-60">
+        <span className="text-[15px] leading-snug font-semibold break-words">{item.title}</span>
         {row.parentTitle !== null && (
-          <span className="text-[12px] font-normal text-muted">
-            {labels.item.separator}
-            {row.parentTitle}
-          </span>
+          <span className="text-[12px] break-words text-muted">{row.parentTitle}</span>
         )}
       </Link>
       <div className="flex flex-wrap gap-1.5">

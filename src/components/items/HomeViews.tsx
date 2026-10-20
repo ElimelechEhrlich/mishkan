@@ -181,7 +181,20 @@ export function HomeViews({
   return (
     <>
       {tabs}
-      <TodayHero greeting={greeting} name={name} date={date} hebrewDate={hebrewDate} next={next}>
+      <TodayHero
+        greeting={greeting}
+        name={name}
+        date={date}
+        hebrewDate={hebrewDate}
+        next={next}
+        footer={
+          <WaitingPills
+            waiting={waiting}
+            incompleteCount={incompleteCount}
+            toReview={loose.relevant !== null}
+          />
+        }
+      >
         <DayStrip
           days={thisWeek(today).map((date) => ({
             date,
@@ -195,11 +208,6 @@ export function HomeViews({
           onSelect={setDay}
         />
       </TodayHero>
-      <WaitingPills
-        waiting={waiting}
-        incompleteCount={incompleteCount}
-        toReview={loose.relevant !== null}
-      />
       {chosenDay === undefined ? (
         <FocusCard
           groups={groups}
