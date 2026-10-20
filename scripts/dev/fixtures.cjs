@@ -152,6 +152,8 @@ const item = (o) => {
     in_main: false,
     closed_with_parent: false,
     reviewed_at: null,
+    shopping_trip: null,
+    trip_run_done_at: null,
     created_at: now,
     completed_at: null,
     ...o,
@@ -297,6 +299,9 @@ item({
 // A supermarket run, to show it by department.
 const RUN = '00000000-0000-4000-8000-0000000000aa';
 item({ id: RUN, title: 'סבב קניות · סופר', kind: 'shopping_run', domain_id: dom('הבית', 'קניות') });
+// Going out shopping: for the supermarket tomorrow, and for clothes, whose run just finished.
+item({ title: 'לצאת לקניות · סופר', domain_id: dom('הבית', 'קניות'), time_mode: 'scheduled', due_date: day(1), shopping_trip: 'food' });
+item({ title: 'לצאת לקניות · ביגוד', domain_id: dom('הבית', 'קניות'), time_mode: 'anytime', shopping_trip: 'clothing', trip_run_done_at: now });
 [
   ['עגבניות', 'done'],
   ['נייר טואלט', 'open'],

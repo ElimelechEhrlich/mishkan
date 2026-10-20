@@ -238,6 +238,10 @@ export type Database = {
           closed_with_parent: boolean;
           /** When it was last looked at by "עוד רלוונטי?" on the home page. */
           reviewed_at: string | null;
+          /** The list a task of going out shopping ("לצאת לקניות") is for; null otherwise. */
+          shopping_trip: ShoppingCategory | null;
+          /** When a run of its list finished while it was open, so "להשלמה" asks to close it. */
+          trip_run_done_at: string | null;
         };
         Insert: {
           id?: string;
@@ -273,6 +277,7 @@ export type Database = {
           tracker_unit?: string | null;
           tracker_summary?: TrackerSummary;
           urgent_from_parent?: boolean;
+          shopping_trip?: ShoppingCategory | null;
           completed_by?: string | null;
           created_at?: string;
           completed_at?: string | null;
@@ -305,6 +310,7 @@ export type Database = {
           tracker_summary?: TrackerSummary;
           urgent_from_parent?: boolean;
           reviewed_at?: string | null;
+          trip_run_done_at?: string | null;
         };
         Relationships: [];
       };

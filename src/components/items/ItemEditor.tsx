@@ -44,6 +44,7 @@ import { CalendarRow } from './CalendarRow';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemHeading } from './ItemHeading';
+import { TripListLink } from '../shopping/TripListLink';
 import { OccurrencesCard } from './OccurrencesCard';
 import { RepeatChoice } from './RepeatChoice';
 import type { ReminderPerson } from '../../hooks/useReminderPeople';
@@ -258,7 +259,8 @@ export function ItemEditor({
 
   const isStep = item.parent_id !== null;
   const isContainer = item.kind === 'goal' || item.kind === 'issue';
-  const isShopping = item.kind === 'missing_item' || item.kind === 'shopping_run';
+  const isShopping =
+    item.kind === 'missing_item' || item.kind === 'shopping_run' || item.shopping_trip !== null;
   const isQuestion = item.kind === 'question';
   const isAppointment = item.kind === 'appointment';
   // An issue has no time of its own: the dates are on its steps.
@@ -281,7 +283,8 @@ export function ItemEditor({
         domain.id === item.domain_id && domain.name.includes(labels.appointment.healthDomain),
     ),
   );
-  const convertible = isStep ? null : asConvertible(item.kind);
+  // Going out shopping stays what it is: it belongs to its list.
+  const convertible = isStep || item.shopping_trip !== null ? null : asConvertible(item.kind);
   // A missing item can only move to the shopping domain of another entity, and anything
   // else stays out of shopping domains (it becomes a missing item by converting it).
   // An entity chosen before any domain, shown until a domain is chosen.
@@ -392,6 +395,7 @@ export function ItemEditor({
         }
       />
       {isAppointment && <AppointmentActions item={item} />}
+      {item.shopping_trip !== null && <TripListLink category={item.shopping_trip} />}
       {/* Every step done: the goal may be reached, but it is closed only when asked. */}
       {item.kind === 'goal' && !done && progress.allDone && (
         <p className="text-sm font-semibold text-primary">{labels.goals.allStepsDone}</p>
@@ -713,7 +717,7 @@ export function ItemEditor({
 
         {(item.due_date !== null || repeating) && <CalendarRow itemId={item.id} />}
 
-        {item.kind === 'task' && goals.length > 0 && (
+        {item.kind === 'task' && item.shopping_trip === null && goals.length > 0 && (
           <PropertyRow
             label={labels.sections.parent}
             icon="target"

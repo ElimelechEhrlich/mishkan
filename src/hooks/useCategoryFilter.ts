@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { shoppingCategories } from '../lib/itemRules';
 import type { ShoppingCategory } from '../types/domain';
 import type { CategoryGroup } from './useShopping';
@@ -19,7 +20,11 @@ export function useCategoryFilter(
   shared: readonly CategoryGroup[],
   personal: readonly CategoryGroup[],
 ): UseCategoryFilter {
-  const [chosen, setCategory] = useState<ShoppingCategory | null>(null);
+  // Opened from going out shopping, the page starts on that list.
+  const [searchParams] = useSearchParams();
+  const [chosen, setCategory] = useState<ShoppingCategory | null>(
+    () => shoppingCategories.find((category) => category === searchParams.get('category')) ?? null,
+  );
 
   return useMemo(() => {
     const count = (category: ShoppingCategory): number =>

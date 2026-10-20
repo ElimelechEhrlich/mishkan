@@ -140,6 +140,7 @@ export async function createItem(newItem: NewItem): Promise<void> {
     ...(newItem.time ?? {}),
     // A note that is one value keeps it as its answer.
     ...(newItem.value === undefined ? {} : { is_value: true, answer: newItem.value }),
+    ...(newItem.shoppingTrip === undefined ? {} : { shopping_trip: newItem.shoppingTrip }),
   });
   if (error !== null) {
     throw new Error(error.message);

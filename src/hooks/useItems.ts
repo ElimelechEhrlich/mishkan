@@ -49,7 +49,7 @@ type ItemsState = {
 /** An item shown for attention, and why. */
 export type AttentionEntry = {
   readonly item: Item;
-  readonly reason: 'waitingReminder' | 'lateStep';
+  readonly reason: 'waitingReminder' | 'lateStep' | 'tripDone';
 };
 
 export type UseItems = {
@@ -338,7 +338,11 @@ export function useItems(): UseItems {
         );
       })
       .map((item) => ({ item, reason: 'lateStep' as const }));
-    return [...waiting, ...late];
+    // A run of its list finished while going out shopping was open: close it?
+    const trips = state.items
+      .filter((item) => item.shopping_trip !== null && item.trip_run_done_at !== null)
+      .map((item) => ({ item, reason: 'tripDone' as const }));
+    return [...trips, ...waiting, ...late];
   }, [state.items, state.steps, incomplete, reminders.waitingItemIds, repeats]);
 
   const agenda = useMemo(

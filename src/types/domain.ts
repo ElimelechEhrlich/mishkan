@@ -156,6 +156,8 @@ export type NewItem = {
   readonly value?: string;
   /** The entity chosen while no domain is, so completing it asks only for the domain. */
   readonly entityId?: string | null;
+  /** For a task of going out shopping, in a shopping domain: the list it is for. */
+  readonly shoppingTrip?: ShoppingCategory;
 };
 
 /** Kinds an item can be converted to and from; runs and questions are left out. */

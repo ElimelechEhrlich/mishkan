@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { toMessage } from '../lib/errors';
 import { shoppingCategories, todayIso } from '../lib/itemRules';
 import { shoppingTargets } from '../lib/lookups';
+import { tripsByList } from '../lib/shoppingTrips';
 import { createShoppingRun, listBoughtRunItems } from '../services/shoppingService';
 import type {
   EntityWithDomains,
@@ -24,14 +25,20 @@ export type UseShopping = {
   /** Missing items of the parent's personal entity that are not in a run, by category. */
   readonly personal: readonly CategoryGroup[];
   readonly runs: readonly ShoppingRun[];
-  /** Other items that sit in a shopping domain, so they can be made missing items. */
-  readonly misplaced: readonly Item[];
+  /** The open going out shopping of each list, of the shared part and of the parent's own. */
+  readonly trips: {
+    readonly shared: ReadonlyMap<ShoppingCategory, Item>;
+    readonly personal: ReadonlyMap<ShoppingCategory, Item>;
+  };
+  /**
+   * Where new going out shopping is kept: the chosen entity's shopping domain (the home's when
+   * all are shown, or one with no shopping), and the parent's own.
+   */
+  readonly tripDomains: { readonly shared: string | null; readonly personal: string | null };
   readonly targets: readonly ShoppingTarget[];
   /** Shopping domain id to the name of its entity, for showing whom an item is for. The home is left out. */
   readonly entityNames: ReadonlyMap<string, string>;
   readonly error: string | null;
-  /** Converts an item filed in a shopping domain to a missing item. */
-  readonly makeMissing: (item: Item) => void;
   /** Marks a missing item bought, or puts a bought one back. */
   readonly toggleBought: (item: Item) => void;
   /** Gathers a category into a new run and opens the run's page. */
@@ -60,7 +67,7 @@ export function useShopping(
   const navigate = useNavigate();
   const [bought, setBought] = useState<readonly Item[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const { reload, completeItem, reopenItem, convertItem } = items;
+  const { reload, completeItem, reopenItem } = items;
 
   const openItems = items.items;
   /** Changes when an item is bought or returned, so bought run items are refetched then. */
@@ -107,14 +114,11 @@ export function useShopping(
         entity.domains.filter((domain) => domain.role === 'shopping').map((domain) => domain.id),
       ),
     );
-    const misplaced = openItems.filter(
+    const trips = openItems.filter(
       (item) =>
-        item.is_complete &&
+        item.shopping_trip !== null &&
         item.domain_id !== null &&
         shoppingDomains.has(item.domain_id) &&
-        item.parent_id === null &&
-        item.kind !== 'missing_item' &&
-        item.kind !== 'shopping_run' &&
         inScope(item),
     );
     // A missing item that repeats is on the list from the day of its occurrence.
@@ -151,7 +155,22 @@ export function useShopping(
       shared: byCategory(listed.filter((item) => !isPersonal(item))),
       personal: byCategory(listed.filter(isPersonal)),
       runs,
-      misplaced,
+      trips: {
+        shared: tripsByList(trips.filter((item) => !isPersonal(item))),
+        personal: tripsByList(trips.filter(isPersonal)),
+      },
+      tripDomains: {
+        shared:
+          targets.find(
+            (target) =>
+              target.entity.id === scope?.id &&
+              target.entity.kind !== 'personal' &&
+              target.entity.kind !== 'circle',
+          )?.domainId ??
+          targets.find((target) => target.entity.kind === 'home')?.domainId ??
+          null,
+        personal: targets.find((target) => target.entity.kind === 'personal')?.domainId ?? null,
+      },
       targets,
       entityNames,
     };
@@ -183,18 +202,5 @@ export function useShopping(
     [completeItem, reopenItem],
   );
 
-  const makeMissing = useCallback(
-    (item: Item): void => {
-      void convertItem(item.id, {
-        kind: 'missing_item',
-        detachSteps: false,
-        category: null,
-        debt: null,
-        startsAt: null,
-      });
-    },
-    [convertItem],
-  );
-
-  return { ...view, error, makeMissing, toggleBought, startRun };
+  return { ...view, error, toggleBought, startRun };
 }

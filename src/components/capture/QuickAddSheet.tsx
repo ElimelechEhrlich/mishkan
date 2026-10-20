@@ -46,6 +46,8 @@ type QuickAddSheetProps = {
   readonly entityId?: string | undefined;
   /** Opens on this domain; a shopping domain opens as a missing item for its entity. */
   readonly initialDomainId?: string | undefined;
+  /** Opens as going out shopping for this list, in the shopping domain given. */
+  readonly initialTrip?: ShoppingCategory | undefined;
   /** No floating button: the page opens the sheet from a button of its own. */
   readonly buttonless?: boolean;
 };
@@ -89,6 +91,7 @@ export function QuickAddSheet({
   initiallyOpen = false,
   entityId,
   initialDomainId,
+  initialTrip,
   buttonless = false,
 }: QuickAddSheetProps): ReactElement | null {
   const initialIsShopping = entities.some((entity) =>
@@ -113,7 +116,15 @@ export function QuickAddSheet({
   const [noteKind, setNoteKind] = useState<'note' | 'value'>('note');
   const [valueText, setValueText] = useState('');
   const isValue = kind === 'note' && noteKind === 'value';
-  const [category, setCategory] = useState<ShoppingCategory>('food');
+  const [category, setCategory] = useState<ShoppingCategory>(initialTrip ?? 'food');
+  /**
+   * In a shopping domain: something to buy, or the task of going out shopping for a list.
+   * Nothing else is kept in a shopping domain.
+   */
+  const [shoppingMode, setShoppingMode] = useState<'item' | 'trip'>(
+    initialTrip === undefined ? 'item' : 'trip',
+  );
+  const isTrip = kind === 'missing_item' && shoppingMode === 'trip';
   const [shoppingDomainId, setShoppingDomainId] = useState<string | null>(
     initialIsShopping ? (initialDomainId ?? null) : null,
   );
@@ -153,7 +164,8 @@ export function QuickAddSheet({
   const amount = Number(amountText);
   const amountValid = Number.isFinite(amount) && amount > 0;
 
-  const asksTime = kind === 'task' || kind === 'goal';
+  const asksTime = kind === 'task' || kind === 'goal' || isTrip;
+  const tripTitle = labels.capture.tripTitle(labels.shoppingCategory[category]);
   // Today or tomorrow picked for a task does not carry over when the kind becomes a goal.
   const pickedTime =
     kind === 'goal' && (quickTime === 'today' || quickTime === 'tomorrow') ? null : quickTime;
@@ -163,7 +175,7 @@ export function QuickAddSheet({
     ),
   );
   const canSave =
-    (kind === 'missing_item' ? listTitles.length > 0 : trimmedTitle !== '') &&
+    (isTrip || (kind === 'missing_item' ? listTitles.length > 0 : trimmedTitle !== '')) &&
     !saving &&
     (kind !== 'appointment' || appointment.startsAt !== '') &&
     (kind !== 'missing_item' || missingItemDomainId !== null) &&
@@ -187,6 +199,18 @@ export function QuickAddSheet({
   }
 
   function save(): Promise<boolean> {
+    if (isTrip) {
+      return missingItemDomainId === null
+        ? Promise.resolve(false)
+        : onAdd({
+            title: trimmedTitle === '' ? tripTitle : trimmedTitle,
+            kind: 'task',
+            domainId: missingItemDomainId,
+            parentId: null,
+            time: pickedTime === null ? null : quickTimeChoice(pickedTime, todayIso(), quickHour),
+            shoppingTrip: category,
+          });
+    }
     if (kind === 'missing_item') {
       return missingItemDomainId === null
         ? Promise.resolve(false)
@@ -252,7 +276,7 @@ export function QuickAddSheet({
         setOutcome('failed');
         return;
       }
-      if (kind === 'missing_item') {
+      if (kind === 'missing_item' && !isTrip) {
         // The list is in; the field is ready for the next one, of the kind still chosen.
         setTitle('');
         setOutcome({ added: count });
@@ -331,7 +355,7 @@ export function QuickAddSheet({
               disabled={!canSave}
               className="min-h-10 rounded-xl px-3 text-[15px] font-semibold text-primary transition active:scale-95 disabled:text-faint"
             >
-              {kind === 'missing_item' ? labels.capture.addShort : labels.actions.save}
+              {kind === 'missing_item' && !isTrip ? labels.capture.addShort : labels.actions.save}
             </button>
           </div>
         </div>
@@ -351,7 +375,7 @@ export function QuickAddSheet({
             <label className="sr-only" htmlFor="quick-add-title">
               {labels.titlePrompt[kind]}
             </label>
-            {kind === 'missing_item' ? (
+            {kind === 'missing_item' && !isTrip ? (
               <ShoppingListField value={title} onChange={setTitle} autoFocus large />
             ) : (
               <input
@@ -359,7 +383,9 @@ export function QuickAddSheet({
                 value={title}
                 autoFocus
                 autoComplete="off"
-                placeholder={isValue ? labels.data.valueName : labels.titlePrompt[kind]}
+                placeholder={
+                  isTrip ? tripTitle : isValue ? labels.data.valueName : labels.titlePrompt[kind]
+                }
                 onChange={(event) => {
                   setTitle(event.target.value);
                 }}
@@ -386,6 +412,18 @@ export function QuickAddSheet({
                 ))}
               </div>
             </div>
+
+            {kind === 'missing_item' && (
+              <Segmented
+                options={[
+                  { value: 'item', label: labels.capture.shoppingModes.item },
+                  { value: 'trip', label: labels.capture.shoppingModes.trip },
+                ]}
+                value={shoppingMode}
+                onChange={setShoppingMode}
+              />
+            )}
+            {isTrip && <p className="-mt-3 text-[13px] text-muted">{labels.capture.tripHint}</p>}
 
             {kind === 'missing_item' && (
               <MissingItemFields
@@ -459,7 +497,7 @@ export function QuickAddSheet({
           <div className="border-t border-line px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <div className="flex flex-col">
               <Button type="submit" disabled={!canSave}>
-                {kind === 'missing_item'
+                {kind === 'missing_item' && !isTrip
                   ? labels.shopping.addCount(listTitles.length)
                   : labels.actions.save}
               </Button>

@@ -1,14 +1,16 @@
 import type { ReactElement } from 'react';
 import { ScopeBar } from '../components/entities/ScopeBar';
 import { CategoryBar } from '../components/shopping/CategoryBar';
-import { MisplacedItems } from '../components/shopping/MisplacedItems';
+import { QuickAddSheet } from '../components/capture/QuickAddSheet';
 import { MissingItemForm } from '../components/shopping/MissingItemForm';
 import { RunCard } from '../components/shopping/RunCard';
 import { ShoppingSection } from '../components/shopping/ShoppingSection';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Icon } from '../components/ui/Icon';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
+import { useTripOpener } from '../hooks/useAddRequest';
 import { useCategoryFilter } from '../hooks/useCategoryFilter';
 import { useEntities } from '../hooks/useEntities';
 import { useEverythingShortcut } from '../hooks/useEverythingShortcut';
@@ -28,7 +30,11 @@ export function ShoppingPage(): ReactElement {
     shopping.shared.length === 0 &&
     shopping.personal.length === 0 &&
     shopping.runs.length === 0 &&
-    shopping.misplaced.length === 0;
+    shopping.trips.shared.size === 0 &&
+    shopping.trips.personal.size === 0;
+  const trip = useTripOpener();
+  const sharedTripDomain = shopping.tripDomains.shared;
+  const personalTripDomain = shopping.tripDomains.personal;
   const toEverything = useEverythingShortcut(entities.entities);
 
   return (
@@ -64,25 +70,63 @@ export function ShoppingPage(): ReactElement {
       <ShoppingSection
         title={labels.shopping.shared}
         groups={filter.shared}
+        trips={shopping.trips.shared}
+        only={filter.category}
         entityNames={shopping.entityNames}
         onBuy={shopping.toggleBought}
         onStartRun={(category) => {
           shopping.startRun(category, false);
         }}
+        onPlanTrip={
+          sharedTripDomain === null
+            ? undefined
+            : (category): void => {
+                trip.open(category, sharedTripDomain);
+              }
+        }
       />
       <ShoppingSection
         title={labels.shopping.private}
         groups={filter.personal}
+        trips={shopping.trips.personal}
+        only={filter.category}
         entityNames={shopping.entityNames}
         onBuy={shopping.toggleBought}
         onStartRun={(category) => {
           shopping.startRun(category, true);
         }}
+        onPlanTrip={
+          personalTripDomain === null
+            ? undefined
+            : (category): void => {
+                trip.open(category, personalTripDomain);
+              }
+        }
       />
-      <MisplacedItems
-        items={shopping.misplaced}
-        entityNames={shopping.entityNames}
-        onMakeMissing={shopping.makeMissing}
+      {sharedTripDomain !== null && (
+        <button
+          type="button"
+          onClick={() => {
+            trip.open(filter.category ?? 'food', sharedTripDomain);
+          }}
+          className="inline-flex min-h-9 items-center gap-1.5 self-start rounded-full px-2 text-[13px] font-medium text-muted transition active:scale-[0.97]"
+        >
+          <Icon name="calendar" className="size-4" />
+          {labels.shopping.planTripRow}
+        </button>
+      )}
+      <QuickAddSheet
+        key={`trip-${String(trip.request?.key ?? 0)}`}
+        entities={entities.entities}
+        onStructureChanged={entities.reload}
+        onAdd={items.addItem}
+        onAddMissingItem={items.addMissingItem}
+        onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
+        initiallyOpen={trip.request !== null}
+        initialDomainId={trip.request?.domainId}
+        initialTrip={trip.request?.category}
+        buttonless
       />
       {isEmpty && !items.loading && <EmptyState text={labels.status.noMissingItems} />}
     </PageShell>

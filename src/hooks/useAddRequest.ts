@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { ShoppingCategory } from '../types/domain';
 
 export type AddRequest = { readonly domainId: string; readonly key: number };
 
@@ -30,4 +31,25 @@ export function useAddOpener(): UseAddOpener {
     setKey((previous) => previous + 1);
   }, []);
   return { key, open };
+}
+
+export type TripRequest = {
+  readonly category: ShoppingCategory;
+  readonly domainId: string;
+  readonly key: number;
+};
+
+export type UseTripOpener = {
+  /** Set when the add sheet should open as going out shopping; a new `key` each time. */
+  readonly request: TripRequest | null;
+  readonly open: (category: ShoppingCategory, domainId: string) => void;
+};
+
+/** Opening the add sheet as going out shopping for a list, from beside it. */
+export function useTripOpener(): UseTripOpener {
+  const [request, setRequest] = useState<TripRequest | null>(null);
+  const open = useCallback((category: ShoppingCategory, domainId: string): void => {
+    setRequest((previous) => ({ category, domainId, key: (previous?.key ?? 0) + 1 }));
+  }, []);
+  return { request, open };
 }

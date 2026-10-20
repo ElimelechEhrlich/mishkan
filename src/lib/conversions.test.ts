@@ -32,6 +32,8 @@ function item(overrides: Partial<Item>): Item {
     is_complete: true,
     closed_with_parent: false,
     reviewed_at: null,
+    shopping_trip: null,
+    trip_run_done_at: null,
     auto_key: null,
     reminder_sent_at: null,
     remind_member_ids: null,

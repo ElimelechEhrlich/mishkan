@@ -124,7 +124,7 @@ const tools = [
   {
     name: 'add_item',
     description:
-      'Adds an item of any kind but a debt or a shopping item: a task (or a step of a goal or an issue, with parent_id), an appointment, a goal, an issue, a note, a value ("נתון": a name and one value), or a tracker. Give a domain_id when the right domain is clear from the household list; when it is not, ask, or leave it out and the item waits in "להשלמה" to be completed.',
+      'Adds an item of any kind but a debt or a shopping item: a task (or a step of a goal or an issue, with parent_id), an appointment, a goal, an issue, a note, a value ("נתון": a name and one value), or a tracker. Give a domain_id when the right domain is clear from the household list; when it is not, ask, or leave it out and the item waits in "להשלמה" to be completed. A domain marked (shopping list) takes no item of these kinds; the one task it takes is going out shopping, with shopping_trip.',
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -159,6 +159,13 @@ const tools = [
         entity_id: {
           type: 'STRING',
           description: 'The entity, when known but its domain is not.',
+        },
+        shopping_trip: {
+          type: 'STRING',
+          format: 'enum',
+          enum: ['food', 'clothing', 'urgent', 'planned'],
+          description:
+            'A task of going out shopping ("לצאת לקניות") for that list (food is the supermarket, "סופר"), with its time like any task. Its domain_id is a domain marked (shopping list), the home\'s when not said.',
         },
         date: {
           type: 'STRING',
@@ -435,7 +442,7 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
   const { data, error } = await db
     .from('items')
     .select(
-      'id, title, kind, time_mode, due_date, due_time, starts_at, is_complete, domain_id, entity_id, run_id, parent_id, shopping_category, place, is_value, answer',
+      'id, title, kind, time_mode, due_date, due_time, starts_at, is_complete, domain_id, entity_id, run_id, parent_id, shopping_category, shopping_trip, place, is_value, answer',
     )
     .eq('status', 'open')
     .neq('kind', 'question')
@@ -538,7 +545,9 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
           ? (debts.get(String(item.id)) ?? '')
           : item.is_value === true && typeof item.answer === 'string'
             ? `value: ${item.answer}`
-            : '';
+            : typeof item.shopping_trip === 'string'
+              ? `going out shopping for the ${item.shopping_trip} list`
+              : '';
       const kind = item.is_value === true ? 'value' : item.kind;
       const step = typeof item.parent_id === 'string' ? `step of ${item.parent_id}` : '';
       return [item.id, kind, item.title, extra, where, when, item.place ?? '', step]
@@ -549,12 +558,22 @@ async function listItems(db: SupabaseClient, house: Household, input: Row): Prom
     .concat(rows.length > maxRows ? `\n…and ${String(rows.length - maxRows)} more` : '');
 }
 
-async function addItem(db: SupabaseClient, input: Row): Promise<string> {
+async function addItem(db: SupabaseClient, house: Household, input: Row): Promise<string> {
   const title = text(input.title);
   if (title === null) {
     return 'error: a title is needed';
   }
-  const domainId = text(input.domain_id);
+  const trip = text(input.shopping_trip);
+  const domainId = trip === null ? text(input.domain_id) : (text(input.domain_id) ?? house.homeShopping);
+  if (trip !== null && !['food', 'clothing', 'urgent', 'planned'].includes(trip)) {
+    return 'error: going out shopping is for food, clothing, urgent or planned';
+  }
+  if (trip !== null && (domainId === null || !house.shoppingDomains.has(domainId))) {
+    return 'error: going out shopping goes in a domain marked (shopping list)';
+  }
+  if (trip === null && domainId !== null && house.shoppingDomains.has(domainId)) {
+    return 'error: a shopping domain takes things to buy (add_to_shopping) and going out shopping (shopping_trip) only; ask which the parent meant';
+  }
   const entityId = text(input.entity_id);
   const date = text(input.date);
   const time = text(input.time);
@@ -574,8 +593,8 @@ async function addItem(db: SupabaseClient, input: Row): Promise<string> {
     });
     return error === null ? `added; time: ${date} ${time}` : `error: ${error.message}`;
   }
-  const parentId = text(input.parent_id);
-  const kind = parentId !== null ? 'task' : String(input.kind);
+  const parentId = trip === null ? text(input.parent_id) : null;
+  const kind = parentId !== null || trip !== null ? 'task' : String(input.kind);
   if (kind === 'value') {
     const value = text(input.value);
     if (value === null) {
@@ -651,6 +670,7 @@ async function addItem(db: SupabaseClient, input: Row): Promise<string> {
       parent_id: parentId,
       notes: text(input.notes),
       ...timeFields,
+      ...(trip === null ? {} : { shopping_trip: trip }),
     },
     timeSaid,
   );
@@ -893,7 +913,7 @@ async function updateItem(db: SupabaseClient, house: Household, input: Row): Pro
   }
   const { data, error } = await db
     .from('items')
-    .select('id, title, kind, time_mode, due_date, due_time, starts_at, parent_id')
+    .select('id, title, kind, time_mode, due_date, due_time, starts_at, parent_id, shopping_trip')
     .eq('id', itemId)
     .single();
   if (error !== null) {
@@ -916,8 +936,9 @@ async function updateItem(db: SupabaseClient, house: Household, input: Row): Pro
       if (!house.places.has(domainId)) {
         return 'error: no such domain; take one from the household list';
       }
-      if (house.shoppingDomains.has(domainId) !== (item.kind === 'missing_item')) {
-        return 'error: a shopping domain holds shopping items only, and a shopping item stays in one';
+      const buying = item.kind === 'missing_item' || item.shopping_trip !== null;
+      if (house.shoppingDomains.has(domainId) !== buying) {
+        return 'error: a shopping domain holds things to buy and going out shopping only, and they stay in one';
       }
       Object.assign(changes, { domain_id: domainId, entity_id: null });
     } else if (entityId !== null) {
@@ -1112,7 +1133,7 @@ async function runTool(
       return { result: await listItems(db, house, input), changed: false, touched: untouched };
     case 'add_item':
     case 'add_debt': {
-      const result = name === 'add_item' ? await addItem(db, input) : await addDebt(db, input);
+      const result = name === 'add_item' ? await addItem(db, house, input) : await addDebt(db, input);
       const ok = result.startsWith('added');
       return { result, changed: ok, touched: ok ? touchedItem(addedId(result)) : untouched };
     }
@@ -1220,6 +1241,7 @@ Advising which kind of item to open is a main part of your job. When the parent 
 • מעקב (tracker): something recorded again and again over time, each entry a date, a value and a note, with a summary: the running total ("סכום מצטבר", expenses of a renovation) or the latest value ("ערך אחרון", weight, height). It can repeat (weigh every week), and can sit inside an issue.
 • חוב (debt): who owes whom and how much, important ("חשוב") or one that can wait ("יכול לחכות"). Payments are recorded on it, in parts, and what is left is shown; a monthly plan ("הסדר תשלומים", set on its page, by a sum each month or a number of payments, with interest if there is) puts it on its payment day each month, and paying marks that month (the last payment only what is left). A month can be skipped, which lowers nothing; only payments lower what is left. It is closed once paid.
 • פריט חסר (shopping): something to buy, on the shared list; the usual is the supermarket ("סופר"), sorted by its departments.
+• לצאת לקניות (add_item with shopping_trip): the task of going out to buy a list (סופר, ביגוד, דחוף, מתוכננת), with a time like any task; its page opens the list, and the run starts there. A shopping domain holds only these and things to buy. "חסר חלב", "צריך לקנות סוללות" is a thing to buy; "לצאת לסופר מחר", "סבב ביגוד ביום חמישי", "תזכיר לי ללכת לקנות" is going out shopping. When it could be either (such as "לקנות מתנה לדני עד מחר"), ask one short question: to add it to the shopping list, or to open going out shopping at that time.
 Choosing the kind when the parent asks to add something: take it from their words when it is clear ("תזכיר לי", "צריך ל..." is a task; a meeting or a class at a set hour is an appointment; "הקוד של", "מספר ה..." with one value is a value; "חייב לנו" is a debt; "לקנות" is shopping; something to work out with questions is an issue; a project in stages is a goal; something weighed or spent again and again is a tracker). When two kinds could fit and the difference matters (a value or a note, a task or a goal, a task or an appointment), do not guess: ask one short question that offers the two, in a sentence, and say what each would give them. Every time you add something, name the kind you chose in your answer ("פתחתי נתון...", "רשמתי חוב..."), so a wrong choice is seen at once; it can be converted in the app. For anything with a time, say its time too, as the tool result gives it: "דחוף", "ללא מועד", or the day and hour ("משימה 'להתקשר לחשמלאי', דחוף"). A task or a goal with no date is added as urgent unless the parent says there is no rush; then give no_date. A step with no date follows its goal.
 Every item belongs to an entity (the home, the couple, each parent, each child, "אישי" that only its owner sees, family and friends) and a domain in it (health, education, events...). Something not yet fully placed waits in "להשלמה".
 Dates the user says ("מחר", "ביום שלישי", "בעוד שבוע") are relative to today.
