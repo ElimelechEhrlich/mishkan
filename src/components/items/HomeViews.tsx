@@ -4,11 +4,20 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { UseLooseItems } from '../../hooks/useLooseItems';
 import type { UseOtherItems } from '../../hooks/useOtherItems';
+import { usePageSwipe } from '../../hooks/usePageSwipe';
 import { todayIso } from '../../lib/itemRules';
 import type { Timeline } from '../../lib/itemRules';
 import type { Lookups } from '../../lib/lookups';
 import { thisWeek } from '../../lib/todayBrief';
-import type { FocusGroup, FocusRow, NextUp, WaitingOnYou, WeekDay } from '../../lib/todayBrief';
+import type {
+  FocusGroup,
+  FocusRow,
+  LooseGroup,
+  NextUp,
+  OtherGroup,
+  WaitingOnYou,
+  WeekDay,
+} from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { Tabs } from '../ui/Tabs';
@@ -70,7 +79,7 @@ export function HomeViews({
 }: HomeViewsProps): ReactElement {
   const today = todayIso();
   const [view, setView] = useState<'today' | 'all'>('today');
-  // The tab is kept in the address, so "לבדוק מחדש" can open it and back returns.
+  // The tab is kept in the address, so "עוד רלוונטי?" can open it and back returns.
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'loose' ? 'loose' : 'today';
   const setTab = (next: 'today' | 'loose'): void => {
@@ -92,6 +101,22 @@ export function HomeViews({
     />
   );
   const [day, setDay] = useState(today);
+  // One list open at a time in the tab with no date: with no date at first.
+  const [opened, setOpened] = useState<
+    | { readonly card: 'loose'; readonly group: LooseGroup }
+    | { readonly card: 'other'; readonly group: OtherGroup }
+    | null
+  >({ card: 'loose', group: 'undated' });
+
+  // Swiping the page sideways, anywhere on it, turns between the two tabs.
+  const tabOrder = ['today', 'loose'] as const;
+  const tabIndex = tabOrder.indexOf(tab);
+  usePageSwipe({
+    canGo: (step) => view === 'today' && tabIndex + step >= 0 && tabIndex + step < tabOrder.length,
+    onGo: (step) => {
+      setTab(tabOrder[tabIndex + step] ?? 'today');
+    },
+  });
   const chosenDay = week.find((entry) => entry.date === day);
 
   if (view === 'all') {
@@ -129,6 +154,10 @@ export function HomeViews({
           />
         )}
         <LooseCard
+          chosen={opened?.card === 'loose' ? opened.group : null}
+          onChoose={(group) => {
+            setOpened(group === null ? null : { card: 'loose', group });
+          }}
           groups={loose.groups}
           reasons={loose.reasons}
           lookups={lookups}
@@ -137,7 +166,15 @@ export function HomeViews({
             setView('all');
           }}
         />
-        <OtherCard groups={other.groups} meta={other.meta} lookups={lookups} />
+        <OtherCard
+          chosen={opened?.card === 'other' ? opened.group : null}
+          onChoose={(group) => {
+            setOpened(group === null ? null : { card: 'other', group });
+          }}
+          groups={other.groups}
+          meta={other.meta}
+          lookups={lookups}
+        />
       </>
     );
   }
@@ -158,6 +195,11 @@ export function HomeViews({
           onSelect={setDay}
         />
       </TodayHero>
+      <WaitingPills
+        waiting={waiting}
+        incompleteCount={incompleteCount}
+        toReview={loose.relevant !== null}
+      />
       {chosenDay === undefined ? (
         <FocusCard
           groups={groups}
@@ -176,11 +218,6 @@ export function HomeViews({
           }}
         />
       )}
-      <WaitingPills
-        waiting={waiting}
-        incompleteCount={incompleteCount}
-        toReview={loose.relevant !== null}
-      />
     </>
   );
 }

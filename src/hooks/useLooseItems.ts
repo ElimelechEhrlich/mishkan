@@ -89,8 +89,8 @@ export function useLooseItems(
   }, [waitingIds, items]);
 
   const relevant = useMemo(
-    () => stillRelevant(groups, new Date(), putAsideIds),
-    [groups, putAsideIds],
+    () => stillRelevant(groups, today, putAsideIds),
+    [groups, today, putAsideIds],
   );
 
   const answer = useCallback(

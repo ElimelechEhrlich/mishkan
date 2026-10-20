@@ -248,36 +248,35 @@ export function daysSince(timestamp: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - new Date(timestamp).getTime()) / 86_400_000));
 }
 
-/** How long an item must rest, from when it was added or last looked at, before it is asked about. */
-export const reviewAfterDays = 7;
+/** How many of the longest untouched take turns, one each day, at "עוד רלוונטי?". */
+export const reviewPool = 7;
 
 /** The item "עוד רלוונטי?" asks about, and where it stands. */
 export type StillRelevant = { readonly row: FocusRow; readonly group: 'undated' | 'someday' };
 
 /**
- * The one item to ask "עוד רלוונטי?" about: of the tasks and goals with no date or on the shelf,
- * the one longest not looked at, once a week has passed since. Those put aside for today are
- * left out.
+ * The one item to ask "עוד רלוונטי?" about, there as long as any task or goal has no date or is
+ * on the shelf. The few longest not looked at take turns, a different one each day; an answer
+ * sends the item to the back, so another comes up. Those put aside for today are left out.
  */
 export function stillRelevant(
   groups: Pick<Record<LooseGroup, readonly FocusRow[]>, 'undated' | 'someday'>,
-  now: Date,
+  today: string,
   putAside: ReadonlySet<string>,
 ): StillRelevant | null {
-  const candidates = (['undated', 'someday'] as const).flatMap((group) =>
-    groups[group]
-      .filter(
-        (row) =>
-          (row.item.kind === 'task' || row.item.kind === 'goal') &&
-          !putAside.has(row.item.id) &&
-          daysSince(lookedAt(row.item), now) >= reviewAfterDays,
-      )
-      .map((row) => ({ row, group })),
-  );
-  const [first] = candidates.sort((a, b) =>
-    lookedAt(a.row.item).localeCompare(lookedAt(b.row.item)),
-  );
-  return first ?? null;
+  const pool = (['undated', 'someday'] as const)
+    .flatMap((group) =>
+      groups[group]
+        .filter(
+          (row) =>
+            (row.item.kind === 'task' || row.item.kind === 'goal') && !putAside.has(row.item.id),
+        )
+        .map((row) => ({ row, group })),
+    )
+    .sort((a, b) => lookedAt(a.row.item).localeCompare(lookedAt(b.row.item)))
+    .slice(0, reviewPool);
+  const day = Math.floor(Date.parse(`${today}T12:00:00Z`) / 86_400_000);
+  return pool[day % Math.max(1, pool.length)] ?? null;
 }
 
 /** The groups of the home page's items with no time of their own, beside tasks and goals. */

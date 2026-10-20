@@ -9,6 +9,9 @@ import { FocusLine } from './FocusLine';
 import { FocusTile } from './FocusTile';
 
 type LooseCardProps = {
+  /** The open group, if any; the page keeps one open at a time. */
+  readonly chosen: LooseGroup | null;
+  readonly onChoose: (group: LooseGroup | null) => void;
   readonly groups: Record<LooseGroup, readonly FocusRow[]>;
   /** For each waiting item, what it waits for. */
   readonly reasons: ReadonlyMap<string, string>;
@@ -25,17 +28,18 @@ const groupOrder = ['undated', 'waiting', 'someday'] as const;
 
 /**
  * Tasks and goals with no date, waiting, or on the shelf, so nothing is lost behind what is due:
- * three numbers, closed at first so the other kinds show too, and the chosen group's lines, the longest untouched first, each
+ * three numbers (one open at a time across the page, with no date at first), and the chosen group's lines, the longest untouched first, each
  * with how long it has been there (and a waiting one, what it waits for).
  */
 export function LooseCard({
+  chosen,
+  onChoose,
   groups,
   reasons,
   lookups,
   onComplete,
   onShowAll,
 }: LooseCardProps): ReactElement {
-  const [chosen, setChosen] = useState<LooseGroup | null>(null);
   const [expanded, setExpanded] = useState(false);
   const rows = chosen === null ? [] : groups[chosen];
   const shown = expanded ? rows : rows.slice(0, firstLines);
@@ -54,7 +58,7 @@ export function LooseCard({
             tone="calm"
             selected={group === chosen}
             onSelect={() => {
-              setChosen(group === chosen ? null : group);
+              onChoose(group === chosen ? null : group);
               setExpanded(false);
             }}
           />

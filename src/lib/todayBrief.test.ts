@@ -190,11 +190,10 @@ describe('this week', () => {
 });
 
 describe('loose groups and still relevant', () => {
-  const now = new Date('2026-10-20T09:00:00Z');
   const old = (title: string, overrides: Partial<Item>): Item =>
     item({ id: title, title, due_date: null, ...overrides });
 
-  it('lists the longest untouched first, and asks about the oldest a week old', () => {
+  it('lists the longest untouched first, and asks about each in turn, a day at a time', () => {
     const items = [
       old('fresh', { time_mode: 'anytime', created_at: '2026-10-18T10:00:00Z' }),
       old('august', { time_mode: 'anytime', created_at: '2026-08-01T10:00:00Z' }),
@@ -209,12 +208,18 @@ describe('loose groups and still relevant', () => {
     const groups = looseGroups(timelineOf(items, [], '2026-10-20'));
     expect(groups.undated.map((row) => row.item.title)).toEqual(['august', 'fresh']);
     expect(groups.someday.map((row) => row.item.title)).toEqual(['shelf', 'looked at']);
-    expect(stillRelevant(groups, now, new Set())?.row.item.title).toBe('august');
+    // Each day another of them, and all of them in turn, the oldest kept first in line.
+    const days = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'];
+    const asked = days.map((day) => stillRelevant(groups, day, new Set())?.row.item.title);
+    expect(new Set(asked)).toEqual(new Set(['august', 'shelf', 'fresh', 'looked at']));
     const august = items[1]?.id ?? '';
-    expect(stillRelevant(groups, now, new Set([august]))).toMatchObject({
-      group: 'someday',
-      row: { item: { title: 'shelf' } },
-    });
+    const withoutAugust = days.map(
+      (day) => stillRelevant(groups, day, new Set([august]))?.row.item.title,
+    );
+    expect(withoutAugust).not.toContain('august');
+    expect(
+      stillRelevant(looseGroups(timelineOf([], [], '2026-10-20')), '2026-10-20', new Set()),
+    ).toBe(null);
   });
 });
 

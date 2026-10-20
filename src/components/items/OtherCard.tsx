@@ -10,6 +10,9 @@ import { Icon } from '../ui/Icon';
 import { OtherLine } from './OtherLine';
 
 type OtherCardProps = {
+  /** The open group, if any; the page keeps one open at a time. */
+  readonly chosen: OtherGroup | null;
+  readonly onChoose: (group: OtherGroup | null) => void;
   readonly groups: Record<OtherGroup, readonly Item[]>;
   readonly meta: ReadonlyMap<string, OtherMeta>;
   readonly lookups: Lookups;
@@ -38,8 +41,13 @@ const pages: Partial<Record<OtherGroup, { readonly to: string; readonly label: s
  * The items with no time of their own, apart from tasks and goals: one white card with a small
  * sign for each kind and its count, and the chosen kind's items under them.
  */
-export function OtherCard({ groups, meta, lookups }: OtherCardProps): ReactElement {
-  const [chosen, setChosen] = useState<OtherGroup | null>(null);
+export function OtherCard({
+  chosen,
+  onChoose,
+  groups,
+  meta,
+  lookups,
+}: OtherCardProps): ReactElement {
   const [expanded, setExpanded] = useState(false);
   const items = chosen === null ? [] : groups[chosen];
   const shown = expanded ? items : items.slice(0, firstLines);
@@ -62,7 +70,7 @@ export function OtherCard({ groups, meta, lookups }: OtherCardProps): ReactEleme
                 role="tab"
                 aria-selected={selected}
                 onClick={() => {
-                  setChosen(selected ? null : kind.group);
+                  onChoose(selected ? null : kind.group);
                   setExpanded(false);
                 }}
                 className={`flex flex-col items-center gap-0.5 rounded-xl py-2 transition active:scale-[0.97] ${
