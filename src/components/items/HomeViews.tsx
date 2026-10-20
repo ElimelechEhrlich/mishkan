@@ -195,36 +195,41 @@ export function HomeViews({
           />
         }
       />
-      <DayStrip
-        days={thisWeek(today).map((date) => ({
-          date,
-          past: date < today,
-          count:
-            date === today
-              ? groups.today.length + groups.urgent.length
-              : (week.find((entry) => entry.date === date)?.things.length ?? 0),
-        }))}
-        selected={chosenDay === undefined ? today : day}
-        onSelect={setDay}
-      />
-      {chosenDay === undefined ? (
-        <FocusCard
-          groups={groups}
-          lookups={lookups}
-          loading={loading}
-          onComplete={onComplete}
-          onShowAll={() => {
-            setView('all');
-          }}
+      {/* The chosen day is a tab of the card under it, which holds what that day has. */}
+      <div className="flex flex-col">
+        <DayStrip
+          days={thisWeek(today).map((date) => ({
+            date,
+            past: date < today,
+            count:
+              date === today
+                ? groups.today.length + groups.urgent.length
+                : (week.find((entry) => entry.date === date)?.things.length ?? 0),
+          }))}
+          selected={chosenDay === undefined ? today : day}
+          onSelect={setDay}
         />
-      ) : (
-        <DayList
-          day={chosenDay}
-          onBack={() => {
-            setDay(today);
-          }}
-        />
-      )}
+        <div className="flex flex-col gap-2 rounded-2xl bg-primary-soft p-2">
+          {chosenDay === undefined ? (
+            <FocusCard
+              groups={groups}
+              lookups={lookups}
+              loading={loading}
+              onComplete={onComplete}
+              onShowAll={() => {
+                setView('all');
+              }}
+            />
+          ) : (
+            <DayList
+              day={chosenDay}
+              onBack={() => {
+                setDay(today);
+              }}
+            />
+          )}
+        </div>
+      </div>
     </>
   );
 }

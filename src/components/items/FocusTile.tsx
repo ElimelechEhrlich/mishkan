@@ -12,7 +12,7 @@ type FocusTileProps = {
 const tones = {
   alert: { soft: 'bg-alert-soft/80', ring: 'ring-alert/30', text: 'text-alert' },
   gold: { soft: 'bg-gold/10', ring: 'ring-gold/35', text: 'text-gold' },
-  primary: { soft: 'bg-primary-soft', ring: 'ring-primary/30', text: 'text-primary' },
+  primary: { soft: 'bg-surface/60', ring: 'ring-primary/30', text: 'text-primary' },
   calm: { soft: 'bg-cream', ring: 'ring-gold/25', text: 'text-ink' },
 } as const;
 
