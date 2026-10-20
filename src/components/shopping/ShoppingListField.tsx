@@ -8,6 +8,8 @@ type ShoppingListFieldProps = {
   readonly autoFocus?: boolean;
   /** Larger text, for the head of the add sheet. */
   readonly large?: boolean;
+  /** One line high at first, growing with what is written, for the form on the shopping page. */
+  readonly folded?: boolean;
 };
 
 /**
@@ -19,6 +21,7 @@ export function ShoppingListField({
   onChange,
   autoFocus = false,
   large = false,
+  folded = false,
 }: ShoppingListFieldProps): ReactElement {
   const field = useRef<HTMLTextAreaElement>(null);
 
@@ -34,7 +37,7 @@ export function ShoppingListField({
     <textarea
       ref={field}
       value={value}
-      rows={large ? 2 : 3}
+      rows={folded ? 1 : large ? 2 : 3}
       autoFocus={autoFocus}
       autoComplete="off"
       enterKeyHint="enter"
@@ -46,7 +49,7 @@ export function ShoppingListField({
       className={
         large
           ? 'w-full resize-none bg-transparent px-1 py-1 text-xl leading-snug font-medium placeholder:text-faint focus:outline-none focus-visible:outline-none'
-          : 'max-h-[50dvh] w-full resize-none rounded-xl bg-paper px-3.5 py-3 text-[15px] leading-relaxed placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
+          : `max-h-[50dvh] w-full resize-none rounded-xl bg-paper px-3.5 text-[15px] leading-relaxed placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${folded ? 'py-2' : 'py-3'}`
       }
     />
   );

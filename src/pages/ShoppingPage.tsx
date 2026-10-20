@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react';
-import { Link } from 'react-router';
 import { ScopeBar } from '../components/entities/ScopeBar';
 import { CategoryBar } from '../components/shopping/CategoryBar';
 import { MisplacedItems } from '../components/shopping/MisplacedItems';
@@ -7,8 +6,6 @@ import { MissingItemForm } from '../components/shopping/MissingItemForm';
 import { RunCard } from '../components/shopping/RunCard';
 import { ShoppingSection } from '../components/shopping/ShoppingSection';
 import { EmptyState } from '../components/ui/EmptyState';
-import { Icon } from '../components/ui/Icon';
-import { ListRow } from '../components/ui/ListRow';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
@@ -54,17 +51,6 @@ export function ShoppingPage(): ReactElement {
         targets={shopping.targets}
         onAdd={items.addMissingItem}
       />
-      <Link
-        to="/shopping/staples"
-        className="group block overflow-hidden rounded-2xl bg-surface shadow-card active:bg-paper"
-      >
-        <ListRow
-          icon="list"
-          title={labels.staples.open}
-          subtitle={labels.staples.openHint}
-          trailing={<Icon name="forward" className="size-4 text-faint" />}
-        />
-      </Link>
       {shopping.runs.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="px-1 text-xs font-bold tracking-wide text-muted">

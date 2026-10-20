@@ -28,7 +28,7 @@ export function TodayHero({
   children,
 }: TodayHeroProps): ReactElement {
   return (
-    <section className="flex flex-col gap-3.5 rounded-3xl bg-gradient-to-bl from-primary-soft via-primary-soft/70 to-cream p-4 shadow-card">
+    <section className="flex flex-col gap-3 rounded-3xl bg-gradient-to-bl from-primary-soft via-primary-soft/70 to-cream p-3.5 shadow-card">
       <div className="flex flex-col gap-0.5">
         <h2 className="font-display text-[22px] leading-7 font-bold">
           {greeting}, {name}
@@ -48,11 +48,11 @@ export function TodayHero({
       ) : (
         <Link
           to={`/item/${next.id}`}
-          className="flex items-center gap-3 rounded-2xl bg-surface px-3.5 py-2.5 shadow-card transition active:scale-[0.98]"
+          className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2 shadow-card transition active:scale-[0.98]"
         >
-          <span className="flex flex-col items-center rounded-xl bg-primary-soft px-2.5 py-1 text-primary">
-            <span className="text-[11px] font-semibold">{labels.today.nextUp}</span>
-            <span className="font-display text-[17px] leading-6 font-bold tabular-nums">
+          <span className="flex flex-col items-center rounded-xl bg-primary-soft px-2.5 py-0.5 text-primary">
+            <span className="text-[11px] leading-4 font-semibold">{labels.today.nextUp}</span>
+            <span className="font-display text-[16px] leading-5 font-bold tabular-nums">
               {next.time}
             </span>
           </span>
