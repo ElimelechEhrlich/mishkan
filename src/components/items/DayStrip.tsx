@@ -17,9 +17,9 @@ type DayStripProps = {
 /** The concave corner where the chosen day meets the card under it: the card's color, less a circle. */
 const flare = 'pointer-events-none absolute bottom-0 size-2.5';
 const flareLeft =
-  'bg-[radial-gradient(circle_at_0_0,transparent_10px,var(--color-primary-soft)_10.5px)]';
+  'bg-[radial-gradient(circle_at_0_0,transparent_10px,var(--color-primary)_10.5px)]';
 const flareRight =
-  'bg-[radial-gradient(circle_at_100%_0,transparent_10px,var(--color-primary-soft)_10.5px)]';
+  'bg-[radial-gradient(circle_at_100%_0,transparent_10px,var(--color-primary)_10.5px)]';
 
 /**
  * This week as a row of days, Sunday to Saturday, like a calendar's, a dot for each day that
@@ -48,19 +48,22 @@ export function DayStrip({ days, selected, onSelect }: DayStripProps): ReactElem
             }}
             className={`relative flex w-10 flex-col items-center transition active:scale-95 ${
               chosen
-                ? 'rounded-t-xl bg-primary-soft pt-1 pb-2.5 text-primary'
+                ? 'rounded-t-xl bg-primary pt-1 pb-2.5 text-white'
                 : past
                   ? 'mb-1.5 rounded-xl py-1 text-faint'
                   : 'mb-1.5 rounded-xl bg-surface py-1 text-ink shadow-card'
             }`}
           >
-            <span className={`text-[11px] font-medium ${chosen ? 'text-primary' : 'text-muted'}`}>
+            <span className={`text-[11px] font-medium ${chosen ? 'text-white/80' : 'text-muted'}`}>
               {chip.weekday}
             </span>
             <span className="font-display text-[17px] leading-5 font-bold">{chip.day}</span>
             <span className="flex h-1.5 items-center gap-0.5">
               {Array.from({ length: Math.min(count, 3) }, (_, index) => (
-                <span key={index} className="size-1 rounded-full bg-primary" />
+                <span
+                  key={index}
+                  className={`size-1 rounded-full ${chosen ? 'bg-white' : 'bg-primary'}`}
+                />
               ))}
             </span>
             {chosen && (
