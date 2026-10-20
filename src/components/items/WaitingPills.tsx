@@ -24,7 +24,15 @@ export function WaitingPills({
 }: WaitingPillsProps): ReactElement | null {
   const [question] = waiting.questions;
   const [goal] = waiting.reachedGoals;
-  const pills: { key: string; to: string; icon: IconName; text: string; color: string }[] = [
+  const pills: {
+    key: string;
+    to: string;
+    icon: IconName;
+    text: string;
+    color: string;
+    /** It opens the other tab of this page, which an arrow says. */
+    arrow?: boolean;
+  }[] = [
     ...(question === undefined
       ? []
       : [
@@ -69,7 +77,8 @@ export function WaitingPills({
             to: '/home?tab=loose',
             icon: 'repeat' as const,
             color: 'bg-primary-soft text-primary',
-            text: labels.today.toReview,
+            text: labels.today.stillRelevant,
+            arrow: true,
           },
         ]
       : []),
@@ -93,6 +102,7 @@ export function WaitingPills({
               <Icon name={pill.icon} className="size-4" />
             </span>
             {pill.text}
+            {pill.arrow === true && <Icon name="forward" className="-ms-1 size-4 text-primary" />}
           </Link>
         ))}
       </div>
