@@ -209,7 +209,7 @@ export function HomeViews({
           selected={chosenDay === undefined ? today : day}
           onSelect={setDay}
         />
-        <div className="flex flex-col gap-2 rounded-t-2xl border-t-[6px] border-primary pt-2">
+        <div className="flex flex-col gap-2 rounded-t-2xl border-t-[3px] border-primary pt-2">
           {chosenDay === undefined ? (
             <FocusCard
               groups={groups}
