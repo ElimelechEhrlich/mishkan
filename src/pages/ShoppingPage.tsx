@@ -128,6 +128,18 @@ export function ShoppingPage(): ReactElement {
         initialTrip={trip.request?.category}
         buttonless
       />
+      {/* The add button of every page, here opening on something to buy. */}
+      <QuickAddSheet
+        key={scoped.scope?.id ?? 'all'}
+        entities={entities.entities}
+        onStructureChanged={entities.reload}
+        onAdd={items.addItem}
+        onAddMissingItem={items.addMissingItem}
+        onAddDebt={items.addDebt}
+        onAddAppointments={items.addAppointments}
+        defaultKind="missing_item"
+        entityId={scoped.scope?.id}
+      />
       {isEmpty && !items.loading && <EmptyState text={labels.status.noMissingItems} />}
     </PageShell>
   );
