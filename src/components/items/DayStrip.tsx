@@ -46,12 +46,13 @@ export function DayStrip({ days, selected, onSelect }: DayStripProps): ReactElem
             onClick={() => {
               onSelect(date);
             }}
-            className={`relative flex w-10 flex-col items-center transition active:scale-95 ${
+            // Only the press moves; the colors change at once, with the corners into the band.
+            className={`relative flex w-10 flex-col items-center ${
               chosen
                 ? 'rounded-t-xl bg-primary pt-1 pb-2.5 text-white'
                 : past
                   ? 'mb-1.5 rounded-xl py-1 text-faint'
-                  : 'mb-1.5 rounded-xl bg-surface py-1 text-ink shadow-card'
+                  : 'mb-1.5 rounded-xl bg-surface py-1 text-ink shadow-card transition-transform active:scale-95'
             }`}
           >
             <span className={`text-[11px] font-medium ${chosen ? 'text-white/80' : 'text-muted'}`}>
