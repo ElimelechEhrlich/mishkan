@@ -11,6 +11,7 @@ import { useItems } from '../hooks/useItems';
 import { useTimeline } from '../hooks/useTimeline';
 import { useLookups } from '../hooks/useLookups';
 import { useLooseItems } from '../hooks/useLooseItems';
+import { useMoveItems } from '../hooks/useMoveItems';
 import { useOtherItems } from '../hooks/useOtherItems';
 import { useTodayBrief } from '../hooks/useTodayBrief';
 import { useHouseholdContext } from '../hooks/useRouteContext';
@@ -31,6 +32,7 @@ export function HomePage(): ReactElement {
   const loose = useLooseItems(timeline, items.items, items.updateItem, items.completeItem);
   const other = useOtherItems(items.assigned, items.steps);
   const adder = useAddOpener();
+  const mover = useMoveItems();
 
   return (
     <PageShell
@@ -39,7 +41,9 @@ export function HomePage(): ReactElement {
       todayCount={items.todayCount}
       bottomBar={<ChatBar onNewItem={adder.open} />}
     >
-      <ErrorBanner message={items.error ?? entities.error ?? loose.error ?? other.error} />
+      <ErrorBanner
+        message={items.error ?? entities.error ?? loose.error ?? other.error ?? mover.error}
+      />
       <HomeViews
         greeting={labels.today.greeting[brief.dayPart]}
         name={member.name}
@@ -56,6 +60,7 @@ export function HomePage(): ReactElement {
         week={brief.week}
         loose={loose}
         other={other}
+        mover={mover}
       />
       <QuickAddSheet
         key={adder.key}

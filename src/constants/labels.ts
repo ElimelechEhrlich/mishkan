@@ -440,6 +440,23 @@ export const labels = {
     signedInAs: 'מחובר/ת עם',
     wrongAccount: 'כבר הצטרפת לבית? כנראה שזו כתובת אחרת: צא/י והיכנס/י עם הכתובת שאיתה הצטרפת.',
   },
+  move: {
+    start: { today: 'להעביר להיום', tomorrow: 'לדחות למחר', urgent: 'לדחוף' },
+    confirm: (count: number, target: 'today' | 'tomorrow' | 'urgent'): string =>
+      target === 'today'
+        ? `להעביר ${String(count)} להיום`
+        : target === 'tomorrow'
+          ? `לדחות ${String(count)} למחר`
+          : `לסמן ${String(count)} דחוף`,
+    done: (count: number, target: 'today' | 'tomorrow' | 'urgent'): string =>
+      `${count === 1 ? 'פריט אחד' : `${String(count)} פריטים`} ${
+        target === 'today' ? 'הועברו להיום' : target === 'tomorrow' ? 'נדחו למחר' : 'סומנו דחוף'
+      }`,
+    all: 'כולם',
+    none: 'אף אחד',
+    cancel: 'ביטול',
+    pick: 'לסמן',
+  },
   capture: {
     shoppingModes: { item: 'פריט חסר', trip: 'לצאת לקניות' },
     tripTitle: (list: string): string => `לצאת לקניות · ${list}`,

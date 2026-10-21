@@ -300,3 +300,51 @@ export function otherGroups(assigned: readonly Item[], today: string): Record<Ot
     trackers: newest((item) => item.kind === 'tracker' && item.time_mode !== 'recurring'),
   };
 }
+
+/** Where the home page moves chosen items: to today, on to tomorrow, or to urgent. */
+export type MoveTarget = 'today' | 'tomorrow' | 'urgent';
+
+/**
+ * Whether an item can be moved from the home page. An appointment keeps its hour, a debt with
+ * a plan its payment day, and an issue its steps' dates; a repeating item moves its current
+ * occurrence only, so it needs one.
+ */
+export function canMove(item: Item): boolean {
+  if (item.kind !== 'task' && item.kind !== 'goal' && item.time_mode !== 'recurring') {
+    return false;
+  }
+  return item.time_mode !== 'recurring' || item.due_date !== null;
+}
+
+/** What moving an item does: its current occurrence to a day, or its own time changed. */
+export type MoveChange =
+  | { readonly kind: 'occurrence'; readonly day: string; readonly time: string | null }
+  | {
+      readonly kind: 'update';
+      readonly changes: Pick<Item, 'time_mode' | 'due_date' | 'due_time'>;
+    };
+
+/** How an item moves to today or tomorrow (keeping its hour), or to urgent (with no date). */
+export function moveChange(item: Item, target: MoveTarget, today: string): MoveChange {
+  if (target === 'urgent') {
+    return { kind: 'update', changes: { time_mode: 'urgent', due_date: null, due_time: null } };
+  }
+  const day = target === 'today' ? today : addDays(today, 1);
+  if (item.time_mode === 'recurring') {
+    return { kind: 'occurrence', day, time: item.due_time };
+  }
+  return {
+    kind: 'update',
+    changes: { time_mode: 'scheduled', due_date: day, due_time: item.due_time },
+  };
+}
+
+/** What takes a move back: the occurrence to its day, or the item's own time as it was. */
+export function moveBack(item: Item): MoveChange {
+  return item.time_mode === 'recurring'
+    ? { kind: 'occurrence', day: item.due_date ?? '', time: item.due_time }
+    : {
+        kind: 'update',
+        changes: { time_mode: item.time_mode, due_date: item.due_date, due_time: item.due_time },
+      };
+}

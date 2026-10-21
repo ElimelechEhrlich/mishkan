@@ -5,7 +5,10 @@ import {
   thisWeek,
   firstFocus,
   focusGroups,
+  canMove,
   looseGroups,
+  moveBack,
+  moveChange,
   otherGroups,
   stillRelevant,
   nextUp,
@@ -248,5 +251,36 @@ describe('other groups', () => {
     expect(groups.debts.map((entry) => entry.id)).toEqual(['d']);
     expect(groups.shopping.map((entry) => entry.id)).toEqual(['m']);
     expect(groups.trackers.map((entry) => entry.id)).toEqual(['t']);
+  });
+});
+
+describe('moving from the home page', () => {
+  const day = '2026-10-21';
+  it('moves a task to today or tomorrow keeping its hour, and to urgent with no date', () => {
+    const late = item({ due_date: '2026-10-19', due_time: '09:00:00' });
+    expect(moveChange(late, 'today', day)).toEqual({
+      kind: 'update',
+      changes: { time_mode: 'scheduled', due_date: day, due_time: '09:00:00' },
+    });
+    expect(moveChange(late, 'tomorrow', day)).toMatchObject({
+      changes: { due_date: '2026-10-22' },
+    });
+    expect(moveChange(item({ time_mode: 'anytime', due_date: null }), 'urgent', day)).toEqual({
+      kind: 'update',
+      changes: { time_mode: 'urgent', due_date: null, due_time: null },
+    });
+    expect(moveBack(late)).toEqual({
+      kind: 'update',
+      changes: { time_mode: 'scheduled', due_date: '2026-10-19', due_time: '09:00:00' },
+    });
+  });
+
+  it('moves the current occurrence of what repeats, and leaves appointments and issues', () => {
+    const repeating = item({ time_mode: 'recurring', due_date: '2026-10-20', due_time: null });
+    expect(moveChange(repeating, 'today', day)).toEqual({ kind: 'occurrence', day, time: null });
+    expect(canMove(repeating)).toBe(true);
+    expect(canMove(item({ kind: 'appointment' }))).toBe(false);
+    expect(canMove(item({ kind: 'issue' }))).toBe(false);
+    expect(canMove(item({ kind: 'debt', time_mode: 'scheduled' }))).toBe(false);
   });
 });

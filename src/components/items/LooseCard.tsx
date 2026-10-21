@@ -2,11 +2,15 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
-import { daysSince } from '../../lib/todayBrief';
-import type { FocusRow, LooseGroup } from '../../lib/todayBrief';
+import { useMovePick } from '../../hooks/useMovePick';
+import { canMove, daysSince } from '../../lib/todayBrief';
+import type { FocusRow, LooseGroup, MoveTarget } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
 import { FocusLine } from './FocusLine';
 import { FocusTile } from './FocusTile';
+import { MoveBar } from './MoveBar';
+import { MoveButton } from './MoveButton';
+import { PickLine } from './PickLine';
 
 type LooseCardProps = {
   /** The open group, if any; the page keeps one open at a time. */
@@ -19,6 +23,9 @@ type LooseCardProps = {
   readonly onComplete: (item: Item) => void;
   /** Opens every item by its time, where these stand at the end. */
   readonly onShowAll: () => void;
+  /** Moves the chosen items with no date to urgent. */
+  readonly onMove: (items: readonly Item[], target: MoveTarget) => void;
+  readonly moving: boolean;
 };
 
 /** Lines shown before "more". */
@@ -39,10 +46,15 @@ export function LooseCard({
   lookups,
   onComplete,
   onShowAll,
+  onMove,
+  moving,
 }: LooseCardProps): ReactElement {
   const [expanded, setExpanded] = useState(false);
+  const pick = useMovePick();
   const rows = chosen === null ? [] : groups[chosen];
-  const shown = expanded ? rows : rows.slice(0, firstLines);
+  const shown = expanded || pick.picking ? rows : rows.slice(0, firstLines);
+  // Only what has no date is moved from here, to urgent.
+  const movable = chosen === 'undated' ? rows.filter((row) => canMove(row.item)) : [];
   const hidden = rows.length - shown.length;
   const now = new Date();
 
@@ -60,6 +72,7 @@ export function LooseCard({
             onSelect={() => {
               onChoose(group === chosen ? null : group);
               setExpanded(false);
+              pick.stop();
             }}
           />
         ))}
@@ -74,6 +87,24 @@ export function LooseCard({
             <ul className="flex flex-col divide-y divide-line">
               {shown.map((row) => {
                 const reason = reasons.get(row.item.id);
+                const age = labels.today.age(daysSince(row.item.created_at, now));
+                if (pick.picking) {
+                  return (
+                    <PickLine
+                      key={row.item.id}
+                      row={row}
+                      meta={age}
+                      picked={pick.picked.has(row.item.id)}
+                      onToggle={
+                        canMove(row.item)
+                          ? (): void => {
+                              pick.toggle(row.item.id);
+                            }
+                          : undefined
+                      }
+                    />
+                  );
+                }
                 return (
                   <FocusLine
                     key={row.item.id}
@@ -82,7 +113,7 @@ export function LooseCard({
                         ? row
                         : { ...row, parentTitle: labels.today.waitingFor(reason) }
                     }
-                    meta={labels.today.age(daysSince(row.item.created_at, now))}
+                    meta={age}
                     alert={false}
                     quiet
                     lookups={lookups}
@@ -92,28 +123,49 @@ export function LooseCard({
               })}
             </ul>
           )}
-          <div className="flex items-center justify-between border-t border-line py-0.5">
-            {rows.length > firstLines ? (
+          {pick.picking ? (
+            <MoveBar
+              target="urgent"
+              count={pick.picked.size}
+              total={movable.length}
+              busy={moving}
+              onAll={(all) => {
+                pick.setAll(all ? movable.map((row) => row.item.id) : []);
+              }}
+              onCancel={pick.stop}
+              onMove={() => {
+                onMove(
+                  movable.filter((row) => pick.picked.has(row.item.id)).map((row) => row.item),
+                  'urgent',
+                );
+                pick.stop();
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-between border-t border-line py-0.5">
+              {rows.length > firstLines ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpanded(!expanded);
+                  }}
+                  className="min-h-9 rounded-full px-2 text-[13px] font-semibold text-primary transition active:scale-[0.97]"
+                >
+                  {hidden > 0 ? labels.today.showMore(hidden) : labels.today.showLess}
+                </button>
+              ) : (
+                <span />
+              )}
+              {movable.length > 0 && <MoveButton target="urgent" onClick={pick.start} />}
               <button
                 type="button"
-                onClick={() => {
-                  setExpanded(!expanded);
-                }}
-                className="min-h-9 rounded-full px-2 text-[13px] font-semibold text-primary transition active:scale-[0.97]"
+                onClick={onShowAll}
+                className="min-h-9 rounded-full px-2 text-[13px] font-medium text-muted transition active:scale-[0.97]"
               >
-                {hidden > 0 ? labels.today.showMore(hidden) : labels.today.showLess}
+                {labels.today.allTimes}
               </button>
-            ) : (
-              <span />
-            )}
-            <button
-              type="button"
-              onClick={onShowAll}
-              className="min-h-9 rounded-full px-2 text-[13px] font-medium text-muted transition active:scale-[0.97]"
-            >
-              {labels.today.allTimes}
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       )}
     </section>

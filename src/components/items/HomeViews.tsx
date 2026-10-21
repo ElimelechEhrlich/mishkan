@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { UseLooseItems } from '../../hooks/useLooseItems';
+import type { UseMoveItems } from '../../hooks/useMoveItems';
 import type { UseOtherItems } from '../../hooks/useOtherItems';
 import { usePageSwipe } from '../../hooks/usePageSwipe';
 import { todayIso } from '../../lib/itemRules';
@@ -51,6 +52,8 @@ type HomeViewsProps = {
   readonly loose: UseLooseItems;
   /** The items with no time of their own, by kind. */
   readonly other: UseOtherItems;
+  /** Moving chosen items: to today, on to tomorrow, or to urgent. */
+  readonly mover: UseMoveItems;
 };
 
 /**
@@ -76,6 +79,7 @@ export function HomeViews({
   week,
   loose,
   other,
+  mover,
 }: HomeViewsProps): ReactElement {
   const today = todayIso();
   const [view, setView] = useState<'today' | 'all'>('today');
@@ -165,6 +169,8 @@ export function HomeViews({
           onShowAll={() => {
             setView('all');
           }}
+          onMove={mover.move}
+          moving={mover.busy}
         />
         <OtherCard
           chosen={opened?.card === 'other' ? opened.group : null}
@@ -219,6 +225,8 @@ export function HomeViews({
               onShowAll={() => {
                 setView('all');
               }}
+              onMove={mover.move}
+              moving={mover.busy}
             />
           ) : (
             <DayList
