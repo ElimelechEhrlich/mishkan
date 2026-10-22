@@ -320,7 +320,7 @@
 ---
 
 ## 5. משימות לפי הסדר
-- **חזרה שנתית לפי תאריך עברי (2026-10-22, ביקש הבעלים; בענף, מחכה ל"רץ" של 0048):** `0048_hebrew_yearly.sql`, `RepeatEditor` ("לפי לוח"), `HebrewYearlyFields`, `lib/hebrewDate` (`hebrewYearlyDates`, `hebrewYearlyOf`, `hebrewDayMonth`, `hebrewMonthChoices`), `setRepeat` שולח ימים או מנקה. חשוב: `setRepeat` קורא ל־`clear_hebrew_repeat`, ולכן אסור לעלות ל־main לפני שהמיגרציה רצה. לא נעשה: שנה ראשונה לפי יום הקבורה.
+- **חזרה שנתית לפי תאריך עברי (2026-10-22, ביקש הבעלים; 0048 רצה, ב־main):** `0048_hebrew_yearly.sql`, `RepeatEditor` ("לפי לוח"), `HebrewYearlyFields`, `lib/hebrewDate` (`hebrewYearlyDates`, `hebrewYearlyOf`, `hebrewDayMonth`, `hebrewMonthChoices`), `setRepeat` שולח ימים או מנקה. חשוב: `setRepeat` קורא ל־`clear_hebrew_repeat`, ולכן אסור לעלות ל־main לפני שהמיגרציה רצה. לא נעשה: שנה ראשונה לפי יום הקבורה.
 
 
 1. **בדיקה בטלפון** של מה שמופיע למעלה תחת "לא נבדק בטלפון". הבעלים מדווח, ומתקנים לפי זה.
