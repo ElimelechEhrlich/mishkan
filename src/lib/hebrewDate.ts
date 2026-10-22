@@ -1,4 +1,5 @@
 import { addDays } from './itemRules';
+import type { HebrewYearly, LeapAdar } from '../types/domain';
 
 /** Reads a date in the Hebrew calendar. English month names are stable keys to compare. */
 const partsFormat = new Intl.DateTimeFormat('en-u-ca-hebrew', {
@@ -180,15 +181,20 @@ export function isHebrewLeapYear(year: number): boolean {
 /**
  * The day (YYYY-MM-DD) of a Hebrew date, such as כ״ו באייר תשפ״ז. A day past the end of its
  * month (the 30th of a 29-day month) is taken as the month's last day; plain Adar in a leap
- * year is Adar II, and Adar I or II in a plain year is Adar.
+ * year is the Adar given (Adar II unless said), and Adar I or II in a plain year is Adar.
  */
-export function isoFromHebrew(year: number, month: string, day: number): string | null {
+export function isoFromHebrew(
+  year: number,
+  month: string,
+  day: number,
+  leapAdar: LeapAdar = 'Adar II',
+): string | null {
   const months = hebrewMonths(year);
   const wanted =
     months.find((entry) => entry.month === month) ??
     months.find((entry) =>
       month === 'Adar'
-        ? entry.month === 'Adar II'
+        ? entry.month === leapAdar
         : month.startsWith('Adar') && entry.month === 'Adar',
     );
   if (wanted === undefined) {
@@ -203,3 +209,43 @@ export function isoFromHebrew(year: number, month: string, day: number): string 
   }
   return null;
 }
+
+/** How many years ahead a yearly Hebrew date is worked out. */
+export const hebrewYearsAhead = 60;
+
+/** The civil days of a Hebrew date, from this Hebrew year on, for the years ahead. */
+export function hebrewYearlyDates(date: HebrewYearly, today: string): string[] {
+  const first = hebrewYearOf(today);
+  return Array.from({ length: hebrewYearsAhead }, (_, index) =>
+    isoFromHebrew(first + index, date.month, date.day, date.leapAdar),
+  ).filter((day): day is string => day !== null);
+}
+
+/** A Hebrew date in words, without a year: כ״ו באייר. */
+export function hebrewDayMonth(date: Pick<HebrewYearly, 'month' | 'day'>): string {
+  return `${hebrewNumeral(date.day)} ב${monthNames[date.month] ?? date.month}`;
+}
+
+/** The Hebrew date of a day, to keep every year; after sunset it is already the next day. */
+export function hebrewYearlyOf(isoDate: string, afterSunset: boolean): HebrewYearly {
+  const parts = hebrewParts(afterSunset ? addDays(isoDate, 1) : isoDate);
+  return { month: parts.month, day: parts.day, leapAdar: 'Adar II' };
+}
+
+/** The months a yearly Hebrew date can be in, with their names: Adar, and Adar I and II apart. */
+export const hebrewMonthChoices: readonly { readonly month: string; readonly name: string }[] = [
+  'Tishri',
+  'Heshvan',
+  'Kislev',
+  'Tevet',
+  'Shevat',
+  'Adar',
+  'Adar I',
+  'Adar II',
+  'Nisan',
+  'Iyar',
+  'Sivan',
+  'Tamuz',
+  'Av',
+  'Elul',
+].map((month) => ({ month, name: monthNames[month] ?? month }));

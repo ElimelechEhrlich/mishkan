@@ -58,6 +58,16 @@ export type { RepeatFrom } from './database';
 export type OccurrenceStatus = Enums['occurrence_status'];
 
 /** What a parent sets for a repeating item. */
+/** Where Adar of a plain year falls in a leap year. */
+export type LeapAdar = 'Adar I' | 'Adar II';
+
+/** A date kept every Hebrew year: its month (the calendar's name), its day, and the leap Adar. */
+export type HebrewYearly = {
+  readonly month: string;
+  readonly day: number;
+  readonly leapAdar: LeapAdar;
+};
+
 export type RepeatDraft = {
   readonly every: number;
   readonly unit: RepeatUnit;
@@ -74,6 +84,8 @@ export type RepeatDraft = {
   readonly endKind: RepeatEnd;
   readonly endCount: number | null;
   readonly endUntil: string | null;
+  /** Every year on this Hebrew date instead, with the hours above; no end. */
+  readonly hebrew?: HebrewYearly | null;
 };
 
 /** What a parent sets for a reminder: when it rings, and for whom (null for everyone). */

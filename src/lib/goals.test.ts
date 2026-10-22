@@ -74,6 +74,9 @@ function repeat(overrides: Partial<ItemRepeat>): ItemRepeat {
     tracker_closes: false,
     dates: [],
     hebrew: false,
+    hebrew_month: null,
+    hebrew_day: null,
+    hebrew_leap_adar: null,
     ...overrides,
   };
 }

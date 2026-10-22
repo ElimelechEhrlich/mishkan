@@ -1,3 +1,5 @@
+import { hebrewYearlyDates } from '../lib/hebrewDate';
+import { todayIso } from '../lib/itemRules';
 import { supabase } from '../lib/supabase';
 import { allPages } from './pages';
 import type {
@@ -55,6 +57,26 @@ export async function listOccurrences(range: {
 }
 
 export async function setRepeat(itemId: string, draft: RepeatDraft): Promise<void> {
+  if (draft.hebrew !== undefined && draft.hebrew !== null) {
+    // Every year on a Hebrew date: the civil days of the years ahead, worked out here.
+    const { error } = await supabase.rpc('save_hebrew_repeat', {
+      p_item_id: itemId,
+      p_month: draft.hebrew.month,
+      p_day: draft.hebrew.day,
+      p_leap_adar: draft.hebrew.month === 'Adar' ? draft.hebrew.leapAdar : null,
+      p_dates: hebrewYearlyDates(draft.hebrew, todayIso()),
+      p_times: [...draft.times],
+    });
+    if (error !== null) {
+      throw new Error(error.message);
+    }
+    return;
+  }
+  // Another rhythm lets go of a Hebrew date kept before.
+  const cleared = await supabase.rpc('clear_hebrew_repeat', { p_item_id: itemId });
+  if (cleared.error !== null) {
+    throw new Error(cleared.error.message);
+  }
   const { error } = await supabase.rpc('save_repeat', {
     p_item_id: itemId,
     p_every: draft.every,

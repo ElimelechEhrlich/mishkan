@@ -17,6 +17,8 @@ type DateFieldProps = {
   readonly max?: string | undefined;
   /** Offers today, tomorrow and in a week as one tap each. */
   readonly shortcuts?: boolean;
+  /** Shows the Hebrew date and a way to choose by it; off where a civil day is asked for. */
+  readonly hebrew?: boolean;
 };
 
 /**
@@ -31,6 +33,7 @@ export function DateField({
   min,
   max,
   shortcuts = false,
+  hebrew = true,
 }: DateFieldProps): ReactElement {
   const today = todayIso();
   const quick = [
@@ -50,7 +53,7 @@ export function DateField({
           {value === '' ? label : formatPickedDate(value)}
         </span>
       </PickerInput>
-      <HebrewDateToggle value={value} onPick={onChange} />
+      {hebrew && <HebrewDateToggle value={value} onPick={onChange} />}
       {shortcuts && (
         <div className="flex flex-wrap gap-1.5">
           {quick.map((choice) => (

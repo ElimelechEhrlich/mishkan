@@ -281,6 +281,14 @@ export function draftOfRepeat(repeat: ItemRepeat): RepeatDraft {
     endKind: repeat.end_kind,
     endCount: repeat.end_count,
     endUntil: repeat.end_until,
+    hebrew:
+      repeat.hebrew_month === null || repeat.hebrew_day === null
+        ? null
+        : {
+            month: repeat.hebrew_month,
+            day: repeat.hebrew_day,
+            leapAdar: repeat.hebrew_leap_adar ?? 'Adar II',
+          },
   };
 }
 

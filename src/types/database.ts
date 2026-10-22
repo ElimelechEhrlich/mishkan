@@ -727,6 +727,11 @@ export type Database = {
           dates: string[];
           /** The days are those of a Hebrew date, every year. */
           hebrew: boolean;
+          /** The Hebrew date kept, set on the item's page; null for a birthday from a profile. */
+          hebrew_month: string | null;
+          hebrew_day: number | null;
+          /** For Adar of a plain year: which Adar it falls in, in a leap year. */
+          hebrew_leap_adar: 'Adar I' | 'Adar II' | null;
         };
         // Written only through set_repeat(), stop_repeat() and resume_repeat().
         Insert: never;
@@ -847,6 +852,21 @@ export type Database = {
         Args: { p_item_id: string };
         /** The payment's id. */
         Returns: string;
+      };
+      save_hebrew_repeat: {
+        Args: {
+          p_item_id: string;
+          p_month: string;
+          p_day: number;
+          p_leap_adar: string | null;
+          p_dates: string[];
+          p_times: string[];
+        };
+        Returns: undefined;
+      };
+      clear_hebrew_repeat: {
+        Args: { p_item_id: string };
+        Returns: undefined;
       };
       skip_debt_month: {
         Args: { p_item_id: string };

@@ -10,11 +10,13 @@ import {
   startingRepeat,
   weekdays,
 } from '../../lib/recurrence';
+import { hebrewDayMonth, hebrewYearlyOf } from '../../lib/hebrewDate';
 import { amountText } from '../../lib/reminders';
 import { repeatUnits } from '../../lib/reminders';
 import type { Item, ItemRepeat, RepeatDraft, RepeatEnd } from '../../types/domain';
 import { Button } from '../ui/Button';
 import { DateField } from '../ui/DateField';
+import { HebrewYearlyFields } from './HebrewYearlyFields';
 import { OptionGroup } from '../ui/OptionGroup';
 import { SettingRow } from '../ui/SettingRow';
 import { SettingsCard } from '../ui/SettingsCard';
@@ -104,20 +106,26 @@ export function RepeatEditor({
     });
   }
 
+  // Every year on a Hebrew date: no end, no weekdays, the hours as any series.
+  const hebrew = draft.unit === 'year' ? (draft.hebrew ?? null) : null;
   const total = draft.endCount ?? gone + freshCount;
   const leastTotal = Math.max(1, gone + dueNow);
   // What is saved: "so many days" is kept as the last of those days.
-  const saved: RepeatDraft = byPeriods
-    ? {
-        ...draft,
-        endKind: 'until',
-        endCount: null,
-        endUntil: periodsEnd(draft.startsOn, draft.every, draft.unit, periods),
-      }
-    : draft;
+  const saved: RepeatDraft =
+    hebrew !== null
+      ? { ...draft, every: 1, endKind: 'never', endCount: null, endUntil: null, hebrew }
+      : byPeriods
+        ? {
+            ...draft,
+            endKind: 'until',
+            endCount: null,
+            endUntil: periodsEnd(draft.startsOn, draft.every, draft.unit, periods),
+            hebrew: null,
+          }
+        : { ...draft, hebrew: null };
   const periodsWords = amountText(periods, draft.unit);
   const valid =
-    saved.startsOn !== '' &&
+    (saved.startsOn !== '' || hebrew !== null) &&
     (!isAppointment || draft.times.length === 1) &&
     (draft.endKind !== 'count' || total >= leastTotal) &&
     (saved.endKind !== 'until' ||
@@ -165,7 +173,7 @@ export function RepeatEditor({
   );
 
   // A Hebrew birthday or anniversary: its days come from the profile, so only stop and resume.
-  if (repeat?.hebrew === true) {
+  if (repeat?.hebrew === true && repeat.hebrew_month === null) {
     return (
       <div className="flex flex-col gap-3">
         <SettingsCard
@@ -186,7 +194,11 @@ export function RepeatEditor({
   return (
     <div className="flex flex-col gap-3">
       <SettingsCard
-        summary={repeatSummary(saved, byPeriods ? periodsWords : undefined)}
+        summary={
+          hebrew !== null
+            ? labels.hebrewRepeat.summary(hebrewDayMonth(hebrew))
+            : repeatSummary(saved, byPeriods ? periodsWords : undefined)
+        }
         actions={
           <>
             <Button
@@ -228,6 +240,37 @@ export function RepeatEditor({
             }}
           />
         </SettingRow>
+
+        {draft.unit === 'year' && limit === null && (
+          <SettingRow label={labels.hebrewRepeat.calendar}>
+            <OptionGroup
+              label={labels.hebrewRepeat.calendar}
+              options={[
+                { value: 'civil', label: labels.hebrewRepeat.civil },
+                { value: 'hebrew', label: labels.hebrewRepeat.hebrew },
+              ]}
+              value={hebrew === null ? 'civil' : 'hebrew'}
+              onChange={(calendar) => {
+                set({
+                  hebrew:
+                    calendar === 'hebrew'
+                      ? (draft.hebrew ?? hebrewYearlyOf(draft.startsOn || today, false))
+                      : null,
+                });
+              }}
+            />
+          </SettingRow>
+        )}
+        {hebrew !== null && (
+          <SettingRow label={labels.hebrewRepeat.date}>
+            <HebrewYearlyFields
+              value={hebrew}
+              onChange={(next) => {
+                set({ hebrew: next });
+              }}
+            />
+          </SettingRow>
+        )}
 
         <SettingRow label={isAppointment ? labels.repeat.appointmentHour : labels.repeat.hours}>
           <div className="flex w-full flex-col gap-2">
@@ -274,17 +317,19 @@ export function RepeatEditor({
           </div>
         </SettingRow>
 
-        <button
-          type="button"
-          aria-expanded={custom}
-          onClick={() => {
-            setCustom(!custom);
-          }}
-          className="self-start px-1 text-[13px] font-semibold text-primary"
-        >
-          {custom ? labels.repeat.lessOptions : labels.repeat.custom}
-        </button>
-        {custom && (
+        {hebrew === null && (
+          <button
+            type="button"
+            aria-expanded={custom}
+            onClick={() => {
+              setCustom(!custom);
+            }}
+            className="self-start px-1 text-[13px] font-semibold text-primary"
+          >
+            {custom ? labels.repeat.lessOptions : labels.repeat.custom}
+          </button>
+        )}
+        {custom && hebrew === null && (
           <>
             {draft.unit === 'week' && (
               <SettingRow

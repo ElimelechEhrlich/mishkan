@@ -3,7 +3,10 @@ import {
   ageInYears,
   daysBetween,
   formatHebrewDate,
+  hebrewDayMonth,
   hebrewMonths,
+  hebrewYearlyDates,
+  hebrewYearlyOf,
   isHebrewLeapYear,
   isoFromHebrew,
   hebrewNumeral,
@@ -89,5 +92,22 @@ describe('isoFromHebrew', () => {
     const days = heshvan?.days ?? 0;
     expect(isoFromHebrew(5786, 'Heshvan', 30)).toBe(isoFromHebrew(5786, 'Heshvan', days));
     expect(isoFromHebrew(5786, 'Adar II', 14)).toBe(isoFromHebrew(5786, 'Adar', 14));
+  });
+});
+
+describe('hebrewYearlyDates', () => {
+  it('gives the days of a Hebrew date every year, Adar where it is chosen', () => {
+    const days = hebrewYearlyDates({ month: 'Iyar', day: 26, leapAdar: 'Adar II' }, '2026-10-22');
+    expect(days).toHaveLength(60);
+    expect(days.every((day) => formatHebrewDate(day, false) === 'כ״ו באייר')).toBe(true);
+    const adar = hebrewYearlyDates({ month: 'Adar', day: 7, leapAdar: 'Adar I' }, '2026-10-22');
+    // 5787 is a leap year: the 7th of Adar I.
+    expect(formatHebrewDate(adar[0] ?? '', false)).toBe('ז׳ באדר א׳');
+    expect(formatHebrewDate(adar[1] ?? '', false)).toBe('ז׳ באדר');
+  });
+
+  it('takes the next day after sunset', () => {
+    expect(hebrewYearlyOf('2026-10-21', true)).toEqual(hebrewYearlyOf('2026-10-22', false));
+    expect(hebrewDayMonth(hebrewYearlyOf('2026-10-22', false))).toBe('י״א בחשוון');
   });
 });
