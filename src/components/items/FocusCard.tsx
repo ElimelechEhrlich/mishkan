@@ -3,7 +3,8 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import { useMovePick } from '../../hooks/useMovePick';
-import { canMove, firstFocus, focusMeta } from '../../lib/todayBrief';
+import { todayIso } from '../../lib/itemRules';
+import { canMove, firstFocus, focusMeta, offersSunday } from '../../lib/todayBrief';
 import type { FocusGroup, FocusRow, MoveTarget } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
 import { SkeletonList } from '../ui/SkeletonList';
@@ -62,7 +63,10 @@ export function FocusCard({
   const rows = groups[group];
   const shown = expanded || pick.picking ? rows : rows.slice(0, firstLines);
   const hidden = rows.length - shown.length;
-  const target = moveTargets[group];
+  // Today's can also be put off to Sunday, on Thursday and Friday.
+  const [toSunday, setToSunday] = useState(false);
+  const sundayToo = group === 'today' && offersSunday(todayIso());
+  const target = sundayToo && toSunday ? 'sunday' : moveTargets[group];
   const movable = rows.filter((row) => canMove(row.item));
 
   return (
@@ -146,18 +150,39 @@ export function FocusCard({
                 onClick={() => {
                   setExpanded(!expanded);
                 }}
-                className="min-h-9 rounded-full px-2 text-[13px] font-semibold text-primary transition active:scale-[0.97]"
+                className="min-h-9 rounded-full px-1.5 text-[13px] font-semibold whitespace-nowrap text-primary transition active:scale-[0.97]"
               >
                 {hidden > 0 ? labels.today.showMore(hidden) : labels.today.showLess}
               </button>
             ) : (
               <span />
             )}
-            {movable.length > 0 && <MoveButton target={target} onClick={pick.start} />}
+            {movable.length > 0 && (
+              <span className="flex gap-1">
+                <MoveButton
+                  target={moveTargets[group]}
+                  compact={sundayToo}
+                  onClick={() => {
+                    setToSunday(false);
+                    pick.start();
+                  }}
+                />
+                {sundayToo && (
+                  <MoveButton
+                    target="sunday"
+                    compact
+                    onClick={() => {
+                      setToSunday(true);
+                      pick.start();
+                    }}
+                  />
+                )}
+              </span>
+            )}
             <button
               type="button"
               onClick={onShowAll}
-              className="min-h-9 rounded-full px-2 text-[13px] font-medium text-muted transition active:scale-[0.97]"
+              className="min-h-9 rounded-full px-1.5 text-[13px] font-medium whitespace-nowrap text-muted transition active:scale-[0.97]"
             >
               {labels.today.allTimes}
             </button>

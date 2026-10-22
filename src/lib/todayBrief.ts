@@ -301,8 +301,20 @@ export function otherGroups(assigned: readonly Item[], today: string): Record<Ot
   };
 }
 
-/** Where the home page moves chosen items: to today, on to tomorrow, or to urgent. */
-export type MoveTarget = 'today' | 'tomorrow' | 'urgent';
+/** Where the home page moves chosen items: to today, on to tomorrow or Sunday, or to urgent. */
+export type MoveTarget = 'today' | 'tomorrow' | 'sunday' | 'urgent';
+
+/** The next Sunday after a day. */
+export function nextSunday(today: string): string {
+  const weekday = new Date(`${today}T12:00:00`).getDay();
+  return addDays(today, 7 - weekday);
+}
+
+/** Whether today's items can also be put off to Sunday: on Thursday and Friday. */
+export function offersSunday(today: string): boolean {
+  const weekday = new Date(`${today}T12:00:00`).getDay();
+  return weekday === 4 || weekday === 5;
+}
 
 /**
  * Whether an item can be moved from the home page. An appointment keeps its hour, a debt with
@@ -329,7 +341,8 @@ export function moveChange(item: Item, target: MoveTarget, today: string): MoveC
   if (target === 'urgent') {
     return { kind: 'update', changes: { time_mode: 'urgent', due_date: null, due_time: null } };
   }
-  const day = target === 'today' ? today : addDays(today, 1);
+  const day =
+    target === 'today' ? today : target === 'sunday' ? nextSunday(today) : addDays(today, 1);
   if (item.time_mode === 'recurring') {
     return { kind: 'occurrence', day, time: item.due_time };
   }

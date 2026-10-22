@@ -9,6 +9,8 @@ import {
   looseGroups,
   moveBack,
   moveChange,
+  nextSunday,
+  offersSunday,
   otherGroups,
   stillRelevant,
   nextUp,
@@ -251,6 +253,18 @@ describe('other groups', () => {
     expect(groups.debts.map((entry) => entry.id)).toEqual(['d']);
     expect(groups.shopping.map((entry) => entry.id)).toEqual(['m']);
     expect(groups.trackers.map((entry) => entry.id)).toEqual(['t']);
+  });
+});
+
+describe('putting off to Sunday', () => {
+  it('is offered on Thursday and Friday, for the next Sunday', () => {
+    expect(offersSunday('2026-10-22')).toBe(true);
+    expect(offersSunday('2026-10-23')).toBe(true);
+    expect(offersSunday('2026-10-21')).toBe(false);
+    expect(nextSunday('2026-10-22')).toBe('2026-10-25');
+    expect(moveChange(item({ due_date: '2026-10-22' }), 'sunday', '2026-10-23')).toMatchObject({
+      changes: { due_date: '2026-10-25' },
+    });
   });
 });
 
