@@ -63,9 +63,9 @@ export function FocusCard({
   const rows = groups[group];
   const shown = expanded || pick.picking ? rows : rows.slice(0, firstLines);
   const hidden = rows.length - shown.length;
-  // Today's can also be put off to Sunday, on Thursday and Friday.
+  // Today's and urgent ones can also go to Sunday, on Thursday and Friday.
   const [toSunday, setToSunday] = useState(false);
-  const sundayToo = group === 'today' && offersSunday(todayIso());
+  const sundayToo = (group === 'today' || group === 'urgent') && offersSunday(todayIso());
   const target = sundayToo && toSunday ? 'sunday' : moveTargets[group];
   const movable = rows.filter((row) => canMove(row.item));
 
