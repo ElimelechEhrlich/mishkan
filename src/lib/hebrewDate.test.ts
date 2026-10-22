@@ -3,6 +3,9 @@ import {
   ageInYears,
   daysBetween,
   formatHebrewDate,
+  hebrewMonths,
+  isHebrewLeapYear,
+  isoFromHebrew,
   hebrewNumeral,
   nextHebrewBirthday,
 } from './hebrewDate';
@@ -60,5 +63,31 @@ describe('ageInYears and daysBetween', () => {
 
   it('counts days across months', () => {
     expect(daysBetween('2026-10-11', '2026-11-01')).toBe(21);
+  });
+});
+
+describe('isoFromHebrew', () => {
+  it('turns a Hebrew date into its day, and back', () => {
+    // כ״ו באייר תשפ״ז
+    const day = isoFromHebrew(5787, 'Iyar', 26);
+    expect(day).not.toBeNull();
+    expect(formatHebrewDate(day ?? '', true)).toBe('כ״ו באייר תשפ״ז');
+    expect(isoFromHebrew(5787, 'Tishri', 1)).toBe('2026-09-12');
+  });
+
+  it('lists the months of a year, with two Adars in a leap year', () => {
+    expect(hebrewMonths(5786).map((month) => month.month)).toContain('Adar');
+    expect(isHebrewLeapYear(5786)).toBe(false);
+    expect(isHebrewLeapYear(5787)).toBe(true);
+    expect(isHebrewLeapYear(5784)).toBe(true);
+    expect(hebrewMonths(5784)).toHaveLength(13);
+  });
+
+  it('takes plain Adar as Adar II in a leap year, and a missing 30th as the last day', () => {
+    expect(isoFromHebrew(5784, 'Adar', 14)).toBe(isoFromHebrew(5784, 'Adar II', 14));
+    const heshvan = hebrewMonths(5786).find((month) => month.month === 'Heshvan');
+    const days = heshvan?.days ?? 0;
+    expect(isoFromHebrew(5786, 'Heshvan', 30)).toBe(isoFromHebrew(5786, 'Heshvan', days));
+    expect(isoFromHebrew(5786, 'Adar II', 14)).toBe(isoFromHebrew(5786, 'Adar', 14));
   });
 });

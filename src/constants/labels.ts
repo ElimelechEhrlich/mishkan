@@ -1080,6 +1080,11 @@ export const labels = {
     attentionWaiting: 'תזכורת ממתינה לזמן',
   },
   picker: {
+    hebrew: 'תאריך עברי',
+    hebrewDay: 'יום',
+    hebrewMonth: 'חודש',
+    hebrewYear: 'שנה',
+    hebrewChoose: 'בחירה',
     today: 'היום',
     tomorrow: 'מחר',
     inWeek: 'בעוד שבוע',

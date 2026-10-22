@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { addDays, formatPickedDate, todayIso } from '../../lib/itemRules';
 import { Icon } from './Icon';
+import { HebrewDateToggle } from './HebrewDateToggle';
 import { PickerInput } from './PickerInput';
 
 type DateFieldProps = {
@@ -20,7 +21,8 @@ type DateFieldProps = {
 
 /**
  * A day, chosen with the phone's own calendar: a tap anywhere on the field opens it. It does
- * not look like a field to type in, since nothing is typed.
+ * not look like a field to type in, since nothing is typed. Its Hebrew date shows under it, and
+ * it can be chosen by a Hebrew date instead.
  */
 export function DateField({
   value,
@@ -48,6 +50,7 @@ export function DateField({
           {value === '' ? label : formatPickedDate(value)}
         </span>
       </PickerInput>
+      <HebrewDateToggle value={value} onPick={onChange} />
       {shortcuts && (
         <div className="flex flex-wrap gap-1.5">
           {quick.map((choice) => (

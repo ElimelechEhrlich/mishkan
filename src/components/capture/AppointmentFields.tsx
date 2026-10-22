@@ -1,9 +1,10 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import { appointmentRepeats, maxAppointments } from '../../lib/itemRules';
+import { appointmentRepeats, maxAppointments, withDay } from '../../lib/itemRules';
 import type { AppointmentRepeat, MeetingPlace } from '../../types/domain';
 import { Chip } from '../ui/Chip';
 import { Segmented } from '../ui/Segmented';
+import { HebrewDateToggle } from '../ui/HebrewDateToggle';
 import { TextField } from '../ui/TextField';
 import { PlaceFields } from './PlaceFields';
 
@@ -57,6 +58,12 @@ export function AppointmentFields({
           value={draft.startsAt}
           onChange={(startsAt) => {
             onChange({ startsAt });
+          }}
+        />
+        <HebrewDateToggle
+          value={draft.startsAt.slice(0, 10)}
+          onPick={(day) => {
+            onChange({ startsAt: withDay(draft.startsAt, day) });
           }}
         />
         <p className="px-0.5 text-[13px] text-muted">{labels.appointment.reminderHint}</p>

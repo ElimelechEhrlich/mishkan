@@ -8,6 +8,7 @@ import type { Item, ItemUpdate, TrackerEntry, TrackerSummary } from '../../types
 import { Card } from '../ui/Card';
 import { Icon } from '../ui/Icon';
 import { Segmented } from '../ui/Segmented';
+import { HebrewDateToggle } from '../ui/HebrewDateToggle';
 import { TextField } from '../ui/TextField';
 import { TrackerEntryRow } from './TrackerEntryRow';
 
@@ -113,6 +114,7 @@ export function TrackerCard({
               value={onDate}
               onChange={setOnDate}
             />
+            <HebrewDateToggle value={onDate} onPick={setOnDate} />
             <div className="flex items-end gap-2">
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <TextField label={labels.tracker.value} value={value} onChange={setValue} compact />

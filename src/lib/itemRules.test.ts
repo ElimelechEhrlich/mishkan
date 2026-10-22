@@ -13,6 +13,7 @@ import {
   sectionOfEntry,
   splitBySection,
   toListEntries,
+  withDay,
 } from './itemRules';
 import { noteValue, timeText } from './itemText';
 import type { ListEntry } from './itemRules';
@@ -434,5 +435,12 @@ describe('a debt with a monthly plan', () => {
     const plain = item({ id: 'd2', kind: 'debt', time_mode: null, due_date: null });
     const agenda = agendaOf([planned, plain], [], today);
     expect(agenda.today.map((entry) => entry.item.id)).toEqual(['d1']);
+  });
+});
+
+describe('withDay', () => {
+  it('moves a day and hour to another day, keeping the hour', () => {
+    expect(withDay('2026-10-22T18:30', '2027-05-23')).toBe('2027-05-23T18:30');
+    expect(withDay('', '2027-05-23')).toBe('2027-05-23T09:00');
   });
 });

@@ -7,6 +7,7 @@ import type { EntryChanges } from '../../hooks/useTrackerEntries';
 import type { TrackerEntry } from '../../types/domain';
 import { ConfirmIconButton } from '../ui/ConfirmIconButton';
 import { IconButton } from '../ui/IconButton';
+import { HebrewDateToggle } from '../ui/HebrewDateToggle';
 import { TextField } from '../ui/TextField';
 
 type TrackerEntryRowProps = {
@@ -46,6 +47,7 @@ export function TrackerEntryRow({
       <li className="py-2.5">
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <TextField label={labels.tracker.date} type="date" value={onDate} onChange={setOnDate} />
+          <HebrewDateToggle value={onDate} onPick={setOnDate} />
           <TextField label={labels.tracker.value} value={value} onChange={setValue} compact />
           <TextField label={labels.tracker.note} value={note} onChange={setNote} compact />
           <div className="flex items-center justify-between">

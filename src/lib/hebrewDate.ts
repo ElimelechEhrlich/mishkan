@@ -129,3 +129,77 @@ export function ageInYears(birthDate: string, today: string): number {
 export function daysBetween(from: string, to: string): number {
   return Math.round((utc(to).getTime() - utc(from).getTime()) / 86_400_000);
 }
+
+/** The Hebrew year a day falls in. */
+export function hebrewYearOf(isoDate: string): number {
+  return hebrewParts(isoDate).year;
+}
+
+/** The day, month (its calendar name) and year of a day in the Hebrew calendar. */
+export function hebrewDateOf(isoDate: string): HebrewParts {
+  return hebrewParts(isoDate);
+}
+
+/** The first day of a Hebrew year, Rosh Hashana: in September or October of the year before. */
+function roshHashana(year: number): string {
+  const gregorian = year - 3761;
+  for (let day = `${String(gregorian)}-09-01`; ; day = addDays(day, 1)) {
+    const parts = hebrewParts(day);
+    if (parts.year === year && parts.month === 'Tishri' && parts.day === 1) {
+      return day;
+    }
+  }
+}
+
+/** The months of a Hebrew year in order, each with its Hebrew name and how many days it has. */
+export function hebrewMonths(
+  year: number,
+): { readonly month: string; readonly name: string; readonly days: number }[] {
+  const months: { month: string; name: string; days: number }[] = [];
+  let day = roshHashana(year);
+  for (;;) {
+    const parts = hebrewParts(day);
+    if (parts.year !== year) {
+      return months;
+    }
+    const last = months.at(-1);
+    if (last?.month === parts.month) {
+      last.days = parts.day;
+    } else {
+      months.push({ month: parts.month, name: monthNames[parts.month] ?? parts.month, days: 1 });
+    }
+    day = addDays(day, 1);
+  }
+}
+
+/** Whether a Hebrew year has two Adars. */
+export function isHebrewLeapYear(year: number): boolean {
+  return hebrewMonths(year).length === 13;
+}
+
+/**
+ * The day (YYYY-MM-DD) of a Hebrew date, such as כ״ו באייר תשפ״ז. A day past the end of its
+ * month (the 30th of a 29-day month) is taken as the month's last day; plain Adar in a leap
+ * year is Adar II, and Adar I or II in a plain year is Adar.
+ */
+export function isoFromHebrew(year: number, month: string, day: number): string | null {
+  const months = hebrewMonths(year);
+  const wanted =
+    months.find((entry) => entry.month === month) ??
+    months.find((entry) =>
+      month === 'Adar'
+        ? entry.month === 'Adar II'
+        : month.startsWith('Adar') && entry.month === 'Adar',
+    );
+  if (wanted === undefined) {
+    return null;
+  }
+  let offset = 0;
+  for (const entry of months) {
+    if (entry === wanted) {
+      return addDays(roshHashana(year), offset + Math.min(day, entry.days) - 1);
+    }
+    offset += entry.days;
+  }
+  return null;
+}

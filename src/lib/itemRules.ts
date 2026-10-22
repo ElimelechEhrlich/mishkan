@@ -790,3 +790,8 @@ export function withPending(
     return changes === undefined ? item : { ...item, ...changes };
   });
 }
+
+/** A day and hour field (YYYY-MM-DDTHH:MM) moved to another day, keeping its hour (09:00 if none). */
+export function withDay(localDateTime: string, day: string): string {
+  return `${day}T${localDateTime.length >= 16 ? localDateTime.slice(11, 16) : '09:00'}`;
+}

@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { Button } from '../ui/Button';
 import { PropertyRow } from '../ui/PropertyRow';
+import { HebrewDateToggle } from '../ui/HebrewDateToggle';
 import { TextField } from '../ui/TextField';
 
 type DateRowProps = {
@@ -40,6 +41,7 @@ export function DateRow({
     >
       <div className="flex flex-col gap-3">
         <TextField label={label} type="date" value={draft} onChange={setDraft} compact />
+        <HebrewDateToggle value={draft} onPick={setDraft} />
         <label className="flex items-center gap-2.5 text-sm">
           <input
             type="checkbox"

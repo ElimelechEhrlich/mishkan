@@ -6,12 +6,14 @@ import {
   formatFullDate,
   fromLocalDateTime,
   toLocalDateTime,
+  withDay,
 } from '../../lib/itemRules';
 import type { Item, ItemUpdate, MeetingPlace } from '../../types/domain';
 import { PlaceFields } from '../capture/PlaceFields';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { PropertyRow } from '../ui/PropertyRow';
+import { HebrewDateToggle } from '../ui/HebrewDateToggle';
 import { TextField } from '../ui/TextField';
 
 type AppointmentRowsProps = {
@@ -82,6 +84,12 @@ export function AppointmentRows({ item, health, onUpdate }: AppointmentRowsProps
             value={startsAt}
             onChange={setStartsAt}
             compact
+          />
+          <HebrewDateToggle
+            value={startsAt.slice(0, 10)}
+            onPick={(day) => {
+              setStartsAt(withDay(startsAt, day));
+            }}
           />
           <Button
             disabled={startsAt === ''}
