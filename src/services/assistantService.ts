@@ -14,17 +14,17 @@ function isRole(value: unknown): value is AssistantTurn['role'] {
   return value === 'user' || value === 'assistant';
 }
 
-/** The parent's own conversation with the assistant, oldest first. */
+/** The parent's own conversation with the assistant: its last 200 turns, oldest first. */
 export async function listConversation(): Promise<AssistantTurn[]> {
   const { data, error } = await supabase
     .from('assistant_messages')
     .select('id, role, text')
-    .order('created_at')
+    .order('created_at', { ascending: false })
     .limit(200);
   if (error !== null) {
     throw new Error(error.message);
   }
-  return data.flatMap((row) =>
+  return data.toReversed().flatMap((row) =>
     isRole(row.role)
       ? [
           row.role === 'assistant'
