@@ -2,10 +2,8 @@ import { useCallback, useState } from 'react';
 import { labels } from '../constants/labels';
 import { toMessage, withTimeout } from '../lib/errors';
 import type { AnswerLink } from '../lib/format';
-import { voiceForReading } from '../lib/audio';
-import { shrinkForReading } from '../lib/image';
 import { announceItemsChanged } from '../lib/itemChanges';
-import { AssistantNotEnabled, askAssistant } from '../services/assistantService';
+import { AssistantNotEnabled, askWith } from '../services/assistantService';
 
 /** An answer shown where the question was written, without opening the conversation. */
 export type QuickAnswer = {
@@ -22,7 +20,7 @@ export type UseQuickAsk = {
   /** Asks the assistant; the answer replaces the one shown. */
   readonly ask: (message: string, photo: File | null) => void;
   /** Sends a voice message; the assistant hears it, tone and all. */
-  readonly askVoice: (recording: Blob) => void;
+  readonly askVoice: (recording: Blob, seconds: number) => void;
   readonly close: () => void;
 };
 
@@ -39,10 +37,7 @@ export function useQuickAsk(): UseQuickAsk {
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    (
-      asking: Promise<Awaited<ReturnType<typeof askAssistant>>>,
-      question: (heard: string | null) => string,
-    ): void => {
+    (asking: ReturnType<typeof askWith>, question: (heard: string | null) => string): void => {
       setSending(true);
       setError(null);
       setAnswer(null);
@@ -73,20 +68,17 @@ export function useQuickAsk(): UseQuickAsk {
       if (question === '' && photo === null) {
         return;
       }
-      run(
-        (photo === null ? Promise.resolve(null) : shrinkForReading(photo)).then((image) =>
-          askAssistant(question, image),
-        ),
-        () => (photo === null ? question : `📷 ${question}`.trim()),
+      run(askWith(question, photo === null ? null : { kind: 'photo', file: photo }), () =>
+        photo === null ? question : `📷 ${question}`.trim(),
       );
     },
     [run],
   );
 
   const askVoice = useCallback(
-    (recording: Blob): void => {
+    (recording: Blob, seconds: number): void => {
       run(
-        voiceForReading(recording).then((audio) => askAssistant('', null, audio)),
+        askWith('', { kind: 'voice', recording, seconds }),
         (heard) => `🎤 ${heard ?? labels.assistant.voiceMessage}`,
       );
     },

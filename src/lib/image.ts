@@ -60,3 +60,13 @@ export async function shrinkForReading(file: Blob): Promise<string> {
   bitmap.close();
   return canvas.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
+
+/** Base64 bytes (as `shrinkForReading` gives) back as a file of the given type. */
+export function blobFromBase64(data: string, type: string): Blob {
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type });
+}

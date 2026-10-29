@@ -1377,7 +1377,13 @@ Deno.serve(async (request) => {
     if (auth.user === null) {
       return json({ error: 'not signed in' }, 401);
     }
-    const body = (await request.json()) as { message?: unknown; image?: unknown; audio?: unknown };
+    const body = (await request.json()) as {
+      message?: unknown;
+      image?: unknown;
+      audio?: unknown;
+      media_path?: unknown;
+      media_seconds?: unknown;
+    };
     // A photo to read (an invitation, a note), sent as base64 JPEG; a few megabytes at most.
     const image =
       typeof body.image === 'string' && body.image.length > 0 && body.image.length < 6_000_000
@@ -1387,6 +1393,18 @@ Deno.serve(async (request) => {
     const audio =
       typeof body.audio === 'string' && body.audio.length > 0 && body.audio.length < 6_000_000
         ? body.audio
+        : null;
+    // The photo or recording as the app kept it, in the parent's own folder, to open again.
+    const mediaPath =
+      (image !== null || audio !== null) &&
+      typeof body.media_path === 'string' &&
+      /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|webm|ogg|m4a)$/.test(body.media_path) &&
+      body.media_path.startsWith(`${auth.user.id}/`)
+        ? body.media_path
+        : null;
+    const mediaSeconds =
+      audio !== null && typeof body.media_seconds === 'number' && body.media_seconds >= 0
+        ? Math.min(body.media_seconds, 99999)
         : null;
     const message =
       text(body.message) ??
@@ -1537,6 +1555,13 @@ Deno.serve(async (request) => {
     await db.from('assistant_messages').insert([
       {
         role: 'user',
+        ...(mediaPath === null
+          ? {}
+          : {
+              media_path: mediaPath,
+              media_kind: audio !== null ? 'audio' : 'image',
+              media_seconds: mediaSeconds,
+            }),
         text:
           audio !== null
             ? `🎤 ${heard ?? 'הודעה קולית'}`

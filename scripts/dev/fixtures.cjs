@@ -779,7 +779,14 @@ module.exports = {
     shopping_departments,
     shopping_item_departments,
     shopping_staples,
-    assistant_messages: [],
+    assistant_messages: process.env.MEDIACHAT
+      ? [
+          { id: 'am1', role: 'user', text: '📷 תוסיף את זה', created_at: '2026-10-29T08:00:00Z', media_path: 'u1/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jpg', media_kind: 'image', media_seconds: null },
+          { id: 'am2', role: 'assistant', text: 'הוספתי: חתונה של דני ומיכל, יום שלישי 3.11 ב־19:30, אולמי הגן.', created_at: '2026-10-29T08:00:05Z', media_path: null, media_kind: null, media_seconds: null },
+          { id: 'am3', role: 'user', text: '🎤 מה יש לי מחר אחרי הצהריים?', created_at: '2026-10-29T09:00:00Z', media_path: 'u1/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.webm', media_kind: 'audio', media_seconds: 4.3 },
+          { id: 'am4', role: 'assistant', text: 'מחר אחרי הצהריים: חוג של אלי ב־16:00, ותור לרופא שיניים ב־17:30.', created_at: '2026-10-29T09:00:06Z', media_path: null, media_kind: null, media_seconds: null },
+        ]
+      : [],
     calendar_items: items
       .filter((i) => ['בדיקה תקופתית', 'שיחת מעקב'].includes(i.title))
       .map((i) => ({ item_id: i.id })),

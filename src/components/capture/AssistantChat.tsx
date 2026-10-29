@@ -7,6 +7,8 @@ import type { AssistantTurn } from '../../services/assistantService';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { Icon } from '../ui/Icon';
 import { MicButton } from './MicButton';
+import { PhotoViewer } from './PhotoViewer';
+import { TurnMediaView } from './TurnMediaView';
 import { VoiceStrip } from './VoiceStrip';
 
 type AssistantChatProps = {
@@ -14,7 +16,7 @@ type AssistantChatProps = {
   readonly sending: boolean;
   readonly onSend: (message: string, photo?: File | null) => void;
   /** Sends a voice message. */
-  readonly onVoice: (recording: Blob) => void;
+  readonly onVoice: (recording: Blob, seconds: number) => void;
   /** Sends again the last message, which got no answer; null when there is none. */
   readonly onRetry: (() => void) | null;
   readonly onClear: () => void;
@@ -37,6 +39,7 @@ export function AssistantChat({
   const [preview, setPreview] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const voice = useVoiceMessage(onVoice);
+  const [openPhoto, setOpenPhoto] = useState<string | null>(null);
 
   // A small picture of the attached photo, let go once it is sent or removed.
   useEffect(() => {
@@ -98,13 +101,23 @@ export function AssistantChat({
               className={`flex max-w-[85%] flex-col gap-2 ${turn.role === 'user' ? 'self-end' : 'self-start'}`}
             >
               <span
-                className={`rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
+                className={`flex flex-col gap-1.5 rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
                   turn.role === 'user'
                     ? 'rounded-ee-md bg-primary text-white'
                     : 'rounded-es-md bg-surface shadow-card'
                 }`}
               >
-                {turn.text}
+                {turn.media !== null && (
+                  <TurnMediaView media={turn.media} onOpenPhoto={setOpenPhoto} />
+                )}
+                {/* With the photo or recording in sight, its mark is not needed. */}
+                {turn.media === null
+                  ? turn.text
+                  : turn.text.replace(/^(📷|🎤)\s*/u, '') !== '' && (
+                      <span className={turn.media.kind === 'audio' ? 'text-[14px] opacity-90' : ''}>
+                        {turn.text.replace(/^(📷|🎤)\s*/u, '')}
+                      </span>
+                    )}
               </span>
               {/* What it just did, a tap away: to check it, or add to it. */}
               {turn.links.length > 0 && (
@@ -163,6 +176,14 @@ export function AssistantChat({
         </div>
       )}
       <div ref={end} />
+      {openPhoto !== null && (
+        <PhotoViewer
+          url={openPhoto}
+          onClose={() => {
+            setOpenPhoto(null);
+          }}
+        />
+      )}
       <form
         onSubmit={handleSubmit}
         className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-xl flex-col gap-2 bg-paper/95 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md"

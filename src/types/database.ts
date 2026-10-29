@@ -395,6 +395,10 @@ export type Database = {
           role: string;
           text: string;
           created_at: string;
+          /** A kept photo or recording, in the assistant-media bucket. */
+          media_path: string | null;
+          media_kind: string | null;
+          media_seconds: number | null;
         };
         Insert: {
           id?: string;
@@ -403,6 +407,9 @@ export type Database = {
           role: string;
           text: string;
           created_at?: string;
+          media_path?: string | null;
+          media_kind?: string | null;
+          media_seconds?: number | null;
         };
         Update: Record<string, never>;
         Relationships: [];

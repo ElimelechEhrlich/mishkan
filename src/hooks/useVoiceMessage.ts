@@ -33,7 +33,9 @@ function recordingType(): string | undefined {
  * or cancel. Nothing is kept: the recording lives until it is sent or thrown away. It is sent
  * by itself after `voiceMaxSeconds`.
  */
-export function useVoiceMessage(onVoice: (recording: Blob) => void): UseVoiceMessage {
+export function useVoiceMessage(
+  onVoice: (recording: Blob, seconds: number) => void,
+): UseVoiceMessage {
   const [state, setState] = useState<'idle' | 'starting' | 'recording'>('idle');
   const [locked, setLocked] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -83,7 +85,11 @@ export function useVoiceMessage(onVoice: (recording: Blob) => void): UseVoiceMes
           return;
         }
         const type = recordingType();
-        const next = new MediaRecorder(stream, type === undefined ? {} : { mimeType: type });
+        // Speech needs little: about 180KB a minute, kept until the conversation is cleared.
+        const next = new MediaRecorder(stream, {
+          audioBitsPerSecond: 24000,
+          ...(type === undefined ? {} : { mimeType: type }),
+        });
         next.ondataavailable = (event): void => {
           if (event.data.size > 0) {
             chunks.current.push(event.data);
@@ -107,11 +113,12 @@ export function useVoiceMessage(onVoice: (recording: Blob) => void): UseVoiceMes
       reset();
       return;
     }
+    const seconds = (Date.now() - startedAt.current) / 1000;
     current.onstop = (): void => {
       const recorded = chunks.current;
       chunks.current = [];
       if (recorded.length > 0) {
-        deliver.current(new Blob(recorded, { type: current.mimeType }));
+        deliver.current(new Blob(recorded, { type: current.mimeType }), seconds);
       }
     };
     current.stop();
