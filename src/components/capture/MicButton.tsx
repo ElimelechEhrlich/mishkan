@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { UseVoiceMessage } from '../../hooks/useVoiceMessage';
@@ -14,14 +15,25 @@ type MicButtonProps = {
  * turns into the send button.
  */
 export function MicButton({ voice, solid = false }: MicButtonProps): ReactElement {
+  // The send button acts only on a press that began on it: on a phone, the click that ends
+  // the tap which locked the recording lands on it, where the microphone was.
+  const pressedSend = useRef(false);
   if (voice.locked) {
-    // A button of its own (by key), so the click that ends the tap does not land on it.
     return (
       <button
         key="send"
         type="button"
         aria-label={labels.assistant.sendVoice}
-        onClick={voice.send}
+        onPointerDown={() => {
+          pressedSend.current = true;
+        }}
+        onClick={(event) => {
+          // From the keyboard there is no press.
+          if (pressedSend.current || event.detail === 0) {
+            pressedSend.current = false;
+            voice.send();
+          }
+        }}
         className="flex size-11 shrink-0 animate-fade-in items-center justify-center rounded-full bg-primary text-white shadow-float transition active:scale-90"
       >
         <Icon name="send" className="size-5" />
@@ -36,6 +48,7 @@ export function MicButton({ voice, solid = false }: MicButtonProps): ReactElemen
       aria-label={labels.assistant.voice}
       onPointerDown={(event) => {
         event.currentTarget.setPointerCapture(event.pointerId);
+        pressedSend.current = false;
         voice.press();
       }}
       onPointerUp={voice.release}
