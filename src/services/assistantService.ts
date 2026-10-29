@@ -60,14 +60,22 @@ export async function askAssistant(
   message: string,
   /** A photo to read, as base64 JPEG. */
   image: string | null = null,
+  /** A voice message, as base64 WAV. */
+  audio: string | null = null,
 ): Promise<{
   readonly reply: string;
   readonly links: readonly AnswerLink[];
   readonly changed: boolean;
+  /** What the assistant heard in a voice message, in short. */
+  readonly heard: string | null;
 }> {
   const answer: { readonly data: unknown; readonly error: unknown } =
     await supabase.functions.invoke('assistant', {
-      body: image === null ? { message } : { message, image },
+      body: {
+        message,
+        ...(image === null ? {} : { image }),
+        ...(audio === null ? {} : { audio }),
+      },
     });
   const { data, error } = answer;
   if (error !== null) {
@@ -86,11 +94,17 @@ export async function askAssistant(
   }
   const reply: unknown = Reflect.get(data, 'reply');
   const changed: unknown = Reflect.get(data, 'changed');
+  const heard: unknown = Reflect.get(data, 'heard');
   if (typeof reply !== 'string') {
     throw new Error('no answer');
   }
   const parsed = splitAnswer(reply);
-  return { reply: parsed.text, links: parsed.links, changed: changed === true };
+  return {
+    reply: parsed.text,
+    links: parsed.links,
+    changed: changed === true,
+    heard: typeof heard === 'string' && heard !== '' ? heard : null,
+  };
 }
 
 /** Starts the conversation over. */

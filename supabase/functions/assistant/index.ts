@@ -1348,6 +1348,20 @@ function quotaReply(seconds: number | null): string {
   return `הגעתי למכסת השיחות היומית. אפשר לחזור לכתוב ${day} בסביבות ${hour}.`;
 }
 
+/** What goes with a voice message: listen to how it is said, not only to the words. */
+const voicePrompt =
+  'This is a voice message from the parent. Listen to it fully: the tone tells a question (a rising tone, even without a question word) from a request; when they correct themselves while speaking ("ביום שלישי, לא, ברביעי"), the last thing said counts; hesitation or "אולי" means they are not sure, so ask before adding. Start your answer with one line: "🎤 " and what they said, in short, in their words (a question ends with ?), then a new line and your answer. If you could not make it out, say so and ask them to say it again.';
+
+/** The "🎤 …" line a voice answer opens with, and the answer without it. */
+function heardLine(reply: string): { readonly heard: string | null; readonly rest: string } {
+  if (!reply.startsWith('🎤')) {
+    return { heard: null, rest: reply };
+  }
+  const end = reply.indexOf('\n');
+  const line = (end === -1 ? reply : reply.slice(0, end)).replace(/^🎤\s*/u, '').trim();
+  return { heard: line === '' ? null : line, rest: end === -1 ? '' : reply.slice(end + 1).trim() };
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -1363,14 +1377,24 @@ Deno.serve(async (request) => {
     if (auth.user === null) {
       return json({ error: 'not signed in' }, 401);
     }
-    const body = (await request.json()) as { message?: unknown; image?: unknown };
+    const body = (await request.json()) as { message?: unknown; image?: unknown; audio?: unknown };
     // A photo to read (an invitation, a note), sent as base64 JPEG; a few megabytes at most.
     const image =
       typeof body.image === 'string' && body.image.length > 0 && body.image.length < 6_000_000
         ? body.image
         : null;
+    // A voice message, as base64 WAV (mono, 16 kHz, up to a minute and a half). Heard, never kept.
+    const audio =
+      typeof body.audio === 'string' && body.audio.length > 0 && body.audio.length < 6_000_000
+        ? body.audio
+        : null;
     const message =
-      text(body.message) ?? (image === null ? null : 'הוסף פריט מתאים מהתמונה, עם כל הפרטים.');
+      text(body.message) ??
+      (audio !== null
+        ? voicePrompt
+        : image === null
+          ? null
+          : 'הוסף פריט מתאים מהתמונה, עם כל הפרטים.');
     if (message === null) {
       return json({ error: 'empty message' }, 400);
     }
@@ -1407,10 +1431,11 @@ Deno.serve(async (request) => {
     }
     contents.push({
       role: 'user',
-      parts:
-        image === null
-          ? [{ text: message }]
-          : [{ inlineData: { mimeType: 'image/jpeg', data: image } }, { text: message }],
+      parts: [
+        ...(image === null ? [] : [{ inlineData: { mimeType: 'image/jpeg', data: image } }]),
+        ...(audio === null ? [] : [{ inlineData: { mimeType: 'audio/wav', data: audio } }]),
+        { text: message },
+      ],
     });
 
     const fallback = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? defaultFallbackModel;
@@ -1426,6 +1451,8 @@ Deno.serve(async (request) => {
     const touchedIds: string[] = [];
     let touchedShopping = false;
     let reply = '';
+    // What was heard in a voice message, from the line the model opens its answer with.
+    let heard: string | null = null;
     for (let round = 0; round < maxRounds; round += 1) {
       let answer: GeminiAnswer;
       try {
@@ -1470,6 +1497,11 @@ Deno.serve(async (request) => {
         .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
         .join('')
         .trim();
+      if (audio !== null) {
+        const said = heardLine(reply);
+        heard ??= said.heard;
+        reply = said.rest;
+      }
       const calls = parts.filter((part) => part.functionCall !== undefined);
       if (calls.length === 0) {
         break;
@@ -1503,10 +1535,18 @@ Deno.serve(async (request) => {
     }
 
     await db.from('assistant_messages').insert([
-      { role: 'user', text: image === null ? message : `📷 ${message}` },
+      {
+        role: 'user',
+        text:
+          audio !== null
+            ? `🎤 ${heard ?? 'הודעה קולית'}`
+            : image === null
+              ? message
+              : `📷 ${message}`,
+      },
       { role: 'assistant', text: reply },
     ]);
-    return json({ reply, changed });
+    return json({ reply, changed, heard });
   } catch (caught) {
     console.error(caught);
     return json({ error: caught instanceof Error ? caught.message : String(caught) }, 500);

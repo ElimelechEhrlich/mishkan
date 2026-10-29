@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { labels } from '../constants/labels';
 import { toMessage, withTimeout } from '../lib/errors';
 import type { AnswerLink } from '../lib/format';
+import { voiceForReading } from '../lib/audio';
 import { shrinkForReading } from '../lib/image';
 import { announceItemsChanged } from '../lib/itemChanges';
 import { AssistantNotEnabled, askAssistant } from '../services/assistantService';
@@ -20,6 +21,8 @@ export type UseQuickAsk = {
   readonly error: string | null;
   /** Asks the assistant; the answer replaces the one shown. */
   readonly ask: (message: string, photo: File | null) => void;
+  /** Sends a voice message; the assistant hears it, tone and all. */
+  readonly askVoice: (recording: Blob) => void;
   readonly close: () => void;
 };
 
@@ -35,40 +38,65 @@ export function useQuickAsk(): UseQuickAsk {
   const [answer, setAnswer] = useState<QuickAnswer | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const ask = useCallback((message: string, photo: File | null): void => {
-    const question = message.trim();
-    if (question === '' && photo === null) {
-      return;
-    }
-    setSending(true);
-    setError(null);
-    setAnswer(null);
-    const asking = (photo === null ? Promise.resolve(null) : shrinkForReading(photo)).then(
-      (image) => askAssistant(question, image),
-    );
-    withTimeout(asking, answerMs)
-      .then(({ reply, links, changed }) => {
-        setAnswer({ question: photo === null ? question : `📷 ${question}`.trim(), reply, links });
-        if (changed) {
-          announceItemsChanged();
-        }
-      })
-      .catch((caught: unknown) => {
-        setError(
-          caught instanceof AssistantNotEnabled
-            ? labels.assistant.notEnabled
-            : `${labels.assistant.failed} (${toMessage(caught)})`,
-        );
-      })
-      .finally(() => {
-        setSending(false);
-      });
-  }, []);
+  const run = useCallback(
+    (
+      asking: Promise<Awaited<ReturnType<typeof askAssistant>>>,
+      question: (heard: string | null) => string,
+    ): void => {
+      setSending(true);
+      setError(null);
+      setAnswer(null);
+      withTimeout(asking, answerMs)
+        .then(({ reply, links, changed, heard }) => {
+          setAnswer({ question: question(heard), reply, links });
+          if (changed) {
+            announceItemsChanged();
+          }
+        })
+        .catch((caught: unknown) => {
+          setError(
+            caught instanceof AssistantNotEnabled
+              ? labels.assistant.notEnabled
+              : `${labels.assistant.failed} (${toMessage(caught)})`,
+          );
+        })
+        .finally(() => {
+          setSending(false);
+        });
+    },
+    [],
+  );
+
+  const ask = useCallback(
+    (message: string, photo: File | null): void => {
+      const question = message.trim();
+      if (question === '' && photo === null) {
+        return;
+      }
+      run(
+        (photo === null ? Promise.resolve(null) : shrinkForReading(photo)).then((image) =>
+          askAssistant(question, image),
+        ),
+        () => (photo === null ? question : `📷 ${question}`.trim()),
+      );
+    },
+    [run],
+  );
+
+  const askVoice = useCallback(
+    (recording: Blob): void => {
+      run(
+        voiceForReading(recording).then((audio) => askAssistant('', null, audio)),
+        (heard) => `🎤 ${heard ?? labels.assistant.voiceMessage}`,
+      );
+    },
+    [run],
+  );
 
   const close = useCallback((): void => {
     setAnswer(null);
     setError(null);
   }, []);
 
-  return { sending, answer, error, ask, close };
+  return { sending, answer, error, ask, askVoice, close };
 }

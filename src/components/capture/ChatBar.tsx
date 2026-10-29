@@ -3,7 +3,10 @@ import type { ReactElement, SyntheticEvent } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import { useQuickAsk } from '../../hooks/useQuickAsk';
+import { useVoiceMessage } from '../../hooks/useVoiceMessage';
 import { Icon } from '../ui/Icon';
+import { MicButton } from './MicButton';
+import { VoiceStrip } from './VoiceStrip';
 
 /**
  * A line at the bottom of a screen to write to the assistant without leaving it: the answer
@@ -20,6 +23,7 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
   const [draft, setDraft] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const voice = useVoiceMessage(quick.askVoice);
 
   // A small picture of the attached photo, let go once it is sent or removed.
   useEffect(() => {
@@ -103,6 +107,7 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
           )}
         </section>
       )}
+      {voice.error !== null && <p className="text-[13px] text-alert">{voice.error}</p>}
       {preview !== null && (
         <div className="flex items-center gap-2.5">
           <img src={preview} alt="" className="size-11 rounded-xl object-cover shadow-card" />
@@ -137,40 +142,51 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
         >
           <Icon name="chat" className="size-5.5" />
         </Link>
-        <label
-          aria-label={labels.assistant.attach}
-          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-primary transition active:scale-90 active:bg-primary-soft"
-        >
-          <Icon name="clip" className="size-5.5" />
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(event) => {
-              setPhoto(event.target.files?.[0] ?? null);
-              event.target.value = '';
-            }}
-          />
-        </label>
-        <input
-          value={draft}
-          dir="auto"
-          aria-label={labels.assistant.barPlaceholder}
-          placeholder={labels.assistant.barPlaceholder}
-          enterKeyHint="send"
-          onChange={(event) => {
-            setDraft(event.target.value);
-          }}
-          className="min-h-11 min-w-0 flex-1 rounded-full border border-line bg-surface px-4 text-[15px] shadow-card outline-none focus:border-primary"
-        />
-        <button
-          type="submit"
-          aria-label={labels.assistant.send}
-          disabled={!canSend}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary transition active:scale-90 disabled:text-faint"
-        >
-          <Icon name="send" className="size-5" />
-        </button>
+        {voice.active ? (
+          <VoiceStrip elapsed={voice.elapsed} locked={voice.locked} onCancel={voice.cancel} />
+        ) : (
+          <>
+            <label
+              aria-label={labels.assistant.attach}
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-primary transition active:scale-90 active:bg-primary-soft"
+            >
+              <Icon name="clip" className="size-5.5" />
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(event) => {
+                  setPhoto(event.target.files?.[0] ?? null);
+                  event.target.value = '';
+                }}
+              />
+            </label>
+            <input
+              value={draft}
+              dir="auto"
+              aria-label={labels.assistant.barPlaceholder}
+              placeholder={labels.assistant.barPlaceholder}
+              enterKeyHint="send"
+              onChange={(event) => {
+                setDraft(event.target.value);
+              }}
+              className="min-h-11 min-w-0 flex-1 rounded-full border border-line bg-surface px-4 text-[15px] shadow-card outline-none focus:border-primary"
+            />
+          </>
+        )}
+        {/* With nothing written, the microphone stands where the send button goes. */}
+        {draft.trim() === '' && photo === null && !quick.sending ? (
+          <MicButton voice={voice} />
+        ) : (
+          <button
+            type="submit"
+            aria-label={labels.assistant.send}
+            disabled={!canSend}
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary transition active:scale-90 disabled:text-faint"
+          >
+            <Icon name="send" className="size-5" />
+          </button>
+        )}
       </form>
     </div>
   );
