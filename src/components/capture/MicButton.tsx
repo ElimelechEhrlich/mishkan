@@ -4,6 +4,9 @@ import { labels } from '../../constants/labels';
 import type { UseVoiceMessage } from '../../hooks/useVoiceMessage';
 import { Icon } from '../ui/Icon';
 
+/** How far to slide, while holding, for letting go to throw the recording away. */
+const binDistance = 90;
+
 type MicButtonProps = {
   readonly voice: UseVoiceMessage;
   /** A full green button, as the send button it stands in for. */
@@ -18,6 +21,8 @@ export function MicButton({ voice, solid = false }: MicButtonProps): ReactElemen
   // The send button acts only on a press that began on it: on a phone, the click that ends
   // the tap which locked the recording lands on it, where the microphone was.
   const pressedSend = useRef(false);
+  /** Where the hold began, to tell how far the finger slid toward the bin. */
+  const startX = useRef(0);
   if (voice.locked) {
     return (
       <button
@@ -49,7 +54,15 @@ export function MicButton({ voice, solid = false }: MicButtonProps): ReactElemen
       onPointerDown={(event) => {
         event.currentTarget.setPointerCapture(event.pointerId);
         pressedSend.current = false;
+        startX.current = event.clientX;
         voice.press();
+      }}
+      onPointerMove={(event) => {
+        if (!voice.active) {
+          return;
+        }
+        // The page is right to left: the strip, and its bin, lie to the button's right.
+        voice.aim(event.clientX - startX.current >= binDistance);
       }}
       onPointerUp={voice.release}
       onPointerCancel={voice.release}
@@ -65,7 +78,7 @@ export function MicButton({ voice, solid = false }: MicButtonProps): ReactElemen
       }}
       className={`flex size-11 shrink-0 touch-none items-center justify-center rounded-full transition select-none ${
         holding
-          ? 'scale-125 bg-alert text-white shadow-float'
+          ? `scale-125 text-white shadow-float ${voice.aiming ? 'bg-muted' : 'bg-alert'}`
           : solid
             ? 'bg-primary text-white active:scale-90'
             : 'bg-primary-soft text-primary active:scale-90'

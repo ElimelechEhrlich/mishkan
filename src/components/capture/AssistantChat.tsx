@@ -207,7 +207,12 @@ export function AssistantChat({
         {voice.error !== null && <p className="text-[13px] text-alert">{voice.error}</p>}
         <div className="flex items-end gap-2">
           {voice.active ? (
-            <VoiceStrip elapsed={voice.elapsed} locked={voice.locked} onCancel={voice.cancel} />
+            <VoiceStrip
+              elapsed={voice.elapsed}
+              locked={voice.locked}
+              aiming={voice.aiming}
+              onCancel={voice.cancel}
+            />
           ) : (
             <>
               <label

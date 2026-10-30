@@ -13,6 +13,9 @@ export type UseVoiceMessage = {
   readonly press: () => void;
   /** It came up: after a hold, the message is sent; after a short tap, it keeps recording. */
   readonly release: () => void;
+  /** The finger slid to the bin while holding: letting go throws the recording away. */
+  readonly aiming: boolean;
+  readonly aim: (atBin: boolean) => void;
   readonly send: () => void;
   readonly cancel: () => void;
   readonly error: string | null;
@@ -38,6 +41,7 @@ export function useVoiceMessage(
 ): UseVoiceMessage {
   const [state, setState] = useState<'idle' | 'starting' | 'recording'>('idle');
   const [locked, setLocked] = useState(false);
+  const [aiming, setAiming] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -59,6 +63,7 @@ export function useVoiceMessage(
     chunks.current = [];
     setState('idle');
     setLocked(false);
+    setAiming(false);
     setElapsed(0);
   }, []);
 
@@ -128,17 +133,9 @@ export function useVoiceMessage(
     recorder.current = null;
     setState('idle');
     setLocked(false);
+    setAiming(false);
     setElapsed(0);
   }, [reset]);
-
-  const release = useCallback((): void => {
-    // A tap, or a hold that ended while the microphone was still being asked for.
-    if (Date.now() - pressedAt.current < tapMs || recorder.current === null) {
-      setLocked(true);
-      return;
-    }
-    send();
-  }, [send]);
 
   const cancel = useCallback((): void => {
     dropped.current = true;
@@ -149,6 +146,23 @@ export function useVoiceMessage(
     }
     reset();
   }, [reset]);
+
+  const release = useCallback((): void => {
+    if (aiming) {
+      cancel();
+      return;
+    }
+    // A tap, or a hold that ended while the microphone was still being asked for.
+    if (Date.now() - pressedAt.current < tapMs || recorder.current === null) {
+      setLocked(true);
+      return;
+    }
+    send();
+  }, [aiming, cancel, send]);
+
+  const aim = useCallback((atBin: boolean): void => {
+    setAiming(atBin);
+  }, []);
 
   // The running clock, and the limit.
   useEffect(() => {
@@ -178,5 +192,16 @@ export function useVoiceMessage(
     [],
   );
 
-  return { active: state !== 'idle', locked, elapsed, press, release, send, cancel, error };
+  return {
+    active: state !== 'idle',
+    locked,
+    elapsed,
+    press,
+    release,
+    aiming,
+    aim,
+    send,
+    cancel,
+    error,
+  };
 }

@@ -143,7 +143,12 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
           <Icon name="chat" className="size-5.5" />
         </Link>
         {voice.active ? (
-          <VoiceStrip elapsed={voice.elapsed} locked={voice.locked} onCancel={voice.cancel} />
+          <VoiceStrip
+            elapsed={voice.elapsed}
+            locked={voice.locked}
+            aiming={voice.aiming}
+            onCancel={voice.cancel}
+          />
         ) : (
           <>
             <label
