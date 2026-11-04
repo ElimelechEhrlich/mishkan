@@ -277,7 +277,7 @@ function lastDay(item: Item, repeat: Repeat): string | null {
     repeat.stopped_on,
     item.status === 'done' && item.completed_at !== null ? localOf(item.completed_at).day : null,
   ].filter((day): day is string => day !== null);
-  return ends.length === 0 ? null : ends.sort()[0] ?? null;
+  return ends.length === 0 ? null : (ends.sort()[0] ?? null);
 }
 
 /** Days of a series given in place of those its start implies (for a shifted reminder). */
@@ -311,7 +311,12 @@ function rule(
     }
   } else {
     if (repeat.unit === 'week' && repeat.weekdays.length > 0) {
-      parts.push(`BYDAY=${[...repeat.weekdays].sort().map((d) => weekdayCodes[d]).join(',')}`);
+      parts.push(
+        `BYDAY=${[...repeat.weekdays]
+          .sort()
+          .map((d) => weekdayCodes[d])
+          .join(',')}`,
+      );
     }
     if (repeat.unit === 'month' && startDay > 28) {
       const days = Array.from({ length: startDay - 27 }, (_, i) => String(28 + i));
@@ -332,9 +337,7 @@ function rule(
 
 function dateList(prefix: string, days: readonly string[], time: string | null): string {
   const values = days.map((day) => compact(day, time)).join(',');
-  return time === null
-    ? `${prefix};VALUE=DATE:${values}`
-    : `${prefix};TZID=${zone}:${values}`;
+  return time === null ? `${prefix};VALUE=DATE:${values}` : `${prefix};TZID=${zone}:${values}`;
 }
 
 /** The event of an appointment on one day and hour. */
@@ -492,12 +495,9 @@ function markerEvents(facts: ItemFacts): Planned[] {
       ];
       const until = reminder.until === null ? '' : `;UNTIL=${compact(reminder.until)}T205959Z`;
       return [
-        markerEvent(
-          facts,
-          key,
-          minutesOf(next.day, next.time),
-          [`RRULE:FREQ=${freq};INTERVAL=${String(reminder.every ?? 1)}${until}`],
-        ),
+        markerEvent(facts, key, minutesOf(next.day, next.time), [
+          `RRULE:FREQ=${freq};INTERVAL=${String(reminder.every ?? 1)}${until}`,
+        ]),
       ];
     }
     if (!repeating) {
@@ -586,7 +586,10 @@ function seriesMarkers(facts: ItemFacts, reminder: Reminder, key: string): Plann
     const hourKey = `${key}:${time ?? 'day'}`;
     const series = (subKey: string, start: string, shape: Shape | null): void => {
       events.push(
-        markerEvent(facts, subKey, shift(start), [rule(repeat, null, null, true, shape), ...exdate]),
+        markerEvent(facts, subKey, shift(start), [
+          rule(repeat, null, null, true, shape),
+          ...exdate,
+        ]),
       );
     };
     const startDay = Number(repeat.starts_on.slice(8, 10));
@@ -684,7 +687,12 @@ type Link = {
   access_expires_at: string | null;
   calendar_id: string | null;
   laid_out_on: string | null;
+  sync_token: string | null;
+  connected_by: string | null;
 };
+
+const linkColumns =
+  'household_id, refresh_token, access_token, access_expires_at, calendar_id, laid_out_on, sync_token, connected_by';
 
 class GoogleError extends Error {
   constructor(
@@ -784,7 +792,11 @@ async function fingerprint(body: EventBody): Promise<string> {
 // ---------------------------------------------------------------------------------------
 // Sending: each queued item's events made to match its plan.
 
-async function factsOf(db: SupabaseClient, itemId: string, today: string): Promise<ItemFacts | null> {
+async function factsOf(
+  db: SupabaseClient,
+  itemId: string,
+  today: string,
+): Promise<ItemFacts | null> {
   const { data: item } = await db
     .from('items')
     .select(
@@ -835,7 +847,7 @@ async function factsOf(db: SupabaseClient, itemId: string, today: string): Promi
   return facts;
 }
 
-type KeptEvent = { key: string; event_id: string; fingerprint: string };
+type KeptEvent = { key: string; event_id: string; fingerprint: string; dismissed: boolean };
 
 async function sendEvent(
   db: SupabaseClient,
@@ -845,7 +857,8 @@ async function sendEvent(
   kept: KeptEvent | undefined,
 ): Promise<void> {
   const print = await fingerprint(event.body);
-  if (kept !== undefined && kept.fingerprint === print) {
+  // The same as sent, or removed in Google by a parent (and so kept out).
+  if (kept !== undefined && (kept.fingerprint === print || kept.dismissed)) {
     return;
   }
   let sent: Record<string, unknown> | null = null;
@@ -866,6 +879,9 @@ async function sendEvent(
     household_id: link.household_id,
     event_id: String(sent?.id ?? ''),
     fingerprint: print,
+    sent: event.body,
+    etag: typeof sent?.etag === 'string' ? sent.etag : null,
+    dismissed: false,
     updated_at: new Date().toISOString(),
   });
 }
@@ -888,7 +904,7 @@ async function syncItem(db: SupabaseClient, link: Link, itemId: string, today: s
     facts === null || facts.item.household_id !== link.household_id ? [] : planItem(facts);
   const { data } = await db
     .from('google_events')
-    .select('key, event_id, fingerprint')
+    .select('key, event_id, fingerprint, dismissed')
     .eq('item_id', itemId);
   const kept = new Map(((data ?? []) as KeptEvent[]).map((row) => [row.key, row]));
   const wanted = new Set<string>();
@@ -898,7 +914,10 @@ async function syncItem(db: SupabaseClient, link: Link, itemId: string, today: s
       wanted.add(event.key);
     } catch (caught) {
       // A series by its days that Google will not take: its days one by one.
-      if (!(caught instanceof GoogleError && caught.status === 400) || event.fallback === undefined) {
+      if (
+        !(caught instanceof GoogleError && caught.status === 400) ||
+        event.fallback === undefined
+      ) {
         throw caught;
       }
       for (const one of event.fallback) {
@@ -934,8 +953,14 @@ async function syncHousehold(db: SupabaseClient, link: Link): Promise<void> {
     if (rows.length > 0) {
       await db.from('google_queue').upsert(rows);
     }
-    await db.from('google_links').update({ laid_out_on: today }).eq('household_id', link.household_id);
+    await db
+      .from('google_links')
+      .update({ laid_out_on: today })
+      .eq('household_id', link.household_id);
   }
+  // What the parents changed in Google comes back first; what it changes in the app is then
+  // queued, and sent below like any other change.
+  await pullChanges(db, link, today);
   const { data: queue } = await db
     .from('google_queue')
     .select('item_id, queued_at')
@@ -1006,12 +1031,626 @@ async function syncLink(db: SupabaseClient, link: Link): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------------------
+// Changes made in Google: what a parent changed in the "משכן" calendar comes back to the app.
+// Google says what changed since the last look (its sync token). A change of Mishkan's own
+// is told by the etag kept when it was sent; anything else is compared with what was sent,
+// field by field, and only what differs is brought back. What cannot be said in the app is
+// put back in Google as it was.
+
+type When = { date?: string; dateTime?: string; timeZone?: string };
+
+type GoogleEvent = {
+  id: string;
+  etag?: string;
+  status?: string;
+  summary?: string;
+  location?: string;
+  start?: When;
+  end?: When;
+  recurrence?: string[];
+  recurringEventId?: string;
+  originalStartTime?: When;
+  reminders?: { useDefault?: boolean; overrides?: { method: string; minutes: number }[] };
+  extendedProperties?: { private?: Record<string, string> };
+};
+
+type KeptRow = {
+  item_id: string;
+  key: string;
+  event_id: string;
+  etag: string | null;
+  sent: EventBody | null;
+  dismissed: boolean;
+};
+
+/** A start as a day and an hour in Israel; no hour for a whole day. */
+function startOf(when: When | undefined): { day: string; time: string | null } | null {
+  if (when?.dateTime !== undefined) {
+    // What was sent has no offset (with the zone beside it); what Google returns has one.
+    if (!/[zZ]|[+-]\d\d:\d\d$/.test(when.dateTime)) {
+      return { day: when.dateTime.slice(0, 10), time: when.dateTime.slice(11, 16) };
+    }
+    return localOf(when.dateTime);
+  }
+  return when?.date === undefined ? null : { day: when.date, time: null };
+}
+
+function sameStart(a: When | undefined, b: When | undefined): boolean {
+  const x = startOf(a);
+  const y = startOf(b);
+  return x !== null && y !== null && x.day === y.day && x.time === y.time;
+}
+
+function startMinutes(when: When | undefined): number | null {
+  const start = startOf(when);
+  return start === null ? null : minutesOf(start.day, start.time ?? '00:00');
+}
+
+/** The minutes before the start at which an event rings, as a sorted list. */
+function ringMinutes(reminders: unknown): number[] {
+  const value = reminders as GoogleEvent['reminders'] | undefined;
+  if (value === undefined || value.useDefault === true) {
+    return [];
+  }
+  return [...new Set((value.overrides ?? []).map((o) => o.minutes))].sort((a, b) => a - b);
+}
+
+function sentText(sent: EventBody, field: string): string {
+  const value = sent[field];
+  return typeof value === 'string' ? value : '';
+}
+
+/** Google's changes since the last look, and the mark for the next one. */
+async function listChanges(
+  db: SupabaseClient,
+  link: Link,
+): Promise<{ events: GoogleEvent[]; token: string | null }> {
+  const events: GoogleEvent[] = [];
+  let pageToken: string | null = null;
+  // Without a mark yet, the calendar is read through only to get one: nothing before it is new.
+  const first = link.sync_token === null;
+  for (;;) {
+    const params = new URLSearchParams({ maxResults: '250', showDeleted: 'true' });
+    if (!first && link.sync_token !== null) {
+      params.set('syncToken', link.sync_token);
+    }
+    if (pageToken !== null) {
+      params.set('pageToken', pageToken);
+    }
+    let page: Record<string, unknown> | null;
+    try {
+      page = await google(db, link, 'GET', `${eventsPath(link)}?${params.toString()}`);
+    } catch (caught) {
+      // The mark is too old: read through again for a new one.
+      if (caught instanceof GoogleError && caught.status === 410 && !first) {
+        link.sync_token = null;
+        return listChanges(db, link);
+      }
+      throw caught;
+    }
+    if (!first) {
+      events.push(...((page?.items ?? []) as GoogleEvent[]));
+    }
+    if (typeof page?.nextPageToken === 'string') {
+      pageToken = page.nextPageToken;
+      continue;
+    }
+    return { events, token: typeof page?.nextSyncToken === 'string' ? page.nextSyncToken : null };
+  }
+}
+
+/** Sends an event again as it should be: Google's change is not kept. */
+async function putBack(db: SupabaseClient, link: Link, itemId: string, key: string) {
+  await db.from('google_events').update({ fingerprint: '' }).eq('item_id', itemId).eq('key', key);
+  await db
+    .from('google_queue')
+    .upsert({
+      item_id: itemId,
+      household_id: link.household_id,
+      queued_at: new Date().toISOString(),
+    });
+}
+
+/** The parent the app's own functions act for: the one who connected, or any of the house. */
+async function actingMember(db: SupabaseClient, link: Link): Promise<string> {
+  if (link.connected_by !== null) {
+    return link.connected_by;
+  }
+  const { data } = await db
+    .from('members')
+    .select('id')
+    .eq('household_id', link.household_id)
+    .limit(1)
+    .maybeSingle();
+  if (data === null) {
+    throw new Error('no parent in the household');
+  }
+  return String((data as { id: string }).id);
+}
+
+/**
+ * Notifications changed on an appointment: one added in Google is added as "before its
+ * hour" (on a whole day, as a day before at an hour); one removed there is removed. Only
+ * the reminders that were sent are compared: the others never reached Google.
+ */
+async function bringReminders(
+  db: SupabaseClient,
+  facts: ItemFacts,
+  sentMinutes: number[],
+  googleMinutes: number[],
+  day: string,
+  time: string | null,
+  repeating: boolean,
+): Promise<boolean> {
+  const added = googleMinutes.filter((m) => !sentMinutes.includes(m));
+  const removed = sentMinutes.filter((m) => !googleMinutes.includes(m));
+  for (const minutes of removed) {
+    const matching = facts.reminders.filter(
+      (reminder) => notificationsFor([reminder], day, time, repeating)[0]?.minutes === minutes,
+    );
+    for (const reminder of matching) {
+      await db.from('item_reminders').delete().eq('id', reminder.id);
+    }
+  }
+  for (const minutes of added) {
+    if (time !== null) {
+      await db
+        .from('item_reminders')
+        .insert({ item_id: facts.item.id, rule: 'before', minutes_before: minutes });
+    } else {
+      const daysBefore = Math.ceil(minutes / 1440);
+      const at = fromMinutes(daysBefore * 1440 - minutes).time;
+      await db.from('item_reminders').insert({
+        item_id: facts.item.id,
+        rule: 'day',
+        days_before: daysBefore,
+        at_time: `${at}:00`,
+      });
+    }
+  }
+  return added.length > 0 || removed.length > 0;
+}
+
+/** Title and place changed on an appointment's event. */
+async function bringDetails(db: SupabaseClient, item: Item, event: GoogleEvent, sent: EventBody) {
+  const changes: Record<string, unknown> = {};
+  const title = (event.summary ?? '').trim();
+  if (title !== '' && title !== sentText(sent, 'summary')) {
+    changes.title = title;
+  }
+  const place = (event.location ?? '').trim();
+  if (place !== sentText(sent, 'location')) {
+    // A meeting given by its link keeps it there; otherwise it is the place.
+    const byLink = (item.place ?? '').trim() === '' && (item.meeting_url ?? '').trim() !== '';
+    changes[byLink ? 'meeting_url' : 'place'] = place === '' ? null : place;
+  }
+  if (Object.keys(changes).length > 0) {
+    await db.from('items').update(changes).eq('id', item.id);
+  }
+}
+
+const unitOf: Record<string, Repeat['unit']> = {
+  DAILY: 'day',
+  WEEKLY: 'week',
+  MONTHLY: 'month',
+  YEARLY: 'year',
+};
+
+/**
+ * A series' rule as the app keeps it, when the app can say it: every so many days, weeks,
+ * months or years, on days of the week, up to a number of times or a day. The days of the
+ * month (or year) must be those its first day implies, as Mishkan sent them.
+ */
+function parseRule(
+  recurrence: readonly string[],
+  sentRecurrence: readonly string[],
+): {
+  every: number;
+  unit: Repeat['unit'];
+  weekdays: number[];
+  endKind: Repeat['end_kind'];
+  endCount: number | null;
+  endUntil: string | null;
+} | null {
+  const line = recurrence.find((r) => r.startsWith('RRULE:'));
+  if (line === undefined || recurrence.some((r) => r.startsWith('RDATE'))) {
+    return null;
+  }
+  const parts = new Map(
+    line
+      .slice(6)
+      .split(';')
+      .map((part) => part.split('=') as [string, string]),
+  );
+  const unit = unitOf[parts.get('FREQ') ?? ''];
+  if (unit === undefined) {
+    return null;
+  }
+  const sent = new Map(
+    (sentRecurrence.find((r) => r.startsWith('RRULE:')) ?? 'RRULE:')
+      .slice(6)
+      .split(';')
+      .map((part) => part.split('=') as [string, string]),
+  );
+  // Days of the month or a month other than those sent: the app has no such rule.
+  for (const field of ['BYMONTHDAY', 'BYMONTH', 'BYSETPOS', 'BYYEARDAY', 'BYWEEKNO']) {
+    if (parts.get(field) !== sent.get(field)) {
+      return null;
+    }
+  }
+  const byday = parts.get('BYDAY');
+  const weekdays: number[] = [];
+  if (byday !== undefined) {
+    for (const code of byday.split(',')) {
+      const index = weekdayCodes.indexOf(code);
+      // "The second Tuesday" and the like: no such rule in the app.
+      if (index === -1) {
+        return null;
+      }
+      weekdays.push(index);
+    }
+  }
+  const count = parts.get('COUNT');
+  const until = parts.get('UNTIL');
+  const untilDay =
+    until === undefined
+      ? null
+      : until.includes('T')
+        ? localOf(
+            `${until.slice(0, 4)}-${until.slice(4, 6)}-${until.slice(6, 8)}T${until.slice(9, 11)}:${until.slice(11, 13)}:${until.slice(13, 15)}Z`,
+          ).day
+        : `${until.slice(0, 4)}-${until.slice(4, 6)}-${until.slice(6, 8)}`;
+  return {
+    every: Math.max(1, Number(parts.get('INTERVAL') ?? '1')),
+    unit,
+    weekdays: unit === 'week' ? weekdays.sort() : [],
+    endKind: count !== undefined ? 'count' : untilDay !== null ? 'until' : 'never',
+    endCount: count === undefined ? null : Number(count),
+    endUntil: count === undefined ? untilDay : null,
+  };
+}
+
+/** A series' hour or rule changed in Google: the app's series is set the same. */
+async function bringSeries(
+  db: SupabaseClient,
+  link: Link,
+  facts: ItemFacts,
+  event: GoogleEvent,
+  sent: EventBody,
+): Promise<boolean> {
+  const repeat = facts.repeat;
+  const start = startOf(event.start);
+  const rule = parseRule(event.recurrence ?? [], (sent.recurrence as string[] | undefined) ?? []);
+  if (
+    repeat === null ||
+    repeat.dates.length > 0 ||
+    start === null ||
+    start.time === null ||
+    rule === null
+  ) {
+    return false;
+  }
+  const { error } = await db.rpc('google_save_repeat', {
+    p_member_id: await actingMember(db, link),
+    p_item_id: facts.item.id,
+    p_every: rule.every,
+    p_unit: rule.unit,
+    p_times: [`${start.time}:00`],
+    p_weekdays: rule.weekdays,
+    p_end_kind: rule.endKind,
+    p_end_count: rule.endCount,
+    p_end_until: rule.endUntil,
+  });
+  if (error !== null) {
+    console.error('series', facts.item.id, error.message);
+    return false;
+  }
+  return true;
+}
+
+/** Moves a reminder by as much as its 🔔 event was moved in Google. */
+async function moveReminder(db: SupabaseClient, reminder: Reminder, by: number): Promise<boolean> {
+  if (reminder.rule === 'at' && reminder.at !== null) {
+    const at = new Date(new Date(reminder.at).getTime() + by * 60000).toISOString();
+    await db.from('item_reminders').update({ at }).eq('id', reminder.id);
+    return true;
+  }
+  if (reminder.rule === 'before' && reminder.minutes_before !== null) {
+    const minutes = reminder.minutes_before - by;
+    if (minutes < 0) {
+      return false;
+    }
+    await db.from('item_reminders').update({ minutes_before: minutes }).eq('id', reminder.id);
+    return true;
+  }
+  if (reminder.rule === 'day' && reminder.at_time !== null) {
+    // Its moment, counted from midnight of the item's day, moved; then said again as days
+    // before and an hour.
+    const [h, m] = hhmm(reminder.at_time).split(':').map(Number);
+    const moment = (h ?? 0) * 60 + (m ?? 0) - (reminder.days_before ?? 0) * 1440 + by;
+    const daysBefore = moment >= 0 ? 0 : Math.ceil(-moment / 1440);
+    const at = moment + daysBefore * 1440;
+    if (at >= 1440) {
+      return false;
+    }
+    await db
+      .from('item_reminders')
+      .update({ days_before: daysBefore, at_time: `${fromMinutes(at).time}:00` })
+      .eq('id', reminder.id);
+    return true;
+  }
+  return false;
+}
+
+/** One occurrence of a series changed in Google. */
+async function bringOccurrence(
+  db: SupabaseClient,
+  link: Link,
+  facts: ItemFacts,
+  master: KeptRow,
+  event: GoogleEvent,
+): Promise<void> {
+  if (event.status === 'cancelled' || master.sent === null) {
+    return;
+  }
+  const original = startOf(event.originalStartTime);
+  const moved = !sameStart(event.start, event.originalStartTime);
+  const sentRings = ringMinutes(master.sent.reminders);
+  const ringsChanged = ringMinutes(event.reminders).join(',') !== sentRings.join(',');
+  if (!moved && !ringsChanged) {
+    return;
+  }
+  const { item, repeat } = facts;
+  // The current occurrence of an appointment may move; the app moves only that one.
+  const current =
+    original !== null &&
+    (original.day === item.due_date || (repeat !== null && original.day === repeat.planned_date));
+  const start = startOf(event.start);
+  if (moved && !master.key.startsWith('r:') && current && start !== null && start.time !== null) {
+    const { error } = await db.rpc('google_move_occurrence', {
+      p_member_id: await actingMember(db, link),
+      p_item_id: item.id,
+      p_date: start.day,
+      p_time: `${start.time}:00`,
+    });
+    if (error === null) {
+      if (!ringsChanged) {
+        return;
+      }
+    } else {
+      console.error('move', item.id, error.message);
+    }
+  }
+  // Anything else on one occurrence is put back as the series has it.
+  if (original === null) {
+    return;
+  }
+  const back =
+    original.time === null
+      ? { start: { date: original.day }, end: { date: addDays(original.day, 1) } }
+      : (() => {
+          const end = fromMinutes(
+            minutesOf(original.day, original.time) + (master.key.startsWith('r:') ? 0 : 60),
+          );
+          return {
+            start: { dateTime: `${original.day}T${original.time}:00`, timeZone: zone },
+            end: { dateTime: `${end.day}T${end.time}:00`, timeZone: zone },
+          };
+        })();
+  await google(db, link, 'PATCH', eventsPath(link, event.id), {
+    ...(moved && !current ? back : {}),
+    reminders: master.sent.reminders,
+  });
+}
+
+/** One change Google gave, brought back to the app (or put back in Google). */
+async function bringChange(
+  db: SupabaseClient,
+  link: Link,
+  event: GoogleEvent,
+  byEvent: ReadonlyMap<string, KeptRow>,
+  byKey: ReadonlyMap<string, KeptRow>,
+  splitKeys: ReadonlySet<string>,
+  today: string,
+): Promise<void> {
+  const mark = event.extendedProperties?.private ?? {};
+  const itemId = mark.mishkanItem;
+  const key = mark.mishkanKey;
+  // Not one of Mishkan's: a parent's own event in this calendar.
+  if (itemId === undefined || key === undefined) {
+    return;
+  }
+  if (event.recurringEventId !== undefined) {
+    const master = byEvent.get(event.recurringEventId);
+    const facts = master === undefined ? null : await factsOf(db, itemId, today);
+    if (master !== undefined && facts !== null) {
+      await bringOccurrence(db, link, facts, master, event);
+    }
+    return;
+  }
+  const row = byEvent.get(event.id);
+  if (row === undefined) {
+    // "This and following" in Google: the rest of the series came as a new one. Its hour and
+    // rule become the series'; the new event goes, and the series is sent whole again.
+    const series = byKey.get(`${itemId}|${key}`);
+    if (series?.sent != null && event.status !== 'cancelled' && event.recurrence !== undefined) {
+      const facts = await factsOf(db, itemId, today);
+      if (facts !== null) {
+        await bringSeries(db, link, facts, event, series.sent);
+      }
+      await google(db, link, 'DELETE', eventsPath(link, event.id)).catch(() => undefined);
+      await putBack(db, link, itemId, key);
+    }
+    return;
+  }
+  if (event.status === 'cancelled') {
+    // Removed in Google: an appointment is taken out of the calendar; a 🔔 reminder only
+    // leaves it, and stays in the app.
+    if (key.startsWith('r:') || key === 'moved') {
+      await db
+        .from('google_events')
+        .update({ dismissed: true })
+        .eq('item_id', itemId)
+        .eq('key', key);
+    } else {
+      await db
+        .from('google_choices')
+        .upsert({ item_id: itemId, household_id: link.household_id, included: false });
+    }
+    return;
+  }
+  if (event.etag !== undefined && event.etag === row.etag) {
+    return;
+  }
+  const sent = row.sent;
+  const facts = await factsOf(db, itemId, today);
+  if (sent === null || facts === null) {
+    return;
+  }
+  const moved = !sameStart(event.start, sent.start as When | undefined);
+  const ringsChanged =
+    ringMinutes(event.reminders).join(',') !== ringMinutes(sent.reminders).join(',');
+
+  // A 🔔 reminder: its time may move; anything else is put back.
+  if (key.startsWith('r:')) {
+    const reminder = facts.reminders.find((r) => key.startsWith(`r:${r.id}`));
+    // What follows the reminder's id: nothing, ":moved", an hour (and a weekday) of a series,
+    // or one time laid out of many (put back: the app has no such reminder of its own).
+    const rest = reminder === undefined ? '' : key.slice(`r:${reminder.id}`.length);
+    const laidOut = rest.includes(':ahead') || /^:\d{4}-/.test(rest);
+    const by =
+      startMinutes(event.start) !== null && startMinutes(sent.start as When) !== null
+        ? (startMinutes(event.start) ?? 0) - (startMinutes(sent.start as When) ?? 0)
+        : 0;
+    const kept =
+      moved && reminder !== undefined && !laidOut && by !== 0
+        ? await moveReminder(db, reminder, by)
+        : false;
+    if (!kept || (event.summary ?? '') !== sentText(sent, 'summary')) {
+      await putBack(db, link, itemId, key);
+    }
+    return;
+  }
+
+  // An appointment.
+  await bringDetails(db, facts.item, event, sent);
+  const start = startOf(event.start);
+  const repeating = key.startsWith('series:') || key === 'moved';
+  if (moved && start !== null) {
+    if (key === 'main') {
+      await db
+        .from('items')
+        .update({
+          due_date: start.day,
+          starts_at:
+            start.time === null || event.start?.dateTime === undefined
+              ? null
+              : new Date(event.start.dateTime).toISOString(),
+        })
+        .eq('id', itemId);
+    } else if (key === 'moved' && start.time !== null) {
+      const { error } = await db.rpc('google_move_occurrence', {
+        p_member_id: await actingMember(db, link),
+        p_item_id: itemId,
+        p_date: start.day,
+        p_time: `${start.time}:00`,
+      });
+      if (error !== null) {
+        console.error('move', itemId, error.message);
+        await putBack(db, link, itemId, key);
+      }
+    }
+  }
+  const seriesChanged =
+    key.startsWith('series:') &&
+    (moved ||
+      (event.recurrence ?? []).join('\n') !==
+        ((sent.recurrence as string[] | undefined) ?? []).join('\n'));
+  // A series split in Google is taken from its new part; the old part is sent whole again.
+  if (seriesChanged) {
+    const brought = splitKeys.has(`${itemId}|${key}`)
+      ? false
+      : await bringSeries(db, link, facts, event, sent);
+    if (!brought) {
+      await putBack(db, link, itemId, key);
+    }
+  }
+  if (ringsChanged && start !== null) {
+    await bringReminders(
+      db,
+      facts,
+      ringMinutes(sent.reminders),
+      ringMinutes(event.reminders),
+      start.day,
+      start.time,
+      repeating,
+    );
+  }
+}
+
+/** Reads what changed in Google since the last look, and brings it back to the app. */
+async function pullChanges(db: SupabaseClient, link: Link, today: string): Promise<void> {
+  // Events sent before what was sent was kept are sent once more, to keep it.
+  const { data: unknown } = await db
+    .from('google_events')
+    .select('item_id')
+    .eq('household_id', link.household_id)
+    .is('sent', null);
+  for (const row of (unknown ?? []) as { item_id: string }[]) {
+    await db
+      .from('google_events')
+      .update({ fingerprint: '' })
+      .eq('item_id', row.item_id)
+      .is('sent', null);
+    await db.from('google_queue').upsert({ item_id: row.item_id, household_id: link.household_id });
+  }
+  const { events, token } = await listChanges(db, link);
+  if (events.length > 0) {
+    const { data } = await db
+      .from('google_events')
+      .select('item_id, key, event_id, etag, sent, dismissed')
+      .eq('household_id', link.household_id);
+    const rows = (data ?? []) as KeptRow[];
+    const byEvent = new Map(rows.map((row) => [row.event_id, row]));
+    const byKey = new Map(rows.map((row) => [`${row.item_id}|${row.key}`, row]));
+    // The series cut in two in Google: their new parts are handled first.
+    const splits = events.filter(
+      (event) =>
+        event.recurrence !== undefined &&
+        event.recurringEventId === undefined &&
+        !byEvent.has(event.id) &&
+        event.extendedProperties?.private?.mishkanItem !== undefined,
+    );
+    const splitKeys = new Set(
+      splits.map(
+        (event) =>
+          `${event.extendedProperties?.private?.mishkanItem ?? ''}|${event.extendedProperties?.private?.mishkanKey ?? ''}`,
+      ),
+    );
+    for (const event of [...splits, ...events.filter((event) => !splits.includes(event))]) {
+      try {
+        await bringChange(db, link, event, byEvent, byKey, splitKeys, today);
+      } catch (caught) {
+        console.error('change', event.id, caught);
+      }
+    }
+  }
+  if (token !== null) {
+    link.sync_token = token;
+    await db
+      .from('google_links')
+      .update({ sync_token: token })
+      .eq('household_id', link.household_id);
+  }
+}
+
+// ---------------------------------------------------------------------------------------
 // Connecting and disconnecting.
 
 async function loadLink(db: SupabaseClient, householdId: string): Promise<Link | null> {
   const { data } = await db
     .from('google_links')
-    .select('household_id, refresh_token, access_token, access_expires_at, calendar_id, laid_out_on')
+    .select(linkColumns)
     .eq('household_id', householdId)
     .maybeSingle();
   return (data ?? null) as Link | null;
@@ -1037,9 +1676,13 @@ async function connect(
     household_id: householdId,
     refresh_token: refresh ?? before?.refresh_token ?? '',
     access_token: String(tokens.access_token),
-    access_expires_at: new Date(Date.now() + Number(tokens.expires_in ?? 3600) * 1000).toISOString(),
+    access_expires_at: new Date(
+      Date.now() + Number(tokens.expires_in ?? 3600) * 1000,
+    ).toISOString(),
     calendar_id: before?.calendar_id ?? null,
     laid_out_on: null,
+    sync_token: before?.sync_token ?? null,
+    connected_by: memberId,
   };
   // The calendar made before, when it is still there; otherwise a new one.
   if (link.calendar_id !== null) {
@@ -1052,6 +1695,7 @@ async function connect(
   if (link.calendar_id === null) {
     const made = await google(db, link, 'POST', '/calendars', { summary: 'משכן', timeZone: zone });
     link.calendar_id = String(made?.id ?? '');
+    link.sync_token = null;
     await db.from('google_events').delete().eq('household_id', householdId);
   }
   await db.from('google_links').upsert({
@@ -1080,9 +1724,12 @@ async function disconnect(db: SupabaseClient, householdId: string): Promise<void
   const link = await loadLink(db, householdId);
   if (link !== null) {
     // Google forgets the access; the calendar and its events stay in the account.
-    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(link.refresh_token)}`, {
-      method: 'POST',
-    }).catch(() => undefined);
+    await fetch(
+      `https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(link.refresh_token)}`,
+      {
+        method: 'POST',
+      },
+    ).catch(() => undefined);
   }
   await db.from('google_queue').delete().eq('household_id', householdId);
   await db.from('google_events').delete().eq('household_id', householdId);
@@ -1108,17 +1755,16 @@ Deno.serve(async (request) => {
     // sending goes on after, so a caller that waits only a moment does not cut it short.
     if (body.action === 'cron') {
       const work = (async (): Promise<void> => {
-        const { data: links } = await db
-          .from('google_links')
-          .select('household_id, refresh_token, access_token, access_expires_at, calendar_id, laid_out_on');
+        const { data: links } = await db.from('google_links').select(linkColumns);
         for (const link of (links ?? []) as Link[]) {
           await syncLink(db, link);
         }
       })().catch((caught: unknown) => {
         console.error(caught);
       });
-      const runtime = (globalThis as { EdgeRuntime?: { waitUntil(promise: Promise<unknown>): void } })
-        .EdgeRuntime;
+      const runtime = (
+        globalThis as { EdgeRuntime?: { waitUntil(promise: Promise<unknown>): void } }
+      ).EdgeRuntime;
       if (runtime === undefined) {
         await work;
       } else {
@@ -1181,5 +1827,5 @@ Deno.serve(async (request) => {
   }
 });
 
-export { planItem };
+export { parseRule, planItem, startOf };
 export type { ItemFacts };
