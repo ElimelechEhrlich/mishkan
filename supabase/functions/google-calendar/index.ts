@@ -137,6 +137,8 @@ type Repeat = {
 
 type Reminder = {
   id: string;
+  item_id: string;
+  member_ids: string[] | null;
   rule: 'at' | 'before' | 'day' | 'repeat';
   at: string | null;
   minutes_before: number | null;
@@ -1142,13 +1144,11 @@ async function listChanges(
 /** Sends an event again as it should be: Google's change is not kept. */
 async function putBack(db: SupabaseClient, link: Link, itemId: string, key: string) {
   await db.from('google_events').update({ fingerprint: '' }).eq('item_id', itemId).eq('key', key);
-  await db
-    .from('google_queue')
-    .upsert({
-      item_id: itemId,
-      household_id: link.household_id,
-      queued_at: new Date().toISOString(),
-    });
+  await db.from('google_queue').upsert({
+    item_id: itemId,
+    household_id: link.household_id,
+    queued_at: new Date().toISOString(),
+  });
 }
 
 /** The parent the app's own functions act for: the one who connected, or any of the house. */
@@ -1348,20 +1348,17 @@ async function bringSeries(
   return true;
 }
 
-/** Moves a reminder by as much as its 🔔 event was moved in Google. */
-async function moveReminder(db: SupabaseClient, reminder: Reminder, by: number): Promise<boolean> {
+/**
+ * A reminder moved by some minutes, as the fields of its rule; null when its rule cannot say
+ * it (before the item's hour by less than nothing, or a repeating reminder).
+ */
+function shiftedReminder(reminder: Reminder, by: number): Record<string, unknown> | null {
   if (reminder.rule === 'at' && reminder.at !== null) {
-    const at = new Date(new Date(reminder.at).getTime() + by * 60000).toISOString();
-    await db.from('item_reminders').update({ at }).eq('id', reminder.id);
-    return true;
+    return { at: new Date(new Date(reminder.at).getTime() + by * 60000).toISOString() };
   }
   if (reminder.rule === 'before' && reminder.minutes_before !== null) {
     const minutes = reminder.minutes_before - by;
-    if (minutes < 0) {
-      return false;
-    }
-    await db.from('item_reminders').update({ minutes_before: minutes }).eq('id', reminder.id);
-    return true;
+    return minutes < 0 ? null : { minutes_before: minutes };
   }
   if (reminder.rule === 'day' && reminder.at_time !== null) {
     // Its moment, counted from midnight of the item's day, moved; then said again as days
@@ -1370,16 +1367,37 @@ async function moveReminder(db: SupabaseClient, reminder: Reminder, by: number):
     const moment = (h ?? 0) * 60 + (m ?? 0) - (reminder.days_before ?? 0) * 1440 + by;
     const daysBefore = moment >= 0 ? 0 : Math.ceil(-moment / 1440);
     const at = moment + daysBefore * 1440;
-    if (at >= 1440) {
-      return false;
-    }
-    await db
-      .from('item_reminders')
-      .update({ days_before: daysBefore, at_time: `${fromMinutes(at).time}:00` })
-      .eq('id', reminder.id);
-    return true;
+    return at >= 1440 ? null : { days_before: daysBefore, at_time: `${fromMinutes(at).time}:00` };
   }
-  return false;
+  return null;
+}
+
+/** Moves a reminder by as much as its 🔔 event was moved in Google. */
+async function moveReminder(db: SupabaseClient, reminder: Reminder, by: number): Promise<boolean> {
+  const fields = shiftedReminder(reminder, by);
+  if (fields === null) {
+    return false;
+  }
+  await db.from('item_reminders').update(fields).eq('id', reminder.id);
+  return true;
+}
+
+/**
+ * A notification added in Google to a 🔔 event ("an hour before" it): one more reminder in
+ * the app, that much earlier than this one, for the same parents. It comes to the calendar
+ * as a 🔔 of its own.
+ */
+async function addEarlier(db: SupabaseClient, reminder: Reminder, minutes: number): Promise<void> {
+  const fields = shiftedReminder(reminder, -minutes);
+  if (fields === null) {
+    return;
+  }
+  await db.from('item_reminders').insert({
+    item_id: reminder.item_id,
+    rule: reminder.rule,
+    member_ids: reminder.member_ids,
+    ...fields,
+  });
 }
 
 /** One occurrence of a series changed in Google. */
@@ -1526,7 +1544,17 @@ async function bringChange(
       moved && reminder !== undefined && !laidOut && by !== 0
         ? await moveReminder(db, reminder, by)
         : false;
-    if (!kept || (event.summary ?? '') !== sentText(sent, 'summary')) {
+    // Notifications added to it ring earlier than it: each is one more reminder in the app.
+    const sentRings = ringMinutes(sent.reminders);
+    if (reminder !== undefined && !laidOut) {
+      for (const minutes of ringMinutes(event.reminders)) {
+        if (minutes > 0 && !sentRings.includes(minutes)) {
+          await addEarlier(db, reminder, minutes);
+        }
+      }
+    }
+    // It goes back to ringing at its own time only; what else changed is put back.
+    if (!kept || ringsChanged || (event.summary ?? '') !== sentText(sent, 'summary')) {
       await putBack(db, link, itemId, key);
     }
     return;
