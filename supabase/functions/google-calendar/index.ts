@@ -21,6 +21,8 @@ const zone = 'Asia/Jerusalem';
 const api = 'https://www.googleapis.com/calendar/v3';
 /** How far ahead the reminders of a repeating item are laid out, one event each. */
 const aheadDays = 60;
+/** How far ahead the times of a series with an end are given (about ten years). */
+const listedDays = 3660;
 /** Google keeps at most 5 notifications on an event, at most 4 weeks before it. */
 const maxNotifications = 5;
 const maxMinutesBefore = 40320;
@@ -275,24 +277,46 @@ function lastDay(item: Item, repeat: Repeat): string | null {
   return ends.length === 0 ? null : ends.sort()[0] ?? null;
 }
 
+/** Days of a series given in place of those its start implies (for a shifted reminder). */
+type Shape = { byday?: number; bymonth?: number; bymonthday?: number };
+
 /**
  * A series as Google's rule. The days of the month past the 28th fall, as in the app, on the
- * month's last day when it is shorter; so does February 29 in a common year.
+ * month's last day when it is shorter; so does February 29 in a common year. A shape gives
+ * other days in their place: a negative day of the month counts from its end.
  */
-function rule(repeat: Repeat, count: number | null, until: string | null, timed: boolean): string {
+function rule(
+  repeat: Repeat,
+  count: number | null,
+  until: string | null,
+  timed: boolean,
+  shape: Shape | null = null,
+): string {
   const freq = { day: 'DAILY', week: 'WEEKLY', month: 'MONTHLY', year: 'YEARLY' }[repeat.unit];
   const parts = [`FREQ=${freq}`, `INTERVAL=${String(repeat.every)}`, 'WKST=SU'];
   const startDay = Number(repeat.starts_on.slice(8, 10));
   const startMonth = Number(repeat.starts_on.slice(5, 7));
-  if (repeat.unit === 'week' && repeat.weekdays.length > 0) {
-    parts.push(`BYDAY=${[...repeat.weekdays].sort().map((d) => weekdayCodes[d]).join(',')}`);
-  }
-  if (repeat.unit === 'month' && startDay > 28) {
-    const days = Array.from({ length: startDay - 27 }, (_, i) => String(28 + i));
-    parts.push(`BYMONTHDAY=${days.join(',')}`, 'BYSETPOS=-1');
-  }
-  if (repeat.unit === 'year' && startMonth === 2 && startDay === 29) {
-    parts.push('BYMONTH=2', 'BYMONTHDAY=28,29', 'BYSETPOS=-1');
+  if (shape !== null) {
+    if (shape.byday !== undefined) {
+      parts.push(`BYDAY=${weekdayCodes[shape.byday] ?? 'SU'}`);
+    }
+    if (shape.bymonth !== undefined) {
+      parts.push(`BYMONTH=${String(shape.bymonth)}`);
+    }
+    if (shape.bymonthday !== undefined) {
+      parts.push(`BYMONTHDAY=${String(shape.bymonthday)}`);
+    }
+  } else {
+    if (repeat.unit === 'week' && repeat.weekdays.length > 0) {
+      parts.push(`BYDAY=${[...repeat.weekdays].sort().map((d) => weekdayCodes[d]).join(',')}`);
+    }
+    if (repeat.unit === 'month' && startDay > 28) {
+      const days = Array.from({ length: startDay - 27 }, (_, i) => String(28 + i));
+      parts.push(`BYMONTHDAY=${days.join(',')}`, 'BYSETPOS=-1');
+    }
+    if (repeat.unit === 'year' && startMonth === 2 && startDay === 29) {
+      parts.push('BYMONTH=2', 'BYMONTHDAY=28,29', 'BYSETPOS=-1');
+    }
   }
   if (count !== null) {
     parts.push(`COUNT=${String(Math.max(1, count))}`);
@@ -403,7 +427,12 @@ function appointmentEvents(facts: ItemFacts): Planned[] {
 }
 
 /** A small event at the moment a reminder rings: "🔔" and the item, ringing at its start. */
-function markerEvent(facts: ItemFacts, key: string, at: number, recurrence?: string): Planned {
+function markerEvent(
+  facts: ItemFacts,
+  key: string,
+  at: number,
+  recurrence: readonly string[] = [],
+): Planned {
   const moment = fromMinutes(at);
   const dateTime = { dateTime: `${moment.day}T${moment.time}:00`, timeZone: zone };
   return {
@@ -415,7 +444,7 @@ function markerEvent(facts: ItemFacts, key: string, at: number, recurrence?: str
       end: dateTime,
       transparency: 'transparent',
       reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 0 }] },
-      ...(recurrence === undefined ? {} : { recurrence: [recurrence] }),
+      ...(recurrence.length === 0 ? {} : { recurrence: [...recurrence] }),
     },
   };
 }
@@ -464,7 +493,7 @@ function markerEvents(facts: ItemFacts): Planned[] {
           facts,
           key,
           minutesOf(next.day, next.time),
-          `RRULE:FREQ=${freq};INTERVAL=${String(reminder.every ?? 1)}${until}`,
+          [`RRULE:FREQ=${freq};INTERVAL=${String(reminder.every ?? 1)}${until}`],
         ),
       ];
     }
@@ -475,14 +504,141 @@ function markerEvents(facts: ItemFacts): Planned[] {
       const minutes = ringsAt(reminder, item.due_date, itemHour(item));
       return minutes === null || minutes < earliest ? [] : [markerEvent(facts, key, minutes)];
     }
-    // A repeating item: one for each time ahead.
-    return facts.slots.flatMap((slot): Planned[] => {
-      const time = slot.at_time === null ? null : hhmm(slot.at_time);
-      const minutes = ringsAt(reminder, slot.on_date, time);
-      return minutes === null || minutes < earliest
-        ? []
-        : [markerEvent(facts, `${key}:${slot.on_date}:${time ?? 'day'}`, minutes)];
+    return seriesMarkers(facts, reminder, key);
+  });
+}
+
+/** A list of moments, as Google takes them in RDATE or EXDATE. */
+function momentList(prefix: string, moments: readonly number[]): string {
+  const values = moments.map((m) => {
+    const at = fromMinutes(m);
+    return compact(at.day, at.time);
+  });
+  return `${prefix};TZID=${zone}:${values.join(',')}`;
+}
+
+/** The most days given one by one in a single series. */
+const maxListed = 1000;
+
+/**
+ * A reminder of a repeating item as a series of its own, ringing for every time of the item
+ * as the item repeats: the same rule moved to the reminder's hour, and to an earlier day when
+ * it rings days before (a weekday earlier, a day of the month earlier, counted from the end
+ * of the month before when it falls there). A series with an end, or given by its days (a
+ * Hebrew date), is given by its moments. Only a month's 29th to 31st rung days before has no
+ * such rule: its times ahead are laid out one by one.
+ */
+function seriesMarkers(facts: ItemFacts, reminder: Reminder, key: string): Planned[] {
+  const { item } = facts;
+  const repeat = facts.repeat;
+  if (repeat === null) {
+    return [];
+  }
+  const earliest = minutesOf(facts.today, '00:00');
+  const hours = repeatHours(repeat);
+  const slotHours: (string | null)[] = hours.length > 0 ? hours : [itemHour(item)];
+  const finite =
+    repeat.dates.length > 0 ||
+    repeat.end_kind !== 'never' ||
+    repeat.stopped_on !== null ||
+    item.status !== 'open';
+
+  // Ended, or given by its days: every moment ahead, from the item's own times.
+  if (finite) {
+    const moments = facts.slots
+      .map((slot) =>
+        ringsAt(reminder, slot.on_date, slot.at_time === null ? null : hhmm(slot.at_time)),
+      )
+      .filter((m): m is number => m !== null && m >= earliest)
+      .sort((a, b) => a - b)
+      .slice(0, maxListed);
+    const [first, ...rest] = moments;
+    return first === undefined
+      ? []
+      : [markerEvent(facts, key, first, rest.length === 0 ? [] : [momentList('RDATE', rest)])];
+  }
+
+  const skipped = facts.occurrences.filter((o) => o.status === 'skipped');
+  const moved = repeat.planned_date !== null && hours.length <= 1 && item.due_date !== null;
+  const events: Planned[] = [];
+  for (const time of slotHours) {
+    const first = firstDay(repeat);
+    const rings = ringsAt(reminder, first, time);
+    if (rings === null) {
+      continue;
+    }
+    // How much earlier it rings than its time, the same for every time of this hour.
+    const before = minutesOf(first, time ?? '00:00') - rings;
+    const shift = (day: string): number => minutesOf(day, time ?? '00:00') - before;
+    const daysBefore = Math.round(
+      (minutesOf(first, '00:00') - minutesOf(fromMinutes(rings).day, '00:00')) / 1440,
+    );
+    const exceptions = [
+      ...skipped
+        .filter((o) => (o.at_time === null ? null : hhmm(o.at_time)) === time)
+        .map((o) => shift(o.on_date)),
+      ...(moved && repeat.planned_date !== null ? [shift(repeat.planned_date)] : []),
+    ];
+    const exdate = exceptions.length === 0 ? [] : [momentList('EXDATE', exceptions)];
+    const hourKey = `${key}:${time ?? 'day'}`;
+    const series = (subKey: string, start: string, shape: Shape | null): void => {
+      events.push(
+        markerEvent(facts, subKey, shift(start), [rule(repeat, null, null, true, shape), ...exdate]),
+      );
+    };
+    const startDay = Number(repeat.starts_on.slice(8, 10));
+    const startMonth = Number(repeat.starts_on.slice(5, 7));
+    if (daysBefore === 0 || repeat.unit === 'day') {
+      series(hourKey, first, null);
+      continue;
+    }
+    if (repeat.unit === 'week') {
+      // Each day of the week on its own, a day (or more) earlier.
+      const weekdays = repeat.weekdays.length > 0 ? repeat.weekdays : [weekdayOf(first)];
+      for (const weekday of weekdays) {
+        let day = first;
+        while (weekdayOf(day) !== weekday) {
+          day = addDays(day, 1);
+        }
+        series(`${hourKey}:${String(weekday)}`, day, {
+          byday: (((weekday - daysBefore) % 7) + 7) % 7,
+        });
+      }
+      continue;
+    }
+    const day = startDay - daysBefore;
+    const clamped = startDay > 28 || (startMonth === 2 && startDay === 29);
+    // Within the month before, counted from its end; further than that, no rule says it.
+    const fromEnd = day - 1;
+    if (clamped || fromEnd < -28) {
+      events.push(...laidOut(facts, reminder, `${hourKey}:ahead`));
+      continue;
+    }
+    const monthBefore = startMonth === 1 ? 12 : startMonth - 1;
+    series(hourKey, first, {
+      ...(repeat.unit === 'year' ? { bymonth: day >= 1 ? startMonth : monthBefore } : {}),
+      bymonthday: day >= 1 ? day : fromEnd,
     });
+  }
+  if (moved && item.due_date !== null) {
+    const rings = ringsAt(reminder, item.due_date, itemHour(item));
+    if (rings !== null && rings >= earliest) {
+      events.push(markerEvent(facts, `${key}:moved`, rings));
+    }
+  }
+  return events;
+}
+
+/** A reminder's times ahead, one event each (for what no rule of Google's can say). */
+function laidOut(facts: ItemFacts, reminder: Reminder, key: string): Planned[] {
+  const earliest = minutesOf(facts.today, '00:00');
+  const until = minutesOf(addDays(facts.today, aheadDays), '00:00');
+  return facts.slots.flatMap((slot): Planned[] => {
+    const time = slot.at_time === null ? null : hhmm(slot.at_time);
+    const minutes = ringsAt(reminder, slot.on_date, time);
+    return minutes === null || minutes < earliest || minutes > until
+      ? []
+      : [markerEvent(facts, `${key}:${slot.on_date}:${time ?? 'day'}`, minutes)];
   });
 }
 
@@ -660,10 +816,16 @@ async function factsOf(db: SupabaseClient, itemId: string, today: string): Promi
     facts.repeat !== null &&
     facts.repeat.from_kind === 'schedule'
   ) {
+    // A series with an end is given by all its times; one without, by a rule (or the days
+    // ahead, for what no rule says).
+    const ended =
+      facts.repeat.dates.length > 0 ||
+      facts.repeat.end_kind !== 'never' ||
+      facts.repeat.stopped_on !== null;
     const { data: slots } = await db.rpc('google_item_slots', {
       p_item_id: itemId,
       p_from: today,
-      p_to: addDays(today, aheadDays),
+      p_to: addDays(today, ended ? listedDays : aheadDays),
     });
     facts.slots = (slots ?? []) as Slot[];
   }
