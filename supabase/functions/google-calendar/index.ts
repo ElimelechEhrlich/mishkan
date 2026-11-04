@@ -1104,15 +1104,27 @@ Deno.serve(async (request) => {
       state?: unknown;
     };
 
-    // The cron job: every connected household's queue.
+    // The cron job: every connected household's queue. It is answered at once and the
+    // sending goes on after, so a caller that waits only a moment does not cut it short.
     if (body.action === 'cron') {
-      const { data: links } = await db
-        .from('google_links')
-        .select('household_id, refresh_token, access_token, access_expires_at, calendar_id, laid_out_on');
-      for (const link of (links ?? []) as Link[]) {
-        await syncLink(db, link);
+      const work = (async (): Promise<void> => {
+        const { data: links } = await db
+          .from('google_links')
+          .select('household_id, refresh_token, access_token, access_expires_at, calendar_id, laid_out_on');
+        for (const link of (links ?? []) as Link[]) {
+          await syncLink(db, link);
+        }
+      })().catch((caught: unknown) => {
+        console.error(caught);
+      });
+      const runtime = (globalThis as { EdgeRuntime?: { waitUntil(promise: Promise<unknown>): void } })
+        .EdgeRuntime;
+      if (runtime === undefined) {
+        await work;
+      } else {
+        runtime.waitUntil(work);
       }
-      return json({ ok: true });
+      return json({ ok: true }, 202);
     }
 
     // Everything else is for a signed-in parent, about their own household.
