@@ -1330,6 +1330,28 @@ async function bringSeries(
   ) {
     return false;
   }
+  // Ending before today is how Google cuts a series in two ("this and following"), whose new
+  // part may come only later: the series is not ended for it, and is sent whole again.
+  if (rule.endUntil !== null && rule.endUntil < facts.today) {
+    return false;
+  }
+  // The same series said in Google's words (a weekday it adds, a default it leaves out):
+  // nothing to save.
+  const days = (weekdays: readonly number[]): string =>
+    (weekdays.length > 0 || repeat.unit !== 'week' ? [...weekdays] : [weekdayOf(repeat.starts_on)])
+      .sort()
+      .join(',');
+  const same =
+    rule.every === repeat.every &&
+    rule.unit === repeat.unit &&
+    days(rule.weekdays) === days(repeat.weekdays) &&
+    rule.endKind === repeat.end_kind &&
+    (rule.endKind !== 'count' || rule.endCount === repeat.end_count) &&
+    (rule.endKind !== 'until' || rule.endUntil === repeat.end_until) &&
+    repeatHours(repeat)[0] === start.time;
+  if (same) {
+    return true;
+  }
   const { error } = await db.rpc('google_save_repeat', {
     p_member_id: await actingMember(db, link),
     p_item_id: facts.item.id,
