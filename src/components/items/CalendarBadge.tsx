@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { useInCalendar } from '../../hooks/useCalendarItems';
+import { useGoogleConnected, useInGoogle } from '../../hooks/useGoogleCalendar';
 
 type CalendarBadgeProps = {
   readonly itemId: string;
@@ -9,11 +10,15 @@ type CalendarBadgeProps = {
 };
 
 /**
- * A small calendar page in Google Calendar's colors beside an item that is in the parent's
- * Google Calendar; nothing for one that is not.
+ * A small calendar page in Google Calendar's colors beside an item that is in Google
+ * Calendar; nothing for one that is not.
  */
 export function CalendarBadge({ itemId, always = false }: CalendarBadgeProps): ReactElement | null {
-  const inCalendar = useInCalendar(itemId);
+  const picked = useInCalendar(itemId);
+  const connected = useGoogleConnected();
+  const inGoogle = useInGoogle(itemId);
+  // Once the household is connected, what is in its calendar; before, what the parent picked.
+  const inCalendar = connected ? inGoogle : picked;
   if (!inCalendar && !always) {
     return null;
   }

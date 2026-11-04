@@ -5,6 +5,8 @@ import { EntitySettings } from '../components/settings/EntitySettings';
 import { ApkUpdateCard } from '../components/settings/ApkUpdateCard';
 import { AutoReminderCard } from '../components/settings/AutoReminderCard';
 import { CalendarCard } from '../components/settings/CalendarCard';
+import { GoogleCard } from '../components/settings/GoogleCard';
+import { useGoogleConnected } from '../hooks/useGoogleCalendar';
 import { InviteCard } from '../components/settings/InviteCard';
 import { NotificationsCard } from '../components/settings/NotificationsCard';
 import { SummaryCard } from '../components/settings/SummaryCard';
@@ -30,6 +32,7 @@ export function SettingsPage(): ReactElement {
   const settings = useEntitySettings(member, entities.entities, entities.reload);
   const setup = useSetupSteps(entities.entities, members.length);
   const summaries = useSummaryTimes();
+  const googleConnected = useGoogleConnected();
   const { hash } = useLocation();
 
   // Arriving for a step (from the tour's end), the page opens at the place it is done.
@@ -93,7 +96,9 @@ export function SettingsPage(): ReactElement {
       <NotificationsCard push={setup.push} />
       <SummaryCard summaries={summaries} pushOn={setup.push.status === 'on'} />
       <AutoReminderCard household={household} members={members} />
-      <CalendarCard />
+      <GoogleCard />
+      {/* The parent's own link, until the household's calendar is connected. */}
+      {!googleConnected && <CalendarCard />}
       <div id="setup-invite" className="scroll-mt-20">
         <InviteCard inviteCode={household.invite_code} />
       </div>

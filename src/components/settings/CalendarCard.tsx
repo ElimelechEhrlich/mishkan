@@ -20,7 +20,9 @@ export function CalendarCard(): ReactElement {
 
   return (
     <section className="flex flex-col gap-1.5">
-      <h2 className="px-1 text-xs font-bold tracking-wide text-muted">{labels.calendar.title}</h2>
+      <h2 className="px-1 text-xs font-bold tracking-wide text-muted">
+        {labels.calendar.oldTitle}
+      </h2>
       <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
         {calendar.addUrl === null ? (
           <ListRow

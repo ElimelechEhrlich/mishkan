@@ -5,6 +5,7 @@ import {
   domainTopics,
   glideTarget,
   groupByTopic,
+  isPersonalItem,
   topicDomainIds,
 } from './lookups';
 import type { EntityWithDomains } from '../types/domain';
@@ -129,5 +130,22 @@ describe('glideTarget', () => {
     expect(glideTarget(3.4, 0.03, 3, 20)).toBe(12);
     expect(glideTarget(3.4, 0.03, 3, 8)).toBe(7);
     expect(glideTarget(2.6, -0.03, 3, 8)).toBe(0);
+  });
+});
+
+describe('isPersonalItem', () => {
+  const mine = {
+    ...entity('me', [['d-me', 'הפתעות']]),
+    kind: 'personal' as const,
+    member_id: 'm1',
+  };
+  const child = entity('kid', [['d-kid', 'בריאות']]);
+  const all = [mine, child];
+
+  it('goes by the domain, or by the entity while there is no domain', () => {
+    expect(isPersonalItem({ domain_id: 'd-me', entity_id: null }, all)).toBe(true);
+    expect(isPersonalItem({ domain_id: 'd-kid', entity_id: null }, all)).toBe(false);
+    expect(isPersonalItem({ domain_id: null, entity_id: 'me' }, all)).toBe(true);
+    expect(isPersonalItem({ domain_id: null, entity_id: null }, all)).toBe(false);
   });
 });

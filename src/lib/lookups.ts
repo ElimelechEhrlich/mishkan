@@ -116,6 +116,19 @@ export function canSeeItem(
   return entity === undefined || entity.kind !== 'personal' || entity.member_id === memberId;
 }
 
+/** Whether an item is in a personal entity (by its domain, or by its entity while it has none). */
+export function isPersonalItem(
+  item: Pick<Item, 'domain_id' | 'entity_id'>,
+  entities: readonly EntityWithDomains[],
+): boolean {
+  const entity = entities.find((candidate) =>
+    item.domain_id === null
+      ? candidate.id === item.entity_id
+      : candidate.domains.some((domain) => domain.id === item.domain_id),
+  );
+  return entity?.kind === 'personal';
+}
+
 /** How many open rows each entity holds, by entity id. Questions and nested steps are not counted. */
 export function countByEntity(
   rows: readonly Item[],

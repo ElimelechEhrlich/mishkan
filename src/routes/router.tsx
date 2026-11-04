@@ -18,6 +18,7 @@ import { OpenItemsPage } from '../pages/OpenItemsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ShoppingPage } from '../pages/ShoppingPage';
 import { AssistantPage } from '../pages/AssistantPage';
+import { GoogleCalendarPage } from '../pages/GoogleCalendarPage';
 import { ShoppingDepartmentsPage } from '../pages/ShoppingDepartmentsPage';
 import { ShoppingRunPage } from '../pages/ShoppingRunPage';
 import { ShoppingStaplesPage } from '../pages/ShoppingStaplesPage';
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
           { path: '/done', element: <DonePage /> },
           { path: '/search', element: <SearchPage /> },
           { path: '/assistant', element: <AssistantPage /> },
+          { path: '/google-calendar', element: <GoogleCalendarPage /> },
         ],
       },
     ],

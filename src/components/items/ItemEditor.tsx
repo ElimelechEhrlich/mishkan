@@ -3,9 +3,9 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { needsTime, shoppingCategories, todayIso, toLocalDateTime } from '../../lib/itemRules';
-import { describeReminder, draftOf, isWaiting } from '../../lib/reminders';
+import { describeReminder, draftOf, isWaiting, newDraft } from '../../lib/reminders';
 import { fullTimeText } from '../../lib/itemText';
-import { canSeeItem } from '../../lib/lookups';
+import { canSeeItem, isPersonalItem } from '../../lib/lookups';
 import type { Lookups } from '../../lib/lookups';
 import type {
   Conversion,
@@ -41,6 +41,8 @@ import { SelectField } from '../ui/SelectField';
 import { AppointmentActions } from './AppointmentActions';
 import { AppointmentRows } from './AppointmentRows';
 import { CalendarRow } from './CalendarRow';
+import { GoogleRow } from './GoogleRow';
+import { useGoogleConnected } from '../../hooks/useGoogleCalendar';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemHeading } from './ItemHeading';
@@ -297,6 +299,7 @@ export function ItemEditor({
     domains: entity.domains.filter((domain) => (domain.role === 'shopping') === isShopping),
   }));
   const done = item.status === 'done';
+  const googleConnected = useGoogleConnected();
   // A repeating item: its own button marks the current occurrence, or, once none is left,
   // the item itself.
   const repeatable =
@@ -305,6 +308,8 @@ export function ItemEditor({
     item.kind === 'tracker' ||
     item.kind === 'missing_item';
   const repeating = repeatable && item.time_mode === 'recurring' && repeat !== null;
+  // Reminders are set on an open item, and on a missing item only when it repeats.
+  const remindable = item.status === 'open' && (item.kind !== 'missing_item' || repeating);
   const repeatControls = {
     repeat,
     gone: occurrences.filter((occurrence) => occurrence.status !== 'closed_with_parent').length,
@@ -684,7 +689,7 @@ export function ItemEditor({
           </PropertyRow>
         )}
 
-        {item.status === 'open' && (item.kind !== 'missing_item' || repeating) && (
+        {remindable && (
           <PropertyRow
             label={labels.reminders.title}
             icon="bell"
@@ -715,7 +720,23 @@ export function ItemEditor({
           </PropertyRow>
         )}
 
-        {(item.due_date !== null || repeating) && <CalendarRow itemId={item.id} />}
+        {/* Once the household is connected, its calendar; before, the parent's own link. */}
+        {googleConnected
+          ? !isPersonalItem(item, entities) &&
+            (isAppointment || remindable) && (
+              <GoogleRow
+                item={item}
+                reminders={reminders.length}
+                hasHour={item.due_time !== null}
+                onAddAtHour={() => {
+                  onAddReminder(item.id, newDraft('before', item, new Date()));
+                }}
+                onOpenReminders={() => {
+                  setOpenRow('reminder');
+                }}
+              />
+            )
+          : (item.due_date !== null || repeating) && <CalendarRow itemId={item.id} />}
 
         {item.kind === 'task' && item.shopping_trip === null && goals.length > 0 && (
           <PropertyRow

@@ -426,6 +426,28 @@ export type Database = {
         Update: Record<string, never>;
         Relationships: [];
       };
+      google_choices: {
+        Row: {
+          item_id: string;
+          household_id: string;
+          /** An appointment taken out of Google Calendar (false), or another item's reminders put in (true). */
+          included: boolean;
+          chosen_by: string | null;
+          chosen_at: string;
+        };
+        Insert: {
+          item_id: string;
+          household_id?: string;
+          included: boolean;
+          chosen_by?: string | null;
+          chosen_at?: string;
+        };
+        Update: {
+          included?: boolean;
+          chosen_at?: string;
+        };
+        Relationships: [];
+      };
       calendar_items: {
         Row: {
           member_id: string;
@@ -932,6 +954,19 @@ export type Database = {
       calendar_link: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      google_synced_items: {
+        Args: Record<string, never>;
+        Returns: string[];
+      };
+      google_link_status: {
+        Args: Record<string, never>;
+        Returns: {
+          connected_at: string;
+          ready: boolean;
+          last_sync_at: string | null;
+          last_error: string | null;
+        }[];
       };
       renew_calendar_link: {
         Args: Record<string, never>;
