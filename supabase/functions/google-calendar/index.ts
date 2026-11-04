@@ -27,8 +27,10 @@ const listedDays = 3660;
 /** Google keeps at most 5 notifications on an event, at most 4 weeks before it. */
 const maxNotifications = 5;
 const maxMinutesBefore = 40320;
-/** How many items one call sends, so a call ends well within its time. */
-const batchSize = 40;
+/** How long one call keeps sending, so it ends well within its time (and its turn). */
+const sendingMs = 40000;
+/** The most queued items one call looks at. */
+const batchSize = 1000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -941,7 +943,12 @@ async function syncHousehold(db: SupabaseClient, link: Link): Promise<void> {
     .order('queued_at')
     .limit(batchSize);
   let lastError: string | null = null;
+  const started = Date.now();
   for (const row of (queue ?? []) as { item_id: string; queued_at: string }[]) {
+    // What is left waits for the next minute.
+    if (Date.now() - started > sendingMs) {
+      break;
+    }
     try {
       await syncItem(db, link, row.item_id, today);
       // Done, unless it changed again meanwhile.
@@ -1047,12 +1054,16 @@ async function connect(
     connected_at: new Date().toISOString(),
     last_error: null,
   });
-  // Everything of the household is looked at once.
-  const { data: items } = await db.from('items').select('id').eq('household_id', householdId);
-  const rows = ((items ?? []) as { id: string }[]).map((row) => ({
-    item_id: row.id,
-    household_id: householdId,
-  }));
+  // What goes to the calendar is looked at once: the appointments, and what was put in.
+  const [{ data: appointments }, { data: chosen }] = await Promise.all([
+    db.from('items').select('id').eq('household_id', householdId).eq('kind', 'appointment'),
+    db.from('google_choices').select('item_id').eq('household_id', householdId),
+  ]);
+  const ids = new Set([
+    ...((appointments ?? []) as { id: string }[]).map((row) => row.id),
+    ...((chosen ?? []) as { item_id: string }[]).map((row) => row.item_id),
+  ]);
+  const rows = [...ids].map((id) => ({ item_id: id, household_id: householdId }));
   for (let i = 0; i < rows.length; i += 500) {
     await db.from('google_queue').upsert(rows.slice(i, i + 500));
   }
