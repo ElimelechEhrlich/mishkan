@@ -219,6 +219,8 @@ export type Database = {
           place: string | null;
           meeting_url: string | null;
           with_whom: string | null;
+          /** An appointment's length in minutes; null for an hour. */
+          duration_minutes: number | null;
           series_id: string | null;
           in_main: boolean;
           /** A note that is one value: its title is the name and its answer the value. */
@@ -270,6 +272,7 @@ export type Database = {
           place?: string | null;
           meeting_url?: string | null;
           with_whom?: string | null;
+          duration_minutes?: number | null;
           series_id?: string | null;
           in_main?: boolean;
           is_value?: boolean;
@@ -303,6 +306,7 @@ export type Database = {
           place?: string | null;
           meeting_url?: string | null;
           with_whom?: string | null;
+          duration_minutes?: number | null;
           in_main?: boolean;
           is_value?: boolean;
           entity_id?: string | null;

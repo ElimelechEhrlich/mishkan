@@ -497,6 +497,20 @@ export const labels = {
     when: 'מתי',
     where: 'איפה',
     withWhom: 'עם מי',
+    length: 'משך',
+    lengths: [15, 30, 45, 60, 90, 120],
+    lengthText: (minutes: number) =>
+      minutes === 60
+        ? 'שעה'
+        : minutes === 90
+          ? 'שעה וחצי'
+          : minutes === 120
+            ? 'שעתיים'
+            : minutes === 15
+              ? 'רבע שעה'
+              : minutes === 30
+                ? 'חצי שעה'
+                : `${String(minutes)} דק׳`,
     address: 'כתובת',
     phone: 'מספר טלפון',
     meetingUrl: 'קישור לפגישה',

@@ -115,6 +115,8 @@ type Item = {
   place: string | null;
   meeting_url: string | null;
   with_whom: string | null;
+  /** An appointment's length in minutes; null for an hour. */
+  duration_minutes: number | null;
   completed_at: string | null;
 };
 
@@ -209,12 +211,12 @@ function description(item: Item): string {
   return lines.filter((line) => line !== null).join('\n');
 }
 
-/** Start and end of an event on a day, at an hour (an hour long) or the whole day. */
-function when(day: string, time: string | null): EventBody {
+/** Start and end of an event on a day, at an hour (for its length) or the whole day. */
+function when(day: string, time: string | null, length = 60): EventBody {
   if (time === null) {
     return { start: { date: day }, end: { date: addDays(day, 1) }, transparency: 'transparent' };
   }
-  const end = fromMinutes(minutesOf(day, time) + 60);
+  const end = fromMinutes(minutesOf(day, time) + length);
   return {
     start: { dateTime: `${day}T${time}:00`, timeZone: zone },
     end: { dateTime: `${end.day}T${end.time}:00`, timeZone: zone },
@@ -358,7 +360,7 @@ function appointmentEvent(
       summary: item.title,
       description: description(item),
       ...(place === undefined || place === null ? {} : { location: place.trim() }),
-      ...when(day, time),
+      ...when(day, time, item.duration_minutes ?? 60),
       reminders: {
         useDefault: false,
         overrides: notificationsFor(facts.reminders, day, time, repeating),
@@ -802,7 +804,7 @@ async function factsOf(
   const { data: item } = await db
     .from('items')
     .select(
-      'id, household_id, title, kind, status, notes, due_date, due_time, starts_at, place, meeting_url, with_whom, completed_at',
+      'id, household_id, title, kind, status, notes, due_date, due_time, starts_at, place, meeting_url, with_whom, duration_minutes, completed_at',
     )
     .eq('id', itemId)
     .maybeSingle();
@@ -1088,6 +1090,24 @@ function startMinutes(when: When | undefined): number | null {
   return start === null ? null : minutesOf(start.day, start.time ?? '00:00');
 }
 
+/** How long a timed event runs, in minutes; null for a whole day. */
+function lengthOf(start: When | undefined, end: When | undefined): number | null {
+  const from = startMinutes(start);
+  const to = startMinutes(end);
+  return start?.dateTime === undefined || from === null || to === null ? null : to - from;
+}
+
+/** A length from Google, kept on the appointment (an hour is kept as none). */
+async function bringLength(db: SupabaseClient, itemId: string, length: number | null) {
+  if (length === null || length < 5 || length > 1440) {
+    return;
+  }
+  await db
+    .from('items')
+    .update({ duration_minutes: length === 60 ? null : length })
+    .eq('id', itemId);
+}
+
 /** The minutes before the start at which an event rings, as a sorted list. */
 function ringMinutes(reminders: unknown): number[] {
   const value = reminders as GoogleEvent['reminders'] | undefined;
@@ -1335,6 +1355,15 @@ async function bringSeries(
   if (rule.endUntil !== null && rule.endUntil < facts.today) {
     return false;
   }
+  // So does a number of times that is over before today (about: by whole steps of the rule).
+  if (rule.endKind === 'count' && rule.endCount !== null) {
+    const perStep = rule.unit === 'week' ? Math.max(1, rule.weekdays.length) : 1;
+    const steps = Math.ceil(rule.endCount / perStep) - 1;
+    const days = { day: 1, week: 7, month: 31, year: 366 }[rule.unit] * rule.every * steps;
+    if (addDays(repeat.starts_on, days) < facts.today) {
+      return false;
+    }
+  }
   // The same series said in Google's words (a weekday it adds, a default it leaves out):
   // nothing to save.
   const days = (weekdays: readonly number[]): string =>
@@ -1437,7 +1466,13 @@ async function bringOccurrence(
   const moved = !sameStart(event.start, event.originalStartTime);
   const sentRings = ringMinutes(master.sent.reminders);
   const ringsChanged = ringMinutes(event.reminders).join(',') !== sentRings.join(',');
-  if (!moved && !ringsChanged) {
+  // A length is the appointment's, not one occurrence's: one changed alone is put back.
+  const length = lengthOf(event.start, event.end);
+  const lengthChanged =
+    !master.key.startsWith('r:') &&
+    length !== null &&
+    length !== (facts.item.duration_minutes ?? 60);
+  if (!moved && !ringsChanged && !lengthChanged) {
     return;
   }
   const { item, repeat } = facts;
@@ -1454,7 +1489,7 @@ async function bringOccurrence(
       p_time: `${start.time}:00`,
     });
     if (error === null) {
-      if (!ringsChanged) {
+      if (!ringsChanged && !lengthChanged) {
         return;
       }
     } else {
@@ -1470,7 +1505,8 @@ async function bringOccurrence(
       ? { start: { date: original.day }, end: { date: addDays(original.day, 1) } }
       : (() => {
           const end = fromMinutes(
-            minutesOf(original.day, original.time) + (master.key.startsWith('r:') ? 0 : 60),
+            minutesOf(original.day, original.time) +
+              (master.key.startsWith('r:') ? 0 : (facts.item.duration_minutes ?? 60)),
           );
           return {
             start: { dateTime: `${original.day}T${original.time}:00`, timeZone: zone },
@@ -1478,7 +1514,7 @@ async function bringOccurrence(
           };
         })();
   await google(db, link, 'PATCH', eventsPath(link, event.id), {
-    ...(moved && !current ? back : {}),
+    ...((moved && !current) || lengthChanged ? back : {}),
     reminders: master.sent.reminders,
   });
 }
@@ -1517,6 +1553,12 @@ async function bringChange(
       const facts = await factsOf(db, itemId, today);
       if (facts !== null) {
         await bringSeries(db, link, facts, event, series.sent);
+        if (
+          lengthOf(event.start, event.end) !==
+          lengthOf(series.sent.start as When, series.sent.end as When)
+        ) {
+          await bringLength(db, itemId, lengthOf(event.start, event.end));
+        }
       }
       await google(db, link, 'DELETE', eventsPath(link, event.id)).catch(() => undefined);
       await putBack(db, link, itemId, key);
@@ -1584,6 +1626,10 @@ async function bringChange(
 
   // An appointment.
   await bringDetails(db, facts.item, event, sent);
+  const length = lengthOf(event.start, event.end);
+  if (length !== lengthOf(sent.start as When, sent.end as When)) {
+    await bringLength(db, itemId, length);
+  }
   const start = startOf(event.start);
   const repeating = key.startsWith('series:') || key === 'moved';
   if (moved && start !== null) {

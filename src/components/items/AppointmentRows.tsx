@@ -50,6 +50,7 @@ export function AppointmentRows({ item, health, onUpdate }: AppointmentRowsProps
   const [place, setPlace] = useState(item.place ?? '');
   const [meetingUrl, setMeetingUrl] = useState(item.meeting_url ?? '');
   const [withWhom, setWithWhom] = useState(item.with_whom ?? '');
+  const [length, setLength] = useState(item.duration_minutes ?? 60);
 
   function toggle(row: Row): void {
     setOpenRow(openRow === row ? null : row);
@@ -63,7 +64,7 @@ export function AppointmentRows({ item, health, onUpdate }: AppointmentRowsProps
   const whenText =
     item.starts_at === null || item.due_date === null
       ? labels.status.notSet
-      : `${formatFullDate(item.due_date)} ${formatClock(item.starts_at)}`;
+      : `${formatFullDate(item.due_date)} ${formatClock(item.starts_at)}${labels.item.separator}${labels.appointment.lengthText(item.duration_minutes ?? 60)}`;
 
   return (
     <>
@@ -91,10 +92,31 @@ export function AppointmentRows({ item, health, onUpdate }: AppointmentRowsProps
               setStartsAt(withDay(startsAt, day));
             }}
           />
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[13px] text-muted">{labels.appointment.length}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {/* A length kept from Google that is none of these shows as one more. */}
+              {[...new Set([...labels.appointment.lengths, length])]
+                .sort((a, b) => a - b)
+                .map((minutes) => (
+                  <Chip
+                    key={minutes}
+                    label={labels.appointment.lengthText(minutes)}
+                    selected={length === minutes}
+                    onClick={() => {
+                      setLength(minutes);
+                    }}
+                  />
+                ))}
+            </div>
+          </div>
           <Button
             disabled={startsAt === ''}
             onClick={() => {
-              save({ starts_at: fromLocalDateTime(startsAt) });
+              save({
+                starts_at: fromLocalDateTime(startsAt),
+                duration_minutes: length === 60 ? null : length,
+              });
             }}
           >
             {labels.actions.save}
