@@ -53,7 +53,7 @@ export function ShoppingPage(): ReactElement {
       />
       <CategoryBar options={filter.options} value={filter.category} onChange={filter.setCategory} />
       <MissingItemForm
-        key={scoped.scope?.id ?? 'all'}
+        key={`form-${scoped.scope?.id ?? 'all'}`}
         targets={shopping.targets}
         onAdd={items.addMissingItem}
       />
@@ -130,7 +130,7 @@ export function ShoppingPage(): ReactElement {
       />
       {/* The add button of every page, here opening on something to buy. */}
       <QuickAddSheet
-        key={scoped.scope?.id ?? 'all'}
+        key={`add-${scoped.scope?.id ?? 'all'}`}
         entities={entities.entities}
         onStructureChanged={entities.reload}
         onAdd={items.addItem}

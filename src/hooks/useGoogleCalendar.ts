@@ -211,12 +211,13 @@ export function useGoogleChoice(itemId: string): UseGoogleChoice {
       setBusy(true);
       setError(null);
       setGoogleChoice(itemId, included)
-        // Sent now rather than at the next minute; if that fails, the minute sends it.
-        .then(() =>
-          syncGoogle()
+        .then(() => {
+          // Sent now, in the background, rather than at the next minute; if that fails, the
+          // minute sends it.
+          void syncGoogle()
             .then(load)
-            .catch(() => undefined),
-        )
+            .catch(() => undefined);
+        })
         .catch((caught: unknown) => {
           publish(before);
           setError(toMessage(caught));

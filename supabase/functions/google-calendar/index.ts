@@ -6,7 +6,8 @@
 // Nothing in a personal entity goes there. The database queues what changed (0050), and a
 // cron job calls this function every minute with { action: 'cron' } to send the queue.
 // The app calls it too: 'start' (the address of Google's consent page), 'connect' (with the
-// code Google returns to the app), 'disconnect', and 'sync' (send this household's queue now).
+// code Google returns to the app; it connects at once, and the next minute sends the events),
+// 'disconnect', and 'sync' (send this household's queue now).
 // Secrets: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (set by the owner). SUPABASE_URL,
 // SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
@@ -964,6 +965,11 @@ async function syncHousehold(db: SupabaseClient, link: Link): Promise<void> {
 }
 
 async function syncLink(db: SupabaseClient, link: Link): Promise<void> {
+  // One send at a time: two at once could make the same event twice.
+  const { data: turn } = await db.rpc('google_take_turn', { p_household_id: link.household_id });
+  if (turn !== true) {
+    return;
+  }
   try {
     await syncHousehold(db, link);
   } catch (caught) {
@@ -977,6 +983,11 @@ async function syncLink(db: SupabaseClient, link: Link): Promise<void> {
     await db
       .from('google_links')
       .update({ last_sync_at: new Date().toISOString(), last_error: message })
+      .eq('household_id', link.household_id);
+  } finally {
+    await db
+      .from('google_links')
+      .update({ sending_until: null })
       .eq('household_id', link.household_id);
   }
 }
@@ -1045,7 +1056,7 @@ async function connect(
   for (let i = 0; i < rows.length; i += 500) {
     await db.from('google_queue').upsert(rows.slice(i, i + 500));
   }
-  await syncLink(db, link);
+  // The events are sent by the next minute's run, not while the parent waits.
 }
 
 async function disconnect(db: SupabaseClient, householdId: string): Promise<void> {
