@@ -324,7 +324,7 @@
 
 ## 5. משימות לפי הסדר
 
-- **יומן גוגל: חיבור ישיר (אפיון אושר 2026-11-04, ב־DATA_MODEL):** ממתין להגדרת Google Cloud אצל הבעלים (OAuth client מסוג Web, scope `calendar.app.created`, כתובת חזרה `…/functions/v1/google-calendar`, סודות `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` ב־Supabase). אחר כך: מיגרציה, פונקציה `google-calendar` (חיבור, דחיפה, משיכת שינויים), מתגים באפליקציה.
+- **יומן גוגל: חיבור ישיר (אפיון אושר 2026-11-04, ב־DATA_MODEL):** ממתין להגדרת Google Cloud אצל הבעלים (OAuth client מסוג Web, scope `calendar.app.created`, כתובת חזרה `https://mishkan.vercel.app/google-calendar` (האפליקציה מעבירה את הקוד לפונקציה; כך מספיק דומיין מורשה אחד, `mishkan.vercel.app`), סודות `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` ב־Supabase). אחר כך: מיגרציה, פונקציה `google-calendar` (חיבור, דחיפה, משיכת שינויים), מתגים באפליקציה.
 - **חזרה שנתית לפי תאריך עברי (2026-10-22, ביקש הבעלים; 0048 רצה, ב־main):** `0048_hebrew_yearly.sql`, `RepeatEditor` ("לפי לוח"), `HebrewYearlyFields`, `lib/hebrewDate` (`hebrewYearlyDates`, `hebrewYearlyOf`, `hebrewDayMonth`, `hebrewMonthChoices`), `setRepeat` שולח ימים או מנקה. חשוב: `setRepeat` קורא ל־`clear_hebrew_repeat`, ולכן אסור לעלות ל־main לפני שהמיגרציה רצה. לא נעשה: שנה ראשונה לפי יום הקבורה.
 
 
