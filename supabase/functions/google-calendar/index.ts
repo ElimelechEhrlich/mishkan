@@ -963,6 +963,12 @@ async function syncHousehold(db: SupabaseClient, link: Link): Promise<void> {
       }
       console.error(row.item_id, caught);
       lastError = caught instanceof Error ? caught.message : String(caught);
+      // To the end of the queue, so one that keeps failing does not hold up the rest.
+      await db
+        .from('google_queue')
+        .update({ queued_at: new Date().toISOString() })
+        .eq('item_id', row.item_id)
+        .eq('queued_at', row.queued_at);
     }
   }
   await db
