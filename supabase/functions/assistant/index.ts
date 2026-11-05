@@ -231,7 +231,8 @@ const tools = [
   },
   {
     name: 'add_to_shopping',
-    description: "Adds things to buy to the household's shared shopping list, one title per thing.",
+    description:
+      "Adds things to buy to the household's shared shopping list, one title per thing. Write how much with it as said (\"חלב 3\", \"עגבניות 2 ק\"ג\"): it is kept apart from the name.",
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -750,9 +751,24 @@ async function addToShopping(db: SupabaseClient, house: Household, input: Row): 
   if (titles.length === 0 || house.homeShopping === null) {
     return 'error: nothing to add';
   }
+  // How much to buy is kept apart from the name ("חלב 3" is חלב, 3), as the app does.
+  const lines = await Promise.all(
+    titles.map(async (title) => {
+      const { data } = await db.rpc('split_quantity', { p_line: title });
+      const split = (Array.isArray(data) ? data[0] : data) as
+        | { name?: unknown; quantity?: unknown }
+        | null
+        | undefined;
+      return {
+        title: text(split?.name) ?? title,
+        quantity: text(split?.quantity),
+      };
+    }),
+  );
   const { error } = await db.from('items').insert(
-    titles.map((title) => ({
-      title,
+    lines.map((line) => ({
+      title: line.title,
+      quantity: line.quantity,
       kind: 'missing_item',
       domain_id: house.homeShopping,
       shopping_category: text(input.category) ?? 'food',

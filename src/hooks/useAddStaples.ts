@@ -5,7 +5,7 @@ import type { UseItems } from './useItems';
 export type UseAddStaples = {
   readonly saving: boolean;
   /** Adds the names to the home's "סופר" shopping list, then goes back to the list. */
-  readonly add: (titles: readonly string[]) => void;
+  readonly add: (titles: readonly string[], quantities: readonly (string | null)[]) => void;
 };
 
 /** Adding what was ticked on the fixed list to the shopping list. */
@@ -14,19 +14,22 @@ export function useAddStaples(items: UseItems, homeDomainId: string | null): Use
   const [saving, setSaving] = useState(false);
   const { addMissingItem } = items;
   const add = useCallback(
-    (titles: readonly string[]): void => {
+    (titles: readonly string[], quantities: readonly (string | null)[]): void => {
       if (homeDomainId === null || titles.length === 0) {
         return;
       }
       setSaving(true);
-      void addMissingItem({ titles: [...titles], category: 'food', domainId: homeDomainId }).then(
-        (added) => {
-          setSaving(false);
-          if (added) {
-            void navigate('/shopping');
-          }
-        },
-      );
+      void addMissingItem({
+        titles: [...titles],
+        quantities: [...quantities],
+        category: 'food',
+        domainId: homeDomainId,
+      }).then((added) => {
+        setSaving(false);
+        if (added) {
+          void navigate('/shopping');
+        }
+      });
     },
     [addMissingItem, homeDomainId, navigate],
   );

@@ -57,6 +57,7 @@ function item(overrides: Partial<Item>): Item {
     meeting_url: null,
     with_whom: null,
     duration_minutes: null,
+    quantity: null,
     series_id: null,
     in_main: false,
     is_value: false,

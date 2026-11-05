@@ -35,3 +35,30 @@ export async function deleteStaple(stapleId: string): Promise<void> {
     throw new Error(error.message);
   }
 }
+
+/** The pairs of names marked "not the same product", by `pairKey`. */
+export async function listApart(): Promise<Set<string>> {
+  const { data, error } = await supabase.from('shopping_staple_apart').select('pair_key');
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  return new Set(data.map((row) => row.pair_key));
+}
+
+/** Two names are one product: the kept one takes the other's count and its open items. */
+export async function mergeStaples(keepId: string, dropId: string): Promise<void> {
+  const { error } = await supabase.rpc('merge_staples', { p_keep_id: keepId, p_drop_id: dropId });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}
+
+/** Two names are not the same product: they are not asked about again. */
+export async function markApart(pairKey: string): Promise<void> {
+  const { error } = await supabase
+    .from('shopping_staple_apart')
+    .upsert({ pair_key: pairKey }, { ignoreDuplicates: true });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+}

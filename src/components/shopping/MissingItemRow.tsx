@@ -35,6 +35,13 @@ export function MissingItemRow({ item, entityName, onToggle }: MissingItemRowPro
         >
           {item.title}
         </span>
+        {item.quantity !== null && (
+          <span
+            className={`shrink-0 rounded-full bg-paper px-2 py-0.5 text-[13px] font-semibold ${bought ? 'text-faint' : 'text-ink'}`}
+          >
+            {item.quantity}
+          </span>
+        )}
         {entityName !== undefined && (
           <span className="shrink-0 text-xs text-muted">
             {labels.shopping.forEntity} {entityName}

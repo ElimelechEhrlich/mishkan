@@ -123,6 +123,8 @@ const item = (o) => {
     title: '',
     notes: null,
     kind: 'task',
+    quantity: null,
+    duration_minutes: null,
     domain_id: null,
     parent_id: null,
     time_mode: null,
@@ -292,6 +294,7 @@ item({
 });
 item({
   title: 'חלב',
+  quantity: '3',
   kind: 'missing_item',
   domain_id: dom('הבית', 'קניות'),
   shopping_category: 'food',
@@ -350,6 +353,7 @@ const shopping_item_departments = [];
 const shopping_staples = [
   ['חלב', 14], ['לחם', 12], ['ביצים', 9], ['עגבניות', 8], ['מלפפונים', 8], ['קוטג׳', 7],
   ['נייר טואלט', 5], ['במבה', 5], ['שמפו', 2], ['חזה עוף', 4], ['אורז', 3], ['מתנה לגננת', 1],
+  ['עגבניה', 2], ['ביצה', 1],
 ].map(([title, times], n) => ({
   id: `00000000-0000-4000-8000-0000000002${String(n).padStart(2, '0')}`,
   household_id: H,

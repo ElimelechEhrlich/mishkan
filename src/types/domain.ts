@@ -230,7 +230,10 @@ export type NewDebt = {
 
 /** One or more missing items of the same kind, for the same entity: one per title. */
 export type NewMissingItem = {
+  /** One per item; a quantity written in a line ("חלב 3") is taken out of it. */
   readonly titles: readonly string[];
+  /** How much of each, in the same order, when chosen apart (the titles are then names). */
+  readonly quantities?: readonly (string | null)[];
   readonly category: ShoppingCategory;
   /** The shopping domain of the chosen entity. */
   readonly domainId: string;

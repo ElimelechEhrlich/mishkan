@@ -1,17 +1,27 @@
+import { splitQuantity } from '../lib/quantity';
 import { supabase } from '../lib/supabase';
 import { allPages, inGroups } from './pages';
 import type { Item, NewMissingItem, ShoppingCategory } from '../types/domain';
 
 /** `household_id` and `created_by` are filled in by the database. */
-/** Adds the missing items in one go, as a list is written. */
+/**
+ * Adds the missing items in one go, as a list is written. How much to buy is kept apart from
+ * the name: chosen with it, or taken out of the line ("חלב 3").
+ */
 export async function createMissingItem(newItem: NewMissingItem): Promise<void> {
   const { error } = await supabase.from('items').insert(
-    newItem.titles.map((title) => ({
-      title,
-      kind: 'missing_item' as const,
-      domain_id: newItem.domainId,
-      shopping_category: newItem.category,
-    })),
+    newItem.titles.map((line, index) => {
+      const chosen = newItem.quantities?.[index];
+      const { name, quantity } =
+        chosen === undefined ? splitQuantity(line) : { name: line.trim(), quantity: chosen };
+      return {
+        title: name,
+        quantity,
+        kind: 'missing_item' as const,
+        domain_id: newItem.domainId,
+        shopping_category: newItem.category,
+      };
+    }),
   );
   if (error !== null) {
     throw new Error(error.message);

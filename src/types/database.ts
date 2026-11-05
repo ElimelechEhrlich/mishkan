@@ -221,6 +221,8 @@ export type Database = {
           with_whom: string | null;
           /** An appointment's length in minutes; null for an hour. */
           duration_minutes: number | null;
+          /** How much of a missing item to buy, apart from its name (free text). */
+          quantity: string | null;
           series_id: string | null;
           in_main: boolean;
           /** A note that is one value: its title is the name and its answer the value. */
@@ -273,6 +275,7 @@ export type Database = {
           meeting_url?: string | null;
           with_whom?: string | null;
           duration_minutes?: number | null;
+          quantity?: string | null;
           series_id?: string | null;
           in_main?: boolean;
           is_value?: boolean;
@@ -307,6 +310,7 @@ export type Database = {
           meeting_url?: string | null;
           with_whom?: string | null;
           duration_minutes?: number | null;
+          quantity?: string | null;
           in_main?: boolean;
           is_value?: boolean;
           entity_id?: string | null;
@@ -491,6 +495,17 @@ export type Database = {
           title?: string;
           title_key?: string;
         };
+        Relationships: [];
+      };
+      shopping_staple_apart: {
+        Row: {
+          household_id: string;
+          /** Two names of the fixed list (as `titleKey`), in order, joined by "|". */
+          pair_key: string;
+          created_at: string;
+        };
+        Insert: { household_id?: string; pair_key: string; created_at?: string };
+        Update: Record<string, never>;
         Relationships: [];
       };
       shopping_departments: {
@@ -958,6 +973,10 @@ export type Database = {
       calendar_link: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      merge_staples: {
+        Args: { p_keep_id: string; p_drop_id: string };
+        Returns: undefined;
       };
       google_synced_items: {
         Args: Record<string, never>;

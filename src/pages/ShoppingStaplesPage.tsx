@@ -1,10 +1,12 @@
 import type { ReactElement } from 'react';
+import { AlikeStaples } from '../components/shopping/AlikeStaples';
 import { StaplePicker } from '../components/shopping/StaplePicker';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { titleKey } from '../lib/departments';
+import { alikePairs } from '../lib/stapleSimilarity';
 import { useAddStaples } from '../hooks/useAddStaples';
 import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
@@ -39,18 +41,25 @@ export function ShoppingStaplesPage(): ReactElement {
       ) : staples.staples.length === 0 ? (
         <EmptyState text={labels.staples.empty} />
       ) : (
-        <StaplePicker
-          staples={staples.staples}
-          departments={departments.departments}
-          chosen={departments.chosen}
-          listed={listed}
-          saving={adding.saving}
-          onAdd={adding.add}
-          onRename={staples.rename}
-          onRemove={staples.remove}
-          onChooseDepartment={departments.choose}
-          onAddDepartment={departments.addAndChoose}
-        />
+        <>
+          <AlikeStaples
+            pairs={alikePairs(staples.staples, staples.apart)}
+            onMerge={staples.merge}
+            onApart={staples.markApart}
+          />
+          <StaplePicker
+            staples={staples.staples}
+            departments={departments.departments}
+            chosen={departments.chosen}
+            listed={listed}
+            saving={adding.saving}
+            onAdd={adding.add}
+            onRename={staples.rename}
+            onRemove={staples.remove}
+            onChooseDepartment={departments.choose}
+            onAddDepartment={departments.addAndChoose}
+          />
+        </>
       )}
     </PageShell>
   );

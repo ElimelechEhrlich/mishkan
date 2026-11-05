@@ -46,6 +46,7 @@ import { useGoogleConnected } from '../../hooks/useGoogleCalendar';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemHeading } from './ItemHeading';
+import { QuantityEditor } from '../shopping/QuantityEditor';
 import { TripListLink } from '../shopping/TripListLink';
 import { OccurrencesCard } from './OccurrencesCard';
 import { RepeatChoice } from './RepeatChoice';
@@ -159,6 +160,7 @@ type Section = 'data' | 'questions' | 'steps' | 'trackers';
 
 type Row =
   | 'kind'
+  | 'quantity'
   | 'domain'
   | 'inMain'
   | 'category'
@@ -509,6 +511,24 @@ export function ItemEditor({
               </div>
               <p className="text-[13px] text-muted">{labels.inMain.hint}</p>
             </div>
+          </PropertyRow>
+        )}
+
+        {item.kind === 'missing_item' && (
+          <PropertyRow
+            label={labels.shopping.quantity}
+            value={item.quantity ?? labels.shopping.noQuantity}
+            open={openRow === 'quantity'}
+            onToggle={() => {
+              toggle('quantity');
+            }}
+          >
+            <QuantityEditor
+              quantity={item.quantity}
+              onSave={(quantity) => {
+                update({ quantity });
+              }}
+            />
           </PropertyRow>
         )}
 

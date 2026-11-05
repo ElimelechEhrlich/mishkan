@@ -20,7 +20,8 @@ type StaplePickerProps = {
   /** Names (as `titleKey`) already on the shopping list. */
   readonly listed: ReadonlySet<string>;
   readonly saving: boolean;
-  readonly onAdd: (titles: readonly string[]) => void;
+  /** The names ticked, and how much of each (null when not chosen). */
+  readonly onAdd: (titles: readonly string[], quantities: readonly (string | null)[]) => void;
   readonly onRename: (stapleId: string, title: string) => void;
   readonly onRemove: (stapleId: string) => void;
   /** Puts a name in a department, or back to the built-in one (null). */
@@ -47,10 +48,23 @@ export function StaplePicker({
   onAddDepartment,
 }: StaplePickerProps): ReactElement {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  // How many of each ticked name, when chosen.
+  const [amounts, setAmounts] = useState<ReadonlyMap<string, number>>(new Map());
   const [editing, setEditing] = useState(false);
   // In editing, the one item whose departments are open to choose from.
   const [choosing, setChoosing] = useState<string | null>(null);
   const toAdd = staples.filter((staple) => picked.has(staple.id));
+
+  function step(stapleId: string, by: number): void {
+    const next = new Map(amounts);
+    const amount = (next.get(stapleId) ?? 1) + by;
+    if (amount <= 1) {
+      next.delete(stapleId);
+    } else {
+      next.set(stapleId, amount);
+    }
+    setAmounts(next);
+  }
 
   function toggle(stapleId: string): void {
     const next = new Set(picked);
@@ -169,30 +183,68 @@ export function StaplePicker({
                     )}
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={ticked}
-                    disabled={onList}
-                    onClick={() => {
-                      toggle(staple.id);
-                    }}
-                    className="flex min-h-12 flex-1 items-center gap-3 text-start"
-                  >
-                    <span
-                      className={`flex size-5.5 shrink-0 items-center justify-center rounded-full border-2 ${
-                        ticked ? 'border-primary bg-primary text-white' : 'border-faint bg-surface'
-                      }`}
+                  <>
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={ticked}
+                      disabled={onList}
+                      onClick={() => {
+                        toggle(staple.id);
+                      }}
+                      className="flex min-h-12 flex-1 items-center gap-3 text-start"
                     >
-                      {ticked && <Icon name="check" className="size-3.5" />}
-                    </span>
-                    <span
-                      className={`flex-1 text-[15px] ${ticked ? 'font-medium' : ''} ${onList ? 'text-muted' : ''}`}
-                    >
-                      {staple.title}
-                    </span>
-                    {onList && <span className="text-xs text-muted">{labels.staples.inList}</span>}
-                  </button>
+                      <span
+                        className={`flex size-5.5 shrink-0 items-center justify-center rounded-full border-2 ${
+                          ticked
+                            ? 'border-primary bg-primary text-white'
+                            : 'border-faint bg-surface'
+                        }`}
+                      >
+                        {ticked && <Icon name="check" className="size-3.5" />}
+                      </span>
+                      <span
+                        className={`flex-1 text-[15px] ${ticked ? 'font-medium' : ''} ${onList ? 'text-muted' : ''}`}
+                      >
+                        {staple.title}
+                      </span>
+                      {onList && (
+                        <span className="text-xs text-muted">{labels.staples.inList}</span>
+                      )}
+                    </button>
+                    {/* How many, once ticked; one unless chosen. */}
+                    {!onList && picked.has(staple.id) && (
+                      <span className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          aria-label={labels.shopping.lessOf(staple.title)}
+                          disabled={!amounts.has(staple.id)}
+                          onClick={() => {
+                            step(staple.id, -1);
+                          }}
+                          className="flex size-8 items-center justify-center rounded-full bg-paper text-primary transition active:scale-90 disabled:text-faint"
+                        >
+                          <Icon name="minus" className="size-4" />
+                        </button>
+                        <span
+                          className="min-w-6 text-center text-[15px] font-semibold tabular-nums"
+                          aria-label={labels.shopping.quantity}
+                        >
+                          {amounts.get(staple.id) ?? 1}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={labels.shopping.moreOf(staple.title)}
+                          onClick={() => {
+                            step(staple.id, 1);
+                          }}
+                          className="flex size-8 items-center justify-center rounded-full bg-primary-soft text-primary transition active:scale-90"
+                        >
+                          <Icon name="plus" className="size-4" />
+                        </button>
+                      </span>
+                    )}
+                  </>
                 )}
               </li>
             );
@@ -204,7 +256,13 @@ export function StaplePicker({
           <Button
             disabled={toAdd.length === 0 || saving}
             onClick={() => {
-              onAdd(toAdd.map((staple) => staple.title));
+              onAdd(
+                toAdd.map((staple) => staple.title),
+                toAdd.map((staple) => {
+                  const amount = amounts.get(staple.id);
+                  return amount === undefined ? null : String(amount);
+                }),
+              );
             }}
           >
             {labels.staples.add(toAdd.length)}

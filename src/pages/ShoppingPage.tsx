@@ -18,6 +18,7 @@ import { useItems } from '../hooks/useItems';
 import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 import { useShopping } from '../hooks/useShopping';
+import { useStaples } from '../hooks/useStaples';
 
 export function ShoppingPage(): ReactElement {
   const { scopeId, setScope } = useHouseholdContext();
@@ -36,6 +37,7 @@ export function ShoppingPage(): ReactElement {
   const sharedTripDomain = shopping.tripDomains.shared;
   const personalTripDomain = shopping.tripDomains.personal;
   const toEverything = useEverythingShortcut(entities.entities);
+  const staples = useStaples();
 
   return (
     <PageShell
@@ -56,6 +58,9 @@ export function ShoppingPage(): ReactElement {
         key={`form-${scoped.scope?.id ?? 'all'}`}
         targets={shopping.targets}
         onAdd={items.addMissingItem}
+        known={staples.staples}
+        apart={staples.apart}
+        onApart={staples.markApart}
       />
       {shopping.runs.length > 0 && (
         <section className="flex flex-col gap-2">
