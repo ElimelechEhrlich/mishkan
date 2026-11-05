@@ -10,7 +10,7 @@
 -- Run once in the Supabase SQL editor, after 0054.
 -- =====================================================================
 
-create table public.shopping_staple_merges (
+create table if not exists public.shopping_staple_merges (
   id            uuid primary key default gen_random_uuid(),
   household_id  uuid not null default public.current_household_id()
                 references public.households(id) on delete cascade,
@@ -25,6 +25,7 @@ create table public.shopping_staple_merges (
 
 alter table public.shopping_staple_merges enable row level security;
 
+drop policy if exists shopping_staple_merges_all on public.shopping_staple_merges;
 create policy shopping_staple_merges_all on public.shopping_staple_merges for all to authenticated
   using (household_id = public.current_household_id())
   with check (household_id = public.current_household_id());
@@ -33,19 +34,26 @@ grant select, delete on public.shopping_staple_merges to authenticated;
 
 -- The merges 0054 made: names of items bought before, written otherwise than the name they
 -- now count under.
+-- Run again after a stop, it starts the record over.
+delete from public.shopping_staple_merges where how = 'auto';
+
+-- Each item's name is read once (materialized), then matched to the list by its key.
+with bought as materialized (
+  select i.household_id, trim(i.title) as title, public.staple_key(i.title) as title_key,
+         public.staple_key((public.split_quantity(i.title)).name) as name_key
+  from public.items i
+  left join public.domains d on d.id = i.domain_id
+  left join public.entities e on e.id = d.entity_id
+  where i.kind = 'missing_item' and i.shopping_category = 'food'
+    and coalesce(e.kind::text, '') <> 'personal'
+)
 insert into public.shopping_staple_merges
   (household_id, kept_id, kept_title, merged_title, merged_times, how, merged_at)
-select s.household_id, s.id, s.title, min(trim(i.title)), count(*)::integer, 'auto', now()
-from public.items i
-join public.shopping_staples s
-  on s.household_id = i.household_id
- and s.title_key = public.staple_key((public.split_quantity(i.title)).name)
-left join public.domains d on d.id = i.domain_id
-left join public.entities e on e.id = d.entity_id
-where i.kind = 'missing_item' and i.shopping_category = 'food'
-  and coalesce(e.kind::text, '') <> 'personal'
-  and public.staple_key(i.title) <> s.title_key
-group by s.household_id, s.id, s.title, public.staple_key(i.title);
+select s.household_id, s.id, s.title, min(b.title), count(*)::integer, 'auto', now()
+from bought b
+join public.shopping_staples s on s.household_id = b.household_id and s.title_key = b.name_key
+where b.title_key <> s.title_key
+group by s.household_id, s.id, s.title, b.title_key;
 
 -- A number at the end of a name is its quantity only when written apart from it ("חלב 3",
 -- "חלב x3"), not when part of a word ("ויטמין D3").
@@ -78,7 +86,8 @@ end $$;
 
 -- Two names are one product: written down, then the kept one takes the other's count and
 -- open missing items under the other name take the kept one.
-drop function public.merge_staples(uuid, uuid);
+drop function if exists public.merge_staples(uuid, uuid);
+drop function if exists public.merge_staples(uuid, uuid, text);
 
 create function public.merge_staples(p_keep_id uuid, p_drop_id uuid, p_how text default 'manual')
 returns void
@@ -109,7 +118,7 @@ end $$;
 
 -- Undoes a merge: the merged name comes back with its count (taken off the kept one), and
 -- the two are marked not the same product.
-create function public.unmerge_staple(p_merge_id uuid) returns void
+create or replace function public.unmerge_staple(p_merge_id uuid) returns void
 language plpgsql security invoker set search_path = '' as $$
 declare
   v_merge public.shopping_staple_merges%rowtype;
