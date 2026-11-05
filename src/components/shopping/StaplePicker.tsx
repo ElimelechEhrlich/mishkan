@@ -48,7 +48,7 @@ export function StaplePicker({
   onAddDepartment,
 }: StaplePickerProps): ReactElement {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
-  // How many of each ticked name, when chosen.
+  // How many of each ticked name, when chosen; none shows as "–" and is sent without one.
   const [amounts, setAmounts] = useState<ReadonlyMap<string, number>>(new Map());
   const [editing, setEditing] = useState(false);
   // In editing, the one item whose departments are open to choose from.
@@ -57,8 +57,10 @@ export function StaplePicker({
 
   function step(stapleId: string, by: number): void {
     const next = new Map(amounts);
-    const amount = (next.get(stapleId) ?? 1) + by;
-    if (amount <= 1) {
+    // From none, + is one; − below one is none again.
+    const current = next.get(stapleId);
+    const amount = current === undefined ? (by > 0 ? 1 : 0) : current + by;
+    if (amount < 1) {
       next.delete(stapleId);
     } else {
       next.set(stapleId, amount);
@@ -212,7 +214,7 @@ export function StaplePicker({
                         <span className="text-xs text-muted">{labels.staples.inList}</span>
                       )}
                     </button>
-                    {/* How many, once ticked; one unless chosen. */}
+                    {/* How many, once ticked; none until chosen. */}
                     {!onList && picked.has(staple.id) && (
                       <span className="flex shrink-0 items-center gap-1">
                         <button
@@ -230,7 +232,7 @@ export function StaplePicker({
                           className="min-w-6 text-center text-[15px] font-semibold tabular-nums"
                           aria-label={labels.shopping.quantity}
                         >
-                          {amounts.get(staple.id) ?? 1}
+                          {amounts.get(staple.id) ?? labels.shopping.noAmount}
                         </span>
                         <button
                           type="button"
