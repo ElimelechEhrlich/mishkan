@@ -1365,6 +1365,55 @@ function quotaReply(seconds: number | null): string {
 }
 
 /**
+ * One question to the model with no tools, answered as JSON: a busy model is asked again
+ * after a moment, and then the fallback model, as the conversation does.
+ */
+async function askPlain(prompt: string): Promise<GeminiAnswer> {
+  const fallback = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? defaultFallbackModel;
+  const models = [
+    Deno.env.get('GEMINI_MODEL') ?? defaultModel,
+    ...(fallback === 'none' ? [] : [fallback]),
+  ];
+  let last: Error = new Error('המודל לא ענה. אפשר לנסות שוב בעוד דקה.');
+  for (const model of models) {
+    for (let attempt = 0; ; attempt += 1) {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '',
+          },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json' },
+          }),
+        },
+      );
+      const answer = (await response.json().catch(() => ({}))) as GeminiAnswer;
+      if (response.ok) {
+        return answer;
+      }
+      if (response.status === 429) {
+        last = new QuotaUsedUp(retryDelayOf(answer));
+        break;
+      }
+      const wait = busyWaits[attempt];
+      if (!busyStatuses.includes(response.status) || wait === undefined) {
+        // Busy all the same: the next model, and a plain word if none answers.
+        last = busyStatuses.includes(response.status)
+          ? new Error('המודל עמוס כרגע. אפשר לנסות שוב בעוד דקה.')
+          : new Error(answer.error?.message ?? `model error ${String(response.status)}`);
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+  }
+  throw last;
+}
+
+/**
  * The smart check of the fixed shopping list: the names that are one product written in
  * other words ("פיירי" and "נוזל כלים"), as groups of the names exactly as on the list.
  */
@@ -1377,28 +1426,7 @@ async function sameProducts(db: SupabaseClient): Promise<string[][]> {
   const prompt = `These are the product names on an Israeli family's fixed supermarket list (Hebrew). Find the names that are the same product written differently: other words for it, a brand for the generic thing, singular and plural, spelling, word order (for example "פיירי", "נוזל כלים" and "סבון כלים"; "שקיות לעצמות" and "שקיות למרק" when it is the same bag). Do not group different products, sizes or kinds ("חלב 3%" and "חלב 1%" are different). Answer only JSON: {"groups": [["name", "name"], ...]}, each group two names or more, written exactly as in the list. No group when unsure.
 
 ${names.map((name) => `- ${name}`).join('\n')}`;
-  const model = Deno.env.get('GEMINI_MODEL') ?? defaultModel;
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '',
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
-    },
-  );
-  const answer = (await response.json().catch(() => ({}))) as GeminiAnswer;
-  if (response.status === 429) {
-    throw new QuotaUsedUp(retryDelayOf(answer));
-  }
-  if (!response.ok) {
-    throw new Error(answer.error?.message ?? `model error ${String(response.status)}`);
-  }
+  const answer = await askPlain(prompt);
   const textOut = (answer.candidates?.[0]?.content?.parts ?? [])
     .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
     .join('');
