@@ -15,11 +15,17 @@ type MissingItemRowProps = {
   readonly onQuantity?: (item: Item, quantity: string | null) => void;
 };
 
-/** A quantity's number moved by one, from one when it has none; null below one. */
+/**
+ * A quantity's number moved by one, as on the fixed list: from none, + is one and − stays
+ * none; below one is none again. A unit after the number stays ("2 ק"ג" → "3 ק"ג").
+ */
 function stepped(quantity: string, by: number): string | null {
   const match = /^(\d+)(.*)$/.exec(quantity.trim());
-  const next = (match === null ? 1 : Number(match[1])) + by;
-  return next < 1 ? null : `${String(next)}${match?.[2] ?? ''}`;
+  if (match === null) {
+    return by > 0 ? '1' : null;
+  }
+  const next = Number(match[1]) + by;
+  return next < 1 ? null : `${String(next)}${match[2] ?? ''}`;
 }
 
 /**
