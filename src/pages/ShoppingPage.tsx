@@ -79,6 +79,9 @@ export function ShoppingPage(): ReactElement {
         only={filter.category}
         entityNames={shopping.entityNames}
         onBuy={shopping.toggleBought}
+        onQuantity={(item, quantity) => {
+          items.updateItem(item.id, { quantity });
+        }}
         onStartRun={(category) => {
           shopping.startRun(category, false);
         }}
@@ -97,6 +100,9 @@ export function ShoppingPage(): ReactElement {
         only={filter.category}
         entityNames={shopping.entityNames}
         onBuy={shopping.toggleBought}
+        onQuantity={(item, quantity) => {
+          items.updateItem(item.id, { quantity });
+        }}
         onStartRun={(category) => {
           shopping.startRun(category, true);
         }}

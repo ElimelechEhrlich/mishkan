@@ -17,6 +17,8 @@ type ShoppingSectionProps = {
   readonly only: ShoppingCategory | null;
   readonly entityNames: ReadonlyMap<string, string>;
   readonly onBuy: (item: Item) => void;
+  /** Sets how much of an item to buy, right in its row. */
+  readonly onQuantity: (item: Item, quantity: string | null) => void;
   readonly onStartRun: (category: ShoppingCategory) => void;
   /** Opens the add sheet as going out shopping for a list; absent where it cannot be kept. */
   readonly onPlanTrip?: ((category: ShoppingCategory) => void) | undefined;
@@ -34,6 +36,7 @@ export function ShoppingSection({
   only,
   entityNames,
   onBuy,
+  onQuantity,
   onStartRun,
   onPlanTrip,
 }: ShoppingSectionProps): ReactElement | null {
@@ -107,6 +110,7 @@ export function ShoppingSection({
                   item={item}
                   entityName={item.domain_id === null ? undefined : entityNames.get(item.domain_id)}
                   onToggle={onBuy}
+                  onQuantity={onQuantity}
                 />
               ))}
             </ul>

@@ -1419,6 +1419,8 @@ export const labels = {
   shopping: {
     quantity: 'כמות',
     noQuantity: 'בלי כמות',
+    saveQuantity: 'שמירת הכמות',
+    setQuantityOf: (name: string) => `כמות של ${name}`,
     lessOf: (name: string) => `פחות ${name}`,
     moreOf: (name: string) => `עוד ${name}`,
     meant: (name: string) => `הכוונה ל"${name}"?`,
