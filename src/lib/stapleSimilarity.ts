@@ -26,42 +26,50 @@ export function nameCore(title: string): string {
     .join(' ');
 }
 
-/** How many letters must change to turn one word into the other. */
-function distance(a: string, b: string): number {
-  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i += 1) {
-    let previous = row[0] ?? 0;
-    row[0] = i;
-    for (let j = 1; j <= b.length; j += 1) {
-      const kept = row[j] ?? 0;
-      row[j] = Math.min(
-        (row[j] ?? 0) + 1,
-        (row[j - 1] ?? 0) + 1,
-        previous + (a[i - 1] === b[j - 1] ? 0 : 1),
-      );
-      previous = kept;
-    }
+/** Whether one letter added, taken out or changed turns one text into the other. */
+function oneEditApart(a: string, b: string): boolean {
+  if (Math.abs(a.length - b.length) > 1) {
+    return false;
   }
-  return row[b.length] ?? 0;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  let i = 0;
+  while (i < short.length && short[i] === long[i]) {
+    i += 1;
+  }
+  // The rest after the first difference: the same once one letter is skipped or changed.
+  return short.length === long.length
+    ? short.slice(i + 1) === long.slice(i + 1)
+    : short.slice(i) === long.slice(i + 1);
+}
+
+/** What two names are compared by, worked out once per name. */
+type Prepared = { readonly key: string; readonly core: string; readonly numbers: string };
+
+function prepare(title: string): Prepared {
+  const core = nameCore(title);
+  return { key: titleKey(title), core, numbers: core.replace(/\D/g, '') };
 }
 
 /**
  * Whether two different names are likely the same product: the same core, or cores a letter
  * apart (a typo) when long enough for one letter not to make another word ("תפוח" and
- * "תפוז" are not).
+ * "תפוז" are not). Numbers tell products apart ("חלב 3%" and "חלב 1%").
  */
-export function looksAlike(a: string, b: string): boolean {
-  if (titleKey(a) === titleKey(b)) {
+function alike(x: Prepared, y: Prepared): boolean {
+  if (x.key === y.key) {
     return false;
   }
-  const x = nameCore(a);
-  const y = nameCore(b);
-  // Numbers tell products apart ("חלב 3%" and "חלב 1%"): a typo is only between words.
-  const numbers = (core: string): string => core.replace(/\D/g, '');
   return (
-    x === y ||
-    (numbers(x) === numbers(y) && Math.min(x.length, y.length) >= 5 && distance(x, y) <= 1)
+    x.core === y.core ||
+    (x.numbers === y.numbers &&
+      Math.min(x.core.length, y.core.length) >= 5 &&
+      oneEditApart(x.core, y.core))
   );
+}
+
+/** Whether two different names are likely the same product (see `alike`). */
+export function looksAlike(a: string, b: string): boolean {
+  return alike(prepare(a), prepare(b));
 }
 
 /** The order-free key of a pair of names, as kept when a pair is marked "not the same". */
@@ -74,11 +82,17 @@ export function alikePairs<T extends { readonly title: string }>(
   rows: readonly T[],
   apart: ReadonlySet<string>,
 ): [T, T][] {
+  const prepared = rows.map((row) => prepare(row.title));
   const pairs: [T, T][] = [];
-  rows.forEach((row, index) => {
-    for (const other of rows.slice(index + 1)) {
-      if (looksAlike(row.title, other.title) && !apart.has(pairKey(row.title, other.title))) {
-        pairs.push([row, other]);
+  prepared.forEach((x, i) => {
+    for (let j = i + 1; j < prepared.length; j += 1) {
+      const y = prepared[j];
+      const a = rows[i];
+      const b = rows[j];
+      if (y !== undefined && a !== undefined && b !== undefined && alike(x, y)) {
+        if (!apart.has(pairKey(a.title, b.title))) {
+          pairs.push([a, b]);
+        }
       }
     }
   });
@@ -94,11 +108,12 @@ export function likelyMeant<T extends { readonly title: string }>(
   rows: readonly T[],
   apart: ReadonlySet<string>,
 ): T | null {
-  if (rows.some((row) => titleKey(row.title) === titleKey(name))) {
+  const x = prepare(name);
+  if (rows.some((row) => titleKey(row.title) === x.key)) {
     return null;
   }
   return (
-    rows.find((row) => looksAlike(name, row.title) && !apart.has(pairKey(name, row.title))) ?? null
+    rows.find((row) => alike(x, prepare(row.title)) && !apart.has(pairKey(name, row.title))) ?? null
   );
 }
 
