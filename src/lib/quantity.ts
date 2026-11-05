@@ -31,8 +31,8 @@ const units = [
 
 const unit = `(?:${units.join('|')})`;
 const number = '\\d+(?:[.,]\\d+)?(?:\\/\\d+)?';
-/** "חלב 3", "חלב x3", "עגבניות 2 ק"ג". */
-const atEnd = new RegExp(`^(.*?\\S)\\s*(?:[x×*]\\s*)?(${number})(?:\\s*(${unit}))?\\s*$`, 'u');
+/** "חלב 3", "חלב x3", "עגבניות 2 ק"ג"; apart from the name, so "ויטמין D3" stays whole. */
+const atEnd = new RegExp(`^(.*?\\S)(?:\\s+|\\s*[x×*]\\s*)(${number})(?:\\s*(${unit}))?\\s*$`, 'u');
 /** "3 חלב", "x3 חלב", "2 ק"ג עגבניות". */
 const atStart = new RegExp(`^(?:[x×*]\\s*)?(${number})(?:\\s*(${unit}))?\\s+(\\S.*)$`, 'u');
 

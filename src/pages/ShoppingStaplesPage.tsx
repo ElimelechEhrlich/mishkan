@@ -1,12 +1,13 @@
 import type { ReactElement } from 'react';
 import { AlikeStaples } from '../components/shopping/AlikeStaples';
+import { StapleMerges } from '../components/shopping/StapleMerges';
 import { StaplePicker } from '../components/shopping/StaplePicker';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
 import { titleKey } from '../lib/departments';
-import { alikePairs } from '../lib/stapleSimilarity';
+import { alikePairs, groupPairs } from '../lib/stapleSimilarity';
 import { useAddStaples } from '../hooks/useAddStaples';
 import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
@@ -22,6 +23,11 @@ export function ShoppingStaplesPage(): ReactElement {
   const staples = useStaples();
   // The home's shopping comes first among the targets.
   const adding = useAddStaples(items, shopping.targets[0]?.domainId ?? null);
+  const alike = alikePairs(staples.staples, staples.apart);
+  const smartPairs =
+    staples.sameProducts === null
+      ? null
+      : groupPairs(staples.sameProducts, staples.staples, staples.apart, alike);
   const listed = new Set(
     shopping.shared
       .filter((group) => group.category === 'food')
@@ -43,10 +49,14 @@ export function ShoppingStaplesPage(): ReactElement {
       ) : (
         <>
           <AlikeStaples
-            pairs={alikePairs(staples.staples, staples.apart)}
+            pairs={alike}
+            smartPairs={smartPairs}
+            checking={staples.checking}
+            onSmartCheck={staples.checkSameProducts}
             onMerge={staples.merge}
             onApart={staples.markApart}
           />
+          <StapleMerges merges={staples.merges} onUnmerge={staples.unmerge} />
           <StaplePicker
             staples={staples.staples}
             departments={departments.departments}

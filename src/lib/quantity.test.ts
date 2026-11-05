@@ -25,6 +25,7 @@ describe('splitQuantity', () => {
     expect(splitQuantity('קולה 1.5 ליטר')).toEqual({ name: 'קולה 1.5 ליטר', quantity: null });
     expect(splitQuantity('ויטמין D 1000')).toEqual({ name: 'ויטמין D 1000', quantity: null });
     expect(splitQuantity('לחם')).toEqual({ name: 'לחם', quantity: null });
+    expect(splitQuantity('ויטמין D3')).toEqual({ name: 'ויטמין D3', quantity: null });
     expect(splitQuantity('42')).toEqual({ name: '42', quantity: null });
   });
 });

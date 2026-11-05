@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { alikePairs, likelyMeant, looksAlike, nameCore, pairKey } from './stapleSimilarity';
+import {
+  alikePairs,
+  groupPairs,
+  likelyMeant,
+  looksAlike,
+  nameCore,
+  pairKey,
+} from './stapleSimilarity';
 
 describe('nameCore', () => {
   it('drops plural and feminine endings, final letters and marks', () => {
@@ -39,5 +46,29 @@ describe('alikePairs and likelyMeant', () => {
     expect(likelyMeant('עגבנייה', rows, new Set())?.title).toBe('עגבניות');
     expect(likelyMeant('לחם', rows, new Set())).toBeNull();
     expect(likelyMeant('גבינה', rows, new Set())).toBeNull();
+  });
+});
+
+describe('groupPairs', () => {
+  const fairy = { title: 'פיירי' };
+  const liquid = { title: 'נוזל כלים' };
+  const soap = { title: 'סבון כלים' };
+  const tomato = { title: 'עגבניה' };
+  const tomatoes = { title: 'עגבניות' };
+  const rows = [fairy, liquid, soap, tomato, tomatoes];
+  const found: [{ title: string }, { title: string }][] = [[tomato, tomatoes]];
+
+  it('pairs each name of a group with its first, skipping what is known', () => {
+    const groups = [
+      ['פיירי', 'נוזל כלים', 'סבון כלים', 'מלח'],
+      ['עגבניה', 'עגבניות'],
+    ];
+    expect(groupPairs(groups, rows, new Set(), found).map(([a, b]) => [a.title, b.title])).toEqual([
+      ['פיירי', 'נוזל כלים'],
+      ['פיירי', 'סבון כלים'],
+    ]);
+    expect(groupPairs(groups, rows, new Set([pairKey('פיירי', 'סבון כלים')]), found).length).toBe(
+      1,
+    );
   });
 });

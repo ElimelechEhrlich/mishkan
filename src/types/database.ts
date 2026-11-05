@@ -497,6 +497,23 @@ export type Database = {
         };
         Relationships: [];
       };
+      shopping_staple_merges: {
+        Row: {
+          id: string;
+          household_id: string;
+          kept_id: string | null;
+          kept_title: string;
+          merged_title: string;
+          /** How many times the merged name had been added, given back on undo. */
+          merged_times: number;
+          /** By itself (when quantities were taken out), by a parent, or after the smart check. */
+          how: 'auto' | 'manual' | 'smart';
+          merged_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       shopping_staple_apart: {
         Row: {
           household_id: string;
@@ -975,7 +992,11 @@ export type Database = {
         Returns: string;
       };
       merge_staples: {
-        Args: { p_keep_id: string; p_drop_id: string };
+        Args: { p_keep_id: string; p_drop_id: string; p_how?: 'manual' | 'smart' };
+        Returns: undefined;
+      };
+      unmerge_staple: {
+        Args: { p_merge_id: string };
         Returns: undefined;
       };
       google_synced_items: {

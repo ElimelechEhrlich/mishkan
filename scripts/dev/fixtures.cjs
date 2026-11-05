@@ -353,7 +353,7 @@ const shopping_item_departments = [];
 const shopping_staples = [
   ['חלב', 14], ['לחם', 12], ['ביצים', 9], ['עגבניות', 8], ['מלפפונים', 8], ['קוטג׳', 7],
   ['נייר טואלט', 5], ['במבה', 5], ['שמפו', 2], ['חזה עוף', 4], ['אורז', 3], ['מתנה לגננת', 1],
-  ['עגבניה', 2], ['ביצה', 1],
+  ['עגבניה', 2], ['ביצה', 1], ['פיירי', 3], ['נוזל כלים', 2],
 ].map(([title, times], n) => ({
   id: `00000000-0000-4000-8000-0000000002${String(n).padStart(2, '0')}`,
   household_id: H,
@@ -783,6 +783,10 @@ module.exports = {
     shopping_departments,
     shopping_item_departments,
     shopping_staples,
+    shopping_staple_merges: [
+      { id: 'mg1', household_id: H, kept_id: null, kept_title: 'חלב', merged_title: 'חלב 3', merged_times: 2, how: 'auto', merged_at: now },
+      { id: 'mg2', household_id: H, kept_id: null, kept_title: 'ויטמין D', merged_title: 'ויטמין D3', merged_times: 1, how: 'auto', merged_at: now },
+    ],
     assistant_messages: process.env.MEDIACHAT
       ? [
           { id: 'am1', role: 'user', text: '📷 תוסיף את זה', created_at: '2026-10-29T08:00:00Z', media_path: 'u1/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jpg', media_kind: 'image', media_seconds: null },

@@ -101,3 +101,37 @@ export function likelyMeant<T extends { readonly title: string }>(
     rows.find((row) => looksAlike(name, row.title) && !apart.has(pairKey(name, row.title))) ?? null
   );
 }
+
+/**
+ * The groups of names the smart check called one product, as pairs of rows of the list: each
+ * name with the first of its group. Names not on the list, pairs marked apart and pairs already
+ * found by spelling are left out.
+ */
+export function groupPairs<T extends { readonly title: string }>(
+  groups: readonly (readonly string[])[],
+  rows: readonly T[],
+  apart: ReadonlySet<string>,
+  found: readonly (readonly [T, T])[],
+): [T, T][] {
+  const byKey = new Map(rows.map((row) => [titleKey(row.title), row]));
+  const seen = new Set([...apart, ...found.map(([a, b]) => pairKey(a.title, b.title))]);
+  const pairs: [T, T][] = [];
+  for (const group of groups) {
+    const members = [...new Set(group.map(titleKey))].flatMap((key) => {
+      const row = byKey.get(key);
+      return row === undefined ? [] : [row];
+    });
+    const [first, ...rest] = members;
+    if (first === undefined) {
+      continue;
+    }
+    for (const row of rest) {
+      const key = pairKey(first.title, row.title);
+      if (!seen.has(key)) {
+        seen.add(key);
+        pairs.push([first, row]);
+      }
+    }
+  }
+  return pairs;
+}

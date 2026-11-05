@@ -1364,6 +1364,57 @@ function quotaReply(seconds: number | null): string {
   return `הגעתי למכסת השיחות היומית. אפשר לחזור לכתוב ${day} בסביבות ${hour}.`;
 }
 
+/**
+ * The smart check of the fixed shopping list: the names that are one product written in
+ * other words ("פיירי" and "נוזל כלים"), as groups of the names exactly as on the list.
+ */
+async function sameProducts(db: SupabaseClient): Promise<string[][]> {
+  const { data } = await db.from('shopping_staples').select('title').order('title');
+  const names = ((data ?? []) as Row[]).map((row) => String(row.title));
+  if (names.length < 2) {
+    return [];
+  }
+  const prompt = `These are the product names on an Israeli family's fixed supermarket list (Hebrew). Find the names that are the same product written differently: other words for it, a brand for the generic thing, singular and plural, spelling, word order (for example "פיירי", "נוזל כלים" and "סבון כלים"; "שקיות לעצמות" and "שקיות למרק" when it is the same bag). Do not group different products, sizes or kinds ("חלב 3%" and "חלב 1%" are different). Answer only JSON: {"groups": [["name", "name"], ...]}, each group two names or more, written exactly as in the list. No group when unsure.
+
+${names.map((name) => `- ${name}`).join('\n')}`;
+  const model = Deno.env.get('GEMINI_MODEL') ?? defaultModel;
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '',
+      },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+    },
+  );
+  const answer = (await response.json().catch(() => ({}))) as GeminiAnswer;
+  if (response.status === 429) {
+    throw new QuotaUsedUp(retryDelayOf(answer));
+  }
+  if (!response.ok) {
+    throw new Error(answer.error?.message ?? `model error ${String(response.status)}`);
+  }
+  const textOut = (answer.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
+    .join('');
+  const parsed = JSON.parse(textOut.replace(/^```(?:json)?|```$/g, '').trim()) as {
+    groups?: unknown;
+  };
+  const known = new Set(names);
+  return (Array.isArray(parsed.groups) ? parsed.groups : [])
+    .map((group: unknown) =>
+      Array.isArray(group)
+        ? group.filter((name): name is string => typeof name === 'string' && known.has(name))
+        : [],
+    )
+    .filter((group) => group.length >= 2);
+}
+
 /** What goes with a voice message: listen to how it is said, not only to the words. */
 const voicePrompt =
   'This is a voice message from the parent. Listen to it fully: the tone tells a question (a rising tone, even without a question word) from a request; when they correct themselves while speaking ("ביום שלישי, לא, ברביעי"), the last thing said counts; hesitation or "אולי" means they are not sure, so ask before adding. Start your answer with one line: "🎤 " and what they said, in short, in their words (a question ends with ?), then a new line and your answer. If you could not make it out, say so and ask them to say it again.';
@@ -1399,7 +1450,27 @@ Deno.serve(async (request) => {
       audio?: unknown;
       media_path?: unknown;
       media_seconds?: unknown;
+      action?: unknown;
     };
+    // The smart check of the fixed shopping list: which names are one product.
+    if (body.action === 'similar_staples') {
+      const house = await loadHousehold(db, auth.user.id);
+      const allowed = (Deno.env.get('ASSISTANT_HOUSEHOLDS') ?? '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id !== '');
+      if (!allowed.includes(house.householdId)) {
+        return json({ error: 'not enabled for this household' }, 403);
+      }
+      try {
+        return json({ groups: await sameProducts(db) });
+      } catch (caught) {
+        if (caught instanceof QuotaUsedUp) {
+          return json({ error: quotaReply(caught.seconds) }, 429);
+        }
+        throw caught;
+      }
+    }
     // A photo to read (an invitation, a note), sent as base64 JPEG; a few megabytes at most.
     const image =
       typeof body.image === 'string' && body.image.length > 0 && body.image.length < 6_000_000

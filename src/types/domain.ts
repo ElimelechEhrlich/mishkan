@@ -39,6 +39,7 @@ export type DoneItem = Item & { readonly occurrence?: Occurrence };
 export type ItemReminder = Tables['item_reminders']['Row'];
 /** A name on the fixed shopping list, kept from every "סופר" item added. */
 export type ShoppingStaple = Tables['shopping_staples']['Row'];
+export type StapleMerge = Tables['shopping_staple_merges']['Row'];
 /** A department of the supermarket, in the order the household walks it. */
 export type ShoppingDepartment = Tables['shopping_departments']['Row'];
 /** The department chosen for an item, by its name. */
