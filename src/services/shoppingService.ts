@@ -16,7 +16,8 @@ export async function createMissingItem(newItem: NewMissingItem): Promise<void> 
         chosen === undefined ? splitQuantity(line) : { name: line.trim(), quantity: chosen };
       return {
         title: name,
-        quantity,
+        // Sent only when there is one, so an item without a quantity is added either way.
+        ...(quantity === null ? {} : { quantity }),
         kind: 'missing_item' as const,
         domain_id: newItem.domainId,
         shopping_category: newItem.category,
