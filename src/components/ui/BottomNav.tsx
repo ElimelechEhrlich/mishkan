@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { NavLink } from 'react-router';
+import { Link, NavLink } from 'react-router';
 import { labels } from '../../constants/labels';
 import { useNavMode } from '../../hooks/useNavMode';
 import { Icon } from './Icon';
@@ -30,12 +30,17 @@ const mainItems: readonly NavItem[] = [
  * The bar at the bottom. Home, which sees the whole house at once, has only home and main;
  * main and its tabs, organized by entity and domain, have every tab. Home stands first in both.
  */
-export function BottomNav(): ReactElement {
+type BottomNavProps = {
+  /** How many are missing on the shopping list; given, home's bar has a way to it. */
+  readonly shoppingCount?: number | undefined;
+};
+
+export function BottomNav({ shoppingCount }: BottomNavProps): ReactElement {
   const mode = useNavMode();
   if (mode === 'home') {
     // Home's bar is low: one rounded switch between home and main, its sign beside its name.
     return (
-      <nav className="fixed inset-x-0 bottom-0 z-10 flex justify-center border-t border-line bg-surface/95 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-md">
+      <nav className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-center gap-2 border-t border-line bg-surface/95 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-md">
         <div className="flex gap-1 rounded-full bg-paper p-1 shadow-inner">
           {[home, main].map((item) => (
             <NavLink
@@ -55,6 +60,19 @@ export function BottomNav(): ReactElement {
             </NavLink>
           ))}
         </div>
+        {/* The shopping list, apart from the switch: its own round button, with how many are missing. */}
+        {shoppingCount !== undefined && (
+          <Link
+            to="/shopping"
+            aria-label={labels.shopping.openList(shoppingCount)}
+            className="flex min-h-11 items-center gap-1.5 rounded-full bg-primary-soft ps-3.5 pe-4 text-primary shadow-card ring-1 ring-primary/15 transition active:scale-95"
+          >
+            <Icon name="cart" className="size-5" />
+            {shoppingCount > 0 && (
+              <span className="text-[15px] font-bold tabular-nums">{String(shoppingCount)}</span>
+            )}
+          </Link>
+        )}
       </nav>
     );
   }

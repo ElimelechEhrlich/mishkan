@@ -110,20 +110,6 @@ export function PageShell({
               </h1>
             </div>
             {toEverything !== undefined && <EverythingButton shortcut={toEverything} />}
-            {shoppingCount !== undefined && (
-              <Link
-                to="/shopping"
-                aria-label={labels.shopping.openList(shoppingCount)}
-                className="relative me-1 flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary-soft ps-3 pe-3.5 text-primary shadow-halo ring-1 ring-primary/15 transition active:scale-95"
-              >
-                <Icon name="cart" className="size-5.5" />
-                {shoppingCount > 0 && (
-                  <span className="text-[15px] font-bold tabular-nums">
-                    {String(shoppingCount)}
-                  </span>
-                )}
-              </Link>
-            )}
             <Link
               to="/today"
               aria-label={labels.pages.today}
@@ -184,7 +170,7 @@ export function PageShell({
           <Icon name="chat" className="size-5.5" />
         </Link>
       )}
-      {!hideNav && <BottomNav />}
+      {!hideNav && <BottomNav shoppingCount={shoppingCount} />}
       <UndoToast />
     </div>
   );
