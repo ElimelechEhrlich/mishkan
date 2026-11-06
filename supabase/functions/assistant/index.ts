@@ -232,7 +232,7 @@ const tools = [
   {
     name: 'add_to_shopping',
     description:
-      "Adds things to buy to the household's shared shopping list, one title per thing. Write how much with it as said (\"חלב 3\", \"עגבניות 2 ק\"ג\"): it is kept apart from the name.",
+      "Adds things to buy to the household's shared shopping list, one title per thing. Write how much and which kind with it as said (\"חלב 3\", \"מרכך כביסה מקסימה\"): the quantity, and the brand or kind of a name on the fixed list, are kept apart from the name.",
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -759,9 +759,17 @@ async function addToShopping(db: SupabaseClient, house: Household, input: Row): 
         | { name?: unknown; quantity?: unknown }
         | null
         | undefined;
+      // A name of the fixed list at its start: the rest is its details, as the app does.
+      const name = text(split?.name) ?? title;
+      const { data: known } = await db.rpc('split_known_staple', { p_name: name });
+      const found = (Array.isArray(known) ? known[0] : known) as
+        | { name?: unknown; details?: unknown }
+        | null
+        | undefined;
       return {
-        title: text(split?.name) ?? title,
+        title: text(found?.name) ?? name,
         quantity: text(split?.quantity),
+        details: text(found?.details),
       };
     }),
   );
@@ -769,6 +777,7 @@ async function addToShopping(db: SupabaseClient, house: Household, input: Row): 
     lines.map((line) => ({
       title: line.title,
       quantity: line.quantity,
+      details: line.details,
       kind: 'missing_item',
       domain_id: house.homeShopping,
       shopping_category: text(input.category) ?? 'food',
