@@ -12,12 +12,14 @@ export async function createMissingItem(newItem: NewMissingItem): Promise<void> 
   const { error } = await supabase.from('items').insert(
     newItem.titles.map((line, index) => {
       const chosen = newItem.quantities?.[index];
+      const details = newItem.details?.[index]?.trim().slice(0, 60) || null;
       const { name, quantity } =
         chosen === undefined ? splitQuantity(line) : { name: line.trim(), quantity: chosen };
       return {
         title: name,
         // Sent only when there is one, so an item without a quantity is added either way.
         ...(quantity === null ? {} : { quantity }),
+        ...(details === null ? {} : { details }),
         kind: 'missing_item' as const,
         domain_id: newItem.domainId,
         shopping_category: newItem.category,

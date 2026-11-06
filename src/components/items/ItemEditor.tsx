@@ -161,6 +161,7 @@ type Section = 'data' | 'questions' | 'steps' | 'trackers';
 type Row =
   | 'kind'
   | 'quantity'
+  | 'details'
   | 'domain'
   | 'inMain'
   | 'category'
@@ -527,6 +528,27 @@ export function ItemEditor({
               quantity={item.quantity}
               onSave={(quantity) => {
                 update({ quantity });
+              }}
+            />
+          </PropertyRow>
+        )}
+
+        {item.kind === 'missing_item' && (
+          <PropertyRow
+            label={labels.shopping.details}
+            value={item.details ?? labels.shopping.noDetails}
+            open={openRow === 'details'}
+            onToggle={() => {
+              toggle('details');
+            }}
+          >
+            <QuantityEditor
+              quantity={item.details}
+              label={labels.shopping.details}
+              clearLabel={labels.shopping.noDetails}
+              max={60}
+              onSave={(details) => {
+                update({ details });
               }}
             />
           </PropertyRow>

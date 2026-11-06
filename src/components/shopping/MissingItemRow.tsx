@@ -75,6 +75,12 @@ export function MissingItemRow({
             className={`min-w-0 flex-1 text-[15px] break-words ${bought ? 'text-muted line-through' : 'font-medium'}`}
           >
             {item.title}
+            {item.details !== null && (
+              <span className="font-normal text-muted">
+                {labels.item.separator}
+                {item.details}
+              </span>
+            )}
           </span>
           {entityName !== undefined && (
             <span className="shrink-0 text-xs text-muted">

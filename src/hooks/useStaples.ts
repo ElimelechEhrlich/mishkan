@@ -7,6 +7,7 @@ import {
   findSameProducts,
   listApart,
   listMerges,
+  listStapleDetails,
   listStaples,
   markApart,
   mergeStaples,
@@ -14,7 +15,7 @@ import {
   unmergeStaple,
 } from '../services/stapleService';
 import type { SameProduct } from '../services/stapleService';
-import type { ShoppingStaple, StapleMerge } from '../types/domain';
+import type { ShoppingStaple, StapleDetail, StapleMerge } from '../types/domain';
 
 export type UseStaples = {
   /** The fixed shopping list, the most added first. */
@@ -26,6 +27,8 @@ export type UseStaples = {
   readonly apart: ReadonlySet<string>;
   /** Two names are one product: the kept one stays, with both counts. */
   readonly merge: (keepId: string, dropId: string, how?: 'manual' | 'smart') => void;
+  /** The details used for each name (by `titleKey`), the most used first. */
+  readonly details: ReadonlyMap<string, readonly StapleDetail[]>;
   /** What was merged, the latest first. */
   readonly merges: readonly StapleMerge[];
   /** Undoes a merge: the name comes back with its count. */
@@ -45,18 +48,21 @@ export function useStaples(): UseStaples {
   const [staples, setStaples] = useState<readonly ShoppingStaple[] | null>(null);
   const [apart, setApart] = useState<ReadonlySet<string>>(new Set());
   const [merges, setMerges] = useState<readonly StapleMerge[]>([]);
+  const [details, setDetails] = useState<ReadonlyMap<string, readonly StapleDetail[]>>(new Map());
   const [sameProducts, setSameProducts] = useState<readonly SameProduct[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     try {
-      const [loaded, marked, merged] = await Promise.all([
+      const [loaded, marked, merged, used] = await Promise.all([
         listStaples(),
         listApart(),
         listMerges(),
+        listStapleDetails(),
       ]);
       setStaples(loaded);
+      setDetails(used);
       setApart(marked);
       setMerges(merged);
       setError(null);
@@ -98,6 +104,7 @@ export function useStaples(): UseStaples {
       setStaples((current) => current?.filter((staple) => staple.id !== dropId) ?? null);
       run(() => mergeStaples(keepId, dropId, how));
     },
+    details,
     merges,
     unmerge: (mergeId): void => {
       setMerges((current) => current.filter((merge) => merge.id !== mergeId));

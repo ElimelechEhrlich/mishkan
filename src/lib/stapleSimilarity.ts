@@ -150,3 +150,33 @@ export function groupPairs<T extends { readonly title: string }>(
   }
   return pairs;
 }
+
+/**
+ * A name of the list that a new name starts with, word by word, and what the new name says
+ * beyond it ("מרכך כביסה מקסימה" → "מרכך כביסה" and "מקסימה"): the details of a product on
+ * the list. The longest such name; null when there is none or the new name is on the list.
+ */
+export function knownStart<T extends { readonly title: string }>(
+  name: string,
+  rows: readonly T[],
+  apart: ReadonlySet<string>,
+): { readonly row: T; readonly rest: string } | null {
+  const key = titleKey(name);
+  if (rows.some((row) => titleKey(row.title) === key)) {
+    return null;
+  }
+  const words = name.trim().split(/\s+/);
+  let best: { readonly row: T; readonly rest: string } | null = null;
+  for (const row of rows) {
+    const rowKey = titleKey(row.title);
+    const length = rowKey.split(' ').length;
+    if (
+      key.startsWith(`${rowKey} `) &&
+      !apart.has(pairKey(name, row.title)) &&
+      (best === null || length > titleKey(best.row.title).split(' ').length)
+    ) {
+      best = { row, rest: words.slice(length).join(' ') };
+    }
+  }
+  return best;
+}

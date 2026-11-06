@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { byDepartment, departmentFor, titleKey } from '../../lib/departments';
-import type { ShoppingDepartment, ShoppingStaple } from '../../types/domain';
+import type { ShoppingDepartment, ShoppingStaple, StapleDetail } from '../../types/domain';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { ConfirmIconButton } from '../ui/ConfirmIconButton';
@@ -21,7 +21,13 @@ type StaplePickerProps = {
   readonly listed: ReadonlySet<string>;
   readonly saving: boolean;
   /** The names ticked, and how much of each (null when not chosen). */
-  readonly onAdd: (titles: readonly string[], quantities: readonly (string | null)[]) => void;
+  readonly onAdd: (
+    titles: readonly string[],
+    quantities: readonly (string | null)[],
+    details: readonly (string | null)[],
+  ) => void;
+  /** The details used for each name (by `titleKey`), the most used first, to offer again. */
+  readonly details: ReadonlyMap<string, readonly StapleDetail[]>;
   readonly onRename: (stapleId: string, title: string) => void;
   readonly onRemove: (stapleId: string) => void;
   /** Puts a name in a department, or back to the built-in one (null). */
@@ -42,6 +48,7 @@ export function StaplePicker({
   listed,
   saving,
   onAdd,
+  details,
   onRename,
   onRemove,
   onChooseDepartment,
@@ -50,6 +57,18 @@ export function StaplePicker({
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   // How many of each ticked name, when chosen; none shows as "–" and is sent without one.
   const [amounts, setAmounts] = useState<ReadonlyMap<string, number>>(new Map());
+  // The details chosen for each ticked name, from those used before or written anew.
+  const [chosenDetails, setChosenDetails] = useState<ReadonlyMap<string, string>>(new Map());
+
+  function chooseDetails(stapleId: string, value: string | null): void {
+    const next = new Map(chosenDetails);
+    if (value === null || value.trim() === '') {
+      next.delete(stapleId);
+    } else {
+      next.set(stapleId, value.trim());
+    }
+    setChosenDetails(next);
+  }
   const [editing, setEditing] = useState(false);
   // In editing, the one item whose departments are open to choose from.
   const [choosing, setChoosing] = useState<string | null>(null);
@@ -185,68 +204,108 @@ export function StaplePicker({
                     )}
                   </div>
                 ) : (
-                  <>
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={ticked}
-                      disabled={onList}
-                      onClick={() => {
-                        toggle(staple.id);
-                      }}
-                      className="flex min-h-12 flex-1 items-center gap-3 text-start"
-                    >
-                      <span
-                        className={`flex size-5.5 shrink-0 items-center justify-center rounded-full border-2 ${
-                          ticked
-                            ? 'border-primary bg-primary text-white'
-                            : 'border-faint bg-surface'
-                        }`}
+                  <div className="flex flex-1 flex-col">
+                    <div className="flex min-h-12 items-center gap-3">
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={ticked}
+                        disabled={onList}
+                        onClick={() => {
+                          toggle(staple.id);
+                        }}
+                        className="flex min-h-12 flex-1 items-center gap-3 text-start"
                       >
-                        {ticked && <Icon name="check" className="size-3.5" />}
-                      </span>
-                      <span
-                        className={`flex-1 text-[15px] ${ticked ? 'font-medium' : ''} ${onList ? 'text-muted' : ''}`}
-                      >
-                        {staple.title}
-                      </span>
-                      {onList && (
-                        <span className="text-xs text-muted">{labels.staples.inList}</span>
-                      )}
-                    </button>
-                    {/* How many, once ticked; none until chosen. */}
-                    {!onList && picked.has(staple.id) && (
-                      <span className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          aria-label={labels.shopping.lessOf(staple.title)}
-                          disabled={!amounts.has(staple.id)}
-                          onClick={() => {
-                            step(staple.id, -1);
-                          }}
-                          className="flex size-8 items-center justify-center rounded-full bg-paper text-primary transition active:scale-90 disabled:text-faint"
-                        >
-                          <Icon name="minus" className="size-4" />
-                        </button>
                         <span
-                          className="min-w-6 text-center text-[15px] font-semibold tabular-nums"
-                          aria-label={labels.shopping.quantity}
+                          className={`flex size-5.5 shrink-0 items-center justify-center rounded-full border-2 ${
+                            ticked
+                              ? 'border-primary bg-primary text-white'
+                              : 'border-faint bg-surface'
+                          }`}
                         >
-                          {amounts.get(staple.id) ?? labels.shopping.noAmount}
+                          {ticked && <Icon name="check" className="size-3.5" />}
                         </span>
-                        <button
-                          type="button"
-                          aria-label={labels.shopping.moreOf(staple.title)}
-                          onClick={() => {
-                            step(staple.id, 1);
-                          }}
-                          className="flex size-8 items-center justify-center rounded-full bg-primary-soft text-primary transition active:scale-90"
+                        <span
+                          className={`flex-1 text-[15px] ${ticked ? 'font-medium' : ''} ${onList ? 'text-muted' : ''}`}
                         >
-                          <Icon name="plus" className="size-4" />
-                        </button>
-                      </span>
+                          {staple.title}
+                        </span>
+                        {onList && (
+                          <span className="text-xs text-muted">{labels.staples.inList}</span>
+                        )}
+                      </button>
+                      {/* How many, once ticked; none until chosen. */}
+                      {!onList && picked.has(staple.id) && (
+                        <span className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            aria-label={labels.shopping.lessOf(staple.title)}
+                            disabled={!amounts.has(staple.id)}
+                            onClick={() => {
+                              step(staple.id, -1);
+                            }}
+                            className="flex size-8 items-center justify-center rounded-full bg-paper text-primary transition active:scale-90 disabled:text-faint"
+                          >
+                            <Icon name="minus" className="size-4" />
+                          </button>
+                          <span
+                            className="min-w-6 text-center text-[15px] font-semibold tabular-nums"
+                            aria-label={labels.shopping.quantity}
+                          >
+                            {amounts.get(staple.id) ?? labels.shopping.noAmount}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label={labels.shopping.moreOf(staple.title)}
+                            onClick={() => {
+                              step(staple.id, 1);
+                            }}
+                            className="flex size-8 items-center justify-center rounded-full bg-primary-soft text-primary transition active:scale-90"
+                          >
+                            <Icon name="plus" className="size-4" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                    {/* Its brand, kind or size: one used before, or written anew. */}
+                    {!onList && picked.has(staple.id) && (
+                      <div className="flex flex-wrap items-center gap-1.5 pb-3">
+                        {(details.get(titleKey(staple.title)) ?? []).slice(0, 5).map((used) => (
+                          <Chip
+                            key={used.details_key}
+                            label={used.details}
+                            selected={chosenDetails.get(staple.id) === used.details}
+                            onClick={() => {
+                              chooseDetails(
+                                staple.id,
+                                chosenDetails.get(staple.id) === used.details ? null : used.details,
+                              );
+                            }}
+                          />
+                        ))}
+                        {chosenDetails.has(staple.id) &&
+                          !(details.get(titleKey(staple.title)) ?? []).some(
+                            (used) => used.details === chosenDetails.get(staple.id),
+                          ) && (
+                            <Chip
+                              label={chosenDetails.get(staple.id) ?? ''}
+                              selected
+                              onClick={() => {
+                                chooseDetails(staple.id, null);
+                              }}
+                            />
+                          )}
+                        <InlineAddChip
+                          label={labels.shopping.otherDetails}
+                          placeholder={labels.shopping.detailsHint}
+                          onAdd={async (value) => {
+                            chooseDetails(staple.id, value);
+                            await Promise.resolve();
+                          }}
+                        />
+                      </div>
                     )}
-                  </>
+                  </div>
                 )}
               </li>
             );
@@ -264,6 +323,7 @@ export function StaplePicker({
                   const amount = amounts.get(staple.id);
                   return amount === undefined ? null : String(amount);
                 }),
+                toAdd.map((staple) => chosenDetails.get(staple.id) ?? null),
               );
             }}
           >

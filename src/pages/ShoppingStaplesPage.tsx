@@ -74,6 +74,7 @@ export function ShoppingStaplesPage(): ReactElement {
             listed={listed}
             saving={adding.saving}
             onAdd={adding.add}
+            details={staples.details}
             onRename={staples.rename}
             onRemove={staples.remove}
             onChooseDepartment={departments.choose}

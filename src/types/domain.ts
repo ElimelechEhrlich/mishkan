@@ -40,6 +40,7 @@ export type ItemReminder = Tables['item_reminders']['Row'];
 /** A name on the fixed shopping list, kept from every "סופר" item added. */
 export type ShoppingStaple = Tables['shopping_staples']['Row'];
 export type StapleMerge = Tables['shopping_staple_merges']['Row'];
+export type StapleDetail = Tables['shopping_staple_details']['Row'];
 /** A department of the supermarket, in the order the household walks it. */
 export type ShoppingDepartment = Tables['shopping_departments']['Row'];
 /** The department chosen for an item, by its name. */
@@ -235,6 +236,8 @@ export type NewMissingItem = {
   readonly titles: readonly string[];
   /** How much of each, in the same order, when chosen apart (the titles are then names). */
   readonly quantities?: readonly (string | null)[];
+  /** The brand, kind or size of each, in the same order, when chosen apart. */
+  readonly details?: readonly (string | null)[];
   readonly category: ShoppingCategory;
   /** The shopping domain of the chosen entity. */
   readonly domainId: string;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   alikePairs,
   groupPairs,
+  knownStart,
   likelyMeant,
   looksAlike,
   nameCore,
@@ -70,5 +71,21 @@ describe('groupPairs', () => {
     expect(groupPairs(groups, rows, new Set([pairKey('פיירי', 'סבון כלים')]), found).length).toBe(
       1,
     );
+  });
+});
+
+describe('knownStart', () => {
+  const rows = [{ title: 'מרכך כביסה' }, { title: 'מרכך' }, { title: 'חלב' }];
+
+  it('finds the longest name the new one starts with, and the rest as details', () => {
+    const found = knownStart('מרכך כביסה מקסימה גדול', rows, new Set());
+    expect(found?.row.title).toBe('מרכך כביסה');
+    expect(found?.rest).toBe('מקסימה גדול');
+  });
+
+  it('says nothing for a name on the list, a word that only starts alike, or one marked apart', () => {
+    expect(knownStart('חלב', rows, new Set())).toBeNull();
+    expect(knownStart('חלבה', rows, new Set())).toBeNull();
+    expect(knownStart('חלב עיזים', rows, new Set([pairKey('חלב עיזים', 'חלב')]))).toBeNull();
   });
 });

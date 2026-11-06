@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { ShoppingStaple, StapleMerge } from '../types/domain';
+import type { ShoppingStaple, StapleDetail, StapleMerge } from '../types/domain';
 
 /** The fixed shopping list, the most added first. */
 export async function listStaples(): Promise<ShoppingStaple[]> {
@@ -144,4 +144,21 @@ export async function findSameProducts(): Promise<SameProduct[]> {
         ]
       : [];
   });
+}
+
+/** The details used for each name of the fixed list, by its key, the most used first. */
+export async function listStapleDetails(): Promise<Map<string, StapleDetail[]>> {
+  const { data, error } = await supabase
+    .from('shopping_staple_details')
+    .select('*')
+    .order('times', { ascending: false })
+    .order('last_used_at', { ascending: false });
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+  const byName = new Map<string, StapleDetail[]>();
+  for (const row of data) {
+    byName.set(row.staple_key, [...(byName.get(row.staple_key) ?? []), row]);
+  }
+  return byName;
 }

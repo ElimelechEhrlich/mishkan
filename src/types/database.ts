@@ -223,6 +223,8 @@ export type Database = {
           duration_minutes: number | null;
           /** How much of a missing item to buy, apart from its name (free text). */
           quantity: string | null;
+          /** Its brand, kind or size, apart from its name (free text). */
+          details: string | null;
           series_id: string | null;
           in_main: boolean;
           /** A note that is one value: its title is the name and its answer the value. */
@@ -276,6 +278,7 @@ export type Database = {
           with_whom?: string | null;
           duration_minutes?: number | null;
           quantity?: string | null;
+          details?: string | null;
           series_id?: string | null;
           in_main?: boolean;
           is_value?: boolean;
@@ -311,6 +314,7 @@ export type Database = {
           with_whom?: string | null;
           duration_minutes?: number | null;
           quantity?: string | null;
+          details?: string | null;
           in_main?: boolean;
           is_value?: boolean;
           entity_id?: string | null;
@@ -509,6 +513,20 @@ export type Database = {
           /** By itself (when quantities were taken out), by a parent, or after the smart check. */
           how: 'auto' | 'manual' | 'smart';
           merged_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      shopping_staple_details: {
+        Row: {
+          household_id: string;
+          /** The name on the fixed list, as `titleKey`. */
+          staple_key: string;
+          details: string;
+          details_key: string;
+          times: number;
+          last_used_at: string;
         };
         Insert: never;
         Update: never;

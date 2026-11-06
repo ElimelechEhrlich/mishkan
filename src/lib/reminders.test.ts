@@ -58,6 +58,7 @@ function item(overrides: Partial<Item>): Item {
     with_whom: null,
     duration_minutes: null,
     quantity: null,
+    details: null,
     series_id: null,
     in_main: false,
     is_value: false,

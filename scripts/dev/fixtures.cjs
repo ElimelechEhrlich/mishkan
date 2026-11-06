@@ -124,6 +124,7 @@ const item = (o) => {
     notes: null,
     kind: 'task',
     quantity: null,
+    details: null,
     duration_minutes: null,
     domain_id: null,
     parent_id: null,
@@ -295,6 +296,7 @@ item({
 item({
   title: 'חלב',
   quantity: '3',
+  details: 'תנובה 3%',
   kind: 'missing_item',
   domain_id: dom('הבית', 'קניות'),
   shopping_category: 'food',
@@ -783,6 +785,11 @@ module.exports = {
     shopping_departments,
     shopping_item_departments,
     shopping_staples,
+    shopping_staple_details: [
+      { household_id: H, staple_key: 'חלב', details: 'תנובה 3%', details_key: 'תנובה 3%', times: 4, last_used_at: now },
+      { household_id: H, staple_key: 'חלב', details: 'טרה 1%', details_key: 'טרה 1%', times: 1, last_used_at: now },
+      { household_id: H, staple_key: 'נוזל כלים', details: 'פיירי', details_key: 'פיירי', times: 2, last_used_at: now },
+    ],
     shopping_staple_merges: [
       { id: 'mg1', household_id: H, kept_id: null, kept_title: 'חלב', merged_title: 'חלב 3', merged_times: 2, how: 'auto', merged_at: now },
       { id: 'mg2', household_id: H, kept_id: null, kept_title: 'ויטמין D', merged_title: 'ויטמין D3', merged_times: 1, how: 'auto', merged_at: now },

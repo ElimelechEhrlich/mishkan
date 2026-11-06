@@ -4,7 +4,7 @@ import type { ReactElement, SyntheticEvent } from 'react';
 import { labels } from '../../constants/labels';
 import { splitQuantity } from '../../lib/quantity';
 import { shoppingLines } from '../../lib/shoppingLines';
-import { likelyMeant, pairKey } from '../../lib/stapleSimilarity';
+import { knownStart, likelyMeant, pairKey } from '../../lib/stapleSimilarity';
 import type {
   NewMissingItem,
   ShoppingCategory,
@@ -35,6 +35,12 @@ type MissingItemFormProps = {
  * it; the kind and for whom open once something is written. The list is written as a message, a
  * line per item, and added in one tap; the kind and the entity stay chosen for the next list.
  */
+/**
+ * A line that is likely a name of the fixed list: that name, what the line said beyond it as
+ * its details (or null when it is written otherwise), and the answer so far.
+ */
+type Question = { meant: string; details: string | null; same: boolean | null };
+
 export function MissingItemForm({
   targets,
   onAdd,
@@ -48,15 +54,13 @@ export function MissingItemForm({
   const [saving, setSaving] = useState(false);
   // For each line likely meaning a name of the fixed list: that name, and the answer so far
   // (true: it is that one; false: it is the line as written).
-  const [asking, setAsking] = useState<
-    ReadonlyMap<number, { meant: string; same: boolean | null }>
-  >(new Map());
+  const [asking, setAsking] = useState<ReadonlyMap<number, Question>>(new Map());
 
   const domainId = chosenDomainId ?? targets[0]?.domainId ?? null;
   const titles = shoppingLines(text);
   const lines = titles.map(splitQuantity);
 
-  function send(answers: ReadonlyMap<number, { meant: string; same: boolean | null }>): void {
+  function send(answers: ReadonlyMap<number, Question>): void {
     if (domainId === null) {
       return;
     }
@@ -67,6 +71,9 @@ export function MissingItemForm({
         answers.get(index)?.same === true ? (answers.get(index)?.meant ?? line.name) : line.name,
       ),
       quantities: lines.map((line) => line.quantity),
+      details: lines.map((_, index) =>
+        answers.get(index)?.same === true ? (answers.get(index)?.details ?? null) : null,
+      ),
       category,
       domainId,
     }).then((saved) => {
@@ -83,12 +90,18 @@ export function MissingItemForm({
       return;
     }
     // Only the "סופר" list has a fixed list to compare with.
-    const questions = new Map<number, { meant: string; same: boolean | null }>();
+    const questions = new Map<number, Question>();
     if (category === 'food') {
       lines.forEach((line, index) => {
+        // A name of the list with more said after it: the more is its details.
+        const start = knownStart(line.name, known, apart);
+        if (start !== null) {
+          questions.set(index, { meant: start.row.title, details: start.rest, same: null });
+          return;
+        }
         const meant = likelyMeant(line.name, known, apart);
         if (meant !== null) {
-          questions.set(index, { meant: meant.title, same: null });
+          questions.set(index, { meant: meant.title, details: null, same: null });
         }
       });
     }
@@ -163,11 +176,17 @@ export function MissingItemForm({
                 return (
                   <div key={index} className="flex flex-col gap-1.5 rounded-xl bg-paper p-2.5">
                     <p className="text-[14px] font-medium">
-                      {labels.shopping.meant(question.meant)}
+                      {question.details === null
+                        ? labels.shopping.meant(question.meant)
+                        : labels.shopping.meantWithDetails(question.meant, question.details)}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       <Chip
-                        label={labels.shopping.meantYes(question.meant)}
+                        label={
+                          question.details === null
+                            ? labels.shopping.meantYes(question.meant)
+                            : labels.shopping.yesWithDetails
+                        }
                         selected={false}
                         onClick={() => {
                           answer(index, true);
