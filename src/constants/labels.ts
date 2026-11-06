@@ -1560,6 +1560,7 @@ export const labels = {
     smartHint: 'משכן עובר על כל הרשימה ומחפש מוצרים שנכתבו במילים אחרות, כמו "פיירי" ו"נוזל כלים".',
     smartNone: 'הבדיקה החכמה לא מצאה עוד כפולים.',
     smartFound: 'מהבדיקה החכמה',
+    bothAre: (what: string) => `שניהם: ${what}`,
     mergesTitle: (count: number) => `מה אוחד (${String(count)})`,
     mergesHint: 'אם משהו התאחד בטעות, "ביטול" מחזיר אותו לרשימה כמו שהיה.',
     mergedInto: (merged: string, kept: string) => `"${merged}" ← "${kept}"`,

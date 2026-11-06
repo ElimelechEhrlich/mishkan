@@ -13,6 +13,8 @@ type AlikeStaplesProps = {
   readonly pairs: readonly Pair[];
   /** Pairs the smart check called one product in other words; null before it ran. */
   readonly smartPairs: readonly Pair[] | null;
+  /** What the smart check says two names both are ("נוזל כלים"); null when it said nothing. */
+  readonly smartWhy: (a: string, b: string) => string | null;
   readonly checking: boolean;
   readonly onSmartCheck: () => void;
   /** The two are one product: the kept name stays, with both counts. */
@@ -29,6 +31,7 @@ type AlikeStaplesProps = {
 export function AlikeStaples({
   pairs,
   smartPairs,
+  smartWhy,
   checking,
   onSmartCheck,
   onMerge,
@@ -38,6 +41,7 @@ export function AlikeStaples({
   const count = pairs.length + (smartPairs?.length ?? 0);
 
   function pairRow([a, b]: Pair, how: 'manual' | 'smart'): ReactElement {
+    const why = how === 'smart' ? smartWhy(a.title, b.title) : null;
     return (
       <li
         key={`${a.id}-${b.id}`}
@@ -48,6 +52,9 @@ export function AlikeStaples({
           {labels.item.separator}
           {b.title}
         </p>
+        {why !== null && why !== '' && (
+          <p className="-mt-1 text-[13px] text-muted">{labels.staples.bothAre(why)}</p>
+        )}
         <div className="flex flex-wrap gap-1.5">
           <Chip
             label={labels.staples.keep(a.title)}

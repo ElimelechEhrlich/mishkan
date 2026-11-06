@@ -13,6 +13,7 @@ import {
   renameStaple,
   unmergeStaple,
 } from '../services/stapleService';
+import type { SameProduct } from '../services/stapleService';
 import type { ShoppingStaple, StapleMerge } from '../types/domain';
 
 export type UseStaples = {
@@ -30,7 +31,7 @@ export type UseStaples = {
   /** Undoes a merge: the name comes back with its count. */
   readonly unmerge: (mergeId: string) => void;
   /** The smart check's answer: groups of names that are one product; null before it ran. */
-  readonly sameProducts: readonly (readonly string[])[] | null;
+  readonly sameProducts: readonly SameProduct[] | null;
   readonly checking: boolean;
   /** Asks the assistant which names are one product in other words. */
   readonly checkSameProducts: () => void;
@@ -44,7 +45,7 @@ export function useStaples(): UseStaples {
   const [staples, setStaples] = useState<readonly ShoppingStaple[] | null>(null);
   const [apart, setApart] = useState<ReadonlySet<string>>(new Set());
   const [merges, setMerges] = useState<readonly StapleMerge[]>([]);
-  const [sameProducts, setSameProducts] = useState<readonly (readonly string[])[] | null>(null);
+  const [sameProducts, setSameProducts] = useState<readonly SameProduct[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

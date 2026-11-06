@@ -1414,16 +1414,34 @@ async function askPlain(prompt: string): Promise<GeminiAnswer> {
 }
 
 /**
- * The smart check of the fixed shopping list: the names that are one product written in
- * other words ("פיירי" and "נוזל כלים"), as groups of the names exactly as on the list.
+ * The smart check of the fixed shopping list: the names that are one product on a shopping
+ * list. The model first says, for every name, what it is in plain words (its generic
+ * product), and the names with the same generic product are grouped, with that as the
+ * reason. It also gets what the parents already decided, merged or "not the same", to follow
+ * the household's way.
  */
-async function sameProducts(db: SupabaseClient): Promise<string[][]> {
-  const { data } = await db.from('shopping_staples').select('title').order('title');
+async function sameProducts(
+  db: SupabaseClient,
+): Promise<{ names: string[]; why: string }[]> {
+  const [{ data }, { data: apartRows }, { data: mergeRows }] = await Promise.all([
+    db.from('shopping_staples').select('title').order('title'),
+    db.from('shopping_staple_apart').select('pair_key').limit(200),
+    db.from('shopping_staple_merges').select('kept_title, merged_title, how').limit(200),
+  ]);
   const names = ((data ?? []) as Row[]).map((row) => String(row.title));
   if (names.length < 2) {
     return [];
   }
-  const prompt = `These are the product names on an Israeli family's fixed supermarket list (Hebrew). Find the names that are the same product written differently: other words for it, a brand for the generic thing, singular and plural, spelling, word order (for example "פיירי", "נוזל כלים" and "סבון כלים"; "שקיות לעצמות" and "שקיות למרק" when it is the same bag). Do not group different products, sizes or kinds ("חלב 3%" and "חלב 1%" are different). Answer only JSON: {"groups": [["name", "name"], ...]}, each group two names or more, written exactly as in the list. No group when unsure.
+  const apart = ((apartRows ?? []) as Row[]).map((row) =>
+    String(row.pair_key).split('|').join('" / "'),
+  );
+  const merged = ((mergeRows ?? []) as Row[])
+    .filter((row) => row.how !== 'auto')
+    .map((row) => `${String(row.merged_title)}" = "${String(row.kept_title)}`);
+  const prompt = `You help an Israeli family tidy their fixed supermarket list (Hebrew). For every name on the list, write its generic product: what a shopper would call the thing itself, in short Hebrew, without brand, size, flavor-less words or how many ("פיירי" → "נוזל כלים"; "מרכך כביסה מקסימה גדול" → "מרכך כביסה"; "מעדנים פשוטים" → "מעדנים"; "סנו ג'אוול" → "אקונומיקה"; "טישו" → "ממחטות נייר"; "שקיות לעצמות" → "שקיות"; "קוקה קולה" → "קולה").
+On a shopping list, a name and a more specific version of it (a brand, a size, "פשוט", "גדול", "רגיל") are the same item: give them the same generic product. Two different specific versions that a family would not swap stay apart: give them generic products that tell them apart ("חלב 3%" → "חלב 3%", "חלב 1%" → "חלב 1%"; "במבה" and "ביסלי" are different snacks).
+${merged.length === 0 ? '' : `This family already said these are the same: "${merged.join('"; "')}". `}${apart.length === 0 ? '' : `And these are NOT the same, keep them apart: "${apart.join('"; "')}".`}
+Answer only JSON: {"items": [{"name": "...", "generic": "..."}, ...]}, one item for every name, the name written exactly as in the list.
 
 ${names.map((name) => `- ${name}`).join('\n')}`;
   const answer = await askPlain(prompt);
@@ -1431,16 +1449,29 @@ ${names.map((name) => `- ${name}`).join('\n')}`;
     .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
     .join('');
   const parsed = JSON.parse(textOut.replace(/^```(?:json)?|```$/g, '').trim()) as {
-    groups?: unknown;
+    items?: unknown;
   };
   const known = new Set(names);
-  return (Array.isArray(parsed.groups) ? parsed.groups : [])
-    .map((group: unknown) =>
-      Array.isArray(group)
-        ? group.filter((name): name is string => typeof name === 'string' && known.has(name))
-        : [],
-    )
-    .filter((group) => group.length >= 2);
+  // The names of each generic product, in the list's order.
+  const byGeneric = new Map<string, { names: string[]; why: string }>();
+  for (const entry of Array.isArray(parsed.items) ? parsed.items : []) {
+    const name: unknown = typeof entry === 'object' && entry !== null ? Reflect.get(entry, 'name') : null;
+    const generic: unknown =
+      typeof entry === 'object' && entry !== null ? Reflect.get(entry, 'generic') : null;
+    if (typeof name !== 'string' || !known.has(name) || typeof generic !== 'string') {
+      continue;
+    }
+    const key = generic.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (key === '') {
+      continue;
+    }
+    const group = byGeneric.get(key) ?? { names: [], why: generic.trim() };
+    if (!group.names.includes(name)) {
+      group.names.push(name);
+    }
+    byGeneric.set(key, group);
+  }
+  return [...byGeneric.values()].filter((group) => group.names.length >= 2);
 }
 
 /** What goes with a voice message: listen to how it is said, not only to the words. */

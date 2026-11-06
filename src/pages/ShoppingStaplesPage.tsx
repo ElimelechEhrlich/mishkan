@@ -27,7 +27,12 @@ export function ShoppingStaplesPage(): ReactElement {
   const smartPairs =
     staples.sameProducts === null
       ? null
-      : groupPairs(staples.sameProducts, staples.staples, staples.apart, alike);
+      : groupPairs(
+          staples.sameProducts.map((group) => group.names),
+          staples.staples,
+          staples.apart,
+          alike,
+        );
   const listed = new Set(
     shopping.shared
       .filter((group) => group.category === 'food')
@@ -51,6 +56,11 @@ export function ShoppingStaplesPage(): ReactElement {
           <AlikeStaples
             pairs={alike}
             smartPairs={smartPairs}
+            smartWhy={(a, b) =>
+              staples.sameProducts?.find(
+                (group) => group.names.includes(a) && group.names.includes(b),
+              )?.why ?? null
+            }
             checking={staples.checking}
             onSmartCheck={staples.checkSameProducts}
             onMerge={staples.merge}

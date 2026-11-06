@@ -91,11 +91,14 @@ export async function unmergeStaple(mergeId: string): Promise<void> {
   }
 }
 
+/** A group of names the smart check found to be one product, and that product in plain words. */
+export type SameProduct = { readonly names: readonly string[]; readonly why: string };
+
 /**
- * Asks the assistant which names on the fixed list are the same product in other words
- * ("פיירי" and "נוזל כלים"); each group is names as they are on the list.
+ * Asks the assistant which names on the fixed list are one product ("פיירי" and "נוזל
+ * כלים"); each group is names as they are on the list, with the product they all are.
  */
-export async function findSameProducts(): Promise<string[][]> {
+export async function findSameProducts(): Promise<SameProduct[]> {
   const answer: { readonly data: unknown; readonly error: unknown } =
     await supabase.functions.invoke('assistant', { body: { action: 'similar_staples' } });
   if (answer.error !== null) {
@@ -126,9 +129,19 @@ export async function findSameProducts(): Promise<string[][]> {
   if (!Array.isArray(groups)) {
     throw new Error('no answer');
   }
-  return groups.flatMap((group: unknown) =>
-    Array.isArray(group)
-      ? [group.filter((name: unknown): name is string => typeof name === 'string')]
-      : [],
-  );
+  return groups.flatMap((group: unknown): SameProduct[] => {
+    if (typeof group !== 'object' || group === null) {
+      return [];
+    }
+    const names: unknown = Reflect.get(group, 'names');
+    const why: unknown = Reflect.get(group, 'why');
+    return Array.isArray(names)
+      ? [
+          {
+            names: names.filter((name: unknown): name is string => typeof name === 'string'),
+            why: typeof why === 'string' ? why : '',
+          },
+        ]
+      : [];
+  });
 }
