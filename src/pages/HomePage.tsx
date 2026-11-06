@@ -5,6 +5,7 @@ import { HomeViews } from '../components/items/HomeViews';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
+import { missingCount } from '../lib/shoppingLines';
 import { useAddOpener } from '../hooks/useAddRequest';
 import { useEntities } from '../hooks/useEntities';
 import { useItems } from '../hooks/useItems';
@@ -39,6 +40,7 @@ export function HomePage(): ReactElement {
       title={labels.pages.start}
       incompleteCount={items.incompleteCount}
       todayCount={items.todayCount}
+      shoppingCount={missingCount(items.items)}
       bottomBar={<ChatBar onNewItem={adder.open} />}
     >
       <ErrorBanner

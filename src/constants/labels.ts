@@ -1418,6 +1418,8 @@ export const labels = {
   },
   shopping: {
     quantity: 'כמות',
+    openList: (count: number) =>
+      count === 0 ? 'רשימת הקניות' : `רשימת הקניות, ${String(count)} חסרים`,
     noQuantity: 'בלי כמות',
     noAmount: '–',
     details: 'פרטים',

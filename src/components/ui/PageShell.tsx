@@ -20,6 +20,8 @@ type PageShellProps = {
   readonly incompleteCount: number;
   /** What is late or due today, across the whole home; marked on the header's today link. */
   readonly todayCount: number;
+  /** On the home page: a way to the shopping list, with how many things are missing. */
+  readonly shoppingCount?: number;
   readonly children: ReactNode;
   /** Inner pages show a back button instead of the header links. */
   readonly inner?: boolean;
@@ -47,6 +49,7 @@ export function PageShell({
   subtitle,
   incompleteCount,
   todayCount,
+  shoppingCount,
   children,
   inner = false,
   heading,
@@ -107,6 +110,20 @@ export function PageShell({
               </h1>
             </div>
             {toEverything !== undefined && <EverythingButton shortcut={toEverything} />}
+            {shoppingCount !== undefined && (
+              <Link
+                to="/shopping"
+                aria-label={labels.shopping.openList(shoppingCount)}
+                className="relative me-1 flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary-soft ps-3 pe-3.5 text-primary shadow-halo ring-1 ring-primary/15 transition active:scale-95"
+              >
+                <Icon name="cart" className="size-5.5" />
+                {shoppingCount > 0 && (
+                  <span className="text-[15px] font-bold tabular-nums">
+                    {String(shoppingCount)}
+                  </span>
+                )}
+              </Link>
+            )}
             <Link
               to="/today"
               aria-label={labels.pages.today}

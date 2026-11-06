@@ -17,3 +17,10 @@ export function shoppingLines(text: string): string[] {
   }
   return lines;
 }
+
+/** How many things are missing on the shopping lists: open items not yet in a run. */
+export function missingCount(
+  items: readonly { readonly kind: string; readonly status: string }[],
+): number {
+  return items.filter((item) => item.kind === 'missing_item' && item.status === 'open').length;
+}
