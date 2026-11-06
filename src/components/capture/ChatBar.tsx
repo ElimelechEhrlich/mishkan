@@ -150,12 +150,24 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
             onCancel={voice.cancel}
           />
         ) : (
-          <>
+          // The clip sits inside the field, at its end, so the field takes the whole width.
+          <div className="flex min-h-11 min-w-0 flex-1 items-center rounded-full border border-line bg-surface shadow-card focus-within:border-primary">
+            <input
+              value={draft}
+              dir="auto"
+              aria-label={labels.assistant.barPlaceholder}
+              placeholder={labels.assistant.barPlaceholder}
+              enterKeyHint="send"
+              onChange={(event) => {
+                setDraft(event.target.value);
+              }}
+              className="min-h-11 min-w-0 flex-1 bg-transparent ps-4 pe-1 text-[15px] outline-none"
+            />
             <label
               aria-label={labels.assistant.attach}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-primary transition active:scale-90 active:bg-primary-soft"
+              className="me-1 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted transition active:scale-90 active:bg-primary-soft active:text-primary"
             >
-              <Icon name="clip" className="size-5.5" />
+              <Icon name="clip" className="size-5" />
               <input
                 type="file"
                 accept="image/*"
@@ -166,18 +178,7 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
                 }}
               />
             </label>
-            <input
-              value={draft}
-              dir="auto"
-              aria-label={labels.assistant.barPlaceholder}
-              placeholder={labels.assistant.barPlaceholder}
-              enterKeyHint="send"
-              onChange={(event) => {
-                setDraft(event.target.value);
-              }}
-              className="min-h-11 min-w-0 flex-1 rounded-full border border-line bg-surface px-4 text-[15px] shadow-card outline-none focus:border-primary"
-            />
-          </>
+          </div>
         )}
         {/* With nothing written, the microphone stands where the send button goes. */}
         {draft.trim() === '' && photo === null && !quick.sending ? (

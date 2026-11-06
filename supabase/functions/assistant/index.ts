@@ -232,7 +232,7 @@ const tools = [
   {
     name: 'add_to_shopping',
     description:
-      "Adds things to buy to the household's shared shopping list, one title per thing. Write how much and which kind with it as said (\"חלב 3\", \"מרכך כביסה מקסימה\"): the quantity, and the brand or kind of a name on the fixed list, are kept apart from the name.",
+      "Adds things to buy to the household's shared shopping list, one title per thing. Write how much and which kind with it as said (\"חלב 3\", \"מרכך כביסה מקסימה\"): the quantity is kept apart, and a name meaning one on the fixed list (another spelling, or its brand or kind) is added under the listed name with the rest as its details. Then tell the parent how each was added, as the result says.",
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -752,27 +752,38 @@ async function addToShopping(db: SupabaseClient, house: Household, input: Row): 
     return 'error: nothing to add';
   }
   // How much to buy is kept apart from the name ("חלב 3" is חלב, 3), as the app does.
-  const lines = await Promise.all(
+  const split = await Promise.all(
     titles.map(async (title) => {
       const { data } = await db.rpc('split_quantity', { p_line: title });
-      const split = (Array.isArray(data) ? data[0] : data) as
+      const parts = (Array.isArray(data) ? data[0] : data) as
         | { name?: unknown; quantity?: unknown }
         | null
         | undefined;
       // A name of the fixed list at its start: the rest is its details, as the app does.
-      const name = text(split?.name) ?? title;
+      const name = text(parts?.name) ?? title;
       const { data: known } = await db.rpc('split_known_staple', { p_name: name });
       const found = (Array.isArray(known) ? known[0] : known) as
         | { name?: unknown; details?: unknown }
         | null
         | undefined;
+      const listed = text(found?.name) ?? name;
       return {
-        title: text(found?.name) ?? name,
-        quantity: text(split?.quantity),
+        said: name,
+        title: listed,
+        quantity: text(parts?.quantity),
         details: text(found?.details),
       };
     }),
   );
+  // What is not on the fixed list as written: the name on it that it means, as the app would ask.
+  const meant = await meantOnList(
+    db,
+    split.filter((line) => line.details === null).map((line) => line.title),
+  ).catch(() => new Map<string, { title: string; details: string | null }>());
+  const lines = split.map((line) => {
+    const hit = line.details === null ? meant.get(line.title) : undefined;
+    return hit === undefined ? line : { ...line, title: hit.title, details: hit.details };
+  });
   const { error } = await db.from('items').insert(
     lines.map((line) => ({
       title: line.title,
@@ -783,7 +794,83 @@ async function addToShopping(db: SupabaseClient, house: Household, input: Row): 
       shopping_category: text(input.category) ?? 'food',
     })),
   );
-  return error === null ? `added ${String(titles.length)}` : `error: ${error.message}`;
+  if (error !== null) {
+    return `error: ${error.message}`;
+  }
+  // How each was understood, for the answer to say, so a parent can correct it.
+  const understood = lines.map(
+    (line) =>
+      `${line.title}${line.details === null ? '' : ` (${line.details})`}${
+        line.quantity === null ? '' : ` x${line.quantity}`
+      }${line.title === line.said ? '' : ` [said: ${line.said}]`}`,
+  );
+  return `added ${String(lines.length)}: ${understood.join('; ')}. Tell the parent in short how each was added, the details in brackets, especially those added under another name.`;
+}
+
+/**
+ * The names of the fixed shopping list that new names mean, when not written as on it: another
+ * spelling ("עגבנייה" → "עגבניות"), a brand or kind of a product on it ("פיירי" → "נוזל כלים",
+ * with "פיירי" its details). The model decides; a name it gives that is not on the list, or a
+ * pair the parents marked "not the same", is left as written.
+ */
+async function meantOnList(
+  db: SupabaseClient,
+  names: readonly string[],
+): Promise<Map<string, { title: string; details: string | null }>> {
+  const found = new Map<string, { title: string; details: string | null }>();
+  if (names.length === 0) {
+    return found;
+  }
+  const [{ data }, { data: apartRows }] = await Promise.all([
+    db.from('shopping_staples').select('title').order('times', { ascending: false }).limit(400),
+    db.from('shopping_staple_apart').select('pair_key').limit(400),
+  ]);
+  const listed = ((data ?? []) as Row[]).map((row) => String(row.title));
+  const keyOf = (name: string): string => name.trim().toLowerCase().replace(/\s+/g, ' ');
+  const byKey = new Map(listed.map((name) => [keyOf(name), name]));
+  const asked = names.filter((name) => !byKey.has(keyOf(name)));
+  if (asked.length === 0 || listed.length === 0) {
+    return found;
+  }
+  const apart = new Set(((apartRows ?? []) as Row[]).map((row) => String(row.pair_key)));
+  const prompt = `An Israeli family adds things to their shopping list (Hebrew). For each new name, find the name on their fixed list that it means, if any:
+- the same product spelled otherwise, or singular / plural ("עגבנייה" → "עגבניות", "איטריות" → "אטריות"): details null;
+- a brand, kind or size of a product on the list ("פיירי" → "נוזל כלים", details "פיירי"; "מרכך מקסימה" → "מרכך כביסה", details "מקסימה"): details is what the new name says beyond the listed one.
+Only when a shopper would surely mean it. A different product is not it, even when written alike ("חלבה" is not "חלב"; "תפוז" is not "תפוח"; "חלב 1%" is not "חלב 3%"): then list null.
+Answer only JSON: {"items": [{"name": "<new name exactly>", "list": "<the name exactly as on the list>" or null, "details": "..." or null}]}.
+
+New names:
+${asked.map((name) => `- ${name}`).join('\n')}
+
+The fixed list:
+${listed.map((name) => `- ${name}`).join('\n')}`;
+  const answer = await askPlain(prompt);
+  const textOut = (answer.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
+    .join('');
+  const parsed = JSON.parse(textOut.replace(/^```(?:json)?|```$/g, '').trim()) as {
+    items?: unknown;
+  };
+  for (const entry of Array.isArray(parsed.items) ? parsed.items : []) {
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
+    const name: unknown = Reflect.get(entry, 'name');
+    const list: unknown = Reflect.get(entry, 'list');
+    const details: unknown = Reflect.get(entry, 'details');
+    const title = typeof list === 'string' ? byKey.get(keyOf(list)) : undefined;
+    if (
+      typeof name !== 'string' ||
+      !asked.includes(name) ||
+      title === undefined ||
+      apart.has([keyOf(name), keyOf(title)].sort().join('|'))
+    ) {
+      continue;
+    }
+    const rest = typeof details === 'string' ? details.trim().slice(0, 60) : '';
+    found.set(name, { title, details: rest === '' || keyOf(rest) === keyOf(title) ? null : rest });
+  }
+  return found;
 }
 
 async function addReminder(db: SupabaseClient, house: Household, input: Row): Promise<string> {
