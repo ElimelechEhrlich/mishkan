@@ -57,8 +57,10 @@ export function StaplePicker({
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   // How many of each ticked name, when chosen; none shows as "–" and is sent without one.
   const [amounts, setAmounts] = useState<ReadonlyMap<string, number>>(new Map());
-  // The details chosen for each ticked name, from those used before or written anew.
+  // The details chosen for each ticked name: one, from those used before or written anew.
   const [chosenDetails, setChosenDetails] = useState<ReadonlyMap<string, string>>(new Map());
+  // Details written anew for a name, kept among its choices so a new one does not replace them.
+  const [newDetails, setNewDetails] = useState<ReadonlyMap<string, readonly string[]>>(new Map());
 
   function chooseDetails(stapleId: string, value: string | null): void {
     const next = new Map(chosenDetails);
@@ -69,6 +71,19 @@ export function StaplePicker({
     }
     setChosenDetails(next);
   }
+
+  function addDetails(stapleId: string, value: string): void {
+    const text = value.trim();
+    if (text === '') {
+      return;
+    }
+    const written = newDetails.get(stapleId) ?? [];
+    if (!written.includes(text)) {
+      setNewDetails(new Map(newDetails).set(stapleId, [...written, text]));
+    }
+    chooseDetails(stapleId, text);
+  }
+
   const [editing, setEditing] = useState(false);
   // In editing, the one item whose departments are open to choose from.
   const [choosing, setChoosing] = useState<string | null>(null);
@@ -267,39 +282,34 @@ export function StaplePicker({
                         </span>
                       )}
                     </div>
-                    {/* Its brand, kind or size: one used before, or written anew. */}
+                    {/* Its brand, kind or size: one of those used before or written anew. */}
                     {!onList && picked.has(staple.id) && (
                       <div className="flex flex-wrap items-center gap-1.5 pb-3">
-                        {(details.get(titleKey(staple.title)) ?? []).slice(0, 5).map((used) => (
+                        {[
+                          ...new Set([
+                            ...(details.get(titleKey(staple.title)) ?? [])
+                              .slice(0, 5)
+                              .map((used) => used.details),
+                            ...(newDetails.get(staple.id) ?? []),
+                          ]),
+                        ].map((value) => (
                           <Chip
-                            key={used.details_key}
-                            label={used.details}
-                            selected={chosenDetails.get(staple.id) === used.details}
+                            key={value}
+                            label={value}
+                            selected={chosenDetails.get(staple.id) === value}
                             onClick={() => {
                               chooseDetails(
                                 staple.id,
-                                chosenDetails.get(staple.id) === used.details ? null : used.details,
+                                chosenDetails.get(staple.id) === value ? null : value,
                               );
                             }}
                           />
                         ))}
-                        {chosenDetails.has(staple.id) &&
-                          !(details.get(titleKey(staple.title)) ?? []).some(
-                            (used) => used.details === chosenDetails.get(staple.id),
-                          ) && (
-                            <Chip
-                              label={chosenDetails.get(staple.id) ?? ''}
-                              selected
-                              onClick={() => {
-                                chooseDetails(staple.id, null);
-                              }}
-                            />
-                          )}
                         <InlineAddChip
                           label={labels.shopping.otherDetails}
                           placeholder={labels.shopping.detailsHint}
                           onAdd={async (value) => {
-                            chooseDetails(staple.id, value);
+                            addDetails(staple.id, value);
                             await Promise.resolve();
                           }}
                         />
