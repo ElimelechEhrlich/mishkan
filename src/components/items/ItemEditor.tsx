@@ -46,6 +46,7 @@ import { useGoogleConnected } from '../../hooks/useGoogleCalendar';
 import { AttachmentList } from './AttachmentList';
 import { ConvertPanel } from './ConvertPanel';
 import { ItemHeading } from './ItemHeading';
+import { DetailsPicker } from '../shopping/DetailsPicker';
 import { QuantityEditor } from '../shopping/QuantityEditor';
 import { TripListLink } from '../shopping/TripListLink';
 import { OccurrencesCard } from './OccurrencesCard';
@@ -542,13 +543,11 @@ export function ItemEditor({
               toggle('details');
             }}
           >
-            <QuantityEditor
-              quantity={item.details}
-              label={labels.shopping.details}
-              clearLabel={labels.shopping.noDetails}
-              max={60}
+            <DetailsPicker
+              title={item.title}
+              details={item.details}
               onSave={(details) => {
-                update({ details });
+                onUpdate(item.id, { details });
               }}
             />
           </PropertyRow>
