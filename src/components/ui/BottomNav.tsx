@@ -40,7 +40,7 @@ export function BottomNav({ shoppingCount }: BottomNavProps): ReactElement {
   if (mode === 'home') {
     // Home's bar is low: one rounded switch between home and main, its sign beside its name.
     return (
-      <nav className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-center border-t border-line bg-surface/95 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-md">
+      <nav className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-center gap-4 border-t border-line bg-surface/95 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-md">
         <div className="flex gap-1 rounded-full bg-paper p-1 shadow-inner">
           {[home, main].map((item) => (
             <NavLink
@@ -60,22 +60,24 @@ export function BottomNav({ shoppingCount }: BottomNavProps): ReactElement {
             </NavLink>
           ))}
         </div>
-        {/* The shopping list, apart from the switch: a note stuck in the corner, with how many are missing. */}
+        {/* The shopping list, apart from the switch: a note stuck to the bar beside it, with how many are missing. */}
         {shoppingCount !== undefined && (
           <Link
             to="/shopping"
             aria-label={labels.shopping.openList(shoppingCount)}
-            className="absolute end-4 top-1/2 flex h-12 w-13 -translate-y-1/2 -rotate-6 flex-col items-center justify-center gap-0.5 bg-cream leading-none text-gold shadow-raised transition active:scale-95 active:rotate-0 [clip-path:polygon(0_0,100%_0,100%_74%,74%_100%,0_100%)]"
+            className="relative group flex -rotate-6 drop-shadow-[0_4px_6px_rgb(29_29_31/0.2)] transition active:scale-95 active:rotate-0"
           >
-            {/* The folded corner, where the note is cut. */}
-            <span className="absolute right-0 bottom-0 size-3.5 bg-gold/45 [clip-path:polygon(0_0,100%_0,0_100%)]" />
-            <span className="absolute inset-x-0 top-0 h-1.5 bg-gold/25" />
-            <Icon name="cart" className="mt-1 size-4.5" />
-            {shoppingCount > 0 && (
-              <span className="font-display text-[17px] font-bold tabular-nums">
-                {String(shoppingCount)}
-              </span>
-            )}
+            {/* The note, its corner folded; a strip of tape holds it to the bar. */}
+            <span className="flex h-11 w-12 flex-col items-center justify-center gap-0.5 bg-cream leading-none text-gold ring-1 ring-gold/30 [clip-path:polygon(0_0,100%_0,100%_76%,76%_100%,0_100%)]">
+              <Icon name="cart" className="mt-1 size-4.5" />
+              {shoppingCount > 0 && (
+                <span className="font-display text-[16px] font-bold tabular-nums">
+                  {String(shoppingCount)}
+                </span>
+              )}
+            </span>
+            <span className="absolute right-0 bottom-0 size-3.5 bg-gold/35 [clip-path:polygon(0_0,100%_0,0_100%)]" />
+            <span className="absolute -top-2 left-1/2 h-3 w-7 -translate-x-1/2 rotate-3 bg-surface/75 ring-1 ring-line" />
           </Link>
         )}
       </nav>
