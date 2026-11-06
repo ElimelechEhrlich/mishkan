@@ -40,7 +40,7 @@ export function BottomNav({ shoppingCount }: BottomNavProps): ReactElement {
   if (mode === 'home') {
     // Home's bar is low: one rounded switch between home and main, its sign beside its name.
     return (
-      <nav className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-center gap-2 border-t border-line bg-surface/95 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-md">
+      <nav className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-center border-t border-line bg-surface/95 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-md">
         <div className="flex gap-1 rounded-full bg-paper p-1 shadow-inner">
           {[home, main].map((item) => (
             <NavLink
@@ -60,16 +60,21 @@ export function BottomNav({ shoppingCount }: BottomNavProps): ReactElement {
             </NavLink>
           ))}
         </div>
-        {/* The shopping list, apart from the switch: its own round button, with how many are missing. */}
+        {/* The shopping list, apart from the switch: a note stuck in the corner, with how many are missing. */}
         {shoppingCount !== undefined && (
           <Link
             to="/shopping"
             aria-label={labels.shopping.openList(shoppingCount)}
-            className="flex min-h-11 items-center gap-1.5 rounded-full bg-primary-soft ps-3.5 pe-4 text-primary shadow-card ring-1 ring-primary/15 transition active:scale-95"
+            className="absolute end-4 top-1/2 flex h-12 w-13 -translate-y-1/2 -rotate-6 flex-col items-center justify-center gap-0.5 bg-cream leading-none text-gold shadow-raised transition active:scale-95 active:rotate-0 [clip-path:polygon(0_0,100%_0,100%_74%,74%_100%,0_100%)]"
           >
-            <Icon name="cart" className="size-5" />
+            {/* The folded corner, where the note is cut. */}
+            <span className="absolute right-0 bottom-0 size-3.5 bg-gold/45 [clip-path:polygon(0_0,100%_0,0_100%)]" />
+            <span className="absolute inset-x-0 top-0 h-1.5 bg-gold/25" />
+            <Icon name="cart" className="mt-1 size-4.5" />
             {shoppingCount > 0 && (
-              <span className="text-[15px] font-bold tabular-nums">{String(shoppingCount)}</span>
+              <span className="font-display text-[17px] font-bold tabular-nums">
+                {String(shoppingCount)}
+              </span>
             )}
           </Link>
         )}
