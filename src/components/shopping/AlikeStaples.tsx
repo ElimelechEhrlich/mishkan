@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { pairKey } from '../../lib/stapleSimilarity';
@@ -87,33 +88,51 @@ export function AlikeStaples({
   }
 
   const ran = smartPairs !== null;
+  const [explaining, setExplaining] = useState(false);
 
   return (
-    <section className="overflow-hidden rounded-2xl bg-surface shadow-card">
-      <button
-        type="button"
-        disabled={checking}
-        onClick={onSmartCheck}
-        className="flex min-h-12 w-full items-center gap-2 px-3.5 text-start transition active:bg-press disabled:opacity-100"
-      >
-        <Icon name="chat" className="size-4.5 text-primary" />
-        <span className="flex-1 text-[15px] font-semibold">
-          {checking
-            ? labels.staples.smartChecking
-            : ran
-              ? labels.staples.smartAgain
-              : labels.staples.smartCheck}
-        </span>
-        {!checking && <Icon name="back" className="size-4 text-faint" />}
-      </button>
-      {/* What the check is doing now, one line at a time. */}
-      {checking && (
-        <div className="border-t border-line px-3.5 py-2.5">
-          <SmartCheckLog steps={steps} />
-        </div>
+    <div className="flex flex-col gap-3">
+      {/* One button; while it runs, it says what the check is doing now. A "?" beside it tells
+          what it does. */}
+      <div className="flex items-center justify-center gap-2">
+        <button
+          type="button"
+          disabled={checking}
+          onClick={onSmartCheck}
+          className={`flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold shadow-halo transition active:scale-[0.97] ${
+            checking ? 'w-full max-w-sm bg-surface text-primary' : 'bg-primary-soft text-primary'
+          }`}
+        >
+          {checking ? (
+            <SmartCheckLog steps={steps} />
+          ) : (
+            <>
+              <Icon name="sparkle" className="size-5" />
+              {ran ? labels.staples.smartAgain : labels.staples.smartCheck}
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          aria-label={labels.staples.smartHelp}
+          aria-expanded={explaining}
+          onClick={() => {
+            setExplaining(!explaining);
+          }}
+          className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[15px] font-bold transition active:scale-90 ${
+            explaining ? 'bg-primary text-white' : 'bg-surface text-muted shadow-card'
+          }`}
+        >
+          ?
+        </button>
+      </div>
+      {explaining && (
+        <p className="animate-fade-in rounded-2xl bg-surface px-3.5 py-3 text-[13px] leading-relaxed text-muted shadow-card">
+          {labels.staples.smartExplain}
+        </p>
       )}
       {ran && !checking && (
-        <div className="flex flex-col border-t border-line">
+        <section className="flex animate-fade-in flex-col overflow-hidden rounded-2xl bg-surface shadow-card">
           {pairs.length > 0 && (
             <>
               <p className="px-3.5 pt-2.5 text-[13px] text-muted">{labels.staples.alikeHint}</p>
@@ -131,8 +150,8 @@ export function AlikeStaples({
           {count === 0 && (
             <p className="px-3.5 py-3 text-[13px] text-muted">{labels.staples.smartNone}</p>
           )}
-        </div>
+        </section>
       )}
-    </section>
+    </div>
   );
 }

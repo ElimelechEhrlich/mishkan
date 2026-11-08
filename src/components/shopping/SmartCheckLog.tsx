@@ -44,7 +44,7 @@ export function SmartCheckLog({ steps }: SmartCheckLogProps): ReactElement {
     <p
       key={steps.length}
       aria-live="polite"
-      className="flex min-h-6 animate-fade-in items-center gap-2 text-[13px] text-muted"
+      className="flex min-h-6 min-w-0 animate-fade-in items-center gap-2 text-[13px] font-normal text-muted"
     >
       <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-gold" />
       {step === undefined ? (
