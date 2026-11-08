@@ -14,7 +14,9 @@ import {
   renameStaple,
   unmergeStaple,
 } from '../services/stapleService';
-import type { SameProduct } from '../services/stapleService';
+import type { SameProduct, SmartCheckStep } from '../services/stapleService';
+
+export type { SmartCheckStep };
 import type { ShoppingStaple, StapleDetail, StapleMerge } from '../types/domain';
 
 export type UseStaples = {
@@ -36,6 +38,8 @@ export type UseStaples = {
   /** The smart check's answer: groups of names that are one product; null before it ran. */
   readonly sameProducts: readonly SameProduct[] | null;
   readonly checking: boolean;
+  /** What the smart check did so far, as it said it, step by step. */
+  readonly steps: readonly SmartCheckStep[];
   /** Asks the assistant which names are one product in other words. */
   readonly checkSameProducts: () => void;
   /** Two names are not the same product. */
@@ -51,6 +55,7 @@ export function useStaples(): UseStaples {
   const [details, setDetails] = useState<ReadonlyMap<string, readonly StapleDetail[]>>(new Map());
   const [sameProducts, setSameProducts] = useState<readonly SameProduct[] | null>(null);
   const [checking, setChecking] = useState(false);
+  const [steps, setSteps] = useState<readonly SmartCheckStep[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
@@ -112,10 +117,14 @@ export function useStaples(): UseStaples {
     },
     sameProducts,
     checking,
+    steps,
     checkSameProducts: (): void => {
       setChecking(true);
       setError(null);
-      findSameProducts()
+      setSteps([]);
+      findSameProducts((step) => {
+        setSteps((current) => [...current, step]);
+      })
         .then(setSameProducts)
         .catch((caught: unknown) => {
           setError(toMessage(caught));

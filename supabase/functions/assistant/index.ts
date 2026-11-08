@@ -1460,21 +1460,79 @@ function quotaReply(seconds: number | null): string {
   return `הגעתי למכסת השיחות היומית. אפשר לחזור לכתוב ${day} בסביבות ${hour}.`;
 }
 
+/** A JSON string's inside as plain text ("ח\\"ב" is ח"ב). */
+function unquote(inside: string | undefined): string {
+  try {
+    const plain: unknown = JSON.parse(`"${inside ?? ''}"`);
+    return typeof plain === 'string' ? plain : '';
+  } catch {
+    return inside ?? '';
+  }
+}
+
+/** What a check says as it goes: its steps, and the model's answer as it is written. */
+type Live = {
+  readonly onStep: (step: Row) => void;
+  readonly onText: (soFar: string) => void;
+};
+
+/** The text of a streamed answer (server-sent events), passed on as it grows. */
+async function readStream(response: Response, onText: (soFar: string) => void): Promise<string> {
+  const reader = response.body?.getReader();
+  if (reader === undefined) {
+    return '';
+  }
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let text = '';
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+    for (const line of lines) {
+      if (!line.startsWith('data:')) {
+        continue;
+      }
+      try {
+        const chunk = JSON.parse(line.slice(5)) as GeminiAnswer;
+        for (const part of chunk.candidates?.[0]?.content?.parts ?? []) {
+          if (typeof part.text === 'string' && part.thought !== true) {
+            text += part.text;
+          }
+        }
+        onText(text);
+      } catch {
+        // A line cut short: the rest comes with the next one.
+      }
+    }
+  }
+  return text;
+}
+
 /**
  * One question to the model with no tools, answered as JSON: a busy model is asked again
  * after a moment, and then the fallback model, as the conversation does.
  */
-async function askPlain(prompt: string): Promise<GeminiAnswer> {
+async function askPlain(prompt: string, live?: Live): Promise<GeminiAnswer> {
   const fallback = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? defaultFallbackModel;
   const models = [
     Deno.env.get('GEMINI_MODEL') ?? defaultModel,
     ...(fallback === 'none' ? [] : [fallback]),
   ];
   let last: Error = new Error('המודל לא ענה. אפשר לנסות שוב בעוד דקה.');
-  for (const model of models) {
+  for (const [index, model] of models.entries()) {
+    if (index > 0) {
+      live?.onStep({ step: 'fallback' });
+    }
     for (let attempt = 0; ; attempt += 1) {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:${
+          live === undefined ? 'generateContent' : 'streamGenerateContent?alt=sse'
+        }`,
         {
           method: 'POST',
           headers: {
@@ -1487,12 +1545,19 @@ async function askPlain(prompt: string): Promise<GeminiAnswer> {
           }),
         },
       );
-      const answer = (await response.json().catch(() => ({}))) as GeminiAnswer;
+      if (response.ok && live !== undefined) {
+        const written = await readStream(response, live.onText);
+        return { candidates: [{ content: { role: 'model', parts: [{ text: written }] } }] };
+      }
+      const said: unknown = await response.json().catch(() => ({}));
+      // A streamed question answers its error as a list of one.
+      const answer = (Array.isArray(said) ? said[0] : said) as GeminiAnswer;
       if (response.ok) {
         return answer;
       }
       if (response.status === 429) {
         last = new QuotaUsedUp(retryDelayOf(answer));
+        live?.onStep({ step: 'quota' });
         break;
       }
       const wait = busyWaits[attempt];
@@ -1503,6 +1568,7 @@ async function askPlain(prompt: string): Promise<GeminiAnswer> {
           : new Error(answer.error?.message ?? `model error ${String(response.status)}`);
         break;
       }
+      live?.onStep({ step: 'busy', attempt: attempt + 2 });
       await new Promise((resolve) => setTimeout(resolve, wait));
     }
   }
@@ -1518,6 +1584,7 @@ async function askPlain(prompt: string): Promise<GeminiAnswer> {
  */
 async function sameProducts(
   db: SupabaseClient,
+  onStep?: (step: Row) => void,
 ): Promise<{ names: string[]; why: string }[]> {
   const [{ data }, { data: apartRows }, { data: mergeRows }] = await Promise.all([
     db.from('shopping_staples').select('title').order('title'),
@@ -1525,6 +1592,7 @@ async function sameProducts(
     db.from('shopping_staple_merges').select('kept_title, merged_title, how').limit(200),
   ]);
   const names = ((data ?? []) as Row[]).map((row) => String(row.title));
+  onStep?.({ step: 'read', count: names.length });
   if (names.length < 2) {
     return [];
   }
@@ -1540,7 +1608,27 @@ ${merged.length === 0 ? '' : `This family already said these are the same: "${me
 Answer only JSON: {"items": [{"name": "...", "generic": "..."}, ...]}, one item for every name, the name written exactly as in the list.
 
 ${names.map((name) => `- ${name}`).join('\n')}`;
-  const answer = await askPlain(prompt);
+  onStep?.({ step: 'known', merged: merged.length, apart: apart.length });
+  onStep?.({ step: 'asking', count: names.length });
+  // Each name and its generic product, said as soon as the model writes it.
+  let told = 0;
+  const pairPattern =
+    /\{\s*"name"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"generic"\s*:\s*"((?:[^"\\]|\\.)*)"\s*\}/g;
+  const answer = await askPlain(
+    prompt,
+    onStep === undefined
+      ? undefined
+      : {
+          onStep,
+          onText: (soFar) => {
+            const found = [...soFar.matchAll(pairPattern)];
+            for (const match of found.slice(told)) {
+              onStep({ step: 'generic', name: unquote(match[1]), generic: unquote(match[2]) });
+            }
+            told = Math.max(told, found.length);
+          },
+        },
+  );
   const textOut = (answer.candidates?.[0]?.content?.parts ?? [])
     .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
     .join('');
@@ -1567,7 +1655,9 @@ ${names.map((name) => `- ${name}`).join('\n')}`;
     }
     byGeneric.set(key, group);
   }
-  return [...byGeneric.values()].filter((group) => group.names.length >= 2);
+  const groups = [...byGeneric.values()].filter((group) => group.names.length >= 2);
+  onStep?.({ step: 'grouped', products: byGeneric.size, groups: groups.length });
+  return groups;
 }
 
 /** What goes with a voice message: listen to how it is said, not only to the words. */
@@ -1606,6 +1696,7 @@ Deno.serve(async (request) => {
       media_path?: unknown;
       media_seconds?: unknown;
       action?: unknown;
+      stream?: unknown;
     };
     // The smart check of the fixed shopping list: which names are one product.
     if (body.action === 'similar_staples') {
@@ -1616,6 +1707,33 @@ Deno.serve(async (request) => {
         .filter((id) => id !== '');
       if (!allowed.includes(house.householdId)) {
         return json({ error: 'not enabled for this household' }, 403);
+      }
+      // Asked to tell as it goes: one JSON line per step, then the groups (or the error).
+      if (body.stream === true) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            const send = (line: Row): void => {
+              controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+            };
+            try {
+              send({ groups: await sameProducts(db, send) });
+            } catch (caught) {
+              send({
+                error:
+                  caught instanceof QuotaUsedUp
+                    ? quotaReply(caught.seconds)
+                    : caught instanceof Error
+                      ? caught.message
+                      : 'error',
+              });
+            }
+            controller.close();
+          },
+        });
+        return new Response(stream, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/x-ndjson' },
+        });
       }
       try {
         return json({ groups: await sameProducts(db) });

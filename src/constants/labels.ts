@@ -1568,6 +1568,23 @@ export const labels = {
     smartHint: 'משכן עובר על כל הרשימה ומחפש מוצרים שנכתבו במילים אחרות, כמו "פיירי" ו"נוזל כלים".',
     smartNone: 'הבדיקה החכמה לא מצאה עוד כפולים.',
     smartFound: 'מהבדיקה החכמה',
+    smartSteps: {
+      read: (count: number) => `קורא את הרשימה הקבועה: ${String(count)} שמות`,
+      known: (merged: number, apart: number) =>
+        `לוקח בחשבון מה שכבר החלטתם: ${String(merged)} איחודים, ${String(apart)} "לא אותו מוצר"`,
+      asking: (count: number) => `שואל את המודל מה כל אחד מ־${String(count)} השמות במילים פשוטות…`,
+      busy: (attempt: number) => `המודל עמוס, מנסה שוב (ניסיון ${String(attempt)})…`,
+      fallback: 'עובר למודל הגיבוי…',
+      quota: 'נגמרה המכסה של המודל לעכשיו',
+      answered: (done: number, count: number) =>
+        `המודל ענה על ${String(done)} מתוך ${String(count)}`,
+      same: 'כבר כללי',
+      grouped: (products: number, groups: number) =>
+        groups === 0
+          ? `קיבץ ל־${String(products)} מוצרים: אין כפולים`
+          : `קיבץ ל־${String(products)} מוצרים: ${String(groups)} עם יותר משם אחד`,
+      title: 'מה הבדיקה עושה',
+    },
     bothAre: (what: string) => `שניהם: ${what}`,
     mergesTitle: (count: number) => `מה אוחד (${String(count)})`,
     mergesHint: 'אם משהו התאחד בטעות, "ביטול" מחזיר אותו לרשימה כמו שהיה.',

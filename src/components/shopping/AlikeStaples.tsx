@@ -5,6 +5,8 @@ import { pairKey } from '../../lib/stapleSimilarity';
 import type { ShoppingStaple } from '../../types/domain';
 import { Chip } from '../ui/Chip';
 import { Icon } from '../ui/Icon';
+import { SmartCheckLog } from './SmartCheckLog';
+import type { SmartCheckStep } from '../../hooks/useStaples';
 
 type Pair = readonly [ShoppingStaple, ShoppingStaple];
 
@@ -16,6 +18,8 @@ type AlikeStaplesProps = {
   /** What the smart check says two names both are ("נוזל כלים"); null when it said nothing. */
   readonly smartWhy: (a: string, b: string) => string | null;
   readonly checking: boolean;
+  /** What the smart check did, step by step, shown as it goes. */
+  readonly steps: readonly SmartCheckStep[];
   readonly onSmartCheck: () => void;
   /** The two are one product: the kept name stays, with both counts. */
   readonly onMerge: (keepId: string, dropId: string, how: 'manual' | 'smart') => void;
@@ -33,6 +37,7 @@ export function AlikeStaples({
   smartPairs,
   smartWhy,
   checking,
+  steps,
   onSmartCheck,
   onMerge,
   onApart,
@@ -124,6 +129,7 @@ export function AlikeStaples({
                 <p className="text-[13px] text-muted">{labels.staples.smartNone}</p>
               )
             )}
+            {steps.length > 0 && <SmartCheckLog steps={steps} checking={checking} />}
             <button
               type="button"
               disabled={checking}

@@ -62,6 +62,7 @@ export function ShoppingStaplesPage(): ReactElement {
               )?.why ?? null
             }
             checking={staples.checking}
+            steps={staples.steps}
             onSmartCheck={staples.checkSameProducts}
             onMerge={staples.merge}
             onApart={staples.markApart}
