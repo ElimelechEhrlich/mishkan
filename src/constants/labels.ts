@@ -1559,14 +1559,13 @@ export const labels = {
     remove: 'הסרה מהרשימה הקבועה',
     confirmRemove: 'לחיצה נוספת להסרה',
     empty: 'הרשימה הקבועה מתמלאת לבד מכל פריט "סופר" שמוסיפים לרשימת הקניות.',
-    alikeTitle: (count: number) => `אולי כפולים (${String(count)})`,
     alikeHint: 'שמות שנראים כמו אותו מוצר. בוחרים איזה שם להשאיר, או "לא אותו מוצר".',
     keep: (name: string) => `להשאיר "${name}"`,
     notSame: 'לא אותו מוצר',
-    smartCheck: 'בדיקה חכמה',
+    smartCheck: 'בדיקת כפולים חכמה',
+    smartAgain: 'לבדוק כפולים שוב',
     smartChecking: 'בודק…',
-    smartHint: 'משכן עובר על כל הרשימה ומחפש מוצרים שנכתבו במילים אחרות, כמו "פיירי" ו"נוזל כלים".',
-    smartNone: 'הבדיקה החכמה לא מצאה עוד כפולים.',
+    smartNone: 'לא נמצאו כפולים.',
     smartFound: 'מהבדיקה החכמה',
     smartSteps: {
       read: (count: number) => `קורא את הרשימה הקבועה: ${String(count)} שמות`,
@@ -1576,14 +1575,11 @@ export const labels = {
       busy: (attempt: number) => `המודל עמוס, מנסה שוב (ניסיון ${String(attempt)})…`,
       fallback: 'עובר למודל הגיבוי…',
       quota: 'נגמרה המכסה של המודל לעכשיו',
-      answered: (done: number, count: number) =>
-        `המודל ענה על ${String(done)} מתוך ${String(count)}`,
-      same: 'כבר כללי',
+      counted: (done: number, count: number) => `${String(done)}/${String(count)}`,
       grouped: (products: number, groups: number) =>
         groups === 0
           ? `קיבץ ל־${String(products)} מוצרים: אין כפולים`
           : `קיבץ ל־${String(products)} מוצרים: ${String(groups)} עם יותר משם אחד`,
-      title: 'מה הבדיקה עושה',
     },
     bothAre: (what: string) => `שניהם: ${what}`,
     mergesTitle: (count: number) => `מה אוחד (${String(count)})`,

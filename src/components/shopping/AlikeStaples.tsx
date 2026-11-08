@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { pairKey } from '../../lib/stapleSimilarity';
@@ -42,7 +41,6 @@ export function AlikeStaples({
   onMerge,
   onApart,
 }: AlikeStaplesProps): ReactElement {
-  const [open, setOpen] = useState(false);
   const count = pairs.length + (smartPairs?.length ?? 0);
 
   function pairRow([a, b]: Pair, how: 'manual' | 'smart'): ReactElement {
@@ -88,24 +86,33 @@ export function AlikeStaples({
     );
   }
 
+  const ran = smartPairs !== null;
+
   return (
     <section className="overflow-hidden rounded-2xl bg-surface shadow-card">
       <button
         type="button"
-        aria-expanded={open}
-        onClick={() => {
-          setOpen(!open);
-        }}
-        className="flex min-h-12 w-full items-center gap-2 px-3.5 text-start"
+        disabled={checking}
+        onClick={onSmartCheck}
+        className="flex min-h-12 w-full items-center gap-2 px-3.5 text-start transition active:bg-press disabled:opacity-100"
       >
-        <Icon name="list" className="size-4.5 text-primary" />
-        <span className="flex-1 text-[15px] font-semibold">{labels.staples.alikeTitle(count)}</span>
-        <Icon
-          name="down"
-          className={`size-4 text-faint transition-transform ${open ? 'rotate-180' : ''}`}
-        />
+        <Icon name="chat" className="size-4.5 text-primary" />
+        <span className="flex-1 text-[15px] font-semibold">
+          {checking
+            ? labels.staples.smartChecking
+            : ran
+              ? labels.staples.smartAgain
+              : labels.staples.smartCheck}
+        </span>
+        {!checking && <Icon name="back" className="size-4 text-faint" />}
       </button>
-      {open && (
+      {/* What the check is doing now, one line at a time. */}
+      {checking && (
+        <div className="border-t border-line px-3.5 py-2.5">
+          <SmartCheckLog steps={steps} />
+        </div>
+      )}
+      {ran && !checking && (
         <div className="flex flex-col border-t border-line">
           {pairs.length > 0 && (
             <>
@@ -113,33 +120,17 @@ export function AlikeStaples({
               <ul className="flex flex-col">{pairs.map((pair) => pairRow(pair, 'manual'))}</ul>
             </>
           )}
-          {smartPairs !== null && smartPairs.length > 0 && (
+          {smartPairs.length > 0 && (
             <>
-              <p className="border-t border-line bg-paper px-3.5 py-1.5 text-xs font-bold text-muted">
+              <p className="border-t border-line bg-paper px-3.5 py-1.5 text-xs font-bold text-muted first:border-t-0">
                 {labels.staples.smartFound}
               </p>
               <ul className="flex flex-col">{smartPairs.map((pair) => pairRow(pair, 'smart'))}</ul>
             </>
           )}
-          <div className="flex flex-col gap-2 border-t border-line px-3.5 py-3">
-            {smartPairs === null ? (
-              <p className="text-[13px] text-muted">{labels.staples.smartHint}</p>
-            ) : (
-              smartPairs.length === 0 && (
-                <p className="text-[13px] text-muted">{labels.staples.smartNone}</p>
-              )
-            )}
-            {steps.length > 0 && <SmartCheckLog steps={steps} checking={checking} />}
-            <button
-              type="button"
-              disabled={checking}
-              onClick={onSmartCheck}
-              className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full bg-primary-soft px-4 text-[14px] font-semibold text-primary transition active:scale-[0.97] disabled:opacity-60"
-            >
-              <Icon name="chat" className="size-4" />
-              {checking ? labels.staples.smartChecking : labels.staples.smartCheck}
-            </button>
-          </div>
+          {count === 0 && (
+            <p className="px-3.5 py-3 text-[13px] text-muted">{labels.staples.smartNone}</p>
+          )}
         </div>
       )}
     </section>
