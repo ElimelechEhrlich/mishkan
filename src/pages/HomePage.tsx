@@ -33,7 +33,7 @@ export function HomePage(): ReactElement {
   const loose = useLooseItems(timeline, items.items, items.updateItem, items.completeItem);
   const other = useOtherItems(items.assigned, items.steps);
   const adder = useAddOpener();
-  const mover = useMoveItems();
+  const mover = useMoveItems(items);
 
   return (
     <PageShell

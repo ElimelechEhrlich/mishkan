@@ -78,6 +78,11 @@ export type UseItems = {
   readonly loading: boolean;
   readonly error: string | null;
   readonly reload: () => void;
+  /**
+   * Shows changes at once, before they are saved elsewhere (such as moving several items);
+   * the returned function ends the preview and reloads, to show what was saved.
+   */
+  readonly preview: (changes: ReadonlyMap<string, ItemUpdate>) => () => void;
   readonly addItem: (newItem: NewItem) => Promise<boolean>;
   readonly addMissingItem: (newItem: NewMissingItem) => Promise<boolean>;
   readonly addDebt: (newDebt: NewDebt) => Promise<boolean>;
@@ -258,6 +263,32 @@ export function useItems(): UseItems {
     [run],
   );
 
+  const handlePreview = useCallback(
+    (changes: ReadonlyMap<string, ItemUpdate>): (() => void) => {
+      const shown = new Map<string, ItemUpdate>();
+      for (const [itemId, change] of changes) {
+        const merged = { ...pending.current.get(itemId), ...change };
+        pending.current.set(itemId, merged);
+        shown.set(itemId, merged);
+      }
+      setState((previous) => ({
+        ...previous,
+        items: withPending(previous.items, pending.current),
+        steps: withPending(previous.steps, pending.current),
+      }));
+      // Called once the changes were saved (or failed): what is saved shows from now on.
+      return (): void => {
+        for (const [itemId, merged] of shown) {
+          if (pending.current.get(itemId) === merged) {
+            pending.current.delete(itemId);
+          }
+        }
+        void load();
+      };
+    },
+    [load],
+  );
+
   // The change shows the moment it is made; if saving it fails, it is taken back and said so.
   const handleUpdate = useCallback(
     (itemId: string, changes: ItemUpdate): void => {
@@ -416,6 +447,7 @@ export function useItems(): UseItems {
     loading: state.loading,
     error: state.error,
     reload,
+    preview: handlePreview,
     addItem: handleAdd,
     addMissingItem: handleAddMissing,
     addDebt: handleAddDebt,
