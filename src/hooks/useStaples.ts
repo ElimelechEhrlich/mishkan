@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { titleKey } from '../lib/departments';
+import { readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
 import { onItemsChanged } from '../lib/itemChanges';
 import {
@@ -15,9 +16,43 @@ import {
   unmergeStaple,
 } from '../services/stapleService';
 import type { SameProduct, SmartCheckStep } from '../services/stapleService';
+import type { ShoppingStaple, StapleDetail, StapleMerge } from '../types/domain';
+import { useHouseholdContext } from './useRouteContext';
 
 export type { SmartCheckStep };
-import type { ShoppingStaple, StapleDetail, StapleMerge } from '../types/domain';
+
+/** What the page shows at once, kept on the device: the lists as loaded last time. */
+type Snapshot = {
+  readonly staples: ShoppingStaple[];
+  readonly apart: string[];
+  readonly merges: StapleMerge[];
+  /** The details by name key, as pairs (a map does not keep in storage). */
+  readonly details: [string, StapleDetail[]][];
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSnapshot(value: unknown): value is Snapshot {
+  return (
+    isObject(value) &&
+    Array.isArray(value['staples']) &&
+    value['staples'].every((row: unknown) => isObject(row) && typeof row['id'] === 'string') &&
+    Array.isArray(value['apart']) &&
+    value['apart'].every((key: unknown) => typeof key === 'string') &&
+    Array.isArray(value['merges']) &&
+    value['merges'].every((row: unknown) => isObject(row) && typeof row['id'] === 'string') &&
+    Array.isArray(value['details']) &&
+    value['details'].every(
+      (pair: unknown) =>
+        Array.isArray(pair) &&
+        typeof pair[0] === 'string' &&
+        Array.isArray(pair[1]) &&
+        pair[1].every((row: unknown) => isObject(row) && typeof row['details'] === 'string'),
+    )
+  );
+}
 
 export type UseStaples = {
   /** The fixed shopping list, the most added first. */
@@ -49,10 +84,16 @@ export type UseStaples = {
 
 /** The fixed shopping list; it grows by itself as items are added, so it reloads with them. */
 export function useStaples(): UseStaples {
-  const [staples, setStaples] = useState<readonly ShoppingStaple[] | null>(null);
-  const [apart, setApart] = useState<ReadonlySet<string>>(new Set());
-  const [merges, setMerges] = useState<readonly StapleMerge[]>([]);
-  const [details, setDetails] = useState<ReadonlyMap<string, readonly StapleDetail[]>>(new Map());
+  const { member } = useHouseholdContext();
+  const cacheKey = `staples.${member.household_id}`;
+  // What was loaded last time shows at once; the fresh lists replace it when they arrive.
+  const [cached] = useState(() => readCache(cacheKey, isSnapshot));
+  const [staples, setStaples] = useState<readonly ShoppingStaple[] | null>(cached?.staples ?? null);
+  const [apart, setApart] = useState<ReadonlySet<string>>(new Set(cached?.apart ?? []));
+  const [merges, setMerges] = useState<readonly StapleMerge[]>(cached?.merges ?? []);
+  const [details, setDetails] = useState<ReadonlyMap<string, readonly StapleDetail[]>>(
+    new Map(cached?.details ?? []),
+  );
   const [sameProducts, setSameProducts] = useState<readonly SameProduct[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [steps, setSteps] = useState<readonly SmartCheckStep[]>([]);
@@ -71,10 +112,16 @@ export function useStaples(): UseStaples {
       setApart(marked);
       setMerges(merged);
       setError(null);
+      writeCache(cacheKey, {
+        staples: loaded,
+        apart: [...marked],
+        merges: merged,
+        details: [...used],
+      });
     } catch (caught: unknown) {
       setError(toMessage(caught));
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => {
     void load();

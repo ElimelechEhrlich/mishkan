@@ -1,5 +1,6 @@
 import { hebrewYearlyDates } from '../lib/hebrewDate';
 import { todayIso } from '../lib/itemRules';
+import { shareable } from '../lib/shared';
 import { supabase } from '../lib/supabase';
 import { allPages } from './pages';
 import type {
@@ -11,18 +12,24 @@ import type {
 } from '../types/domain';
 
 /** How every item the parent can see repeats, including settings kept while another time is chosen. */
-export async function listRepeats(): Promise<ItemRepeat[]> {
+async function listRepeatsNow(): Promise<ItemRepeat[]> {
   return allPages((from, to) =>
     supabase.from('item_repeats').select('*').order('item_id').range(from, to),
   );
 }
 
+/** listRepeats, sent once while several ask at the same moment. */
+export const listRepeats = shareable(listRepeatsNow);
+
 /** How many occurrences each item has had, done and gone by, for a goal's progress. */
-export async function listOccurrenceCounts(): Promise<OccurrenceCount[]> {
+async function listOccurrenceCountsNow(): Promise<OccurrenceCount[]> {
   return allPages((from, to) =>
     supabase.from('occurrence_counts').select('*').order('item_id').range(from, to),
   );
 }
+
+/** listOccurrenceCounts, sent once while several ask at the same moment. */
+export const listOccurrenceCounts = shareable(listOccurrenceCountsNow);
 
 /** Every occurrence of an item, newest first. */
 export async function listItemOccurrences(itemId: string): Promise<Occurrence[]> {

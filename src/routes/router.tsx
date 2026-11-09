@@ -1,62 +1,154 @@
+import type { ComponentType } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
-import { AppointmentsPage } from '../pages/AppointmentsPage';
-import { DebtsPage } from '../pages/DebtsPage';
-import { DomainsPage } from '../pages/DomainsPage';
-import { DonePage } from '../pages/DonePage';
-import { EntityPage } from '../pages/EntityPage';
-import { GoalsPage } from '../pages/GoalsPage';
-import { TodayPage } from '../pages/TodayPage';
 import { HomePage } from '../pages/HomePage';
-import { IncompletePage } from '../pages/IncompletePage';
-import { ItemPage } from '../pages/ItemPage';
 import { LoginPage } from '../pages/LoginPage';
-import { SearchPage } from '../pages/SearchPage';
-import { SignUpPage } from '../pages/SignUpPage';
-import { OnboardingPage } from '../pages/OnboardingPage';
-import { NotesPage } from '../pages/NotesPage';
-import { OpenItemsPage } from '../pages/OpenItemsPage';
-import { SettingsPage } from '../pages/SettingsPage';
-import { ShoppingPage } from '../pages/ShoppingPage';
-import { AssistantPage } from '../pages/AssistantPage';
-import { GoogleCalendarPage } from '../pages/GoogleCalendarPage';
-import { ShoppingDepartmentsPage } from '../pages/ShoppingDepartmentsPage';
-import { ShoppingRunPage } from '../pages/ShoppingRunPage';
-import { ShoppingStaplesPage } from '../pages/ShoppingStaplesPage';
 import { RequireAuth } from './RequireAuth';
 import { RequireHousehold } from './RequireHousehold';
 import { StartRoute } from './StartRoute';
 
+/** A page whose code loads when it is first opened. */
+type LazyPage = { readonly Component: ComponentType };
+
+/**
+ * Each page's code loads when it is first opened (and is kept by the service worker), so the
+ * app starts with the code of its first screen only. Home and sign-in come with the start.
+ */
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
-  { path: '/signup', element: <SignUpPage /> },
+  {
+    path: '/signup',
+    lazy: async (): Promise<LazyPage> => ({
+      Component: (await import('../pages/SignUpPage')).SignUpPage,
+    }),
+  },
   {
     element: <RequireAuth />,
     children: [
-      { path: '/onboarding', element: <OnboardingPage /> },
+      {
+        path: '/onboarding',
+        lazy: async (): Promise<LazyPage> => ({
+          Component: (await import('../pages/OnboardingPage')).OnboardingPage,
+        }),
+      },
       {
         element: <RequireHousehold />,
         children: [
           { path: '/', element: <StartRoute /> },
-          { path: '/tasks', element: <OpenItemsPage /> },
-          { path: '/appointments', element: <AppointmentsPage /> },
-          { path: '/goals', element: <GoalsPage /> },
-          { path: '/notes', element: <NotesPage /> },
-          { path: '/shopping', element: <ShoppingPage /> },
-          { path: '/shopping/run/:runId', element: <ShoppingRunPage /> },
-          { path: '/shopping/departments', element: <ShoppingDepartmentsPage /> },
-          { path: '/shopping/staples', element: <ShoppingStaplesPage /> },
-          { path: '/debts', element: <DebtsPage /> },
-          { path: '/incomplete', element: <IncompletePage /> },
-          { path: '/today', element: <TodayPage /> },
+          {
+            path: '/tasks',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/OpenItemsPage')).OpenItemsPage,
+            }),
+          },
+          {
+            path: '/appointments',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/AppointmentsPage')).AppointmentsPage,
+            }),
+          },
+          {
+            path: '/goals',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/GoalsPage')).GoalsPage,
+            }),
+          },
+          {
+            path: '/notes',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/NotesPage')).NotesPage,
+            }),
+          },
+          {
+            path: '/shopping',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingPage')).ShoppingPage,
+            }),
+          },
+          {
+            path: '/shopping/run/:runId',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingRunPage')).ShoppingRunPage,
+            }),
+          },
+          {
+            path: '/shopping/departments',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingDepartmentsPage')).ShoppingDepartmentsPage,
+            }),
+          },
+          {
+            path: '/shopping/staples',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingStaplesPage')).ShoppingStaplesPage,
+            }),
+          },
+          {
+            path: '/debts',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/DebtsPage')).DebtsPage,
+            }),
+          },
+          {
+            path: '/incomplete',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/IncompletePage')).IncompletePage,
+            }),
+          },
+          {
+            path: '/today',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/TodayPage')).TodayPage,
+            }),
+          },
           { path: '/home', element: <HomePage /> },
-          { path: '/item/:itemId', element: <ItemPage /> },
-          { path: '/entity/:entityId', element: <EntityPage /> },
-          { path: '/domains', element: <DomainsPage /> },
-          { path: '/settings', element: <SettingsPage /> },
-          { path: '/done', element: <DonePage /> },
-          { path: '/search', element: <SearchPage /> },
-          { path: '/assistant', element: <AssistantPage /> },
-          { path: '/google-calendar', element: <GoogleCalendarPage /> },
+          {
+            path: '/item/:itemId',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ItemPage')).ItemPage,
+            }),
+          },
+          {
+            path: '/entity/:entityId',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/EntityPage')).EntityPage,
+            }),
+          },
+          {
+            path: '/domains',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/DomainsPage')).DomainsPage,
+            }),
+          },
+          {
+            path: '/settings',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/SettingsPage')).SettingsPage,
+            }),
+          },
+          {
+            path: '/done',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/DonePage')).DonePage,
+            }),
+          },
+          {
+            path: '/search',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/SearchPage')).SearchPage,
+            }),
+          },
+          {
+            path: '/assistant',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/AssistantPage')).AssistantPage,
+            }),
+          },
+          {
+            path: '/google-calendar',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/GoogleCalendarPage')).GoogleCalendarPage,
+            }),
+          },
         ],
       },
     ],

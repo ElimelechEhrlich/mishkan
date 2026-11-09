@@ -1,13 +1,17 @@
+import { shareable } from '../lib/shared';
 import { supabase } from '../lib/supabase';
 import { allPages } from './pages';
 import type { DebtChanges, DebtDetails, NewDebt } from '../types/domain';
 import { deleteItem } from './itemService';
 
-export async function listDebtDetails(): Promise<DebtDetails[]> {
+async function listDebtDetailsNow(): Promise<DebtDetails[]> {
   return allPages((from, to) =>
     supabase.from('debt_details').select('*').order('item_id').range(from, to),
   );
 }
+
+/** listDebtDetails, sent once while several ask at the same moment. */
+export const listDebtDetails = shareable(listDebtDetailsNow);
 
 /**
  * A debt is an item of kind `debt` plus one row of details.

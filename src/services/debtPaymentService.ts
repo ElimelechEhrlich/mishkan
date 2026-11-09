@@ -1,14 +1,18 @@
+import { shareable } from '../lib/shared';
 import { supabase } from '../lib/supabase';
 import type { DebtPayment } from '../types/domain';
 
 /** How much was paid of each debt, by item id. */
-export async function listDebtPaid(): Promise<Map<string, number>> {
+async function listDebtPaidNow(): Promise<Map<string, number>> {
   const { data, error } = await supabase.from('debt_paid').select('*');
   if (error !== null) {
     throw new Error(error.message);
   }
   return new Map(data.map((row) => [row.item_id, row.paid]));
 }
+
+/** listDebtPaid, sent once while several ask at the same moment. */
+export const listDebtPaid = shareable(listDebtPaidNow);
 
 /** A debt's payments, newest first. */
 export async function listDebtPayments(itemId: string): Promise<DebtPayment[]> {

@@ -1,10 +1,36 @@
 import { useEffect, useMemo, useState } from 'react';
+import { readCache, writeCache } from '../lib/cache';
 import { toMessage } from '../lib/errors';
 import { onItemsChanged } from '../lib/itemChanges';
 import { remainingOf } from '../lib/debts';
 import { listDebtPaid } from '../services/debtPaymentService';
 import { listDebtDetails } from '../services/debtService';
 import type { Debt, DebtDetails, DebtDirection, Item } from '../types/domain';
+import { useHouseholdContext } from './useRouteContext';
+
+/** The debts as loaded last time, kept on the device to show at once. */
+type Snapshot = {
+  readonly details: DebtDetails[];
+  /** How much was paid of each debt, as pairs (a map does not keep in storage). */
+  readonly paid: [string, number][];
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSnapshot(value: unknown): value is Snapshot {
+  return (
+    isObject(value) &&
+    Array.isArray(value['details']) &&
+    value['details'].every((row: unknown) => isObject(row) && typeof row['item_id'] === 'string') &&
+    Array.isArray(value['paid']) &&
+    value['paid'].every(
+      (pair: unknown) =>
+        Array.isArray(pair) && typeof pair[0] === 'string' && typeof pair[1] === 'number',
+    )
+  );
+}
 
 type DebtsState = {
   readonly details: readonly DebtDetails[];
@@ -28,11 +54,17 @@ export type UseDebts = {
 
 /** Open debts, built from the open items of kind `debt` and their details. */
 export function useDebts(items: readonly Item[]): UseDebts {
+  const { member } = useHouseholdContext();
+  const cacheKey = `debts.${member.id}`;
   const [direction, setDirection] = useState<DebtDirection>('we_owe');
-  const [state, setState] = useState<DebtsState>({
-    details: [],
-    paid: new Map(),
-    error: null,
+  // What was loaded last time shows at once; the fresh copy replaces it when it arrives.
+  const [state, setState] = useState<DebtsState>(() => {
+    const cached = readCache(cacheKey, isSnapshot);
+    return {
+      details: cached?.details ?? [],
+      paid: new Map(cached?.paid ?? []),
+      error: null,
+    };
   });
 
   const debtItems = useMemo(() => items.filter((item) => item.kind === 'debt'), [items]);
@@ -46,6 +78,7 @@ export function useDebts(items: readonly Item[]): UseDebts {
         .then(([details, paid]) => {
           if (active) {
             setState({ details, paid, error: null });
+            writeCache(cacheKey, { details, paid: [...paid] });
           }
         })
         .catch((error: unknown) => {
@@ -61,7 +94,7 @@ export function useDebts(items: readonly Item[]): UseDebts {
       active = false;
       stop();
     };
-  }, [debtKey]);
+  }, [debtKey, cacheKey]);
 
   const detailsByItem = useMemo(
     () => new Map(state.details.map((details) => [details.item_id, details])),
