@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isItem,
+  openOnly,
+  parentIdsOf,
   activeSectionOf,
   addDays,
   agendaOf,
@@ -445,5 +448,25 @@ describe('withDay', () => {
   it('moves a day and hour to another day, keeping the hour', () => {
     expect(withDay('2026-10-22T18:30', '2027-05-23')).toBe('2027-05-23T18:30');
     expect(withDay('', '2027-05-23')).toBe('2027-05-23T09:00');
+  });
+});
+
+describe('lists loaded and shown at once', () => {
+  const goal = item({ id: 'g', kind: 'goal' });
+  const issue = item({ id: 'i', kind: 'issue' });
+  const task = item({ id: 't', kind: 'task' });
+
+  it('finds the goals and issues whose steps load with the list', () => {
+    expect(parentIdsOf([goal, task, issue])).toEqual(['g', 'i']);
+  });
+
+  it('keeps only what is open', () => {
+    expect(openOnly([task, { ...goal, status: 'done' }]).map((one) => one.id)).toEqual(['t']);
+  });
+
+  it('tells an item row from anything else', () => {
+    expect(isItem(task)).toBe(true);
+    expect(isItem(null)).toBe(false);
+    expect(isItem({ id: 'x' })).toBe(false);
   });
 });

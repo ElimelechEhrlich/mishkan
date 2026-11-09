@@ -795,3 +795,25 @@ export function withPending(
 export function withDay(localDateTime: string, day: string): string {
   return `${day}T${localDateTime.length >= 16 ? localDateTime.slice(11, 16) : '09:00'}`;
 }
+
+/** The ids of the goals and issues among items: their steps are loaded with them. */
+export function parentIdsOf(items: readonly Item[]): string[] {
+  return items
+    .filter((item) => item.kind === 'goal' || item.kind === 'issue')
+    .map((item) => item.id);
+}
+
+/** The open list holds open items only; one marked done leaves it at once. */
+export function openOnly(items: readonly Item[]): Item[] {
+  return items.filter((item) => item.status === 'open');
+}
+
+/** Whether a value is an item row as the database returns it. */
+export function isItem(value: unknown): value is Item {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof Reflect.get(value, 'id') === 'string' &&
+    typeof Reflect.get(value, 'status') === 'string'
+  );
+}

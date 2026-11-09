@@ -130,21 +130,26 @@ export async function getItem(itemId: string): Promise<Item | null> {
 }
 
 /** `household_id` and `created_by` are filled in by the database. */
-export async function createItem(newItem: NewItem): Promise<void> {
-  const { error } = await supabase.from('items').insert({
-    title: newItem.title,
-    kind: newItem.kind,
-    domain_id: newItem.domainId,
-    entity_id: newItem.entityId ?? null,
-    parent_id: newItem.parentId,
-    ...(newItem.time ?? {}),
-    // A note that is one value keeps it as its answer.
-    ...(newItem.value === undefined ? {} : { is_value: true, answer: newItem.value }),
-    ...(newItem.shoppingTrip === undefined ? {} : { shopping_trip: newItem.shoppingTrip }),
-  });
+/** Adds an item; returns it as saved, to show at once. */
+export async function createItem(newItem: NewItem): Promise<Item[]> {
+  const { data, error } = await supabase
+    .from('items')
+    .insert({
+      title: newItem.title,
+      kind: newItem.kind,
+      domain_id: newItem.domainId,
+      entity_id: newItem.entityId ?? null,
+      parent_id: newItem.parentId,
+      ...(newItem.time ?? {}),
+      // A note that is one value keeps it as its answer.
+      ...(newItem.value === undefined ? {} : { is_value: true, answer: newItem.value }),
+      ...(newItem.shoppingTrip === undefined ? {} : { shopping_trip: newItem.shoppingTrip }),
+    })
+    .select();
   if (error !== null) {
     throw new Error(error.message);
   }
+  return data;
 }
 
 /**

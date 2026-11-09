@@ -3,7 +3,7 @@ import { hasRowLists, readCache, writeCache } from '../lib/cache';
 import { labels } from '../constants/labels';
 import { toMessage, withTimeout } from '../lib/errors';
 import { announceItemsChanged, onItemsChanged } from '../lib/itemChanges';
-import { agendaOf, todayIso, withPending } from '../lib/itemRules';
+import { agendaOf, isItem, openOnly, parentIdsOf, todayIso, withPending } from '../lib/itemRules';
 import type { Agenda } from '../lib/itemRules';
 import {
   completeItem,
@@ -116,21 +116,29 @@ export function useItems(): UseItems {
   const latestLoad = useRef(0);
   // Changes still being saved, shown at once and kept over any list loaded meanwhile.
   const pending = useRef(new Map<string, ItemUpdate>());
+  // The goals and issues known so far, so their steps load together with the open list.
+  const knownParents = useRef<readonly string[]>(
+    parentIdsOf(readCache(cacheKey, isItemsSnapshot)?.items ?? []),
+  );
   const load = useCallback(async (): Promise<void> => {
     latestLoad.current += 1;
     const thisLoad = latestLoad.current;
     try {
-      const items = await listOpenItems();
-      const steps = await listSteps(
-        items
-          .filter((item) => item.kind === 'goal' || item.kind === 'issue')
-          .map((item) => item.id),
-      );
+      const asked = knownParents.current;
+      const [items, early] = await Promise.all([listOpenItems(), listSteps(asked)]);
+      const parents = parentIdsOf(items);
+      knownParents.current = parents;
+      // A goal or issue new since: its steps now; one closed since: its steps dropped.
+      const wanted = new Set(parents);
+      const late = await listSteps(parents.filter((id) => !asked.includes(id)));
+      const steps = [...early, ...late]
+        .filter((step) => step.parent_id !== null && wanted.has(step.parent_id))
+        .sort((a, b) => a.created_at.localeCompare(b.created_at));
       if (thisLoad !== latestLoad.current) {
         return;
       }
       setState({
-        items: withPending(items, pending.current),
+        items: openOnly(withPending(items, pending.current)),
         steps: withPending(steps, pending.current),
         loading: false,
         error: null,
@@ -163,29 +171,55 @@ export function useItems(): UseItems {
     };
   }, [load]);
 
+  /** Reloads in the background and tells the app's other lists to; a failure is shown. */
+  const refresh = useCallback(async (): Promise<void> => {
+    try {
+      await withTimeout(load());
+      announceItemsChanged(reloadOnChange.current);
+    } catch (error: unknown) {
+      setState((previous) => ({ ...previous, error: toMessage(error) }));
+    }
+  }, [load]);
+
   /**
-   * Runs a change, then reloads this list and tells the app's other lists to.
+   * Runs a change; what it added shows at once, and the lists catch up in the background, so
+   * the screen is not held for them. With `waitForLists`, it returns only once they did.
    * A failure is reported in `error`, never swallowed.
    */
   const run = useCallback(
-    async (change: () => Promise<void>): Promise<boolean> => {
+    async (change: () => Promise<unknown>, waitForLists = false): Promise<boolean> => {
+      let added: readonly Item[] = [];
       try {
-        await withTimeout(change());
+        const result = await withTimeout(change());
+        added = Array.isArray(result) ? result.filter(isItem) : [];
       } catch (error: unknown) {
         setState((previous) => ({ ...previous, error: toMessage(error) }));
         return false;
       }
-      // Saved: the lists catch up, without holding the screen if the reload is slow.
-      try {
-        await withTimeout(load());
-        announceItemsChanged(reloadOnChange.current);
-        return true;
-      } catch (error: unknown) {
-        setState((previous) => ({ ...previous, error: toMessage(error) }));
-        return true;
+      if (added.length > 0) {
+        setState((previous) => {
+          const next = {
+            ...previous,
+            items: [...added.filter((item) => item.status === 'open'), ...previous.items],
+            steps: [
+              ...previous.steps,
+              ...added.filter(
+                (item) => item.parent_id !== null && knownParents.current.includes(item.parent_id),
+              ),
+            ],
+          };
+          writeCache(cacheKey, { items: next.items, steps: next.steps });
+          return next;
+        });
       }
+      if (waitForLists) {
+        await refresh();
+      } else {
+        void refresh();
+      }
+      return true;
     },
-    [load],
+    [cacheKey, refresh],
   );
 
   const handleAdd = useCallback(
@@ -268,9 +302,28 @@ export function useItems(): UseItems {
     (item: Item): void => {
       // The occurrence marked, for a repeating task, so the offer to undo unmarks it.
       let occurrenceId: string | null = null;
+      // What closes leaves the lists at once; a payment or a repeating date waits for them.
+      const closes =
+        !(item.kind === 'debt' && item.due_date !== null) &&
+        !(item.time_mode === 'recurring' && item.due_date !== null);
+      const marked: ItemUpdate = { status: 'done' };
+      if (closes) {
+        pending.current.set(item.id, { ...pending.current.get(item.id), ...marked });
+        setState((previous) => ({
+          ...previous,
+          items: openOnly(withPending(previous.items, pending.current)),
+          steps: withPending(previous.steps, pending.current),
+        }));
+      }
       void run(async () => {
         occurrenceId = await completeItem(item);
-      }).then((done) => {
+      }, closes).then((done) => {
+        if (closes) {
+          pending.current.delete(item.id);
+          if (!done) {
+            void load();
+          }
+        }
         if (done) {
           offerUndo(labels.undo.done, () => {
             void run(() => undoComplete(item, occurrenceId));
@@ -278,7 +331,7 @@ export function useItems(): UseItems {
         }
       });
     },
-    [run],
+    [run, load],
   );
 
   const handleReopen = useCallback(
@@ -298,7 +351,7 @@ export function useItems(): UseItems {
       let copyId: string | null = null;
       const done = await run(async () => {
         copyId = await duplicateItem(itemId);
-      });
+      }, true);
       return done ? copyId : null;
     },
     [run],
