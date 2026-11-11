@@ -13,6 +13,7 @@ import { useTimeline } from '../hooks/useTimeline';
 import { useLookups } from '../hooks/useLookups';
 import { useLooseItems } from '../hooks/useLooseItems';
 import { useMoveItems } from '../hooks/useMoveItems';
+import { useRepeats } from '../hooks/useRepeats';
 import { useOtherItems } from '../hooks/useOtherItems';
 import { useTodayBrief } from '../hooks/useTodayBrief';
 import { useHouseholdContext } from '../hooks/useRouteContext';
@@ -34,6 +35,7 @@ export function HomePage(): ReactElement {
   const other = useOtherItems(items.assigned, items.steps);
   const adder = useAddOpener();
   const mover = useMoveItems(items);
+  const repeats = useRepeats();
 
   return (
     <PageShell
@@ -57,6 +59,9 @@ export function HomePage(): ReactElement {
         lookups={lookups}
         loading={items.loading}
         onComplete={items.completeItem}
+        onSkip={(item) => {
+          repeats.skip(item.id);
+        }}
         waiting={brief.waiting}
         incompleteCount={items.incompleteCount}
         week={brief.week}

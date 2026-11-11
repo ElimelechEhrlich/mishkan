@@ -43,6 +43,8 @@ type HomeViewsProps = {
   readonly lookups: Lookups;
   readonly loading: boolean;
   readonly onComplete: (item: Item) => void;
+  /** Skips this time of a repeating item. */
+  readonly onSkip: (item: Item) => void;
   /** What waits on the parents rather than on a date. */
   readonly waiting: WaitingOnYou;
   readonly incompleteCount: number;
@@ -74,6 +76,7 @@ export function HomeViews({
   lookups,
   loading,
   onComplete,
+  onSkip,
   waiting,
   incompleteCount,
   week,
@@ -222,6 +225,7 @@ export function HomeViews({
               lookups={lookups}
               loading={loading}
               onComplete={onComplete}
+              onSkip={onSkip}
               onShowAll={() => {
                 setView('all');
               }}

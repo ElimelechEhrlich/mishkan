@@ -21,6 +21,8 @@ type FocusCardProps = {
   readonly lookups: Lookups;
   readonly loading: boolean;
   readonly onComplete: (item: Item) => void;
+  /** Skips this time of a repeating item. */
+  readonly onSkip: (item: Item) => void;
   /** Opens every item that runs on time, by its time. */
   readonly onShowAll: () => void;
   /** Moves the chosen items: what is late or urgent to today, today's on to tomorrow. */
@@ -47,6 +49,7 @@ export function FocusCard({
   lookups,
   loading,
   onComplete,
+  onSkip,
   onShowAll,
   onMove,
   moving,
@@ -118,6 +121,7 @@ export function FocusCard({
                   alert={group === 'overdue'}
                   lookups={lookups}
                   onComplete={onComplete}
+                  onSkip={onSkip}
                 />
               ),
             )}

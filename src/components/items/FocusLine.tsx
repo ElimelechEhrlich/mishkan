@@ -17,6 +17,8 @@ type FocusLineProps = {
   readonly quiet?: boolean;
   readonly lookups: Lookups;
   readonly onComplete: (item: Item) => void;
+  /** Skips this time of what repeats; given, a repeating line has a skip button. */
+  readonly onSkip?: ((item: Item) => void) | undefined;
 };
 
 /** One short line of the first page: tick it off, or tap it to open it. */
@@ -27,11 +29,15 @@ export function FocusLine({
   quiet = false,
   lookups,
   onComplete,
+  onSkip,
 }: FocusLineProps): ReactElement {
   const { item } = row;
   const [ticked, setTicked] = useState(false);
   const tone = item.domain_id === null ? undefined : lookups.domainTones.get(item.domain_id);
   const container = item.kind === 'goal' || item.kind === 'issue';
+  // What repeats can skip this time: it goes on to its next one.
+  const skippable =
+    onSkip !== undefined && item.time_mode === 'recurring' && item.due_date !== null;
   return (
     <li
       className={`flex min-h-11 items-center gap-3 transition-opacity duration-300 ${ticked ? 'opacity-40' : ''}`}
@@ -75,6 +81,21 @@ export function FocusLine({
           </span>
         )}
       </Link>
+      {skippable && (
+        <button
+          type="button"
+          aria-label={labels.move.skip(item.title)}
+          disabled={ticked}
+          onClick={() => {
+            setTicked(true);
+            onSkip(item);
+          }}
+          className="flex min-h-7 shrink-0 items-center gap-0.5 rounded-full bg-paper ps-2 pe-1.5 text-[12px] font-medium text-muted transition active:scale-90 active:bg-primary-soft active:text-primary"
+        >
+          {labels.move.skipShort}
+          <Icon name="skip" className="size-3.5" />
+        </button>
+      )}
     </li>
   );
 }

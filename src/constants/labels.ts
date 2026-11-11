@@ -453,6 +453,8 @@ export const labels = {
       someday: 'על המדף',
     },
     chooseDay: 'תאריך…',
+    skip: (title: string): string => `דילוג על הפעם: ${title}`,
+    skipShort: 'דילוג',
     /** Why an item is not chosen with the rest. */
     blocked: { repeatsByDay: 'חוזרת · לתאריך בלבד', ownPage: 'המועד נקבע בדף הפריט' },
     confirm: (count: number, to: string): string => `להעביר ${String(count)}: ${to}`,
