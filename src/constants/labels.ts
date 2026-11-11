@@ -453,6 +453,8 @@ export const labels = {
       someday: 'על המדף',
     },
     chooseDay: 'תאריך…',
+    /** Why an item is not chosen with the rest. */
+    blocked: { repeatsByDay: 'חוזרת · לתאריך בלבד', ownPage: 'המועד נקבע בדף הפריט' },
     confirm: (count: number, to: string): string => `להעביר ${String(count)}: ${to}`,
     done: (count: number, to: string): string =>
       `${count === 1 ? 'פריט אחד הועבר' : `${String(count)} פריטים הועברו`}: ${to}`,

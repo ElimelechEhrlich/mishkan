@@ -7,6 +7,7 @@ import {
   focusGroups,
   canMove,
   canMoveTo,
+  moveBlock,
   looseGroups,
   moveBack,
   moveChange,
@@ -344,5 +345,8 @@ describe('moving to any day or time', () => {
     const repeating = item({ time_mode: 'recurring', due_date: day });
     expect(canMoveTo(repeating, 'tomorrow')).toBe(true);
     expect(canMoveTo(repeating, 'someday')).toBe(false);
+    expect(moveBlock(repeating, 'someday')).toBe('repeatsByDay');
+    expect(moveBlock(repeating, 'tomorrow')).toBeNull();
+    expect(moveBlock(item({ kind: 'appointment' }), 'tomorrow')).toBe('ownPage');
   });
 });

@@ -2,6 +2,7 @@ import { labels } from '../constants/labels';
 import type { Item, OpenSegment } from '../types/domain';
 import { addDays, formatClock, formatDueDate, hasOwnTime } from './itemRules';
 import { rhythmOfRule, rhythmText } from './recurrence';
+import { moveBlock } from './todayBrief';
 import type { MoveTarget } from './todayBrief';
 
 function dateText(dueDate: string, today: string): string {
@@ -17,6 +18,12 @@ function dateText(dueDate: string, today: string): string {
 /** Where items are moved, in words: "מחר", "דחוף", or the day chosen. */
 export function moveTargetText(target: MoveTarget, today: string): string {
   return typeof target === 'object' ? dateText(target.day, today) : labels.move.to[target];
+}
+
+/** Why an item is not chosen with the rest for this move, in words; null when it can be. */
+export function moveBlockedText(item: Item, target: MoveTarget | null): string | null {
+  const block = target === null ? null : moveBlock(item, target);
+  return block === null ? null : labels.move.blocked[block];
 }
 
 /** When an item is due, in words: a date, "today", or the name of its time mode. */

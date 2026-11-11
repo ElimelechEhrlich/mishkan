@@ -4,7 +4,7 @@ import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import { useMovePick } from '../../hooks/useMovePick';
 import { todayIso } from '../../lib/itemRules';
-import { moveTargetText } from '../../lib/itemText';
+import { moveBlockedText, moveTargetText } from '../../lib/itemText';
 import { canMove, canMoveTo, daysSince, moveOptions } from '../../lib/todayBrief';
 import type { FocusRow, LooseGroup, MoveTarget } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
@@ -103,7 +103,7 @@ export function LooseCard({
                     <PickLine
                       key={row.item.id}
                       row={row}
-                      meta={age}
+                      meta={moveBlockedText(row.item, target) ?? age}
                       picked={pick.picked.has(row.item.id)}
                       onToggle={
                         canMoveTo(row.item, target)

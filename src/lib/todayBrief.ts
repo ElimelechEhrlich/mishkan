@@ -373,6 +373,17 @@ export function canMove(item: Item): boolean {
   return item.time_mode !== 'recurring' || item.due_date !== null;
 }
 
+/**
+ * Why an item cannot be moved to this target, or null when it can: what repeats moves to a
+ * day only; an appointment, a debt or an issue keeps its time, changed on its own page.
+ */
+export function moveBlock(item: Item, target: MoveTarget): 'repeatsByDay' | 'ownPage' | null {
+  if (item.time_mode === 'recurring' && item.due_date !== null && isTimeTarget(target)) {
+    return 'repeatsByDay';
+  }
+  return canMove(item) ? null : 'ownPage';
+}
+
 /** Whether an item can be moved to this target: what repeats moves to a day only. */
 export function canMoveTo(item: Item, target: MoveTarget): boolean {
   return canMove(item) && !(item.time_mode === 'recurring' && isTimeTarget(target));

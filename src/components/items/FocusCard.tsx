@@ -4,7 +4,7 @@ import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import { useMovePick } from '../../hooks/useMovePick';
 import { todayIso } from '../../lib/itemRules';
-import { moveTargetText } from '../../lib/itemText';
+import { moveBlockedText, moveTargetText } from '../../lib/itemText';
 import { canMove, canMoveTo, firstFocus, focusMeta, moveOptions } from '../../lib/todayBrief';
 import type { FocusGroup, FocusRow, MoveTarget } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
@@ -100,7 +100,7 @@ export function FocusCard({
                 <PickLine
                   key={row.item.id}
                   row={row}
-                  meta={focusMeta(row.item, group)}
+                  meta={moveBlockedText(row.item, target) ?? focusMeta(row.item, group)}
                   picked={pick.picked.has(row.item.id)}
                   onToggle={
                     target !== null && canMoveTo(row.item, target)
