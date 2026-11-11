@@ -5,7 +5,7 @@ import type { Lookups } from '../../lib/lookups';
 import { useMovePick } from '../../hooks/useMovePick';
 import { todayIso } from '../../lib/itemRules';
 import { moveBlockedText, moveTargetText } from '../../lib/itemText';
-import { canMove, canMoveTo, firstFocus, focusMeta, moveOptions } from '../../lib/todayBrief';
+import { canMove, canMoveTo, firstFocus, focusRowMeta, moveOptions } from '../../lib/todayBrief';
 import type { FocusGroup, FocusRow, MoveTarget } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
 import { SkeletonList } from '../ui/SkeletonList';
@@ -103,7 +103,7 @@ export function FocusCard({
                 <PickLine
                   key={row.item.id}
                   row={row}
-                  meta={moveBlockedText(row.item, target) ?? focusMeta(row.item, group)}
+                  meta={moveBlockedText(row.item, target) ?? focusRowMeta(row, group)}
                   picked={pick.picked.has(row.item.id)}
                   onToggle={
                     target !== null && canMoveTo(row.item, target)
@@ -117,7 +117,7 @@ export function FocusCard({
                 <FocusLine
                   key={row.item.id}
                   row={row}
-                  meta={focusMeta(row.item, group)}
+                  meta={focusRowMeta(row, group)}
                   alert={group === 'overdue'}
                   lookups={lookups}
                   onComplete={onComplete}

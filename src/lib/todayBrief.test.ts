@@ -5,6 +5,7 @@ import {
   thisWeek,
   firstFocus,
   focusGroups,
+  focusRowMeta,
   canMove,
   canMoveTo,
   moveBlock,
@@ -348,5 +349,21 @@ describe('moving to any day or time', () => {
     expect(moveBlock(repeating, 'someday')).toBe('repeatsByDay');
     expect(moveBlock(repeating, 'tomorrow')).toBeNull();
     expect(moveBlock(item({ kind: 'appointment' }), 'tomorrow')).toBe('ownPage');
+  });
+});
+
+describe('a goal on its day', () => {
+  const day = '2026-11-11';
+  const goal = item({ id: 'goal', kind: 'goal', due_date: day, title: 'יעד' });
+  const loose = item({ id: 's1', parent_id: 'goal', time_mode: 'anytime', due_date: null });
+  const dated = item({ id: 's2', parent_id: 'goal', due_date: day, title: 'צעד' });
+
+  it('is one line holding its steps with no date; a step with a date stands under its name', () => {
+    const today = focusGroups(agendaOf([goal], [loose, dated], day)).today;
+    const goalRow = today.find((row) => row.item.id === 'goal');
+    expect(goalRow?.stepsInside).toBe(1);
+    expect(goalRow === undefined ? null : focusRowMeta(goalRow, 'today')).toBe('צעד אחד');
+    expect(today.some((row) => row.item.id === 's1')).toBe(false);
+    expect(today.find((row) => row.item.id === 's2')?.parentTitle).toBe('יעד');
   });
 });

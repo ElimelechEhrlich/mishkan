@@ -178,6 +178,17 @@ item({
   time_mode: 'scheduled',
   due_date: day(-2),
 });
+// A goal for today whose steps have no date: one line on the home page, holding them.
+const storage = item({
+  title: 'לסדר את המחסן',
+  kind: 'goal',
+  domain_id: dom('הבית', 'טכני ותיקונים'),
+  time_mode: 'scheduled',
+  due_date: day(0),
+});
+for (const title of ['למיין קופסאות', 'לזרוק מה שלא צריך']) {
+  item({ title, parent_id: storage.id, domain_id: storage.domain_id, time_mode: 'anytime' });
+}
 const g = item({
   title: 'שולחן וכיסאות לסלון',
   kind: 'goal',

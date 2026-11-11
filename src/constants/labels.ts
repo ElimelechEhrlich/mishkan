@@ -338,6 +338,7 @@ export const labels = {
               ? `${String(Math.floor(days / 30))} ח׳`
               : `${String(Math.floor(days / 365))} שנ׳`,
     waitingFor: (what: string): string => `מחכה ל${what}`,
+    stepsInside: (count: number): string => (count === 1 ? 'צעד אחד' : `${String(count)} צעדים`),
     stillRelevant: 'עוד רלוונטי?',
     onShelfSince: (age: string): string => `על המדף ${age}`,
     noDateSince: (age: string): string => `בלי מועד ${age}`,

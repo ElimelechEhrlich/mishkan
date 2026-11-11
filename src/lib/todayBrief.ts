@@ -1,3 +1,4 @@
+import { labels } from '../constants/labels';
 import { goalProgress } from './goals';
 import { addDays, formatClock } from './itemRules';
 import type { Agenda, ListEntry, Timeline } from './itemRules';
@@ -151,15 +152,22 @@ export function nextUp(agenda: Agenda, now: Date): NextUp | null {
 export type FocusRow = {
   readonly item: Item;
   readonly parentTitle: string | null;
+  /** For a goal: how many of its open steps it holds (those with no date of their own). */
+  readonly stepsInside?: number;
 };
 
 /**
- * A group of today's page as short lines: a step under its goal's name rather than inside it,
- * and a goal or issue on its own only when no step of it is listed.
+ * A group of today's page as short lines: a goal is one line, with how many steps it holds
+ * (those with no date are its work, not lines of their own); a step with a date of its own
+ * stands under its goal's name; an issue's steps likewise, the issue on its own only when no
+ * step of it is listed.
  */
 export function focusRows(entries: readonly ListEntry[]): FocusRow[] {
   return entries.flatMap((entry): FocusRow[] => {
     const shown = entry.shown ?? [];
+    if (entry.heading !== true && entry.item.kind === 'goal') {
+      return [{ item: entry.item, parentTitle: null, stepsInside: shown.length }];
+    }
     if (
       shown.length > 0 &&
       (entry.heading === true || entry.item.kind === 'goal' || entry.item.kind === 'issue')
@@ -189,6 +197,16 @@ export function focusGroups(agenda: Agenda): Record<FocusGroup, FocusRow[]> {
 export function firstFocus(groups: Record<FocusGroup, readonly FocusRow[]>): FocusGroup {
   const order: readonly FocusGroup[] = ['today', 'urgent', 'overdue'];
   return order.find((group) => groups[group].length > 0) ?? 'today';
+}
+
+/**
+ * What a short line shows at its end: how many steps a goal holds, its hour, or for what is
+ * late the day it was due.
+ */
+export function focusRowMeta(row: FocusRow, group: FocusGroup): string | null {
+  return row.stepsInside !== undefined && row.stepsInside > 0
+    ? labels.today.stepsInside(row.stepsInside)
+    : focusMeta(row.item, group);
 }
 
 /** What a short line shows at its end: its hour, or for what is late the day it was due. */
