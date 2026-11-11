@@ -90,7 +90,7 @@ export function FocusLine({
             setTicked(true);
             onSkip(item);
           }}
-          className="flex min-h-7 shrink-0 items-center gap-0.5 rounded-full bg-paper ps-2 pe-1.5 text-[12px] font-medium text-muted transition active:scale-90 active:bg-primary-soft active:text-primary"
+          className="flex min-h-7 shrink-0 items-center gap-0.5 rounded-full bg-paper ps-2 pe-1.5 text-[12px] font-semibold text-primary transition active:scale-90 active:bg-primary-soft active:text-primary"
         >
           {labels.move.skipShort}
           <Icon name="skip" className="size-3.5" />
