@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
-import type { MoveTarget } from '../../lib/todayBrief';
 
 type MoveBarProps = {
-  readonly target: MoveTarget;
+  /** Where they move, in words. */
+  readonly to: string;
   /** How many are chosen, and how many could be. */
   readonly count: number;
   readonly total: number;
@@ -15,7 +15,7 @@ type MoveBarProps = {
 
 /** The foot of a list while choosing what to move: all or none, cancel, and move. */
 export function MoveBar({
-  target,
+  to,
   count,
   total,
   busy,
@@ -49,7 +49,7 @@ export function MoveBar({
         onClick={onMove}
         className="min-h-9 rounded-full bg-primary px-4 text-[13px] font-semibold text-white transition active:scale-[0.97] disabled:bg-line disabled:text-faint"
       >
-        {labels.move.confirm(count, target)}
+        {labels.move.confirm(count, to)}
       </button>
     </div>
   );

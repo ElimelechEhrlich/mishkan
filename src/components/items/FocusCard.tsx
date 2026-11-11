@@ -4,7 +4,8 @@ import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import { useMovePick } from '../../hooks/useMovePick';
 import { todayIso } from '../../lib/itemRules';
-import { canMove, firstFocus, focusMeta, offersSunday } from '../../lib/todayBrief';
+import { moveTargetText } from '../../lib/itemText';
+import { canMove, canMoveTo, firstFocus, focusMeta, moveOptions } from '../../lib/todayBrief';
 import type { FocusGroup, FocusRow, MoveTarget } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
 import { SkeletonList } from '../ui/SkeletonList';
@@ -12,6 +13,7 @@ import { FocusLine } from './FocusLine';
 import { FocusTile } from './FocusTile';
 import { MoveBar } from './MoveBar';
 import { MoveButton } from './MoveButton';
+import { MoveChoices } from './MoveChoices';
 import { PickLine } from './PickLine';
 
 type FocusCardProps = {
@@ -26,13 +28,6 @@ type FocusCardProps = {
   readonly moving: boolean;
 };
 
-/** Where each group's items move to. */
-const moveTargets: Record<FocusGroup, MoveTarget> = {
-  overdue: 'today',
-  urgent: 'today',
-  today: 'tomorrow',
-};
-
 /** Lines shown before "more". */
 const firstLines = 4;
 
@@ -44,8 +39,8 @@ const tiles = [
 
 /**
  * Late, urgent and today on the first page, light: three numbers to choose between, and the
- * chosen group's first few lines, with the rest a tap away. A button chooses some of them, the
- * whole group open, to move to today (or today's on to tomorrow).
+ * chosen group's first few lines, with the rest a tap away. One button opens where to move them
+ * (a day, any day chosen, or a time with no date); then some of them are chosen and moved.
  */
 export function FocusCard({
   groups,
@@ -63,11 +58,13 @@ export function FocusCard({
   const rows = groups[group];
   const shown = expanded || pick.picking ? rows : rows.slice(0, firstLines);
   const hidden = rows.length - shown.length;
-  // Today's and urgent ones can also go to Sunday, on Thursday and Friday.
-  const [toSunday, setToSunday] = useState(false);
-  const sundayToo = (group === 'today' || group === 'urgent') && offersSunday(todayIso());
-  const target = sundayToo && toSunday ? 'sunday' : moveTargets[group];
+  const today = todayIso();
+  // The move button open, to choose where; then the target chosen, while picking the items.
+  const [choosing, setChoosing] = useState(false);
+  const [target, setTarget] = useState<MoveTarget | null>(null);
   const movable = rows.filter((row) => canMove(row.item));
+  const pickable = target === null ? [] : rows.filter((row) => canMoveTo(row.item, target));
+  const pickedRows = pickable.filter((row) => pick.picked.has(row.item.id));
 
   return (
     <section className="flex flex-col gap-2">
@@ -82,6 +79,8 @@ export function FocusCard({
             onSelect={() => {
               setChosen(tile.group);
               setExpanded(false);
+              setChoosing(false);
+              setTarget(null);
               pick.stop();
             }}
           />
@@ -104,7 +103,7 @@ export function FocusCard({
                   meta={focusMeta(row.item, group)}
                   picked={pick.picked.has(row.item.id)}
                   onToggle={
-                    canMove(row.item)
+                    target !== null && canMoveTo(row.item, target)
                       ? (): void => {
                           pick.toggle(row.item.id);
                         }
@@ -124,22 +123,39 @@ export function FocusCard({
             )}
           </ul>
         )}
-        {pick.picking ? (
+        {pick.picking && target !== null ? (
           <MoveBar
-            target={target}
-            count={pick.picked.size}
-            total={movable.length}
+            to={moveTargetText(target, today)}
+            count={pickedRows.length}
+            total={pickable.length}
             busy={moving}
             onAll={(all) => {
-              pick.setAll(all ? movable.map((row) => row.item.id) : []);
+              pick.setAll(all ? pickable.map((row) => row.item.id) : []);
             }}
-            onCancel={pick.stop}
+            onCancel={() => {
+              pick.stop();
+              setTarget(null);
+            }}
             onMove={() => {
               onMove(
-                movable.filter((row) => pick.picked.has(row.item.id)).map((row) => row.item),
+                pickedRows.map((row) => row.item),
                 target,
               );
               pick.stop();
+              setTarget(null);
+            }}
+          />
+        ) : choosing ? (
+          <MoveChoices
+            options={moveOptions(group, today)}
+            today={today}
+            onChoose={(chosenTarget) => {
+              setTarget(chosenTarget);
+              setChoosing(false);
+              pick.start();
+            }}
+            onClose={() => {
+              setChoosing(false);
             }}
           />
         ) : (
@@ -158,26 +174,11 @@ export function FocusCard({
               <span />
             )}
             {movable.length > 0 && (
-              <span className="flex gap-1">
-                <MoveButton
-                  target={moveTargets[group]}
-                  compact={sundayToo}
-                  onClick={() => {
-                    setToSunday(false);
-                    pick.start();
-                  }}
-                />
-                {sundayToo && (
-                  <MoveButton
-                    target="sunday"
-                    compact
-                    onClick={() => {
-                      setToSunday(true);
-                      pick.start();
-                    }}
-                  />
-                )}
-              </span>
+              <MoveButton
+                onClick={() => {
+                  setChoosing(true);
+                }}
+              />
             )}
             <button
               type="button"

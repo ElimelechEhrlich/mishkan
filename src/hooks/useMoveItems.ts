@@ -3,6 +3,7 @@ import { labels } from '../constants/labels';
 import { toMessage } from '../lib/errors';
 import { announceItemsChanged } from '../lib/itemChanges';
 import { todayIso } from '../lib/itemRules';
+import { moveTargetText } from '../lib/itemText';
 import { moveBack, moveChange } from '../lib/todayBrief';
 import type { MoveChange, MoveTarget } from '../lib/todayBrief';
 import { updateItem } from '../services/itemService';
@@ -56,7 +57,7 @@ export function useMoveItems(lists: Pick<UseItems, 'preview'>): UseMoveItems {
         .then(() => {
           settle();
           announceItemsChanged();
-          offerUndo(labels.move.done(items.length, target), () => {
+          offerUndo(labels.move.done(items.length, moveTargetText(target, today)), () => {
             const back = items.map((item) => ({ item, change: moveBack(item) }));
             const settleBack = preview(
               new Map(back.map(({ item, change }) => [item.id, shownChanges(change)])),

@@ -301,8 +301,53 @@ export function otherGroups(assigned: readonly Item[], today: string): Record<Ot
   };
 }
 
-/** Where the home page moves chosen items: to today, on to tomorrow or Sunday, or to urgent. */
-export type MoveTarget = 'today' | 'tomorrow' | 'sunday' | 'urgent';
+/** A time with no date that chosen items can be moved to. */
+export type TimeTarget = 'urgent' | 'waiting' | 'anytime' | 'someday';
+
+/**
+ * Where the home page moves chosen items: to today, on to tomorrow or Sunday, to a day chosen,
+ * or to a time with no date (urgent, waiting, no date, the shelf).
+ */
+export type MoveTarget = 'today' | 'tomorrow' | 'sunday' | TimeTarget | { readonly day: string };
+
+const timeTargets: readonly TimeTarget[] = ['urgent', 'waiting', 'anytime', 'someday'];
+
+function isTimeTarget(target: MoveTarget): target is TimeTarget {
+  return typeof target === 'string' && timeTargets.some((time) => time === target);
+}
+
+/** The day a target moves to; null for a time with no date. */
+export function moveDay(target: MoveTarget, today: string): string | null {
+  if (typeof target === 'object') {
+    return target.day;
+  }
+  if (isTimeTarget(target)) {
+    return null;
+  }
+  return target === 'today' ? today : target === 'sunday' ? nextSunday(today) : addDays(today, 1);
+}
+
+/**
+ * Where a list of the home page offers to move its items: every day and time but the list's
+ * own (late and urgent items move to today first; today's on to tomorrow); Sunday on
+ * Thursday and Friday.
+ */
+export function moveOptions(
+  from: FocusGroup | LooseGroup,
+  today: string,
+): ('today' | 'tomorrow' | 'sunday' | TimeTarget)[] {
+  const own: Partial<Record<FocusGroup | LooseGroup, string>> = {
+    today: 'today',
+    urgent: 'urgent',
+    undated: 'anytime',
+    waiting: 'waiting',
+    someday: 'someday',
+  };
+  const days = offersSunday(today)
+    ? (['today', 'tomorrow', 'sunday'] as const)
+    : (['today', 'tomorrow'] as const);
+  return [...days, ...timeTargets].filter((target) => target !== own[from]);
+}
 
 /** The next Sunday after a day. */
 export function nextSunday(today: string): string {
@@ -328,6 +373,11 @@ export function canMove(item: Item): boolean {
   return item.time_mode !== 'recurring' || item.due_date !== null;
 }
 
+/** Whether an item can be moved to this target: what repeats moves to a day only. */
+export function canMoveTo(item: Item, target: MoveTarget): boolean {
+  return canMove(item) && !(item.time_mode === 'recurring' && isTimeTarget(target));
+}
+
 /** What moving an item does: its current occurrence to a day, or its own time changed. */
 export type MoveChange =
   | { readonly kind: 'occurrence'; readonly day: string; readonly time: string | null }
@@ -338,11 +388,11 @@ export type MoveChange =
 
 /** How an item moves to today or tomorrow (keeping its hour), or to urgent (with no date). */
 export function moveChange(item: Item, target: MoveTarget, today: string): MoveChange {
-  if (target === 'urgent') {
-    return { kind: 'update', changes: { time_mode: 'urgent', due_date: null, due_time: null } };
+  const day = moveDay(target, today);
+  if (day === null) {
+    const time = isTimeTarget(target) ? target : 'anytime';
+    return { kind: 'update', changes: { time_mode: time, due_date: null, due_time: null } };
   }
-  const day =
-    target === 'today' ? today : target === 'sunday' ? nextSunday(today) : addDays(today, 1);
   if (item.time_mode === 'recurring') {
     return { kind: 'occurrence', day, time: item.due_time };
   }

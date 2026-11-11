@@ -6,9 +6,12 @@ import {
   firstFocus,
   focusGroups,
   canMove,
+  canMoveTo,
   looseGroups,
   moveBack,
   moveChange,
+  moveDay,
+  moveOptions,
   nextSunday,
   offersSunday,
   otherGroups,
@@ -299,5 +302,47 @@ describe('moving from the home page', () => {
     expect(canMove(item({ kind: 'appointment' }))).toBe(false);
     expect(canMove(item({ kind: 'issue' }))).toBe(false);
     expect(canMove(item({ kind: 'debt', time_mode: 'scheduled' }))).toBe(false);
+  });
+});
+
+describe('moving to any day or time', () => {
+  const day = '2026-11-11';
+
+  it("offers every day and time but the list's own, Sunday on Thursday and Friday", () => {
+    expect(moveOptions('today', day)).toEqual([
+      'tomorrow',
+      'urgent',
+      'waiting',
+      'anytime',
+      'someday',
+    ]);
+    expect(moveOptions('overdue', '2026-11-12')).toEqual([
+      'today',
+      'tomorrow',
+      'sunday',
+      'urgent',
+      'waiting',
+      'anytime',
+      'someday',
+    ]);
+    expect(moveOptions('undated', day)).not.toContain('anytime');
+  });
+
+  it('moves to a day chosen, or to a time with no date', () => {
+    expect(moveDay({ day: '2026-11-20' }, day)).toBe('2026-11-20');
+    expect(moveChange(item({ due_date: day }), { day: '2026-11-20' }, day)).toMatchObject({
+      kind: 'update',
+      changes: { time_mode: 'scheduled', due_date: '2026-11-20' },
+    });
+    expect(moveChange(item({ due_date: day }), 'waiting', day)).toEqual({
+      kind: 'update',
+      changes: { time_mode: 'waiting', due_date: null, due_time: null },
+    });
+  });
+
+  it('moves what repeats to a day only', () => {
+    const repeating = item({ time_mode: 'recurring', due_date: day });
+    expect(canMoveTo(repeating, 'tomorrow')).toBe(true);
+    expect(canMoveTo(repeating, 'someday')).toBe(false);
   });
 });

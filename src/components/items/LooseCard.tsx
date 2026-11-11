@@ -3,13 +3,16 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import type { Lookups } from '../../lib/lookups';
 import { useMovePick } from '../../hooks/useMovePick';
-import { canMove, daysSince } from '../../lib/todayBrief';
+import { todayIso } from '../../lib/itemRules';
+import { moveTargetText } from '../../lib/itemText';
+import { canMove, canMoveTo, daysSince, moveOptions } from '../../lib/todayBrief';
 import type { FocusRow, LooseGroup, MoveTarget } from '../../lib/todayBrief';
 import type { Item } from '../../types/domain';
 import { FocusLine } from './FocusLine';
 import { FocusTile } from './FocusTile';
 import { MoveBar } from './MoveBar';
 import { MoveButton } from './MoveButton';
+import { MoveChoices } from './MoveChoices';
 import { PickLine } from './PickLine';
 
 type LooseCardProps = {
@@ -23,7 +26,7 @@ type LooseCardProps = {
   readonly onComplete: (item: Item) => void;
   /** Opens every item by its time, where these stand at the end. */
   readonly onShowAll: () => void;
-  /** Moves the chosen items with no date to urgent. */
+  /** Moves the chosen items to a day or another time. */
   readonly onMove: (items: readonly Item[], target: MoveTarget) => void;
   readonly moving: boolean;
 };
@@ -53,8 +56,13 @@ export function LooseCard({
   const pick = useMovePick();
   const rows = chosen === null ? [] : groups[chosen];
   const shown = expanded || pick.picking ? rows : rows.slice(0, firstLines);
-  // Only what has no date is moved from here, to urgent.
-  const movable = chosen === 'undated' ? rows.filter((row) => canMove(row.item)) : [];
+  const today = todayIso();
+  // The move button open, to choose where; then the target chosen, while picking the items.
+  const [choosing, setChoosing] = useState(false);
+  const [target, setTarget] = useState<MoveTarget | null>(null);
+  const movable = rows.filter((row) => canMove(row.item));
+  const pickable = target === null ? [] : rows.filter((row) => canMoveTo(row.item, target));
+  const pickedRows = pickable.filter((row) => pick.picked.has(row.item.id));
   const hidden = rows.length - shown.length;
   const now = new Date();
 
@@ -72,6 +80,8 @@ export function LooseCard({
             onSelect={() => {
               onChoose(group === chosen ? null : group);
               setExpanded(false);
+              setChoosing(false);
+              setTarget(null);
               pick.stop();
             }}
           />
@@ -88,7 +98,7 @@ export function LooseCard({
               {shown.map((row) => {
                 const reason = reasons.get(row.item.id);
                 const age = labels.today.age(daysSince(row.item.created_at, now));
-                if (pick.picking) {
+                if (pick.picking && target !== null) {
                   return (
                     <PickLine
                       key={row.item.id}
@@ -96,7 +106,7 @@ export function LooseCard({
                       meta={age}
                       picked={pick.picked.has(row.item.id)}
                       onToggle={
-                        canMove(row.item)
+                        canMoveTo(row.item, target)
                           ? (): void => {
                               pick.toggle(row.item.id);
                             }
@@ -123,22 +133,39 @@ export function LooseCard({
               })}
             </ul>
           )}
-          {pick.picking ? (
+          {pick.picking && target !== null ? (
             <MoveBar
-              target="urgent"
-              count={pick.picked.size}
-              total={movable.length}
+              to={moveTargetText(target, today)}
+              count={pickedRows.length}
+              total={pickable.length}
               busy={moving}
               onAll={(all) => {
-                pick.setAll(all ? movable.map((row) => row.item.id) : []);
+                pick.setAll(all ? pickable.map((row) => row.item.id) : []);
               }}
-              onCancel={pick.stop}
+              onCancel={() => {
+                pick.stop();
+                setTarget(null);
+              }}
               onMove={() => {
                 onMove(
-                  movable.filter((row) => pick.picked.has(row.item.id)).map((row) => row.item),
-                  'urgent',
+                  pickedRows.map((row) => row.item),
+                  target,
                 );
                 pick.stop();
+                setTarget(null);
+              }}
+            />
+          ) : choosing ? (
+            <MoveChoices
+              options={moveOptions(chosen, today)}
+              today={today}
+              onChoose={(chosenTarget) => {
+                setTarget(chosenTarget);
+                setChoosing(false);
+                pick.start();
+              }}
+              onClose={() => {
+                setChoosing(false);
               }}
             />
           ) : (
@@ -156,7 +183,13 @@ export function LooseCard({
               ) : (
                 <span />
               )}
-              {movable.length > 0 && <MoveButton target="urgent" onClick={pick.start} />}
+              {movable.length > 0 && (
+                <MoveButton
+                  onClick={() => {
+                    setChoosing(true);
+                  }}
+                />
+              )}
               <button
                 type="button"
                 onClick={onShowAll}

@@ -2,6 +2,7 @@ import { labels } from '../constants/labels';
 import type { Item, OpenSegment } from '../types/domain';
 import { addDays, formatClock, formatDueDate, hasOwnTime } from './itemRules';
 import { rhythmOfRule, rhythmText } from './recurrence';
+import type { MoveTarget } from './todayBrief';
 
 function dateText(dueDate: string, today: string): string {
   if (dueDate === today) {
@@ -11,6 +12,11 @@ function dateText(dueDate: string, today: string): string {
     return labels.item.tomorrow;
   }
   return formatDueDate(dueDate);
+}
+
+/** Where items are moved, in words: "מחר", "דחוף", or the day chosen. */
+export function moveTargetText(target: MoveTarget, today: string): string {
+  return typeof target === 'object' ? dateText(target.day, today) : labels.move.to[target];
 }
 
 /** When an item is due, in words: a date, "today", or the name of its time mode. */

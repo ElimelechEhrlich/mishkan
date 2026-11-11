@@ -441,30 +441,21 @@ export const labels = {
     wrongAccount: 'כבר הצטרפת לבית? כנראה שזו כתובת אחרת: צא/י והיכנס/י עם הכתובת שאיתה הצטרפת.',
   },
   move: {
-    start: {
-      today: 'להעביר להיום',
-      tomorrow: 'לדחות למחר',
-      sunday: 'ליום ראשון',
-      urgent: 'לדחוף',
+    open: 'להעביר ל…',
+    /** The days and times items move to. */
+    to: {
+      today: 'היום',
+      tomorrow: 'מחר',
+      sunday: 'יום ראשון',
+      urgent: 'דחוף',
+      waiting: 'ממתינה',
+      anytime: 'ללא מועד',
+      someday: 'על המדף',
     },
-    confirm: (count: number, target: 'today' | 'tomorrow' | 'sunday' | 'urgent'): string =>
-      target === 'today'
-        ? `להעביר ${String(count)} להיום`
-        : target === 'tomorrow'
-          ? `לדחות ${String(count)} למחר`
-          : target === 'sunday'
-            ? `לדחות ${String(count)} ליום ראשון`
-            : `לסמן ${String(count)} דחוף`,
-    done: (count: number, target: 'today' | 'tomorrow' | 'sunday' | 'urgent'): string =>
-      `${count === 1 ? 'פריט אחד' : `${String(count)} פריטים`} ${
-        target === 'today'
-          ? 'הועברו להיום'
-          : target === 'tomorrow'
-            ? 'נדחו למחר'
-            : target === 'sunday'
-              ? 'נדחו ליום ראשון'
-              : 'סומנו דחוף'
-      }`,
+    chooseDay: 'תאריך…',
+    confirm: (count: number, to: string): string => `להעביר ${String(count)}: ${to}`,
+    done: (count: number, to: string): string =>
+      `${count === 1 ? 'פריט אחד הועבר' : `${String(count)} פריטים הועברו`}: ${to}`,
     all: 'כולם',
     none: 'אף אחד',
     cancel: 'ביטול',
