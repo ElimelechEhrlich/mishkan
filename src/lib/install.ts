@@ -1,6 +1,22 @@
 /** Where the Android app (a TWA wrapping this site) is served from, once it is built. */
 export const apkPath = '/mishkan.apk';
 
+/**
+ * The download address of a version: its own for each one, so no copy kept on the way serves
+ * an older one.
+ */
+export function apkUrl(version: number | null): string {
+  return version === null ? apkPath : `${apkPath}?v=${String(version)}`;
+}
+
+/**
+ * The name a version downloads as: its own, so the phone opens this file and not an older
+ * download of the same name ("mishkan.apk" kept from before, the new one saved beside it).
+ */
+export function apkFileName(version: number | null): string {
+  return version === null ? 'mishkan.apk' : `mishkan-${String(version)}.apk`;
+}
+
 export function isAndroid(): boolean {
   return /Android/i.test(navigator.userAgent);
 }

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { ReactElement } from 'react';
 import { Link, useLocation } from 'react-router';
 import { EntitySettings } from '../components/settings/EntitySettings';
+import { AndroidAppCard } from '../components/settings/AndroidAppCard';
 import { ApkUpdateCard } from '../components/settings/ApkUpdateCard';
 import { AutoReminderCard } from '../components/settings/AutoReminderCard';
 import { CalendarCard } from '../components/settings/CalendarCard';
@@ -15,7 +16,6 @@ import { ProfileCard } from '../components/settings/ProfileCard';
 import { SetupCard } from '../components/settings/SetupCard';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Icon } from '../components/ui/Icon';
-import { InstallAppButton } from '../components/ui/InstallAppButton';
 import { ListRow } from '../components/ui/ListRow';
 import { PageShell } from '../components/ui/PageShell';
 import { labels } from '../constants/labels';
@@ -92,7 +92,7 @@ export function SettingsPage(): ReactElement {
       <div id="setup-children" className="scroll-mt-20">
         <EntitySettings entities={entities.entities} settings={settings} />
       </div>
-      <InstallAppButton />
+      <AndroidAppCard />
       <NotificationsCard push={setup.push} />
       <SummaryCard summaries={summaries} pushOn={setup.push.status === 'on'} />
       <AutoReminderCard household={household} members={members} />

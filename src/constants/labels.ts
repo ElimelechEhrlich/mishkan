@@ -639,6 +639,16 @@ export const labels = {
     update: 'עדכון',
     title: 'התקנת משכן לאנדרואיד',
     hint: 'הורדה והתקנה כאפליקציה בטלפון. אם הטלפון שואל, לאשר התקנה מהדפדפן.',
+    appTitle: 'אפליקציית אנדרואיד',
+    version: (latest: number | null, installed: number | null): string =>
+      [
+        latest === null ? null : `גרסה אחרונה ${String(latest)}`,
+        installed === null ? null : `מותקנת ${String(installed)}`,
+      ]
+        .filter((part) => part !== null)
+        .join(' · '),
+    appHint: 'התוכן בה מתעדכן לבד',
+    download: 'הורדה',
   },
   tour: {
     skip: 'דילוג',

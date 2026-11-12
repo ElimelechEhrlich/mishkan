@@ -314,7 +314,8 @@
   - נבנה ב־`.github/workflows/android.yml` מתוך `.github/twa-manifest.json`. המפתח בסודות הריפו. כל APK נפתח פעמיים באמולטור לפני פרסום. `android-test.yml` בודק וריאנטים בלי לפרסם. ה־workflow דוחף בעצמו ל־main, ולכן לא דוחפים במקביל אליו.
   - **חייב להישאר `enableSiteSettingsShortcut: true`** (בלעדיו קריסה, כך נפלה גרסה 8). את קיצור Site Settings מוחק `.github/scripts/remove-site-settings-shortcut.py`.
   - ארבעה קיצורים לכל היותר: רשימת קניות, פריט חדש, היום, שיחה (מ־2026-10-16 במקום להשלמה, APK 12). האייקונים ב־`public/icons/shortcut-*.png`, ונוצרים ב־`scripts/dev/shortcut-icons.cjs`. שינוי בהם מחייב APK חדש.
-  - עדכון מוכרז לבד: `?apk=N` בכל פתיחה, `public/apk-version.json`, `ApkUpdateCard` והנקודה. גרסה אחרונה: 11.
+  - עדכון מוכרז לבד: `?apk=N` בכל פתיחה, `public/apk-version.json`, `ApkUpdateCard` והנקודה. גרסה אחרונה: 12 (נבדק ב־APK שבריפו: versionCode 12).
+  - **הורדה (2026-11-12, לבקשת הבעלים):** בהגדרות תמיד `AndroidAppCard` (גרסה אחרונה, ובתוך האפליקציה גם המותקנת, וכפתור הורדה), בכל מכשיר. כל קישור הורדה הוא `apkUrl(גרסה)` (`/mishkan.apk?v=N`) עם שם קובץ `mishkan-N.apk` (`apkFileName`), ו־`vercel.json` שולח `Content-Disposition: attachment` בלי שם, כדי שהטלפון לא יפתח הורדה ישנה בשם `mishkan.apk`. `useLatestApk` שואל את הגרסה גם בדפדפן.
 
 ### מה נבדק ומה לא
 - **נבדק:** SQL מקומי לכל מיגרציה (עד `t38`), 130 בדיקות, typecheck, lint, build, צילומי מסך.

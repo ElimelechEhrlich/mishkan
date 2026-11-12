@@ -23,7 +23,7 @@
         },
         {
           "key": "Content-Disposition",
-          "value": "attachment; filename=\"mishkan.apk\""
+          "value": "attachment"
         },
         {
           "key": "Cache-Control",

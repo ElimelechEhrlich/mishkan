@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { useApkUpdate } from '../../hooks/useApkUpdate';
-import { apkPath, markApkUpdating } from '../../lib/install';
+import { useLatestApk } from '../../hooks/useLatestApk';
+import { apkFileName, apkUrl, markApkUpdating } from '../../lib/install';
 import { Icon } from '../ui/Icon';
 
 /**
@@ -10,13 +11,14 @@ import { Icon } from '../ui/Icon';
  */
 export function ApkUpdateCard(): ReactElement | null {
   const due = useApkUpdate();
+  const latest = useLatestApk();
   if (!due) {
     return null;
   }
   return (
     <a
-      href={apkPath}
-      download="mishkan.apk"
+      href={apkUrl(latest)}
+      download={apkFileName(latest)}
       onClick={markApkUpdating}
       className="flex items-center gap-3 rounded-2xl bg-primary-soft p-3.5 active:opacity-80"
     >

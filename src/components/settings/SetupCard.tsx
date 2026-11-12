@@ -3,7 +3,8 @@ import type { ReactElement } from 'react';
 import { labels } from '../../constants/labels';
 import { openSteps } from '../../lib/setup';
 import type { SetupState, SetupStep } from '../../lib/setup';
-import { apkPath } from '../../lib/install';
+import { apkFileName, apkUrl } from '../../lib/install';
+import { useLatestApk } from '../../hooks/useLatestApk';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 
@@ -37,6 +38,7 @@ export function SetupCard({
   onBringBack,
   foldable = true,
 }: SetupCardProps): ReactElement | null {
+  const latest = useLatestApk();
   const left = openSteps(steps).length;
   const [open, setOpen] = useState(left > 0);
   if (steps.length === 0) {
@@ -116,8 +118,8 @@ export function SetupCard({
                     </button>
                     {step === 'install' ? (
                       <a
-                        href={apkPath}
-                        download="mishkan.apk"
+                        href={apkUrl(latest)}
+                        download={apkFileName(latest)}
                         className="flex min-h-9 items-center rounded-xl bg-primary-soft px-3 text-[14px] font-semibold text-primary"
                       >
                         {labels.setup.actions.install}
