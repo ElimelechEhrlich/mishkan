@@ -3,8 +3,8 @@
 // items, and answers in Hebrew. Every read and write goes through the parent's own sign-in,
 // so the database's rules apply as in the app: the parent sees and changes only what they may.
 // It needs one secret, GEMINI_API_KEY (from Google AI Studio), and should have ASSISTANT_HOUSEHOLDS:
-// the household ids
-// (comma-separated) it serves, since its cost is the owner's; without it, it serves no one.
+// the household ids (comma-separated) it serves fully, since its cost is the owner's. Any other
+// household gets a trial: a few messages a day for each parent.
 // GEMINI_MODEL may name another model (for example, one the free tier offers), and
 // GEMINI_FALLBACK_MODEL the one asked when its daily quota is used up (a lighter model with a
 // larger free quota; "none" turns this off).
@@ -28,6 +28,16 @@ const maxRows = 60;
 const timeZone = 'Asia/Jerusalem';
 /** Messages one parent can send in a day, a guard on the cost. */
 const dailyLimit = 150;
+/** Messages a day for a parent of a household not listed in ASSISTANT_HOUSEHOLDS: a trial. */
+const trialLimit = 20;
+
+/** Whether the household is served fully (listed in ASSISTANT_HOUSEHOLDS) or on trial. */
+function fullyServed(householdId: string): boolean {
+  return (Deno.env.get('ASSISTANT_HOUSEHOLDS') ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .includes(householdId);
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1700,14 +1710,7 @@ Deno.serve(async (request) => {
     };
     // The smart check of the fixed shopping list: which names are one product.
     if (body.action === 'similar_staples') {
-      const house = await loadHousehold(db, auth.user.id);
-      const allowed = (Deno.env.get('ASSISTANT_HOUSEHOLDS') ?? '')
-        .split(',')
-        .map((id) => id.trim())
-        .filter((id) => id !== '');
-      if (!allowed.includes(house.householdId)) {
-        return json({ error: 'not enabled for this household' }, 403);
-      }
+      // Every household may run it: one question to the model, asked now and then.
       // Asked to tell as it goes: one JSON line per step, then the groups (or the error).
       if (body.stream === true) {
         const encoder = new TextEncoder();
@@ -1778,20 +1781,20 @@ Deno.serve(async (request) => {
     }
 
     const house = await loadHousehold(db, auth.user.id);
-    const allowed = (Deno.env.get('ASSISTANT_HOUSEHOLDS') ?? '')
-      .split(',')
-      .map((id) => id.trim())
-      .filter((id) => id !== '');
-    if (!allowed.includes(house.householdId)) {
-      return json({ error: 'not enabled for this household' }, 403);
-    }
+    // A household not listed is on trial: fewer messages a day.
+    const full = fullyServed(house.householdId);
     const { count } = await db
       .from('assistant_messages')
       .select('id', { count: 'exact', head: true })
       .eq('role', 'user')
       .gte('created_at', localToUtc(`${localDate()}T00:00`));
-    if ((count ?? 0) >= dailyLimit) {
-      return json({ reply: 'הגעת למכסת ההודעות להיום. אפשר להמשיך מחר.', changed: false });
+    if ((count ?? 0) >= (full ? dailyLimit : trialLimit)) {
+      return json({
+        reply: full
+          ? 'הגעת למכסת ההודעות להיום. אפשר להמשיך מחר.'
+          : `בגרסת הניסיון אפשר ${String(trialLimit)} הודעות ביום, והן נגמרו להיום. אפשר להמשיך מחר.`,
+        changed: false,
+      });
     }
     const { data: past } = await db
       .from('assistant_messages')
