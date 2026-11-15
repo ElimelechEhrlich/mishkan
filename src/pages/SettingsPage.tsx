@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router';
 import { EntitySettings } from '../components/settings/EntitySettings';
 import { AndroidAppCard } from '../components/settings/AndroidAppCard';
 import { ApkUpdateCard } from '../components/settings/ApkUpdateCard';
+import { ShopAppCard } from '../components/settings/ShopAppCard';
 import { AutoReminderCard } from '../components/settings/AutoReminderCard';
 import { CalendarCard } from '../components/settings/CalendarCard';
 import { GoogleCard } from '../components/settings/GoogleCard';
@@ -93,6 +94,7 @@ export function SettingsPage(): ReactElement {
         <EntitySettings entities={entities.entities} settings={settings} />
       </div>
       <AndroidAppCard />
+      <ShopAppCard />
       <NotificationsCard push={setup.push} />
       <SummaryCard summaries={summaries} pushOn={setup.push.status === 'on'} />
       <AutoReminderCard household={household} members={members} />

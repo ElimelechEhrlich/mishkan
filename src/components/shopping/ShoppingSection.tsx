@@ -7,6 +7,7 @@ import { tripWhen } from '../../lib/shoppingTrips';
 import type { Item, ShoppingCategory } from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { MissingItemRow } from './MissingItemRow';
+import { useShopPath } from '../../hooks/useShopPath';
 
 type ShoppingSectionProps = {
   readonly title: string;
@@ -40,6 +41,7 @@ export function ShoppingSection({
   onStartRun,
   onPlanTrip,
 }: ShoppingSectionProps): ReactElement | null {
+  const shopPath = useShopPath();
   const today = todayIso();
   const lists = shoppingCategories
     .filter((category) => only === null || category === only)
@@ -69,7 +71,7 @@ export function ShoppingSection({
             </h3>
             {list.trip !== undefined ? (
               <Link
-                to={`/item/${list.trip.id}`}
+                to={shopPath(`/item/${list.trip.id}`)}
                 className="flex min-h-8 items-center gap-1 rounded-full bg-surface px-3 text-[13px] font-medium text-ink shadow-card transition active:scale-95"
               >
                 <Icon name="calendar" className="size-3.5 text-primary" />

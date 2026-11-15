@@ -10,6 +10,7 @@ import { ConfirmIconButton } from '../ui/ConfirmIconButton';
 import { Icon } from '../ui/Icon';
 import { InlineAddChip } from '../ui/InlineAddChip';
 import { InlineEdit } from '../ui/InlineEdit';
+import { useShopPath } from '../../hooks/useShopPath';
 
 type StaplePickerProps = {
   /** The most added first; the order holds inside each department. */
@@ -54,6 +55,7 @@ export function StaplePicker({
   onChooseDepartment,
   onAddDepartment,
 }: StaplePickerProps): ReactElement {
+  const shopPath = useShopPath();
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   // How many of each ticked name, when chosen; none shows as "–" and is sent without one.
   const [amounts, setAmounts] = useState<ReadonlyMap<string, number>>(new Map());
@@ -118,7 +120,10 @@ export function StaplePicker({
         <div className="flex flex-col gap-1">
           <p className="text-[13px] text-muted">{labels.staples.hint}</p>
           {editing && (
-            <Link to="/shopping/departments" className="text-[13px] font-semibold text-primary">
+            <Link
+              to={shopPath('/shopping/departments')}
+              className="text-[13px] font-semibold text-primary"
+            >
               {labels.staples.departmentsOrder}
             </Link>
           )}

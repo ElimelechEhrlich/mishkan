@@ -9,6 +9,7 @@ import { Button } from '../ui/Button';
 import { Segmented } from '../ui/Segmented';
 import { DepartmentHeader } from './DepartmentHeader';
 import { MissingItemRow } from './MissingItemRow';
+import { useShopPath } from '../../hooks/useShopPath';
 
 type RunChecklistProps = {
   readonly run: ShoppingRun;
@@ -48,6 +49,7 @@ export function RunChecklist({
   onToggle,
   onFinish,
 }: RunChecklistProps): ReactElement {
+  const shopPath = useShopPath();
   /** Departments opened or folded by hand; the rest fold once all of them is bought. */
   const [folding, setFolding] = useState<ReadonlyMap<string, boolean>>(new Map());
   const bought = run.items.filter((item) => item.status === 'done');
@@ -88,7 +90,7 @@ export function RunChecklist({
               <p className="flex items-center gap-1.5 px-1 text-xs text-muted">
                 {labels.departments.sortedNote}
                 <span aria-hidden>·</span>
-                <Link to="/shopping/departments" className="font-semibold text-primary">
+                <Link to={shopPath('/shopping/departments')} className="font-semibold text-primary">
                   {labels.departments.changeOrder}
                 </Link>
               </p>

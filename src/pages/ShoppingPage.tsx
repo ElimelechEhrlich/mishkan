@@ -19,11 +19,14 @@ import { useHouseholdContext } from '../hooks/useRouteContext';
 import { useScopedItems } from '../hooks/useScopedItems';
 import { useShopping } from '../hooks/useShopping';
 import { useStaples } from '../hooks/useStaples';
+import { ShopInstallBanner } from '../components/shopping/ShopInstallBanner';
+import { useInShopApp } from '../hooks/useShopPath';
 
 export function ShoppingPage(): ReactElement {
   const { scopeId, setScope } = useHouseholdContext();
   const entities = useEntities();
   const items = useItems();
+  const inShop = useInShopApp();
   const scoped = useScopedItems(items, entities.entities);
   const shopping = useShopping(items, entities.entities, scoped.scope);
   const filter = useCategoryFilter(shopping.shared, shopping.personal);
@@ -47,6 +50,7 @@ export function ShoppingPage(): ReactElement {
       todayCount={items.todayCount}
     >
       <ErrorBanner message={shopping.error ?? items.error ?? entities.error} />
+      {inShop && <ShopInstallBanner />}
       <ScopeBar
         onEntityChanged={entities.reload}
         entities={entities.entities}

@@ -16,6 +16,7 @@ import { Card } from '../ui/Card';
 import { Icon } from '../ui/Icon';
 import { MissingItemFields } from './MissingItemFields';
 import { ShoppingListField } from './ShoppingListField';
+import { useShopPath } from '../../hooks/useShopPath';
 
 type MissingItemFormProps = {
   /** Entities and their shopping domains, the home first. */
@@ -48,6 +49,7 @@ export function MissingItemForm({
   apart,
   onApart,
 }: MissingItemFormProps): ReactElement {
+  const shopPath = useShopPath();
   const [text, setText] = useState('');
   const [category, setCategory] = useState<ShoppingCategory>('food');
   const [chosenDomainId, setChosenDomainId] = useState<string | null>(null);
@@ -149,7 +151,7 @@ export function MissingItemForm({
             </button>
           ) : (
             <Link
-              to="/shopping/staples"
+              to={shopPath('/shopping/staples')}
               className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl bg-primary-soft px-3 text-[13px] font-semibold text-primary transition active:scale-[0.97]"
             >
               <Icon name="list" className="size-4.5" />

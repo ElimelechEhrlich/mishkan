@@ -9,5 +9,7 @@ describe('navModeAfter', () => {
     expect(navModeAfter('/item/abc', 'home')).toBe('home');
     expect(navModeAfter('/item/abc', 'main')).toBe('main');
     expect(navModeAfter('/search', 'home')).toBe('home');
+    expect(navModeAfter('/shop/staples', 'home')).toBe('shop');
+    expect(navModeAfter('/shopping', 'home')).toBe('main');
   });
 });

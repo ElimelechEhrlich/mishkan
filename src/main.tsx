@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { fetchLatestApk, installedApkVersion, rememberApkLaunch } from './lib/install';
+import { listenForInstallOffer } from './lib/installPrompt';
+import { offerShopApp } from './lib/shopApp';
 import { refreshOnReturnAndAtMidnight } from './lib/itemChanges';
 import { showPresses } from './lib/press';
 import { registerAppUpdates } from './lib/pwa';
@@ -13,6 +15,8 @@ if (container === null) {
 }
 
 rememberApkLaunch();
+offerShopApp();
+listenForInstallOffer();
 // Only the Android app is offered updates; offline, what was known before stands.
 if (installedApkVersion() !== null) {
   fetchLatestApk().catch(() => undefined);

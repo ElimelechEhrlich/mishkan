@@ -15,6 +15,14 @@ type NavItem = {
 const home: NavItem = { to: '/home', label: labels.nav.start, icon: 'home' };
 const main: NavItem = { to: '/', label: labels.nav.home, icon: 'grid' };
 
+/** The shopping app's bar: its pages, and the whole app. */
+const shopItems: readonly NavItem[] = [
+  { to: '/shop', label: labels.nav.shopList, icon: 'cart' },
+  { to: '/shop/staples', label: labels.nav.shopStaples, icon: 'list' },
+  { to: '/shop/departments', label: labels.nav.shopDepartments, icon: 'grid' },
+  { to: '/home', label: labels.nav.shopWhole, icon: 'home' },
+];
+
 const mainItems: readonly NavItem[] = [
   home,
   main,
@@ -29,6 +37,7 @@ const mainItems: readonly NavItem[] = [
 /**
  * The bar at the bottom. Home, which sees the whole house at once, has only home and main;
  * main and its tabs, organized by entity and domain, have every tab. Home stands first in both.
+ * The shopping app has its own: its pages, and the whole app.
  */
 type BottomNavProps = {
   /** How many are missing on the shopping list; given, home's bar has a way to it. */
@@ -37,6 +46,24 @@ type BottomNavProps = {
 
 export function BottomNav({ shoppingCount }: BottomNavProps): ReactElement {
   const mode = useNavMode();
+  if (mode === 'shop') {
+    return (
+      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+        <div className="mx-auto grid max-w-xl grid-cols-4">
+          {shopItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end
+              className="m-1 flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] transition active:scale-[0.97]"
+            >
+              {({ isActive }) => <NavCell icon={item.icon} label={item.label} active={isActive} />}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    );
+  }
   if (mode === 'home') {
     // Home's bar is low: one rounded switch between home and main, its sign beside its name.
     return (

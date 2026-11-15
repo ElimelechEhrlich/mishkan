@@ -13,6 +13,7 @@ import type {
   ShoppingTarget,
 } from '../types/domain';
 import type { UseItems } from './useItems';
+import { useShopPath } from './useShopPath';
 
 export type CategoryGroup = {
   readonly category: ShoppingCategory;
@@ -64,6 +65,7 @@ export function useShopping(
   /** The entity the tabs are narrowed to: only its items and runs that hold them are shown. */
   scope?: EntityWithDomains,
 ): UseShopping {
+  const shopPath = useShopPath();
   const navigate = useNavigate();
   const [bought, setBought] = useState<readonly Item[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -182,13 +184,13 @@ export function useShopping(
         .then((runId) => {
           reload();
           setError(null);
-          void navigate(`/shopping/run/${runId}`);
+          void navigate(shopPath(`/shopping/run/${runId}`));
         })
         .catch((caught: unknown) => {
           setError(toMessage(caught));
         });
     },
-    [reload, navigate],
+    [reload, navigate, shopPath],
   );
 
   const toggleBought = useCallback(

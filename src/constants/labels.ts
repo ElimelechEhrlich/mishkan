@@ -190,6 +190,11 @@ export const labels = {
     shopping: 'קניות',
     debts: 'חובות',
     incomplete: 'להשלמה',
+    /** The shopping app's own bar. */
+    shopList: 'רשימה',
+    shopStaples: 'קבועה',
+    shopDepartments: 'מחלקות',
+    shopWhole: 'משכן',
   },
   data: {
     title: 'נתונים',
@@ -648,6 +653,14 @@ export const labels = {
         .filter((part) => part !== null)
         .join(' · '),
     appHint: 'התוכן בה מתעדכן לבד',
+    shopTitle: 'אפליקציית קניות',
+    shopAppName: 'משכן · קניות',
+    shopHint:
+      'אייקון נפרד בטלפון שנפתח ישר לקניות. פותחים בדפדפן Chrome, ובתפריט: "הוספה למסך הבית".',
+    shopOpen: 'פתיחה',
+    shopInstall: 'התקנת אפליקציית הקניות',
+    shopInstallHint: 'אייקון נפרד בטלפון, שנפתח ישר לכאן',
+    install: 'התקנה',
     download: 'הורדה',
   },
   tour: {

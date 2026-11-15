@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import type { Item } from '../../types/domain';
 import { Icon } from '../ui/Icon';
+import { useShopPath } from '../../hooks/useShopPath';
 
 type TripDoneListProps = {
   /** Going out shopping whose list had a run finish while it was open. */
@@ -14,6 +15,7 @@ type TripDoneListProps = {
 
 /** "הסבב הסתיים": going out shopping is not closed by itself; here it is asked about. */
 export function TripDoneList({ trips, onClose, onKeep }: TripDoneListProps): ReactElement | null {
+  const shopPath = useShopPath();
   if (trips.length === 0) {
     return null;
   }
@@ -28,7 +30,10 @@ export function TripDoneList({ trips, onClose, onKeep }: TripDoneListProps): Rea
             key={trip.id}
             className="flex flex-col gap-2 border-t border-line px-3.5 py-3 first:border-t-0"
           >
-            <Link to={`/item/${trip.id}`} className="flex items-center gap-2 active:opacity-60">
+            <Link
+              to={shopPath(`/item/${trip.id}`)}
+              className="flex items-center gap-2 active:opacity-60"
+            >
               <Icon name="cart" className="size-5 shrink-0 text-primary" />
               <span className="text-[15px] font-medium break-words">
                 {labels.shopping.tripDoneQuestion(trip.title)}

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import type { UseItems } from './useItems';
+import { useShopPath } from './useShopPath';
 
 export type UseAddStaples = {
   readonly saving: boolean;
@@ -14,6 +15,7 @@ export type UseAddStaples = {
 
 /** Adding what was ticked on the fixed list to the shopping list. */
 export function useAddStaples(items: UseItems, homeDomainId: string | null): UseAddStaples {
+  const shopPath = useShopPath();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const { addMissingItem } = items;
@@ -36,11 +38,11 @@ export function useAddStaples(items: UseItems, homeDomainId: string | null): Use
       }).then((added) => {
         setSaving(false);
         if (added) {
-          void navigate('/shopping');
+          void navigate(shopPath('/shopping'));
         }
       });
     },
-    [addMissingItem, homeDomainId, navigate],
+    [addMissingItem, homeDomainId, navigate, shopPath],
   );
   return { saving: saving || homeDomainId === null, add };
 }

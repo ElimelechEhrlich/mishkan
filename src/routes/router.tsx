@@ -76,6 +76,37 @@ export const router = createBrowserRouter([
               Component: (await import('../pages/ShoppingDepartmentsPage')).ShoppingDepartmentsPage,
             }),
           },
+          // The shopping app, installed on its own: the same pages under /shop.
+          {
+            path: '/shop',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingPage')).ShoppingPage,
+            }),
+          },
+          {
+            path: '/shop/staples',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingStaplesPage')).ShoppingStaplesPage,
+            }),
+          },
+          {
+            path: '/shop/departments',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingDepartmentsPage')).ShoppingDepartmentsPage,
+            }),
+          },
+          {
+            path: '/shop/run/:runId',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ShoppingRunPage')).ShoppingRunPage,
+            }),
+          },
+          {
+            path: '/shop/item/:itemId',
+            lazy: async (): Promise<LazyPage> => ({
+              Component: (await import('../pages/ItemPage')).ItemPage,
+            }),
+          },
           {
             path: '/shopping/staples',
             lazy: async (): Promise<LazyPage> => ({

@@ -5,6 +5,7 @@ import { labels } from '../../constants/labels';
 import type { Item } from '../../types/domain';
 import { CheckButton } from '../ui/CheckButton';
 import { Icon } from '../ui/Icon';
+import { useShopPath } from '../../hooks/useShopPath';
 
 type MissingItemRowProps = {
   readonly item: Item;
@@ -38,6 +39,7 @@ export function MissingItemRow({
   onToggle,
   onQuantity,
 }: MissingItemRowProps): ReactElement {
+  const shopPath = useShopPath();
   const bought = item.status === 'done';
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(item.quantity ?? '');
@@ -68,7 +70,7 @@ export function MissingItemRow({
       </span>
       <div className="flex min-w-0 flex-1 items-center gap-2 border-t border-line pe-2 group-first:border-t-0">
         <Link
-          to={`/item/${item.id}`}
+          to={shopPath(`/item/${item.id}`)}
           className="flex min-w-0 flex-1 items-baseline gap-2 py-3 active:opacity-70"
         >
           <span

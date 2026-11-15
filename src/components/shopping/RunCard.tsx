@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
 import type { ShoppingRun } from '../../types/domain';
 import { Icon } from '../ui/Icon';
+import { useShopPath } from '../../hooks/useShopPath';
 
 type RunCardProps = {
   readonly run: ShoppingRun;
@@ -10,12 +11,13 @@ type RunCardProps = {
 
 /** An open run on the shopping page: its name and how much of it is bought. */
 export function RunCard({ run }: RunCardProps): ReactElement {
+  const shopPath = useShopPath();
   const boughtCount = run.items.filter((item) => item.status === 'done').length;
   const percent = run.items.length === 0 ? 0 : (boughtCount / run.items.length) * 100;
 
   return (
     <Link
-      to={`/shopping/run/${run.run.id}`}
+      to={shopPath(`/shopping/run/${run.run.id}`)}
       className="flex items-center gap-3 rounded-2xl bg-surface p-3.5 shadow-card transition active:scale-[0.99]"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
