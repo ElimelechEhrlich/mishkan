@@ -1674,13 +1674,32 @@ ${names.map((name) => `- ${name}`).join('\n')}`;
 const voicePrompt =
   'This is a voice message from the parent. Listen to it fully: the tone tells a question (a rising tone, even without a question word) from a request; when they correct themselves while speaking ("ביום שלישי, לא, ברביעי"), the last thing said counts; hesitation or "אולי" means they are not sure, so ask before adding. Start your answer with one line: "🎤 " and what they said, in short, in their words (a question ends with ?), then a new line and your answer. If you could not make it out, say so and ask them to say it again.';
 
+/** What goes with a recorded call: find in it what the household should keep, and keep it. */
+const callPrompt =
+  'This is a recording of a phone call (or a conversation) the parent had. Listen to all of it. Work out what in it the household should keep: tasks and who does them, appointments (day, hour, place, with whom), debts and payments, things to buy, notes worth keeping. Use what the parent wrote with it, if anything, to complete or correct the details; it wins over what you understood. Add what is clear, with every detail said; ask about what is not clear (a day, an hour, who) instead of guessing. Start your answer with one line: "📞 " and what the call was about, in short (with whom, on what), then a new line and what you added, or your questions.';
+
+/** A recording the app kept in the parent's own folder, as base64; null if it cannot be read. */
+async function keptRecording(db: SupabaseClient, path: string): Promise<string | null> {
+  const { data, error } = await db.storage.from('assistant-media').download(path);
+  // A model hears at most this much in one message (about 12 minutes of a phone call).
+  if (error !== null || data.size === 0 || data.size > 16_000_000) {
+    return null;
+  }
+  const bytes = new Uint8Array(await data.arrayBuffer());
+  let binary = '';
+  for (let start = 0; start < bytes.length; start += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(start, start + 0x8000));
+  }
+  return btoa(binary);
+}
+
 /** The "🎤 …" line a voice answer opens with, and the answer without it. */
 function heardLine(reply: string): { readonly heard: string | null; readonly rest: string } {
-  if (!reply.startsWith('🎤')) {
+  if (!reply.startsWith('🎤') && !reply.startsWith('📞')) {
     return { heard: null, rest: reply };
   }
   const end = reply.indexOf('\n');
-  const line = (end === -1 ? reply : reply.slice(0, end)).replace(/^🎤\s*/u, '').trim();
+  const line = (end === -1 ? reply : reply.slice(0, end)).replace(/^(🎤|📞)\s*/u, '').trim();
   return { heard: line === '' ? null : line, rest: end === -1 ? '' : reply.slice(end + 1).trim() };
 }
 
@@ -1707,6 +1726,7 @@ Deno.serve(async (request) => {
       media_seconds?: unknown;
       action?: unknown;
       stream?: unknown;
+      call?: unknown;
     };
     // The smart check of the fixed shopping list: which names are one product.
     if (body.action === 'similar_staples') {
@@ -1757,25 +1777,38 @@ Deno.serve(async (request) => {
       typeof body.audio === 'string' && body.audio.length > 0 && body.audio.length < 6_000_000
         ? body.audio
         : null;
+    // A recorded call: too long to send in the message, so the app keeps it first (WAV, mono at
+    // a phone's rate) and it is heard from there.
+    const callAsked = body.call === true;
     // The photo or recording as the app kept it, in the parent's own folder, to open again.
     const mediaPath =
-      (image !== null || audio !== null) &&
+      (image !== null || audio !== null || callAsked) &&
       typeof body.media_path === 'string' &&
-      /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|webm|ogg|m4a)$/.test(body.media_path) &&
+      /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|webm|ogg|m4a|wav)$/.test(body.media_path) &&
       body.media_path.startsWith(`${auth.user.id}/`)
         ? body.media_path
         : null;
+    const callAudio = callAsked && mediaPath !== null ? await keptRecording(db, mediaPath) : null;
+    if (callAsked && callAudio === null) {
+      return json({ error: 'the recording could not be read' }, 400);
+    }
     const mediaSeconds =
-      audio !== null && typeof body.media_seconds === 'number' && body.media_seconds >= 0
+      (audio !== null || callAudio !== null) &&
+      typeof body.media_seconds === 'number' &&
+      body.media_seconds >= 0
         ? Math.min(body.media_seconds, 99999)
         : null;
+    // What the parent wrote with a call: details to complete what was said in it.
+    const added = text(body.message);
     const message =
-      text(body.message) ??
+      callAudio !== null
+        ? `${callPrompt}${added === null ? '' : `\n\nמה שההורה הוסיף בכתב, להשלמת הפרטים: ${added}`}`
+        : (added ??
       (audio !== null
         ? voicePrompt
         : image === null
           ? null
-          : 'הוסף פריט מתאים מהתמונה, עם כל הפרטים.');
+          : 'הוסף פריט מתאים מהתמונה, עם כל הפרטים.'));
     if (message === null) {
       return json({ error: 'empty message' }, 400);
     }
@@ -1815,6 +1848,7 @@ Deno.serve(async (request) => {
       parts: [
         ...(image === null ? [] : [{ inlineData: { mimeType: 'image/jpeg', data: image } }]),
         ...(audio === null ? [] : [{ inlineData: { mimeType: 'audio/wav', data: audio } }]),
+        ...(callAudio === null ? [] : [{ inlineData: { mimeType: 'audio/wav', data: callAudio } }]),
         { text: message },
       ],
     });
@@ -1878,7 +1912,7 @@ Deno.serve(async (request) => {
         .map((part) => (typeof part.text === 'string' && part.thought !== true ? part.text : ''))
         .join('')
         .trim();
-      if (audio !== null) {
+      if (audio !== null || callAudio !== null) {
         const said = heardLine(reply);
         heard ??= said.heard;
         reply = said.rest;
@@ -1922,11 +1956,13 @@ Deno.serve(async (request) => {
           ? {}
           : {
               media_path: mediaPath,
-              media_kind: audio !== null ? 'audio' : 'image',
+              media_kind: audio !== null || callAudio !== null ? 'audio' : 'image',
               media_seconds: mediaSeconds,
             }),
         text:
-          audio !== null
+          callAudio !== null
+            ? [`📞 ${heard ?? 'הקלטת שיחה'}`, added ?? ''].filter((line) => line !== '').join('\n')
+            : audio !== null
             ? `🎤 ${heard ?? 'הודעה קולית'}`
             : image === null
               ? message

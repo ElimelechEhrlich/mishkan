@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
+import { isSoundFile } from '../../lib/audio';
 import { useVoiceMessage } from '../../hooks/useVoiceMessage';
 import type { AssistantTurn } from '../../services/assistantService';
 import { ConfirmButton } from '../ui/ConfirmButton';
@@ -14,7 +15,8 @@ import { VoiceStrip } from './VoiceStrip';
 type AssistantChatProps = {
   readonly turns: readonly AssistantTurn[];
   readonly sending: boolean;
-  readonly onSend: (message: string, photo?: File | null) => void;
+  /** Sends a message, with a photo or a recorded call attached. */
+  readonly onSend: (message: string, file?: File | null) => void;
   /** Sends a voice message. */
   readonly onVoice: (recording: Blob, seconds: number) => void;
   /** Sends again the last message, which got no answer; null when there is none. */
@@ -36,6 +38,8 @@ export function AssistantChat({
 }: AssistantChatProps): ReactElement {
   const [draft, setDraft] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
+  // An attached recording is a call to hear, not a picture to show.
+  const isCall = photo !== null && isSoundFile(photo);
   const [preview, setPreview] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const voice = useVoiceMessage(onVoice);
@@ -43,7 +47,7 @@ export function AssistantChat({
 
   // A small picture of the attached photo, let go once it is sent or removed.
   useEffect(() => {
-    if (photo === null) {
+    if (photo === null || isSoundFile(photo)) {
       setPreview(null);
       return;
     }
@@ -113,9 +117,9 @@ export function AssistantChat({
                 {/* With the photo or recording in sight, its mark is not needed. */}
                 {turn.media === null
                   ? turn.text
-                  : turn.text.replace(/^(📷|🎤)\s*/u, '') !== '' && (
+                  : turn.text.replace(/^(📷|🎤|📞)\s*/u, '') !== '' && (
                       <span className={turn.media.kind === 'audio' ? 'text-[14px] opacity-90' : ''}>
-                        {turn.text.replace(/^(📷|🎤)\s*/u, '')}
+                        {turn.text.replace(/^(📷|🎤|📞)\s*/u, '')}
                       </span>
                     )}
               </span>
@@ -188,10 +192,19 @@ export function AssistantChat({
         onSubmit={handleSubmit}
         className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-xl flex-col gap-2 bg-paper/95 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md"
       >
-        {preview !== null && (
+        {(preview !== null || isCall) && (
           <div className="flex items-center gap-2.5">
-            <img src={preview} alt="" className="size-14 rounded-xl object-cover shadow-card" />
-            <p className="flex-1 text-[13px] text-muted">{labels.assistant.photoReady}</p>
+            {preview !== null ? (
+              <img src={preview} alt="" className="size-14 rounded-xl object-cover shadow-card" />
+            ) : (
+              <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                <Icon name="phone" className="size-6" />
+              </span>
+            )}
+            <p className="flex min-w-0 flex-1 flex-col text-[13px] text-muted">
+              {isCall && <span className="truncate font-medium text-ink">{photo.name}</span>}
+              {isCall ? labels.assistant.callReady : labels.assistant.photoReady}
+            </p>
             <button
               type="button"
               aria-label={labels.assistant.removePhoto}
@@ -222,7 +235,7 @@ export function AssistantChat({
                 <Icon name="clip" className="size-5.5" />
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,audio/*"
                   className="sr-only"
                   onChange={(event) => {
                     setPhoto(event.target.files?.[0] ?? null);
@@ -235,7 +248,7 @@ export function AssistantChat({
                 rows={1}
                 dir="auto"
                 aria-label={labels.assistant.placeholder}
-                placeholder={labels.assistant.placeholder}
+                placeholder={isCall ? labels.assistant.callDetails : labels.assistant.placeholder}
                 onChange={(event) => {
                   setDraft(event.target.value);
                 }}

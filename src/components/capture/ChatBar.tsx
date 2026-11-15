@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
 import { Link } from 'react-router';
 import { labels } from '../../constants/labels';
+import { isSoundFile } from '../../lib/audio';
 import { useQuickAsk } from '../../hooks/useQuickAsk';
 import { useVoiceMessage } from '../../hooks/useVoiceMessage';
 import { Icon } from '../ui/Icon';
@@ -23,11 +24,17 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
   const [draft, setDraft] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  // An attached recording is a call to hear, not a picture to show.
+  const isCall = photo !== null && isSoundFile(photo);
   const voice = useVoiceMessage(quick.askVoice);
 
   // A small picture of the attached photo, let go once it is sent or removed.
   useEffect(() => {
     if (photo === null) {
+      setPreview(null);
+      return;
+    }
+    if (isSoundFile(photo)) {
       setPreview(null);
       return;
     }
@@ -108,10 +115,19 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
         </section>
       )}
       {voice.error !== null && <p className="text-[13px] text-alert">{voice.error}</p>}
-      {preview !== null && (
+      {(preview !== null || isCall) && (
         <div className="flex items-center gap-2.5">
-          <img src={preview} alt="" className="size-11 rounded-xl object-cover shadow-card" />
-          <p className="flex-1 text-[13px] text-muted">{labels.assistant.photoReady}</p>
+          {preview !== null ? (
+            <img src={preview} alt="" className="size-11 rounded-xl object-cover shadow-card" />
+          ) : (
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+              <Icon name="phone" className="size-5" />
+            </span>
+          )}
+          <p className="flex min-w-0 flex-1 flex-col text-[13px] text-muted">
+            {isCall && <span className="truncate font-medium text-ink">{photo.name}</span>}
+            {isCall ? labels.assistant.callReady : labels.assistant.photoReady}
+          </p>
           <button
             type="button"
             aria-label={labels.assistant.removePhoto}
@@ -156,7 +172,7 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
               value={draft}
               dir="auto"
               aria-label={labels.assistant.barPlaceholder}
-              placeholder={labels.assistant.barPlaceholder}
+              placeholder={isCall ? labels.assistant.callDetails : labels.assistant.barPlaceholder}
               enterKeyHint="send"
               onChange={(event) => {
                 setDraft(event.target.value);
@@ -170,7 +186,7 @@ export function ChatBar({ onNewItem }: ChatBarProps): ReactElement {
               <Icon name="clip" className="size-5" />
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,audio/*"
                 className="sr-only"
                 onChange={(event) => {
                   setPhoto(event.target.files?.[0] ?? null);

@@ -5,6 +5,7 @@ import { announceItemsChanged } from '../lib/itemChanges';
 import {
   AssistantNotEnabled,
   askWith,
+  attachmentOf,
   clearConversation,
   listConversation,
 } from '../services/assistantService';
@@ -16,7 +17,8 @@ export type UseAssistant = {
   /** Waiting for the answer. */
   readonly sending: boolean;
   /** Sends a message, and a photo to read (a `File` from the camera or the gallery). */
-  readonly send: (message: string, photo?: File | null) => void;
+  /** A message, with a photo or a recorded call attached. */
+  readonly send: (message: string, file?: File | null) => void;
   /** Sends a voice message; its bubble shows what the assistant heard. */
   readonly sendVoice: (recording: Blob, seconds: number) => void;
   /** Sends again the message that got no answer; null when there is none. */
@@ -66,8 +68,14 @@ export function useAssistant(): UseAssistant {
     }
     const turnId = `local-${String(Date.now())}`;
     const voice = attachment?.kind === 'voice';
+    const call = attachment?.kind === 'call';
     const voiceLine = (heard: string | null): string =>
       `🎤 ${heard ?? labels.assistant.voiceMessage}`;
+    // A call's bubble says what the call was about, and what the parent added.
+    const callLine = (heard: string | null): string =>
+      [`📞 ${heard ?? labels.assistant.callMessage}`, trimmed]
+        .filter((part) => part !== '')
+        .join('\n');
     setError(null);
     setFailed(null);
     setSending(true);
@@ -76,7 +84,13 @@ export function useAssistant(): UseAssistant {
       {
         id: turnId,
         role: 'user',
-        text: voice ? voiceLine(null) : attachment === null ? trimmed : `📷 ${trimmed}`.trim(),
+        text: voice
+          ? voiceLine(null)
+          : call
+            ? callLine(null)
+            : attachment === null
+              ? trimmed
+              : `📷 ${trimmed}`.trim(),
         links: [],
         // What was just sent, from the device, until the conversation is loaded again.
         media:
@@ -84,11 +98,13 @@ export function useAssistant(): UseAssistant {
             ? null
             : attachment.kind === 'photo'
               ? { kind: 'image', url: URL.createObjectURL(attachment.file), seconds: null }
-              : {
-                  kind: 'audio',
-                  url: URL.createObjectURL(attachment.recording),
-                  seconds: attachment.seconds,
-                },
+              : attachment.kind === 'call'
+                ? { kind: 'audio', url: URL.createObjectURL(attachment.file), seconds: null }
+                : {
+                    kind: 'audio',
+                    url: URL.createObjectURL(attachment.recording),
+                    seconds: attachment.seconds,
+                  },
       },
     ]);
     withTimeout(askWith(trimmed, attachment), answerMs)
@@ -96,7 +112,13 @@ export function useAssistant(): UseAssistant {
         setTurns((current) => [
           // A voice message's bubble says what was heard.
           ...(current ?? []).map((turn) =>
-            turn.id === turnId && voice ? { ...turn, text: voiceLine(heard) } : turn,
+            turn.id !== turnId
+              ? turn
+              : voice
+                ? { ...turn, text: voiceLine(heard) }
+                : call
+                  ? { ...turn, text: callLine(heard) }
+                  : turn,
           ),
           {
             id: `local-${String(Date.now())}-reply`,
@@ -126,8 +148,8 @@ export function useAssistant(): UseAssistant {
   }, []);
 
   const send = useCallback(
-    (message: string, photo: File | null = null): void => {
-      deliver(message, photo === null ? null : { kind: 'photo', file: photo });
+    (message: string, file: File | null = null): void => {
+      deliver(message, attachmentOf(file));
     },
     [deliver],
   );

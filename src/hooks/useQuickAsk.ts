@@ -3,7 +3,7 @@ import { labels } from '../constants/labels';
 import { toMessage, withTimeout } from '../lib/errors';
 import type { AnswerLink } from '../lib/format';
 import { announceItemsChanged } from '../lib/itemChanges';
-import { AssistantNotEnabled, askWith } from '../services/assistantService';
+import { AssistantNotEnabled, askWith, attachmentOf } from '../services/assistantService';
 
 /** An answer shown where the question was written, without opening the conversation. */
 export type QuickAnswer = {
@@ -18,6 +18,7 @@ export type UseQuickAsk = {
   readonly answer: QuickAnswer | null;
   readonly error: string | null;
   /** Asks the assistant; the answer replaces the one shown. */
+  /** Asks, with a photo or a recorded call attached. */
   readonly ask: (message: string, photo: File | null) => void;
   /** Sends a voice message; the assistant hears it, tone and all. */
   readonly askVoice: (recording: Blob, seconds: number) => void;
@@ -68,8 +69,13 @@ export function useQuickAsk(): UseQuickAsk {
       if (question === '' && photo === null) {
         return;
       }
-      run(askWith(question, photo === null ? null : { kind: 'photo', file: photo }), () =>
-        photo === null ? question : `📷 ${question}`.trim(),
+      const attachment = attachmentOf(photo);
+      run(askWith(question, attachment), (heard) =>
+        attachment === null
+          ? question
+          : attachment.kind === 'call'
+            ? `📞 ${heard ?? labels.assistant.callMessage}`
+            : `📷 ${question}`.trim(),
       );
     },
     [run],

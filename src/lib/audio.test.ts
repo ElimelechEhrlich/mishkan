@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { encodeWav, formatElapsed, toBase64 } from './audio';
+import { encodeWav, formatElapsed, isSoundFile, toBase64 } from './audio';
 
 describe('formatElapsed', () => {
   it('shows minutes and two-digit seconds', () => {
@@ -32,5 +32,13 @@ describe('toBase64', () => {
     expect(toBase64(new Uint8Array([104, 105]))).toBe('aGk=');
     const long = new Uint8Array(70000).map((_, index) => index % 256);
     expect(toBase64(long)).toBe(Buffer.from(long).toString('base64'));
+  });
+});
+
+describe('isSoundFile', () => {
+  it('tells a recorded call from a picture', () => {
+    expect(isSoundFile({ type: 'audio/mp4', name: 'call.m4a' })).toBe(true);
+    expect(isSoundFile({ type: '', name: 'שיחה עם הבנק.AMR' })).toBe(true);
+    expect(isSoundFile({ type: 'image/jpeg', name: 'invite.jpg' })).toBe(false);
   });
 });

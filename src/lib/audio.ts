@@ -4,6 +4,20 @@ export const voiceRate = 16000;
 /** The longest a voice message may run, in seconds. */
 export const voiceMaxSeconds = 90;
 
+/** The rate a recorded call is sent at: a phone line's own, so a long call stays small. */
+export const callRate = 8000;
+
+/** The longest part of a recorded call that is sent, in seconds; the rest is left out. */
+export const callMaxSeconds = 12 * 60;
+
+/** Whether a chosen file is a recording (a call) rather than a picture, by its type or name. */
+export function isSoundFile(file: { readonly type: string; readonly name: string }): boolean {
+  return (
+    file.type.startsWith('audio/') ||
+    /\.(m4a|mp3|ogg|oga|opus|wav|aac|amr|3gp|flac)$/i.test(file.name)
+  );
+}
+
 /** A running time as "0:07" or "1:23". */
 export function formatElapsed(seconds: number): string {
   const whole = Math.max(0, Math.floor(seconds));
@@ -50,6 +64,38 @@ export function toBase64(bytes: Uint8Array): string {
     binary += String.fromCharCode(...bytes.subarray(start, start + 0x8000));
   }
   return btoa(binary);
+}
+
+/**
+ * A recorded call (m4a, mp3, ogg or whatever the phone keeps) as WAV, mono at the phone's own
+ * rate, up to `callMaxSeconds`: how long it runs, and whether its end was left out.
+ */
+export async function callForReading(
+  file: Blob,
+): Promise<{ readonly wav: Uint8Array; readonly seconds: number; readonly cut: boolean }> {
+  // Decoded straight at the phone's rate, so a long call does not fill the phone's memory.
+  const decoder = new AudioContext({ sampleRate: callRate });
+  try {
+    const decoded = await decoder.decodeAudioData(await file.arrayBuffer());
+    const seconds = Math.min(decoded.duration, callMaxSeconds);
+    const offline = new OfflineAudioContext(
+      1,
+      Math.max(1, Math.ceil(seconds * callRate)),
+      callRate,
+    );
+    const source = offline.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offline.destination);
+    source.start();
+    const rendered = await offline.startRendering();
+    return {
+      wav: encodeWav(rendered.getChannelData(0), callRate),
+      seconds: Math.round(seconds * 10) / 10,
+      cut: decoded.duration > callMaxSeconds,
+    };
+  } finally {
+    void decoder.close();
+  }
 }
 
 /**

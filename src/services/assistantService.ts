@@ -1,4 +1,5 @@
-import { voiceForReading } from '../lib/audio';
+import { labels } from '../constants/labels';
+import { callForReading, callMaxSeconds, isSoundFile, voiceForReading } from '../lib/audio';
 import { splitAnswer } from '../lib/format';
 import { blobFromBase64, shrinkForReading } from '../lib/image';
 import type { AnswerLink } from '../lib/format';
@@ -51,11 +52,13 @@ async function ownFolder(): Promise<string> {
 export async function uploadMedia(file: Blob, seconds: number | null = null): Promise<SentMedia> {
   const extension = file.type.startsWith('image/')
     ? '.jpg'
-    : file.type.includes('mp4')
-      ? '.m4a'
-      : file.type.includes('ogg')
-        ? '.ogg'
-        : '.webm';
+    : file.type.includes('wav')
+      ? '.wav'
+      : file.type.includes('mp4')
+        ? '.m4a'
+        : file.type.includes('ogg')
+          ? '.ogg'
+          : '.webm';
   const path = `${await ownFolder()}/${crypto.randomUUID()}${extension}`;
   const uploaded = await supabase.storage
     .from(mediaBucket)
@@ -145,6 +148,8 @@ export async function askAssistant(
   audio: string | null = null,
   /** The photo or recording, kept to open or hear again. */
   media: SentMedia | null = null,
+  /** The recording kept is a call, for the assistant to hear from where it is kept. */
+  call = false,
 ): Promise<{
   readonly reply: string;
   readonly links: readonly AnswerLink[];
@@ -159,6 +164,7 @@ export async function askAssistant(
         ...(image === null ? {} : { image }),
         ...(audio === null ? {} : { audio }),
         ...(media === null ? {} : { media_path: media.path, media_seconds: media.seconds }),
+        ...(call ? { call: true } : {}),
       },
     });
   const { data, error } = answer;
@@ -194,7 +200,17 @@ export async function askAssistant(
 /** What goes with a message: a photo to read, or a voice message to hear. */
 export type Attachment =
   | { readonly kind: 'photo'; readonly file: File }
-  | { readonly kind: 'voice'; readonly recording: Blob; readonly seconds: number };
+  | { readonly kind: 'voice'; readonly recording: Blob; readonly seconds: number }
+  /** A recorded call, with the parent's words to complete what it says. */
+  | { readonly kind: 'call'; readonly file: File };
+
+/** A file chosen to attach: a recorded call when it is sound, a photo otherwise. */
+export function attachmentOf(file: File | null): Attachment | null {
+  if (file === null) {
+    return null;
+  }
+  return isSoundFile(file) ? { kind: 'call', file } : { kind: 'photo', file };
+}
 
 /**
  * Sends a message with what is attached: the photo made small, or the recording as WAV, for
@@ -211,6 +227,20 @@ export async function askWith(
     const image = await shrinkForReading(attachment.file);
     const media = await uploadMedia(blobFromBase64(image, 'image/jpeg'));
     return askAssistant(message, image, null, media);
+  }
+  if (attachment.kind === 'call') {
+    // Too long to send in the message: kept first, and heard from there.
+    const call = await callForReading(attachment.file).catch(() => {
+      throw new Error(labels.assistant.callUnreadable);
+    });
+    const media = await uploadMedia(new Blob([call.wav], { type: 'audio/wav' }), call.seconds);
+    return askAssistant(
+      call.cut ? `${message}\n${labels.assistant.callCut(callMaxSeconds / 60)}`.trim() : message,
+      null,
+      null,
+      media,
+      true,
+    );
   }
   const [audio, media] = await Promise.all([
     voiceForReading(attachment.recording),
