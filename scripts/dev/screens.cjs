@@ -18,7 +18,7 @@ function filter(rows, params) {
 (async () => {
   const b = await chromium.launch({ args: process.env.FAKEMIC ? ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] : [], proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: '<-loopback>,127.0.0.1,localhost' } : undefined });
   const ctx = await b.newContext({ viewport: { width: 390, height: Number(process.env.HEIGHT || 844) }, deviceScaleFactor: 2, hasTouch: Boolean(process.env.TOUCH), ignoreHTTPSErrors: true, locale: 'he-IL', permissions: process.env.FAKEMIC ? ['microphone'] : [] });
-  await ctx.addInitScript((s) => { localStorage.setItem('sb-mock-auth-token', JSON.stringify(s.session)); if (s.scope) localStorage.setItem('mishkan.scope', s.scope); if (s.tourSeen) localStorage.setItem('mishkan.tourSeen.v6', 'yes'); }, { session, scope: process.env.SCOPE, tourSeen: process.env.TOUR !== '1' });
+  await ctx.addInitScript((s) => { localStorage.setItem('sb-mock-auth-token', JSON.stringify(s.session)); if (s.scope) localStorage.setItem('mishkan.scope', s.scope); if (s.tourSeen) localStorage.setItem('mishkan.tourSeen.v7', 'yes'); }, { session, scope: process.env.SCOPE, tourSeen: process.env.TOUR !== '1' });
   await ctx.route('https://mock.supabase.co/**', async (route) => {
     const req = route.request(); const url = new URL(req.url());
     if (process.env.DELAY && url.pathname.includes('/rest/')) await new Promise((r) => setTimeout(r, Number(process.env.DELAY)));
